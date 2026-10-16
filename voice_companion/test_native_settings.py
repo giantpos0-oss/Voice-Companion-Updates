@@ -1,0 +1,199 @@
+"""Windows integration checks for the real category dialog and message loop."""
+import ctypes as c
+from ctypes import wintypes as w
+import sys
+import threading
+import time
+import unittest
+from native_settings import NativeSettings
+from settings_model import SettingsSession,DEFAULTS
+
+@unittest.skipUnless(sys.platform=='win32','Native Windows controls require Windows')
+class NativeSettingsTests(unittest.TestCase):
+    def test_announcements_are_visible_in_the_settings_window(self):
+        hwnd=self.open_panel();status=self.u.GetDlgItem(hwnd,400)
+        self.assertTrue(status)
+        self.panel.command('read current setting')
+        def visible():
+            buffer=c.create_unicode_buffer(1024)
+            self.u.GetWindowTextW(status,buffer,len(buffer))
+            return bool(buffer.value) and buffer.value==self.panel.last_notice
+        self.wait(visible)
+
+    def test_rate_change_previews_staged_values_and_cancel_restores_original(self):
+        hwnd=self.open_panel();samples=[]
+        self.panel.preview=lambda values,text:samples.append((values,text))
+        self.panel.command('voice');self.wait(lambda:bool(self.u.GetDlgItem(hwnd,200)))
+        self.panel.command('speech rate 8');self.wait(lambda:bool(samples))
+        self.assertEqual(samples[-1][0]['rate'],'8');self.assertIn('sample',samples[-1][1]);self.assertEqual(self.saved,[])
+        self.panel.command('cancel');self.wait(lambda:self.session.values['rate']=='0');self.assertEqual(self.saved,[])
+    def open_panel(self):
+        self.saved=[];self.notices=[]
+        context={'engines':('windows',),'windows_voices':('Test voice',),'espeak_voices':(),'ai_voices':('coral',),'accounts':(),'podcasts':(),'podcast_limits':{}}
+        values=DEFAULTS|{'rate':'0','volume':'100','punctuation':'some','input_mode':'mixed','engine':'windows','windows_voice':'Test voice','ai_voice':'coral','email_list_size':'10','browser':'firefox','radio_source':'all','podcast_limit':'manual','ai_consent':False,'remove_ai':False,'api_key':''}
+        self.session=SettingsSession(values,context)
+        def save(values):self.saved.append(values);self.panel.accepted()
+        self.panel=NativeSettings(self.session,self.notices.append,save,lambda key:None).start()
+        self.assertTrue(self.panel.ready.wait(8));self.assertFalse(self.panel.closed.is_set(),self.notices)
+        self.u=c.WinDLL('user32',use_last_error=True)
+        self.u.GetWindowTextW.restype=c.c_int;self.u.GetWindowTextW.argtypes=[w.HWND,w.LPWSTR,c.c_int]
+        self.u.GetDlgItem.restype=w.HWND;self.u.GetDlgItem.argtypes=[w.HWND,c.c_int]
+        self.u.SendMessageW.restype=c.c_ssize_t;self.u.SendMessageW.argtypes=[w.HWND,w.UINT,w.WPARAM,w.LPARAM]
+        self.u.PostMessageW.restype=w.BOOL;self.u.PostMessageW.argtypes=[w.HWND,w.UINT,w.WPARAM,w.LPARAM]
+        return self.panel.hwnd
+    def wait(self,condition):
+        until=time.monotonic()+5
+        while not condition() and time.monotonic()<until:time.sleep(.02)
+        self.assertTrue(condition(),self.notices)
+    def tearDown(self):
+        if hasattr(self,'panel') and not self.panel.closed.is_set():self.panel.cancel();self.panel.closed.wait(3)
+    def test_category_and_choice_home_end_stop_at_boundaries(self):
+        hwnd=self.open_panel();categories=self.u.GetDlgItem(hwnd,100)
+        def press(control,key,condition):
+            before=len(self.notices);self.u.PostMessageW(control,0x100,key,0)
+            self.wait(lambda:len(self.notices)>before and condition())
+        press(categories,0x23,lambda:self.session.category==11 and 'Startup and exit options' in self.notices[-1] and 'of list' not in self.notices[-1])
+        press(categories,0x23,lambda:self.session.category==11 and 'End of list' in self.notices[-1])
+        press(categories,0x28,lambda:self.session.category==11 and 'End of list' in self.notices[-1])
+        press(categories,0x24,lambda:self.session.category==0 and 'Verbosity options' in self.notices[-1] and 'of list' not in self.notices[-1])
+        press(categories,0x24,lambda:self.session.category==0 and 'Start of list' in self.notices[-1])
+        press(categories,0x26,lambda:self.session.category==0 and 'Start of list' in self.notices[-1])
+        press(categories,0x0D,lambda:bool(self.u.GetDlgItem(hwnd,200)))
+        choice=self.u.GetDlgItem(hwnd,200)
+        press(choice,0x23,lambda:self.session.values['verbosity']=='low' and self.notices[-1]=='low' and 'of list' not in self.notices[-1])
+        press(choice,0x23,lambda:self.session.values['verbosity']=='low' and 'End of list' in self.notices[-1])
+        press(choice,0x28,lambda:self.session.values['verbosity']=='low' and 'End of list' in self.notices[-1])
+        press(choice,0x24,lambda:self.session.values['verbosity']=='high' and self.notices[-1]=='high' and 'of list' not in self.notices[-1])
+        press(choice,0x24,lambda:self.session.values['verbosity']=='high' and 'Start of list' in self.notices[-1])
+        press(choice,0x26,lambda:self.session.values['verbosity']=='high' and 'Start of list' in self.notices[-1])
+    def test_entering_choice_and_tabbing_back_repeat_boundary(self):
+        hwnd=self.open_panel();categories=self.u.GetDlgItem(hwnd,100)
+        self.session.values['punctuation']='none'
+        self.u.PostMessageW(categories,0x100,0x0D,0)
+        self.wait(lambda:any('Verbosity, high' in notice for notice in self.notices))
+        choice=self.u.GetDlgItem(hwnd,200)
+        self.u.PostMessageW(choice,0x100,9,0)
+        self.wait(lambda:any('Spoken punctuation, none' in notice for notice in self.notices))
+        before=len(self.notices)
+        self.panel.command('previous setting')
+        self.wait(lambda:len(self.notices)>before and 'Verbosity, high' in self.notices[-1])
+    def test_category_arrows_choose_enter_opens_then_checkbox_and_enter_save(self):
+        hwnd=self.open_panel();categories=self.u.GetDlgItem(hwnd,100)
+        self.u.PostMessageW(categories,0x100,0x28,0) # Choose only; Enter opens.
+        self.wait(lambda:self.session.category==1)
+        self.assertFalse(self.u.GetDlgItem(hwnd,200))
+        self.u.PostMessageW(categories,0x100,0x0D,0)
+        # Wait for the checkbox itself: rendering the two preceding combo boxes
+        # can still be in progress when the first control appears.
+        self.wait(lambda:bool(self.u.GetDlgItem(hwnd,203)))
+        checkbox=self.u.GetDlgItem(hwnd,203)
+        for _ in range(3):self.panel.command('next setting')
+        self.wait(lambda:any('Lower media volume while Companion speaks' in message for message in self.notices))
+        before=bool(self.u.SendMessageW(checkbox,0xF0,0,0))
+        # Queue real keystrokes so IsDialogMessage handles checkbox activation.
+        self.u.PostMessageW(checkbox,0x100,0x20,0);self.u.PostMessageW(checkbox,0x101,0x20,0)
+        self.wait(lambda:bool(self.u.SendMessageW(checkbox,0xF0,0,0))!=before and self.notices[-1]==('off' if before else 'on'))
+        self.u.PostMessageW(checkbox,0x100,0x0D,0)
+        self.wait(lambda:len(self.saved)==1)
+        self.assertFalse(self.panel.closed.is_set())
+        self.assertEqual(len(self.saved),1);self.assertEqual(self.saved[0]['duck_audio'],not before)
+    def test_category_letters_stop_enter_opens_and_alt_o_returns(self):
+        hwnd=self.open_panel();categories=self.u.GetDlgItem(hwnd,100)
+        for expected,notice in ((2,'Synthesizer'),(11,'Startup and exit options'),(11,'End of matching items')):
+            before=len(self.notices);self.u.PostMessageW(categories,0x100,ord('S'),0)
+            self.wait(lambda:self.session.category==expected and len(self.notices)>before and notice in self.notices[-1])
+        self.assertTrue(any('Startup and exit options (S)' in text for text in self.notices))
+        self.u.PostMessageW(categories,0x100,0x24,0);self.wait(lambda:self.session.category==0)
+        self.u.PostMessageW(categories,0x100,ord('S'),0);self.wait(lambda:self.session.category==2)
+        self.u.PostMessageW(categories,0x100,0x0D,0)
+        self.wait(lambda:bool(self.u.GetDlgItem(hwnd,200)))
+        self.u.PostMessageW(self.u.GetDlgItem(hwnd,200),0x104,ord('O'),0)
+        self.wait(lambda:not self.u.GetDlgItem(hwnd,200))
+        self.assertFalse(self.saved)
+
+    def test_escape_discards_changes_and_voice_settings_are_staged(self):
+        hwnd=self.open_panel();self.panel.command('verbosity low')
+        self.wait(lambda:self.session.values['verbosity']=='low' and 'Verbosity low' in self.notices)
+        self.assertFalse(self.saved)
+        self.assertTrue(self.u.PostMessageW(self.u.GetDlgItem(hwnd,200),0x100,0x1B,0))
+        self.wait(lambda:self.session.values['verbosity']=='high' and not self.u.GetDlgItem(hwnd,200))
+        self.assertFalse(self.panel.closed.is_set())
+        self.panel.command('close settings');self.assertTrue(self.panel.closed.wait(5))
+        self.assertFalse(self.saved)
+    def test_combo_arrow_changes_value_and_enter_saves(self):
+        hwnd=self.open_panel()
+        self.u.PostMessageW(self.u.GetDlgItem(hwnd,100),0x100,0x0D,0)
+        self.wait(lambda:any('Verbosity, high' in message for message in self.notices))
+        combo=self.u.GetDlgItem(hwnd,200)
+        self.u.PostMessageW(combo,0x100,0x28,0)
+        self.wait(lambda:self.session.values['verbosity']=='medium' and self.notices[-1]=='medium')
+        self.u.PostMessageW(combo,0x100,0x0D,0)
+        self.wait(lambda:len(self.saved)==1)
+        self.assertEqual(self.saved[0]['verbosity'],'medium')
+    def test_enter_opens_category_and_focus_is_spoken(self):
+        hwnd=self.open_panel();categories=self.u.GetDlgItem(hwnd,100)
+        self.u.PostMessageW(categories,0x100,0x0D,0)
+        self.wait(lambda:any('Verbosity, high' in message for message in self.notices))
+        self.assertTrue(any('Verbosity' in message for message in self.notices))
+
+    def test_text_entry_is_self_voicing_and_password_is_hidden(self):
+        hwnd=self.open_panel();self.panel.command('documents')
+        self.wait(lambda:self.session.category==5)
+        self.wait(lambda:any('Font for new documents, Calibri' in message for message in self.notices))
+        entry=self.u.GetDlgItem(hwnd,200)
+        self.u.PostMessageW(entry,0x102,ord('Z'),0)
+        self.wait(lambda:'Z' in self.notices)
+        self.panel.command('synthesizer')
+        self.wait(lambda:self.session.category==2)
+        for _ in range(3):self.panel.command('next setting')
+        self.wait(lambda:any('AI API key; blank keeps the saved key. Hidden.' in message for message in self.notices))
+        password=self.u.GetDlgItem(hwnd,204)
+        self.assertTrue(password)
+        before=len(self.notices)
+        self.u.PostMessageW(password,0x102,ord('Q'),0)
+        self.wait(lambda:'Hidden character.' in self.notices[before:])
+        self.assertNotIn('Q',self.notices[before:])
+
+    def test_every_category_tabs_without_invalid_value_and_escape_closes(self):
+        hwnd=self.open_panel()
+        for name,expected in [('Voice','Voice options'),('Synthesizer','Synthesizer options'),('Input','Input options'),('Email','Email options'),('Documents','Word processor options'),('Word processor options','Word processor options'),('Notes','Notepad options'),('Notepad options','Notepad options'),('Web browser','Web browser options'),('Radio','Radio options'),('Podcasts','Podcasts options'),('Updates','Auto-update options'),('Auto update options','Auto-update options'),('Verbosity','Verbosity options')]:
+            self.panel.command(name)
+            self.wait(lambda:self.session.category_name()==expected)
+            self.u.PostMessageW(self.u.GetDlgItem(hwnd,100),0x100,9,0)
+            time.sleep(.15)
+            self.assertFalse(any('Choose one of' in n or 'Settings:' in n for n in self.notices),self.notices)
+        self.assertTrue(self.u.PostMessageW(self.u.GetDlgItem(hwnd,200),0x100,0x1B,0))
+        self.wait(lambda:not self.u.GetDlgItem(hwnd,200))
+        self.panel.command('close settings');self.assertTrue(self.panel.closed.wait(5),self.notices)
+        self.assertFalse(self.saved)
+
+    def test_enter_activates_action_without_saving(self):
+        hwnd=self.open_panel();actions=[]
+        self.panel.action_callback=actions.append
+        self.panel.command('Email');self.wait(lambda:self.session.category_name()=='Email options')
+        self.wait(lambda:bool(self.u.GetDlgItem(hwnd,205)))
+        for _ in range(7):self.panel.command('next setting')
+        self.wait(lambda:any('Add an email account. Button.' in n for n in self.notices))
+        self.u.PostMessageW(self.u.GetDlgItem(hwnd,205),0x100,0x0D,0)
+        self.assertTrue(self.panel.closed.wait(5),self.notices)
+        self.assertEqual(actions,['add_account']);self.assertFalse(self.saved)
+
+    def test_header_list_space_buttons_and_cancel_are_keyboard_accessible(self):
+        hwnd=self.open_panel();self.panel.command('Email')
+        self.wait(lambda:bool(self.u.GetDlgItem(hwnd,302)))
+        for _ in range(3):self.panel.command('next setting')
+        self.wait(lambda:any('From, enabled, 1 of 4' in n for n in self.notices))
+        headers=self.u.GetDlgItem(hwnd,204)
+        self.u.PostMessageW(headers,0x100,0x20,0)
+        self.wait(lambda:self.session.values['email_header_order']=='subject, date')
+        self.panel.command('next setting');self.panel.command('next setting');self.panel.command('next setting')
+        self.wait(lambda:any('Move down. Button.' in n for n in self.notices))
+        self.u.PostMessageW(self.u.GetDlgItem(hwnd,302),0x100,0x0D,0)
+        self.wait(lambda:any('From, disabled, 2 of 4' in n for n in self.notices))
+        self.u.PostMessageW(self.u.GetDlgItem(hwnd,302),0x100,0x1B,0)
+        self.wait(lambda:not self.u.GetDlgItem(hwnd,204))
+        self.assertEqual(self.session.values['email_header_order'],'from, subject, date');self.assertFalse(self.saved)
+
+if __name__=='__main__':unittest.main()
+
+

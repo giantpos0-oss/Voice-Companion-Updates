@@ -1,0 +1,67 @@
+VOICE COMPANION - SET UP EMAIL
+
+1. Before you start
+The account owner must agree to connect their email. They can do the setup or ask someone they trust for help.
+Use the same Windows account that will run Companion. Enter passwords and sign-in codes privately.
+The installer includes the app setup for Google and Microsoft sign-in. The person using the app does not need to edit setup files.
+A work or school account may need approval from its own support team. A private Exchange server is not supported in this version.
+
+2. Connect Gmail or Outlook
+1. Open Companion and say "Add account".
+2. Choose Gmail or Outlook or Exchange.
+3. Follow the normal browser sign-in prompts.
+4. Check the account name and the access being requested.
+5. Agree only if the owner wants to connect that account.
+6. Listen to the address read after setup. Check that it is right.
+If sign-in fails, note the exact message. Ask the app supplier or the account's support team for help. Do not guess at changes to setup files.
+
+3. Connect Yahoo
+Yahoo needs an app password. This is a separate password made in Yahoo's account settings for an email app.
+1. The account owner makes an app password in Yahoo's account settings.
+2. In Companion, say "Add account" and choose Yahoo.
+3. Type the full email address and the app password in the private entry window.
+4. Save and check the address Companion reads.
+Use the app password here. Keep your usual Yahoo password private.
+Companion protects the saved connection for the Windows user who made it.
+
+4. Choose the right account
+Say "List email accounts" to hear saved accounts.
+Say "Switch to" followed by the full email address when you have more than one account of the same type.
+Say "Which email account?" to check the current choice. Check it before sending.
+Without a connected account, the app can save a draft but cannot send it.
+
+5. Test a message
+Use an address you control or someone who has agreed to help.
+1. Say "Write an email".
+2. Give the test address, a short subject, and one sentence.
+3. Say "Send email".
+4. Check the spoken sender, address, subject, and message.
+5. Say "Cancel send". Check that no message arrived.
+6. Review again and say "Yes" only when all parts are right.
+7. Check the receiving inbox.
+A sent message may not appear in Yahoo's Sent folder. Check arrival with the receiver.
+If the result is uncertain, check the account and receiver before trying again. This helps avoid sending the same message twice.
+Close and reopen Companion. Check that the saved account still works.
+
+6. Test folders and replies
+Use spare messages and empty test folders. Keep important mail out of these tests.
+Read a message and return to its folder. Try reply, reply all, and forward. Check all addresses before sending.
+Choose one message, then several messages. Move them to a test folder and check the result in your email service.
+Try making, renaming, and moving an empty folder. Delete it only after checking the name in the Yes or No question.
+Gmail and Yahoo forwards do not include the original attachments in this version. Some email services also limit folder changes.
+Read chapters 8, 9, and 10 of the user guide for the full steps.
+
+7. Add Google Contacts if wanted
+Select the correct Gmail account. Say "Connect Google Contacts".
+Google asks separately for permission to use contacts. Check the account and agree only if the owner wants this.
+Say "Sync Google Contacts" to check for changes. Try a spare contact first.
+The app brings in Google contacts and can add new local contacts to Google. It does not delete Google contacts.
+If access is refused, mail stays connected. The local contact list can still be used.
+The app supplier may need to finish the Google service setup. Google Calendar and Google Drive are not connected in this version.
+
+8. Remove access
+To fully remove access, the owner can use the email service's account security page. For Yahoo, remove the app password made for Companion.
+A support person can remove a saved connection from this computer. First choose the exact address in Companion. Then close the app.
+The support person runs VoiceCompanion-Diagnostics.exe. Use --disconnect-gmail, --disconnect-outlook, or --disconnect-yahoo for that account type.
+This removes the selected saved account of that type. Other saved accounts stay in place.
+Ask the support person to check the result. Removing the local connection does not replace removing access at the email service.

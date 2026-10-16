@@ -1,0 +1,54 @@
+VOICE COMPANION - UPDATES
+
+1. Update the app
+Companion checks for updates when it starts, unless this choice is turned off in Options.
+Say "Check for updates" to check at any time. If an update is offered, say "Yes" to install or "No" to keep working.
+An update offered later waits for a suitable pause in your work.
+
+2. What happens after Yes
+1. Companion saves the current work.
+2. It downloads the full installer.
+3. It checks that the download matches the published file.
+4. It closes and runs setup.
+5. It opens again when setup finishes.
+Say "Update status" to hear progress. Say "Cancel update" while the file is downloading to stop.
+Status works while download speech is playing. After the download is checked, the app prepares setup. A checked update cannot be canceled once setup is being prepared.
+During setup, a separate update window listens for "Status" or "Update status". Press its Status button or Enter for keyboard access.
+Companion opens again in sleep mode. Say "Wake up" or use the keyboard when ready. It tries the microphone again if Windows is still releasing it.
+A Windows security prompt may need help. A computer restart is not forced. Companion tells you if one is needed.
+The update keeps your account data and personal files. It also refreshes the user guides.
+
+3. If an update fails
+Keep using the current version if it opens. Note the exact error message.
+Check internet access and free disk space. Try "Check for updates" again later.
+Ask a support person for help if setup is blocked or the desktop icon opens an older version.
+The app keeps update records for support. You do not need to edit them.
+
+4. Find the new guide and notes
+Say "Open user guides". Open the guide or release notes in the format you prefer.
+Close and reopen any guide that was already open before the update.
+Release notes explain the changes from the earlier version. Read them before trying a changed task.
+
+5. Publish an update from source files
+This part is for the person who makes and shares the app. People who only use it do not need a GitHub account.
+The source is set up for willwalsh14-hub/voice-companion-updates on GitHub. The build checks the app and installer before sharing the update.
+1. Open BUILD INSTALLER - Double click.cmd on the build computer.
+2. If asked, sign in to GitHub with the account allowed to update that project.
+3. Keep the build window open. Follow its setup prompts.
+4. Wait for the file uploads and checks to finish.
+5. Look for PUBLISHED AND VERIFIED and the release address.
+That message means the uploaded files were checked before the update was made available.
+Do not put passwords or sign-in codes in the source folder.
+
+6. If publishing fails
+A completed local installer may still be used for a test. A failed public upload does not make a new update available.
+PUBLISH UPDATE - Double click.cmd can retry sharing the checked installer. It checks that the installer still matches the successful build.
+If the installer has changed, build and check it again first.
+Each published version keeps its own files. Use a new version number for a later update.
+Build details are in BUILD ON WINDOWS - READ ME.txt and GITHUB AUTOMATED BUILDS.txt.
+
+7. Check on a real computer
+Check update Yes and No, a lost internet connection, and canceling a download.
+Check that saved work, settings, accounts, and the guide copies remain right after an update.
+Check that the app closes for setup and opens again afterward.
+Record what passed, what failed, and what you did not test. Use TRAINER TEST CHECKLIST.txt.

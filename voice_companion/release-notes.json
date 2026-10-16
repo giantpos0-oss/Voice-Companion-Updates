@@ -1,0 +1,34 @@
+{
+  "version": "0.2.139-test",
+  "status": "Testing build",
+  "date": "October 15, 2026",
+  "baseline": "0.2.138-test",
+  "scope": "One-time browser linking and choice-control updates.",
+  "sections": [
+    {
+      "title": "New in this version",
+      "topics": [
+        {
+          "title": "Link your browser once",
+          "details": [
+            "Set up or reload the extension once. Keep Companion open. Normal website tabs link on their own. You do not need to press Connect for each tab or site.",
+            "The extension tries again after a browser or app restart. It follows the active tab. The usual Web browser menu, element keys, lists, tables, typing and dictation remain in place.",
+            "Use the extension popup only to check status or pause the link. Browser settings pages are not linked."
+          ]
+        }
+      ]
+    },
+    {
+      "title": "What works better",
+      "topics": [
+        {
+          "title": "Use choices with one action",
+          "details": [
+            "Click-based radio widgets use one click. Widgets with keyboard handlers use Space. The reader waits briefly for delayed choice updates without clicking again.",
+            "The tests include nested keyboard checkboxes, delayed radio state changes, active tab changes and browser reconnects. Live PayPal sign-in has not been verified. Site security checks still apply."
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,186 @@
+VOICE COMPANION - TEST CHECKLIST
+
+Use this on the Windows computer that the person will use. A build check cannot test their own voice, microphone, hearing, or account.
+Use spare files, mail, and web forms. Write PASS, FAIL, or NOT TESTED beside each check. Record the exact words or error message when a check fails.
+
+Date: ____________________
+App version: ____________________
+Windows version: ____________________
+Tester: ____________________
+Microphone: ____________________
+Speaker or headset: ____________________
+
+1. Install and start
+___ Install VoiceCompanion-Setup.exe.
+___ Open the desktop icon. Check that the app window opens and speaks.
+___ Say "What version?" and compare it with the release you installed.
+___ Run check-setup.cmd from the installed app folder. Check that its tests pass.
+___ Turn off your screen reader for the app's speech test. Press Y only if you hear Companion's own test sentence.
+___ Run test-microphone.cmd. Say "Wake up. Create a document." Check its result and the words it heard.
+___ Start the app normally. Say "Wake up", then "Create a document".
+Result: ____________________
+
+2. Microphone and speech
+___ Repeat with the microphone and speaker or headset the person plans to use.
+___ While text is read, say "Be quiet". Check that speech pauses with no reply.
+___ Say "Keep going". Check that reading continues.
+___ Press Control during speech. Check that it stops.
+___ Give a new command during speech. Check that the old message stops.
+___ Try "Faster", "Slower", and "Punctuation all".
+___ Choose a voice with "List voices", "Next", and "Okay". Cancel a choice and check that the earlier voice returns.
+___ Try the US and UK English eSpeak voices. Reopen the app and check the saved voice and speed.
+Result: ____________________
+
+3. Help and lessons
+___ From a document, say "Help with documents". Open a part and read it.
+___ Move to another part while Help is speaking. Check that the old speech stops.
+___ Say "Close help". Check that you return to the same document.
+___ Repeat from email, the web, radio, podcasts, and the main menu.
+___ Use arrows, Enter, and Escape in Help. Check that headings and choices are clear.
+___ Say "Start tutorial". Try Next lesson, Repeat, Lesson list, and Explain command.
+___ Check that a lesson command does not change a real file, message, or page.
+___ Open each guide format you use. Check the text, headings, and contents links.
+Result: ____________________
+
+4. Write and save
+___ Create and name a test document. Speak two sentences without Start dictation.
+___ Use Commands only. Speak another sentence and check that it was not added.
+___ Use Dictation only. Say "Read document" and check that those words become text.
+___ Use Normal mode. Check that "Read document" now reads the text.
+___ Save, close, reopen, and check the name and text.
+___ Try Save as with a new name. Check both copies.
+___ Try a rename, then Undo. Check the old name returns.
+___ Leave a document and answer No at the save question. Check what was kept.
+___ Write a note. Go back, reopen it, and check the text.
+Result: ____________________
+
+5. Read and edit text
+___ Try next and previous character, word, line, sentence, and paragraph.
+___ Try Read from top and Continue reading.
+___ Use arrows, Control with arrows, Home, End, and Shift to select.
+___ Select a repeated word by name. Choose the second match and check it.
+___ Select a passage with Select through, Selection start, and Selection end.
+___ Check What is selected before making a change.
+___ Try copy, cut, paste, delete, Scratch, replacement, insertion, and Undo.
+___ Repeat in a document, an email draft, and a note. Try reading in a received message and on a web page.
+___ Say punctuation names. Check the text. Try Type literally with words that sound like commands.
+Result: ____________________
+
+6. Format a document and draft
+___ Try headings, bold, italic, underline, font, size, and alignment.
+___ Try bulleted and numbered lists. End a list and check ordinary text.
+___ Make a two-by-two table. Fill cells and move by cell, row, and column.
+___ Add and delete a row or column. Delete the table, then Undo.
+___ Try single, double, and custom line spacing. Check the spoken value.
+___ At a custom spacing question, change the value, confirm it, then try cancel.
+___ Save, close, reopen, and check the text and its look.
+___ Repeat the needed formatting in an email body.
+Result: ____________________
+
+7. Email accounts and contacts
+___ Test Gmail, Outlook or Exchange, and Yahoo separately when available.
+___ Enter passwords and codes privately. Check the address after sign-in.
+___ Add a second account of the same type. Switch using the full address.
+___ Check Which email account before writing or sending.
+___ Add a spare local contact and use its name in a draft.
+___ If using Google Contacts, connect with the right account and try a spare contact.
+___ Close and reopen the app. Check that the right account is kept.
+Result: ____________________
+
+8. Write, review, and send email
+___ Without an account, make a draft and request a send. Check that it is saved and not sent.
+___ With a test account, write to an address you control.
+___ Enter and review To, CC, BCC, Subject, and Body by voice and keyboard.
+___ Say Send email. Check the sender, every address, subject, and full body.
+___ Say Cancel send. Check that Yes afterward cannot send the canceled request.
+___ Review again. Say Yes only when it is right. Check the receiving inbox.
+___ If delivery is uncertain, check before trying again.
+___ Save and reopen a draft. Cancel new, reply, reply-all, and forward drafts.
+Result: ____________________
+
+9. Read and organize email
+___ Read the inbox and a message. Return to the folder, then the inbox.
+___ Try next and previous messages and loading another page of mail.
+___ Use a folder list. Try two folders with the same name in different places.
+___ Mark one message, then several. Move and delete only spare messages.
+___ Check every Yes or No question before agreeing.
+___ Make, rename, move, and delete an empty test folder. Check that a nonempty folder is kept.
+___ Reply, reply all, and forward. Check addresses and arrival.
+___ Check links and buttons in received mail.
+___ Check results in the email service itself.
+Result: ____________________
+
+10. Web browser menus and bookmarks
+___ Choose Web browser. Check that the web browser menu opens.
+___ Search or type an address by voice and keyboard.
+___ Save the page with New bookmark. Speak a name, then try typing a name.
+___ Open the bookmark list. Try first-letter and several-letter search.
+___ Rename and delete a spare bookmark from their lists.
+___ Try Web history, Go back, and Go forward.
+___ On a page, use Alt+Left Arrow and Alt+Right Arrow.
+___ With Keep browser window open checked, press Escape on a page. Check the web browser menu and Resume where you left off.
+___ Resume and check the same page and reading place.
+___ Turn that setting off. Leave a page and check that Resume is absent.
+Result: ____________________
+
+11. Read and use web pages
+___ Test in Edge, Chrome, Brave, and Firefox where installed.
+___ Read lines and words. Move to a heading, then check that arrow reading starts there.
+___ Try heading, link, button, text-box, table, and other quick keys.
+___ Open link and heading lists. Choose an item, then return to the page.
+___ Try a page whose links load later, and a page with content inside another frame.
+___ Enter a text box. Type, edit, save, and cancel. Check the saved value.
+___ Try checkboxes, choice boxes, radio buttons, and a box with several lines.
+___ Read a table by row and column. Check headings and the spoken place.
+___ Move quickly with keys during speech. Check that the old speech stops and each new result is prompt.
+Result: ____________________
+
+12. Fill in a test web form
+___ Fill a harmless form by voice, then edit some answers with the keyboard.
+___ Say Review and submit form. Check every answer and the named button.
+___ Use Continue review on a long form.
+___ Change an answer after review. Check that the earlier Yes request is canceled.
+___ Review again and submit only the test form.
+___ Try cancel, an empty required answer, and a form that adds a question.
+___ Check how the app reports a page that asks you to prove you are human.
+___ Try another search engine if offered. Check that the default remains the same.
+___ Record the site and browser for each failure.
+Result: ____________________
+
+13. Radio and podcasts
+___ Find a station or show. Use arrows, first-letter keys, and voice to choose.
+___ Save, open, and delete a spare station preset or podcast subscription.
+___ Try play, pause, resume, stop, and seeking where supported.
+___ Record a short station passage and check the saved audio.
+___ Schedule a test recording. Cancel it from the list and check the result.
+___ Download a podcast episode and play it with internet access off.
+___ Try manual and automatic downloads with a spare show. Check which files are kept.
+___ Give a new command during speech and check that the old speech stops.
+Result: ____________________
+
+14. Options, sleep, and exit
+___ Change a setting, choose OK, and check it after reopening.
+___ Change a setting, cancel, and check that it stays unchanged.
+___ Test typing echo, letter hints, and speech controls.
+___ Say Go to sleep. Check that a new task is ignored and Wake up works.
+___ Turn off internet access and try local speech, a document, sleep, and wake.
+___ Restore internet access after the test.
+___ Test exit Yes and No. Check the save question for an open document.
+___ Check power choices without agreeing to shut down until all work is saved.
+Result: ____________________
+
+15. Updates
+___ Try update Yes and No, cancel, and a lost internet connection.
+___ Check that the new version opens after setup.
+___ Say Status while download speech is playing. Check the current progress.
+___ During installation, try spoken Status and the update window's Status button.
+___ After setup, give a command without Wake up. Check that the microphone works.
+___ Check accounts, settings, documents, notes, drafts, and guide copies.
+___ Reopen a guide and the release notes. Check that they match the new version.
+Result: ____________________
+
+16. Report a problem
+Record the app version, Windows version, microphone, speaker or headset, step, site or service, and exact message.
+Say what you expected and what happened. Mark any missed tests as NOT TESTED.
+Keep a failed test result for the person fixing the app. Do not send them passwords, private keys, or personal mail.
+Check all tasks the person needs before relying on the app for important work.

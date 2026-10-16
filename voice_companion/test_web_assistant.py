@@ -1,0 +1,342 @@
+import tempfile
+import unittest
+
+from web_assistant import BrowserBackend, Favorites, WebSession, match_choices
+
+
+class FakeBackend:
+    def __init__(self):
+        self.url = 'https://example.com/'
+        self.activated = []
+        self.filled = []
+        self.controls = [
+            {'key':'0','role':'link','label':'Log in','href':'https://example.com/login','type':'','tag':'a'},
+            {'key':'1','role':'link','label':'Transfer between accounts','href':'https://example.com/transfer','type':'','tag':'a'},
+            {'key':'2','role':'field','label':'Full name','href':'','type':'text','tag':'input','value':''},
+            {'key':'3','role':'field','label':'Password','href':'','type':'password','tag':'input'},
+            {'key':'4','role':'button','label':'Submit application','href':'','type':'submit','tag':'button'},
+            {'key':'5','role':'button','label':'Continue','href':'','type':'submit','tag':'button','in_form':True},
+        ]
+    def focus(self,item):self.focused=item['key']
+    def field_value(self,item):return item.get('value','')
+    def goto(self, url): self.url = url
+    def back(self): self.url = 'https://example.com/'
+    def snapshot(self):
+        return {'title':'Example account', 'url':self.url,
+                'text':'Welcome to the account. Log in or transfer between accounts. Fill out an application.',
+                'controls':self.controls}
+    def activate(self, item): self.activated.append(item['key'])
+    def fill(self, item, value, private=False):
+        self.filled.append((item['key'], value))
+        next(c for c in self.controls if c['key'] == item['key'])['value'] = value
+    def choose_form_option(self, item, answer):
+        control = next(c for c in self.controls if c['key'] == item['key'])
+        if item['tag'] == 'select': control['selected_label'] = answer
+        else: control['checked'] = answer == 'yes'
+
+
+class WebTests(unittest.TestCase):
+    def test_failed_dynamic_capture_retries_the_same_revision(self):
+        from web_assistant import WebError
+        backend=FakeBackend();backend.revision=0
+        backend.document_stamp=lambda:{'url':backend.url,'epoch':1,'revision':backend.revision,'ready':'complete','busy':False,'frames':[]}
+        session=WebSession(self.temp.name,backend);session._refresh()
+        backend.revision=1;original=backend.snapshot
+        backend.snapshot=lambda:(_ for _ in ()).throw(WebError('Changing document'))
+        with self.assertRaises(WebError):session.refresh_changed()
+        self.assertEqual(session.document_state['revision'],0)
+        def updated():
+            result=original();result['text']='Password step';return result
+        backend.snapshot=updated;session.refresh_changed()
+        self.assertEqual(session.reading.text,'Password step')
+
+    def test_capture_does_not_swallow_mutation_after_extraction(self):
+        backend=FakeBackend();backend.revision=0
+        backend.document_stamp=lambda:{'url':backend.url,'epoch':1,'revision':backend.revision,'ready':'complete','busy':False,'frames':[]}
+        original=backend.snapshot
+        def snapshot():
+            result=original();result['text']='Old text' if backend.revision==0 else 'New text'
+            backend.revision=1
+            return result
+        backend.snapshot=snapshot
+        session=WebSession(self.temp.name,backend);session._refresh()
+        self.assertEqual(session.reading.text,'Old text');session.refresh_changed()
+        self.assertEqual(session.reading.text,'New text')
+
+    def test_capture_retries_navigation_without_repeating_action(self):
+        backend=FakeBackend();backend.epoch=1;backend.calls=0
+        backend.document_stamp=lambda:{'url':backend.url,'epoch':backend.epoch}
+        original=backend.snapshot
+        def snapshot():
+            result=original();backend.calls+=1
+            if backend.calls==1:backend.url='https://example.com/new';backend.epoch=2
+            return result
+        backend.snapshot=snapshot
+        session=WebSession(self.temp.name,backend);session._refresh()
+        self.assertEqual(session.snapshot['url'],'https://example.com/new');self.assertEqual(backend.calls,2);self.assertEqual(backend.activated,[])
+
+    def test_blocked_search_waits_for_explicit_voice_engine_choice(self):
+        original=self.backend.snapshot;requests=[]
+        def goto(url):requests.append(url);self.backend.url=url
+        self.backend.goto=goto
+        def snapshot():
+            result=original()
+            if 'google.com' in self.backend.url:result.update(challenge=True,text='Verification')
+            return result
+        self.backend.snapshot=snapshot
+        self.session.search('accessible help','google')
+        self.assertEqual(len(requests),1);self.assertEqual(self.session.engine_names()[0],'Brave Search')
+        self.session.command('try brave search')
+        self.assertEqual(len(requests),2);self.assertIn('search.brave.com',requests[-1]);self.assertEqual(self.session.search_engine,'google')
+
+    def test_waits_for_late_page_text_before_reporting_empty(self):
+        original = self.backend.snapshot
+        calls = [0]
+        self.backend.settle = lambda: None
+        def delayed():
+            calls[0] += 1
+            result = original()
+            if calls[0] < 4:
+                result['text'] = ''
+                result['controls'] = []
+            return result
+        self.backend.snapshot = delayed
+        self.assertIn('Welcome to the account', self.session.open('example.com'))
+        self.assertEqual(calls[0], 4)
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.backend = FakeBackend()
+        self.session = WebSession(self.temp.name, self.backend)
+
+    def test_guided_login_and_page_reading(self):
+        self.assertIn('Page loaded: Example account', self.session.open('example.com'))
+        self.assertIn('Log in', self.session.command("Um, I'm looking for how to log in"))
+        self.assertEqual(self.backend.activated, [])
+        self.assertIn('Is that what you want?', self.session.command('I am looking for login'))
+        self.session.command('cancel')
+        self.assertEqual(self.backend.activated, [])
+        self.session.command('I am looking for login')
+        self.assertIn('Page loaded: Example account', self.session.command('yes'))
+        self.assertEqual(self.backend.activated, ['0'])
+        self.assertIn('Welcome', self.session.command('read page'))
+
+    def test_no_offers_next_match_and_named_choice(self):
+        self.session.open('example.com')
+        self.assertIn('Tell me what you want', self.session.command('help me'))
+        self.assertIn('Log in', self.session.command('I am looking for login or transfer'))
+        self.assertIn('Transfer between accounts', self.session.command('no'))
+        self.assertIn('Page loaded: Example account', self.session.command('yes'))
+        self.assertEqual(self.backend.activated, ['1'])
+
+    def test_transfer_link_and_submission_guard(self):
+        self.session.open('example.com')
+        self.assertIn('Transfer between accounts', self.session.command('I want to transfer money between my accounts'))
+        self.session.command('open choice 1')
+        self.session.command('confirm web action')
+        self.assertEqual(self.backend.activated, ['1'])
+        self.assertIn('Submit application', self.session.command('find submit application'))
+        self.assertIn('Ask your helper', self.session.command('yes'))
+        self.assertEqual(self.backend.activated, ['1'])
+        self.session.command('find continue')
+        self.assertIn('Page loaded', self.session.command('yes'))
+        self.assertEqual(self.backend.activated, ['1','5'])
+
+    def test_favorites_and_form_fields(self):
+        self.session.open('example.com')
+        self.assertIn('Saved favorite Bank', self.session.command('save favorite as Bank'))
+        self.assertIn('Bank', self.session.command('list favorites'))
+        self.assertIn('Page loaded:', self.session.command('that one'))
+        self.session.command('save favorite as Portal')
+        self.assertIn('Bank', self.session.command('list favorites'))
+        self.assertIn('Portal', self.session.command('next'))
+        self.assertIn('Page loaded:', self.session.command('confirm'))
+        self.assertEqual(Favorites(self.temp.name).get('bank')['url'], 'https://example.com')
+        self.assertIn('Page loaded: Example account', self.session.command('open favorite Bank'))
+        self.assertIn('Full name', self.session.command('list fields'))
+        self.assertNotIn('Field 2:', self.session.command('list fields'))
+        self.assertIn('Password', self.session.command('next'))
+        self.assertIn('Full name', self.session.command('previous'))
+        self.assertIn('Filled Full name', self.session.command('fill field 1 with David McKeehan'))
+        self.assertEqual(self.backend.filled, [('2', 'David McKeehan')])
+        self.assertIn('Password entered', self.session.command('fill field 2 with secret'))
+        self.assertEqual(len(self.backend.filled), 2)
+        self.assertIn('What should I enter?', self.session.command('fill out this form for me'))
+        self.assertIn('Full name', self.session.command('help me'))
+        answer = self.session.command('David McKeehan')
+        self.assertIn('Recorded David McKeehan for Full name', answer)
+        self.assertIn('Password', answer)
+        self.assertIn('Review every answer', self.session.command('skip'))
+        self.assertEqual(len(self.backend.filled), 3)
+        self.assertIn('Full name: David McKeehan', self.session.command('review form'))
+        handoff = self.session.command('ask for help')
+        self.assertIn('example.com', handoff)
+        self.assertNotIn('David McKeehan', handoff)
+
+    def test_search_and_matching_reject_empty(self):
+        self.assertEqual(match_choices(self.backend.controls, 'um uh'), [])
+        self.assertIn('Page loaded: Example', self.session.command('look up public benefits'))
+        self.assertIn('www.google.com/search?q=public%20benefits', self.backend.url)
+        self.assertIn('Page loaded: Example', self.session.command('what about eligibility'))
+        self.assertIn('www.google.com/search?q=public%20benefits%20eligibility', self.backend.url)
+        self.assertIn('Source: Example account', self.session.command('what does this page say about transfer'))
+
+    def test_numbered_links_and_late_search_results(self):
+        self.session.open('example.com')
+        self.assertIn('Log in.', self.session.command('list links'))
+        self.assertIn('Page loaded: Example account', self.session.command('open link 1'))
+        self.assertIsNone(self.session.pending)
+        self.assertEqual(self.backend.activated, ['0'])
+        self.backend.controls = []
+        original = self.backend.snapshot
+        calls = [0]
+        def delayed_snapshot():
+            calls[0] += 1
+            if calls[0] > 1: self.backend.controls = [
+                {'key':'7','role':'link','label':'Veterans benefits','href':'https://example.com/benefits','tag':'a'}]
+            return original()
+        self.backend.snapshot = delayed_snapshot
+        self.session.open('example.com')
+        self.assertIn('Veterans benefits', self.session.command('find veterans benefits'))
+
+    def test_search_challenge_is_spoken_without_changing_engine(self):
+        original = self.backend.snapshot
+        def challenge_then_results():
+            snap = original()
+            if 'google.com' in self.backend.url:
+                snap.update(title='Human verification', text='', controls=[], challenge=True)
+            return snap
+        self.backend.snapshot = challenge_then_results
+        result = self.session.command('google veterans benefits')
+        self.assertIn('human verification', result)
+        self.assertNotIn('Searching with Brave Search', result)
+        self.assertIn('google.com', self.backend.url)
+        self.backend.url = 'https://www.google.com/sorry/index'
+        self.assertIn('human verification', self.session._refresh())
+
+    def test_search_all_engines_blocked_gives_honest_speech(self):
+        original = self.backend.snapshot
+        def blocked():
+            snap = original()
+            snap.update(text='', controls=[], challenge=True)
+            return snap
+        self.backend.snapshot = blocked
+        result = self.session.search('help with email')
+        self.assertIn('human verification', result)
+        self.assertNotIn('Page loaded:', result)
+
+    def test_browser_snapshot_includes_embedded_page_links(self):
+        class Frame:
+            def __init__(self, url, label):
+                self.url, self.label = url, label
+            def frame_element(self):
+                from unittest.mock import Mock
+                return Mock(is_visible=lambda:True,evaluate=lambda script:False,get_attribute=lambda name:'frame-key')
+            def evaluate(self, script):
+                self.script = script
+                return {'title':'Page', 'url':self.url, 'text':'Content',
+                        'elements':[dict(key='frame-key',role='frame',label='Account',start=7,end=7)] if self is main else [],'anchors':[],
+                        'controls':[{'key':'0', 'role':'link', 'label':self.label,
+                                     'href':self.url+'/login', 'tag':'a'}]}
+        main = Frame('https://example.com', 'Top link')
+        child = Frame('https://accounts.example.com', 'Sign in')
+        main.main_frame = main
+        main.frames = [main, child]
+        child.parent_frame=main
+        backend = BrowserBackend(self.temp.name)
+        backend.page = main
+        backend.start = lambda: None
+        result = backend.snapshot()
+        self.assertEqual([c['label'] for c in result['controls']], ['Top link', 'Sign in'])
+        self.assertEqual(result['controls'][1]['frame_index'], 1)
+        self.assertIn('shadowRoot', main.script)
+
+    def test_mixed_web_speech_types_into_focused_field(self):
+        self.session.open('example.com')
+        self.backend.dictate_focused = lambda spoken: 'Added text to Search. Review the field before submitting.'
+        self.assertIn('Added text to Search', self.session.command('veterans benefits near me'))
+        self.session.input_mode = 'commands'
+        self.assertIn('did not identify', self.session.command('veterans benefits near me')
+                      .replace('could not identify', 'did not identify'))
+
+    def test_web_reading_units(self):
+        self.session.open('example.com')
+        self.assertIn('Welcome', self.session.command('start reading'))
+        self.assertEqual(self.session.command('next character'),'e')
+        self.assertNotRegex(self.session.command('next word'),r'^Word \d')
+        self.assertNotRegex(self.session.command('next sentence'),r'^Sentence \d')
+
+    def test_browser_dictation_respects_focused_field_and_password(self):
+        class Frame:
+            def __init__(self, field): self.field = field
+            def evaluate(self, script): return self.field
+        class Keyboard:
+            inserted = []
+            def insert_text(self, value): self.inserted.append(value)
+        backend = BrowserBackend(self.temp.name)
+        frame = Frame({'tag':'input','type':'password','editable':False,'label':'Password'})
+        backend.page = type('Page', (), {'frames':[frame], 'keyboard':Keyboard()})()
+        backend.start = lambda: None
+        self.assertIn('Password entered', backend.dictate_focused('secret'))
+        self.assertEqual(backend.page.keyboard.inserted, ['secret'])
+        frame.field = {'tag':'textarea','type':'','editable':False,'label':'Comments'}
+        self.assertIn('Added text to Comments', backend.dictate_focused('Hello there'))
+        self.assertEqual(backend.page.keyboard.inserted, ['secret','Hello there'])
+
+    def test_complete_text_choice_form_and_submit_after_review(self):
+        self.backend.controls = [
+            {'key':'1','role':'field','label':'Full name','tag':'input','type':'text','value':'','required':True},
+            {'key':'2','role':'field','label':'Agree to terms','tag':'input','type':'checkbox','checked':False},
+            {'key':'3','role':'field','label':'State','tag':'select','type':'select-one','selected_label':'Choose',
+             'options':[{'label':'Choose','value':''},{'label':'Oregon','value':'OR'}]},
+            {'key':'4','role':'button','label':'Submit application','tag':'button','type':'submit','in_form':True},
+        ]
+        self.session.open('example.com')
+        self.assertIn('Full name', self.session.command('fill out this form for me'))
+        self.assertIn('Agree to terms', self.session.command('David McKeehan'))
+        self.assertIn('Choices:', self.session.command('yes'))
+        self.assertIn('Review every answer', self.session.command('Oregon'))
+        review = self.session.command('review and submit form')
+        self.assertIn('Full name: David McKeehan', review)
+        self.assertIn('Agree to terms: checked', self.session.command('continue review'))
+        self.assertIn('State: Oregon', self.session.command('continue review'))
+        self.assertEqual(self.backend.activated, [])
+        result=self.session.command('submit this form')
+        self.assertIn('Page loaded',result)
+        self.assertNotIn('pressed',result.lower())
+        self.assertEqual(self.backend.activated, ['4'])
+        self.assertIn('no reviewed form', self.session.command('submit this form'))
+
+    def test_browser_choice_and_keyboard_edit_appear_in_review(self):
+        self.session.open('example.com')
+        self.assertIn('Chrome', self.session.command('use Chrome'))
+        self.assertIn('Chrome', self.session.command('which browser'))
+        self.backend.controls = [
+            {'key':'1','role':'field','label':'Name','tag':'input','type':'text','value':'typed by keyboard'},
+            {'key':'2','role':'button','label':'Submit application','tag':'button','type':'submit','in_form':True},
+        ]
+        self.session.open('example.com')
+        self.assertIn('Name: typed by keyboard', self.session.command('review and submit form'))
+        self.backend.controls[0]['value'] = 'edited by keyboard'
+        self.assertIn('answer changed', self.session.command('submit this form'))
+        self.assertEqual(self.backend.activated, [])
+
+    def test_form_change_cancels_submission_and_financial_action_needs_review(self):
+        self.backend.controls = [
+            {'key':'1','role':'field','label':'Amount','tag':'input','type':'text','value':''},
+            {'key':'2','role':'button','label':'Transfer money','tag':'button','type':'submit','in_form':True},
+        ]
+        self.session.open('example.com')
+        self.session.command('fill out this form')
+        self.session.command('100')
+        self.assertIn('move money', self.session.command('review and submit form'))
+        self.assertEqual(self.backend.activated, [])
+        self.backend.controls[1]['label'] = 'Submit application'
+        self.assertIn('Is every field right?', self.session.command('review and submit form'))
+        self.backend.controls[0]['value'] = '1000'
+        self.assertIn('answer changed', self.session.command('submit this form'))
+        self.assertEqual(self.backend.activated, [])
+
+
+if __name__ == '__main__': unittest.main()

@@ -1,0 +1,112 @@
+#define AppName "Voice Companion"
+#define AppVersion "0.2.139-test"
+[Setup]
+AppId={{9DFB48ED-1D99-4230-A78D-FD727536AC40}
+AppName={#AppName}
+AppVersion={#AppVersion}
+AppPublisher=Miles Access Skills Training
+DefaultDirName={localappdata}\Programs\Voice Companion
+UsePreviousAppDir=no
+DefaultGroupName=Voice Companion
+PrivilegesRequired=lowest
+OutputDir=dist\installer
+OutputBaseFilename=VoiceCompanion-Setup
+Compression=lzma2
+SolidCompression=yes
+SetupLogging=yes
+CloseApplications=yes
+ArchitecturesAllowed=x64compatible
+WizardStyle=modern
+DisableWelcomePage=yes
+DisableStartupPrompt=yes
+DisableDirPage=yes
+DisableProgramGroupPage=yes
+DisableReadyPage=yes
+DisableFinishedPage=no
+UninstallDisplayIcon={app}\VoiceCompanion.exe
+
+[Files]
+Source: "dist\VoiceCompanion\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "dist\VoiceCompanion\START HERE - Veteran.txt"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\START HERE - Veteran.html"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\START HERE - Veteran.docx"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\START HERE - Veteran.epub"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\START HERE - Veteran - DAISY 3.zip"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall
+
+Source: "dist\VoiceCompanion\START HERE - Veteran.brf"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\README.txt"; DestDir: "{userdocs}\Voice Companion\User Guides"; DestName: "Quick Start.txt"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\EMAIL SETUP - Helper.txt"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\AI VOICE SETUP - Trainer.txt"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\UPDATES - Trainer.txt"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\TRAINER TEST CHECKLIST.txt"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\Voice Companion Release Notes.txt"; DestDir: "{userdocs}\Voice Companion\User Guides"; DestName: "Release Notes for Voice Companion {#AppVersion}.txt"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\Voice Companion Release Notes.html"; DestDir: "{userdocs}\Voice Companion\User Guides"; DestName: "Release Notes for Voice Companion {#AppVersion}.html"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\Voice Companion Release Notes.docx"; DestDir: "{userdocs}\Voice Companion\User Guides"; DestName: "Release Notes for Voice Companion {#AppVersion}.docx"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\Voice Companion Release Notes.epub"; DestDir: "{userdocs}\Voice Companion\User Guides"; DestName: "Release Notes for Voice Companion {#AppVersion}.epub"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\Voice Companion Release Notes - DAISY 3.zip"; DestDir: "{userdocs}\Voice Companion\User Guides"; DestName: "Release Notes for Voice Companion {#AppVersion} - DAISY 3.zip"; Flags: ignoreversion uninsneveruninstall
+Source: "dist\VoiceCompanion\Voice Companion Release Notes.brf"; DestDir: "{userdocs}\Voice Companion\User Guides"; DestName: "Release Notes for Voice Companion {#AppVersion}.brf"; Flags: ignoreversion uninsneveruninstall
+
+[Registry]
+Root: HKCU; Subkey: "Software\Google\Chrome\NativeMessagingHosts\com.voicecompanion.browser"; ValueType: string; ValueName: ""; ValueData: "{app}\browser-native-host.json"; Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Microsoft\Edge\NativeMessagingHosts\com.voicecompanion.browser"; ValueType: string; ValueName: ""; ValueData: "{app}\browser-native-host.json"; Flags: uninsdeletekey
+
+[UninstallDelete]
+Type: files; Name: "{app}\browser-native-host.json"
+
+[Icons]
+Name: "{group}\Voice Companion"; Filename: "{app}\VoiceCompanion.exe"
+Name: "{group}\Start Here"; Filename: "{userdocs}\Voice Companion\User Guides\START HERE - Veteran.html"
+Name: "{group}\Start Here - Text"; Filename: "{userdocs}\Voice Companion\User Guides\START HERE - Veteran.txt"
+Name: "{group}\Voice Companion User Guides"; Filename: "{userdocs}\Voice Companion\User Guides"
+Name: "{group}\Browser Connection Setup"; Filename: "{app}\regular_browser_extension\SETUP.txt"
+Name: "{group}\Email Setup - Helper"; Filename: "{app}\EMAIL SETUP - Helper.txt"
+Name: "{userdesktop}\Voice Companion"; Filename: "{app}\VoiceCompanion.exe"
+Name: "{userdesktop}\Voice Companion User Guides"; Filename: "{userdocs}\Voice Companion\User Guides"
+
+[Run]
+Filename: "{app}\VoiceCompanion-Diagnostics.exe"; Parameters: "--refresh-guides"; Flags: runhidden
+Filename: "{app}\VoiceCompanion.exe"; Description: "Open Voice Companion now"; Flags: postinstall nowait skipifsilent
+
+[Code]
+procedure CurInstallProgressChanged(CurProgress, MaxProgress: Integer);
+var
+  ProgressPath: String;
+  Percent: Integer;
+begin
+  ProgressPath := ExpandConstant('{param:UPDATESTATUSFILE|}');
+  if (ProgressPath <> '') and (MaxProgress > 0) then
+  begin
+    Percent := Round((CurProgress * 1.0 / MaxProgress) * 99);
+    SaveStringToFile(ProgressPath, IntToStr(Percent), False);
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ResultCode: Integer;
+  Diagnostic: String;
+begin
+  if CurStep = ssPostInstall then
+  begin
+    Diagnostic := ExpandConstant('{app}\VoiceCompanion-BrowserHost.exe');
+    if not Exec(Diagnostic, '--register', ExpandConstant('{app}'), SW_HIDE,
+      ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+      RaiseException('The browser connection could not be registered. Run Setup again.');
+    Diagnostic := ExpandConstant('{app}\VoiceCompanion-Diagnostics.exe');
+    if not FileExists(Diagnostic) then
+      RaiseException('Voice Companion was not installed completely. Run Setup again.');
+    if not Exec(Diagnostic, '--check-runtime', ExpandConstant('{app}'), SW_HIDE,
+      ewWaitUntilTerminated, ResultCode) or (ResultCode <> 0) then
+      RaiseException('The installed Voice Companion could not verify its included components. Run Setup again or contact your trainer.');
+  end;
+end;
+
+
+
+
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+    RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'VoiceCompanion');
+end;
