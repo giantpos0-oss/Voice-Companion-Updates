@@ -51,7 +51,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.196-test'
+APP_VERSION = '0.2.197-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -1376,7 +1376,8 @@ def poll_file_manager(mode):
                 # Document reader, Open a document: a text file or PDF is remembered and Escape
                 # goes back to the Document reader menu, the same as a Word file (read_file).
                 task_navigation().remember_read(FILE_READER.path);task_navigation().picker=None
-                task_navigation().reader_return='reader_menu'
+                # Escape comes back to this file in the list (Will, November 1, 2026).
+                task_navigation().reader_return='reader_picker';task_navigation().reader_files=FILE_MANAGER
             notice=notice or 'Opened '+FILE_READER.title+'. Read-only document. '+FILE_READER.reading.read(True)
             if mode=='sleep':SLEEP_RETURN_MODE='file_reader'
             else:mode='file_reader'
@@ -2223,6 +2224,30 @@ def close_browser_window():
     announce_main_menu()
     return 'awake'
 
+WEB_HOME={'google':'https://www.google.com/','bing':'https://www.bing.com/','brave':'https://search.brave.com/',
+          'duckduckgo':'https://duckduckgo.com/'}
+
+def open_own_chrome_for_web(session):
+    """Chrome is your web browser and your own Chrome has the Voice Companion extension: the Web browser
+    opens in your own Chrome, signed in as you, as YouTube does (Will, November 1, 2026: "sometimes I
+    open the web browser and it doesn't open up in Chrome"). Before, it used Voice Companion's own copy
+    of Chrome whenever your Chrome was closed. Returns True when your Chrome is linked now."""
+    if os.name!='nt' or getattr(session,'injected_backend',None) or getattr(session.backend,'regular',False):return False
+    if getattr(session.backend,'page',None) is not None:return False   # a browser already shows pages: keep it
+    try:
+        if session._saved_browser()!='chrome':return False
+        import chrome_setup
+        home=WEB_HOME.get(getattr(session,'search_engine','google'),WEB_HOME['google'])
+        result=chrome_setup.link_own_chrome(sys.modules[__name__],home,'Opening your own Chrome.')
+    except Exception:
+        return False
+    if APP_WINDOW is not None and hasattr(APP_WINDOW,'reclaim_focus'):APP_WINDOW.reclaim_focus()
+    if isinstance(result,str):speak(result)
+    return result is True
+
+# Every way into the web (the menu, a search, a favorite, a link in an email) goes through this first.
+WebSession.own_browser_opener=staticmethod(open_own_chrome_for_web)
+
 def open_browser_menu(regular=False):
     global web_session
     if os.name=='nt':
@@ -2232,6 +2257,7 @@ def open_browser_menu(regular=False):
         except OSError:
             speak('The browser extension connection could not start. Close other copies of Companion and try again.')
     web_session=web_session or WebSession(APP,progress=speak_status)
+    open_own_chrome_for_web(web_session)
     try:web_session.adopt_connected_browser()
     except Exception:
         speak('The regular browser tab could not be read. Reconnect it using the extension, then open this menu again.')
@@ -4734,8 +4760,14 @@ def _handle(text, mode, typed=False):
     # Help in Document reader opens the guide, as on every other screen.
     if mode=='file_reader' and not (command in ('help','user guide','open user guide','manual','open manual') or command.startswith(('help with ','help for '))):
         if command in ('back to files','go back','back','close document','leave document','escape'):
-            if task_navigation().reader_return=='recent_documents':return task_navigation().enter('recent_documents','Recent documents')
-            if task_navigation().reader_return=='reader_menu':return task_navigation().enter('reader_menu','Document reader menu')
+            # Back where the document was opened from, on the same item (Will, November 1, 2026).
+            if task_navigation().reader_return=='recent_documents':return task_navigation().back_to('recent_documents','Recent documents')
+            if task_navigation().reader_return=='reader_recent':return task_navigation().back_to('reader_recent','Recent documents')
+            if task_navigation().reader_return=='reader_picker' and (getattr(task_navigation(),'reader_files',None) or FILE_MANAGER) is not None:
+                FILE_MANAGER=getattr(task_navigation(),'reader_files',None) or FILE_MANAGER
+                task_navigation().picker='reader'
+                speak('Back to Open a document. '+FILE_MANAGER.say_current());return 'files'
+            if task_navigation().reader_return=='reader_menu':return task_navigation().back_to('reader_menu','Document reader menu')
             if task_navigation().reader_return=='word_processor' or FILE_MANAGER is None:return task_navigation().enter('word_processor','Word processor menu')
             if task_navigation().reader_return=='downloads':
                 back=__import__('download_screen').reader_back(sys.modules[__name__])

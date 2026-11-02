@@ -64,8 +64,10 @@ if(chrome.downloads){
   chrome.downloads.onCreated.addListener(item=>downloads?.created(item));
   chrome.downloads.onChanged.addListener(delta=>{void downloads?.changed(delta).catch(()=>{});});
 }
-chrome.tabs.onCreated.addListener(tab=>{if(model)void model.created(tab).catch(()=>{});});
-chrome.tabs.onUpdated.addListener((id,change,tab)=>{if(eligible(tab)&&model&&!model.tabs.has(id))void model.created(tab).catch(()=>{});else if(model&&change.url&&/^(chrome|edge|devtools|chrome-extension):/i.test(change.url))model.removed(id);});
+// A tab opening or loading wakes the link at once when it dropped, instead of waiting up to half a
+// minute for the alarm: Companion opens a tab when it starts this Chrome (Will, November 1, 2026).
+chrome.tabs.onCreated.addListener(tab=>{if(!connection)void ensureConnection();if(model)void model.created(tab).catch(()=>{});});
+chrome.tabs.onUpdated.addListener((id,change,tab)=>{if(!connection&&eligible(tab))void ensureConnection();if(eligible(tab)&&model&&!model.tabs.has(id))void model.created(tab).catch(()=>{});else if(model&&change.url&&/^(chrome|edge|devtools|chrome-extension):/i.test(change.url))model.removed(id);});
 chrome.tabs.onRemoved.addListener(id=>{declined.delete(id);model?.removed(id);});
 chrome.runtime.onMessage.addListener((message,sender,respond)=>{
   if(sender.id!==chrome.runtime.id||sender.url!==chrome.runtime.getURL('popup.html'))return false;

@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.196-test.
+Guide version: 0.2.197-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -660,7 +660,7 @@ For reader help, say "Help with document reader", or press F1.
 Press Alt to open the document menu. It has Read, Move by, and Leave and help.
 
 7.4 Return to your files
-To close the reader, say "Back to files", or press Escape. You return to where you opened the file: the same folder and file in File manager, or the Document reader menu.
+To close the reader, say "Back to files", or press Escape. You return to where you opened the file, on that same file. That can be File manager, the file list from Open a document, or your recent documents.
 To go to the main menu, say "Main menu", or press Control+F1.
 You can open Options while you read. When you save Options, you return to the reader.
 
@@ -1647,6 +1647,7 @@ You need this only to use your own Chrome, with the sites you are already signed
 5. Wait to hear "Chrome is linked to Voice Companion."
 If it does not link in two minutes, Companion offers the Chrome Web Store page. There, press Tab until you hear "Add to Chrome", then press Enter. Chrome asks again. Press Tab until you hear "Add extension", then press Enter.
 During setup, say "Status" to hear the current step again. Say "Cancel" to stop setup.
+When Chrome is your web browser and your own Chrome has the extension, the web opens in your own Chrome. You are signed in there as yourself. If your Chrome is closed, Companion opens it. It opens Chrome only once, even if you ask again while it starts.
 If Chrome is not ready when you open Web browser, Companion asks: "Chrome is not set up yet. Set it up now?" This happens when Chrome is your guided browser but is not installed. It also happens when your own Chrome is not linked. Say yes or no, or press Y or N. Enter and Escape mean no. If you say no, Companion uses embedded Edge. It does not ask again until you choose Chrome again.
 The installer has a box named Set up Chrome and the Voice Companion extension when Voice Companion opens. It is off unless you check it. When it is on, setup starts the next time Companion opens.
 If setup does not finish, ask your helper. A helper can open Voice Companion Browser Connection in the Chrome Web Store and choose Add to Chrome. For Edge or a test copy, a helper can follow Browser Connection Setup in the Voice Companion Start menu folder.
@@ -2268,7 +2269,7 @@ To search for videos:
 2. You hear "Say or type what to search for".
 3. Type your words, then press Enter. Or say your words. Companion says them back. Then press Enter, or say "Confirm", "Okay", or "Yes".
 4. You hear the first result. Use the arrows to hear more.
-Escape cancels the search. While the search box is open, the letters you type go into the box. They do not control the video.
+Escape cancels the search. While the search box is open, the letters you type go into the box. They do not control the video. The keyboard always moves to the search box when it opens, even if Chrome had it.
 To search in one step, say "Search for", then your words, such as "Search for jazz piano". From any screen, say "Search YouTube for", then your words.
 
 Filters narrow your results. Companion uses the filters YouTube offers now. To choose one:
@@ -2299,7 +2300,7 @@ When you press Enter on a video, you hear "Loading video". Then the video plays 
 - Home starts the video again.
 - Escape goes back to the list you came from, such as your search results. The video keeps playing.
 To come back to the player, press Enter on the video that is playing, or say "Player".
-If YouTube says something went wrong, Companion loads the video again once by itself. YouTube stops videos after about a minute in a browser a program controls. So when your own Chrome has the Voice Companion extension, YouTube always opens in your own Chrome, and videos play without stopping. If Chrome is closed, Companion opens it and gives your keys back. If a video still stops in Companion's Chrome, it goes on in your own Chrome, from where it stopped. When you go to the main menu, leave YouTube with nothing playing, or close Companion, the Chrome window Companion opened for YouTube closes too. A Chrome window you opened yourself stays open. Only the YouTube tab closes. If your own Chrome does not have the extension yet, Companion says so. Say "Set up Chrome" to add it. In your own Chrome, you are signed in to your account. So if you have YouTube Premium, ads do not play. If it still does not play, press Enter to try again, or choose another video.
+If YouTube says something went wrong, Companion loads the video again once by itself. YouTube stops videos after about a minute in a browser a program controls. So when your own Chrome has the Voice Companion extension, YouTube always opens in your own Chrome, and videos play without stopping. If Chrome is closed, Companion opens it and gives your keys back. YouTube uses its own tab again each time, so extra YouTube tabs do not pile up. If a video still stops in Companion's Chrome, it goes on in your own Chrome, from where it stopped. When you go to the main menu, leave YouTube with nothing playing, or close Companion, the Chrome window Companion opened for YouTube closes too. A Chrome window you opened yourself stays open. Only the YouTube tab closes. If your own Chrome does not have the extension yet, Companion says so. Say "Set up Chrome" to add it. In your own Chrome, you are signed in to your account. So if you have YouTube Premium, ads do not play. If it still does not play, press Enter to try again, or choose another video.
 The letter keys below also work in a YouTube list while a video plays. In the YouTube menu and the filter lists, letters move to the next name instead.
 - To play or pause, say "Play or pause video", or press Space.
 - To skip back, say "Skip back". To skip forward, say "Skip forward".

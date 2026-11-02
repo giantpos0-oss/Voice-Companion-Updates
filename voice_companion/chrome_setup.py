@@ -690,3 +690,87 @@ def startup_request(app, mode):
     if result == 'chrome_setup':
         app.CHROME_SETUP_RETURN = 'awake'
     return result
+
+
+# ---------------------------------------------------------------- your own Chrome, opened by Companion
+OWN_CHROME_SECONDS = 20     # how long to wait for the extension to link a Chrome Companion opened
+OWN_CHROME_NOT_LINKED = 'Your own Chrome opened, but the Voice Companion extension did not link it.'
+# When Companion last started your Chrome. A second request while that Chrome is still starting
+# waits for it instead of opening another (Will, November 1, 2026: YouTube kept opening new Chrome sessions).
+LAUNCH = {'at': None, 'failed': None}
+LAUNCH_SECONDS = 45
+
+
+def browser_log(app, text):
+    """browser-log.txt in the data folder: when your own Chrome was opened and linked, for a helper.
+    No page addresses and nothing about your account are written."""
+    try:
+        import time as _time
+        path = Path(app.APP) / 'browser-log.txt'
+        try:
+            if path.stat().st_size > 200000:
+                path.write_text('', encoding='utf-8')
+        except OSError:
+            pass
+        with path.open('a', encoding='utf-8') as out:
+            out.write(_time.strftime('%Y-%m-%d %H:%M:%S') + ' ' + text + '\n')
+    except Exception:
+        pass
+
+
+def link_own_chrome(app, address, announce='', before_open=None, clock=None):
+    """Your own Chrome, linked by the Voice Companion extension.
+    Returns True when it is linked now, None when it cannot be (not Windows, no extension),
+    or words saying what went wrong. before_open() runs just before Chrome is started.
+    Chrome is started at most once while it is still starting up."""
+    import time as _time
+    clock = clock or _time.monotonic
+    try:
+        import browser_cdp_relay
+    except Exception:
+        return None
+    relay = browser_cdp_relay.prepared()
+    if relay is None:
+        return None
+    if relay.connected.is_set():
+        return True
+    system = WindowsChrome()
+    try:
+        ready = system.supported() and system.extension_state() == 'enabled'
+    except Exception:
+        ready = False
+    if not ready:
+        browser_log(app, 'own Chrome: no extension, not opened')
+        return None
+    failed = LAUNCH.get('failed')
+    if failed is not None and clock() - failed < LAUNCH_SECONDS:
+        return OWN_CHROME_NOT_LINKED   # it just did not link: do not wait on it twice in a row
+    started = LAUNCH['at']
+    if started is not None and clock() - started < LAUNCH_SECONDS:
+        # Already starting: wait for that Chrome, never open a second one.
+        browser_log(app, 'own Chrome: still starting, waiting instead of opening another')
+        wait = max(1.0, LAUNCH_SECONDS - (clock() - started))
+    else:
+        if announce:
+            app.speak_status(announce)
+        if before_open is not None:
+            before_open()
+        if not system.open_chrome(address):
+            browser_log(app, 'own Chrome: could not start Chrome')
+            return None
+        LAUNCH['at'] = clock()
+        browser_log(app, 'own Chrome: opened')
+        wait = OWN_CHROME_SECONDS
+    import user_stop
+    began = clock()
+    try:
+        user_stop.wait(relay.connected, wait)
+    except user_stop.Stopped:
+        return 'Stopped waiting for your own Chrome.'
+    if relay.connected.is_set():
+        LAUNCH['at'] = LAUNCH['failed'] = None
+        browser_log(app, 'own Chrome: linked after %.1f seconds' % (clock() - began))
+        return True
+    browser_log(app, 'own Chrome: not linked after %.0f seconds' % wait)
+    LAUNCH['failed'] = clock()
+    return OWN_CHROME_NOT_LINKED

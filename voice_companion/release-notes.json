@@ -1,18 +1,19 @@
 {
-  "version": "0.2.196-test",
+  "version": "0.2.197-test",
   "status": "Testing build",
   "date": "November 1, 2026",
-  "baseline": "0.2.195-test",
-  "scope": "Companion no longer freezes when the Windows voice stops answering.",
+  "baseline": "0.2.196-test",
+  "scope": "Escape goes back where you were, and Chrome opens once, as your own.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "Speech that comes back by itself",
+          "title": "The web in your own Chrome",
           "details": [
-            "If the Windows voice stops answering, Companion starts a new voice after a few seconds.",
-            "It keeps your voice, speed and volume."
+            "When Chrome is your web browser, the web now opens in your own Chrome. You are signed in there as yourself.",
+            "Before, it sometimes used a copy of Chrome that is not signed in.",
+            "This needs the Voice Companion extension in your Chrome. Say set up Chrome to add it."
           ]
         }
       ]
@@ -21,11 +22,26 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "No more freezes from speech",
+          "title": "Back where you were",
           "details": [
-            "Companion could freeze at startup if the Windows voice stopped answering.",
-            "The window still showed your typing, but no key or command worked.",
-            "Now your keys and commands keep working, even while the voice is stuck."
+            "In the Document reader, Escape now goes back to where you opened the document.",
+            "You land on the same file in the file list, or the same document in your recent documents.",
+            "Before, it went back to the Document reader menu."
+          ]
+        },
+        {
+          "title": "Chrome opens once",
+          "details": [
+            "YouTube and the web open your Chrome only once, even if you ask again while it starts.",
+            "YouTube uses its own tab again, so extra YouTube tabs do not pile up.",
+            "Your Chrome links faster after you start Companion again."
+          ]
+        },
+        {
+          "title": "YouTube search",
+          "details": [
+            "When you press Control+F in YouTube, the keyboard now always goes to the search box.",
+            "Before, your typing could go to Chrome instead."
           ]
         }
       ]

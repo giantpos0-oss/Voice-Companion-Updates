@@ -2610,7 +2610,14 @@ class WebSession:
         self.cursor_changed(True)
         return describe(target)
 
+    own_browser_opener=None   # set by companion.py: opens your own Chrome when it is your web browser
+
     def _navigate(self,url):
+        opener=type(self).own_browser_opener
+        if opener is not None and not self.injected_backend and not getattr(self.backend,'regular',False) and getattr(self.backend,'page',None) is None:
+            try:
+                if opener(self):self.adopt_connected_browser()
+            except Exception:pass
         try:
             self.backend.goto(url)
             return ''

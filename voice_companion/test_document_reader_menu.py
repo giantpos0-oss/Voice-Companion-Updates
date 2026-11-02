@@ -38,8 +38,22 @@ class DocumentReaderMenuTests(CompanionTestCase):
         mode = nav.selected_file(self.text)
         self.assertEqual(mode, 'file_reader')
         self.assertIn('Report to the front desk', self.said[-1])
-        self.assertEqual(self.key('Escape', mode), 'reader_menu')
+        # Will, November 1, 2026: Escape goes back to the file list it was opened from, not the menu.
+        self.assertEqual(self.key('Escape', mode), 'files')
+        self.assertEqual(nav.picker, 'reader')
         self.assertEqual(json.loads((self.folder / 'recent-reader.json').read_text()), [str(self.text.resolve())])
+
+    def test_escape_returns_to_the_same_recent_document(self):
+        """Will, November 1, 2026: Escape from a document went all the way back to the menu."""
+        nav = companion.task_navigation()
+        second = self.folder / 'Minutes.txt'; second.write_text('Meeting at ten.', encoding='utf-8')
+        nav.remember_read(self.text); nav.remember_read(second)       # Minutes first, then Orders
+        mode = self.key('Ctrl+R', companion.handle('document reader', 'awake'))
+        mode = self.key('Down', mode)
+        self.assertTrue(self.said[-1].startswith('Orders.txt'), self.said[-1])
+        self.assertEqual(self.key('Enter', mode), 'file_reader')
+        self.assertEqual(self.key('Escape', 'file_reader'), 'reader_recent')
+        self.assertTrue(self.said[-1].startswith('Recent documents. Orders.txt (O), 2 of 2'), self.said[-1])
 
     def test_recent_documents_reopen_and_handle_a_missing_file(self):
         nav = companion.task_navigation()
@@ -48,6 +62,9 @@ class DocumentReaderMenuTests(CompanionTestCase):
         self.assertEqual(mode, 'reader_recent')
         self.assertTrue(self.said[-1].startswith('Recent documents. Orders.txt'), self.said[-1])
         self.assertEqual(self.key('Enter', mode), 'file_reader')
+        # Escape goes back to the recent list, on the same document (Will, November 1, 2026).
+        self.assertEqual(self.key('Escape', 'file_reader'), 'reader_recent')
+        self.assertTrue(self.said[-1].startswith('Recent documents. Orders.txt'), self.said[-1])
         # Gone after the list was read: Enter says so.
         mode = self.key('Ctrl+R', companion.handle('document reader', 'awake'))
         self.text.unlink()
