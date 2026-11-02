@@ -1376,7 +1376,8 @@ def poll_file_manager(mode):
                 # Document reader, Open a document: a text file or PDF is remembered and Escape
                 # goes back to the Document reader menu, the same as a Word file (read_file).
                 task_navigation().remember_read(FILE_READER.path);task_navigation().picker=None
-                task_navigation().reader_return='reader_menu'
+                # Escape comes back to this file in the list (Will, November 1, 2026).
+                task_navigation().reader_return='reader_picker';task_navigation().reader_files=FILE_MANAGER
             notice=notice or 'Opened '+FILE_READER.title+'. Read-only document. '+FILE_READER.reading.read(True)
             if mode=='sleep':SLEEP_RETURN_MODE='file_reader'
             else:mode='file_reader'
@@ -4734,8 +4735,14 @@ def _handle(text, mode, typed=False):
     # Help in Document reader opens the guide, as on every other screen.
     if mode=='file_reader' and not (command in ('help','user guide','open user guide','manual','open manual') or command.startswith(('help with ','help for '))):
         if command in ('back to files','go back','back','close document','leave document','escape'):
-            if task_navigation().reader_return=='recent_documents':return task_navigation().enter('recent_documents','Recent documents')
-            if task_navigation().reader_return=='reader_menu':return task_navigation().enter('reader_menu','Document reader menu')
+            # Back where the document was opened from, on the same item (Will, November 1, 2026).
+            if task_navigation().reader_return=='recent_documents':return task_navigation().back_to('recent_documents','Recent documents')
+            if task_navigation().reader_return=='reader_recent':return task_navigation().back_to('reader_recent','Recent documents')
+            if task_navigation().reader_return=='reader_picker' and (getattr(task_navigation(),'reader_files',None) or FILE_MANAGER) is not None:
+                FILE_MANAGER=getattr(task_navigation(),'reader_files',None) or FILE_MANAGER
+                task_navigation().picker='reader'
+                speak('Back to Open a document. '+FILE_MANAGER.say_current());return 'files'
+            if task_navigation().reader_return=='reader_menu':return task_navigation().back_to('reader_menu','Document reader menu')
             if task_navigation().reader_return=='word_processor' or FILE_MANAGER is None:return task_navigation().enter('word_processor','Word processor menu')
             if task_navigation().reader_return=='downloads':
                 back=__import__('download_screen').reader_back(sys.modules[__name__])

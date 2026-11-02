@@ -345,8 +345,10 @@ class ReaderPickerTests(CompanionTestCase):
         mode = self.step('Enter', mode)              # notes.txt
         self.assertEqual(mode, 'file_reader')
         self.assertIn('Buy milk.', self.said[-1])
-        self.assertEqual(self.step('Escape', mode), 'reader_menu')
-        self.assertTrue(self.said[-1].startswith('Document reader menu.'), self.said[-1])
+        # Will, November 1, 2026: Escape goes back to where the document was opened, on that file.
+        self.assertEqual(self.step('Escape', mode), 'files')
+        self.assertTrue(self.said[-1].startswith('Back to Open a document. notes.txt'), self.said[-1])
+        self.assertEqual(companion.task_navigation().picker, 'reader')
         self.assertEqual([__import__('pathlib').Path(p).name for p in companion.task_navigation().reader_list()], ['notes.txt'])
 
 

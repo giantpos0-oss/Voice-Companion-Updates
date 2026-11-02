@@ -120,6 +120,10 @@ def gone_words(gone):
     return str(gone) + ' files are gone, so they were removed from the list. '
 
 
+READER_BACK_WORDS = {'reader_recent': 'your recent documents', 'reader_picker': 'the file list',
+                     'recent_documents': 'your recent documents', 'files': 'the file list'}
+
+
 class TaskNavigation:
     def __init__(self, app):
         self.app = app
@@ -192,6 +196,10 @@ class TaskNavigation:
         if items is None or not items:
             return None
         return ([name for name, _, _ in items], self.indices.get(mode, 0), lambda i: self.indices.update({mode:i}))
+
+    def back_to(self, mode, title):
+        """Back to a list on the item you left it on, not its first item."""
+        return self.enter(mode, title, self.indices.get(mode, 0))
 
     def enter(self, mode, title, index=0):
         items = self.items(mode)
@@ -291,7 +299,9 @@ class TaskNavigation:
             self.app.speak('Playing '+path.name+'. Press Alt for the player menu.')
             return 'local_media'
         if kind == 'reader':
-            return self.read_file(path)
+            # Escape comes back to this folder, on this file, as the media player does.
+            self.reader_files = self.app.FILE_MANAGER
+            return self.read_file(path, 'reader_picker')
         self.reader_return='files'
         result=self.open_document(path)
         self.picker=None
@@ -313,7 +323,9 @@ class TaskNavigation:
         except OSError:
             pass
 
-    def read_file(self, path):
+    def read_file(self, path, back='reader_menu'):
+        """Open a document in the Document reader. back: where Escape returns, the place it was
+        opened from (Will, November 1, 2026: 'focus does not return to where I was before')."""
         """Open any supported file in Document reader (read-only), from the Document reader menu."""
         m = self.app
         from document_reader import open_document
@@ -329,11 +341,11 @@ class TaskNavigation:
         except Exception:
             # A damaged file (not a real zip, broken XML, a missing part) must never stop the app.
             return self.enter('reader_menu', path.name+' could not be opened. It may be damaged. Document reader menu')
-        self.remember_read(path); self.reader_return = 'reader_menu'
+        self.remember_read(path); self.reader_return = back
         if m.PREFERENCES.get('reader_auto_read', True):
             m.speak('Opened '+path.name+'. '+m.FILE_READER.reading.read(True))
         else:
-            m.speak('Opened '+path.name+'. Press Control+R to read it. Escape goes back to the Document reader menu.')
+            m.speak('Opened '+path.name+'. Press Control+R to read it. Escape goes back to '+READER_BACK_WORDS.get(back,'the Document reader menu')+'.')
         return 'file_reader'
 
     def action(self, command, mode):
@@ -345,7 +357,7 @@ class TaskNavigation:
             if not self.reader_recent:
                 m.speak(gone_words(gone)+'No recent documents yet. Choose Open a document.'); return mode
             return self.enter('reader_recent', 'Recent documents'+('. '+gone_words(gone).rstrip('. ') if gone else ''))
-        if command.startswith('@reader_file:'): return self.read_file(command[len('@reader_file:'):])
+        if command.startswith('@reader_file:'): return self.read_file(command[len('@reader_file:'):], 'reader_recent')
         if command == '@media_open': return self.pick('media')
         if command == '@recent':
             try: self.recent = json.loads((m.APP/'recent-documents.json').read_text(encoding='utf-8'))[:20]
