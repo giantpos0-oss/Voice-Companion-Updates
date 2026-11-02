@@ -1317,6 +1317,13 @@ class CompanionWindow:
                             entry=field.get('entry_request')  # a screen's own box, such as YouTube search: its text, once
                             if entry and entry!=self.last_name_request:
                                 typed.delete(0,'end');typed.insert(0,entry[1]);typed.icursor('end');self.last_name_request=entry
+                                if field.get('task_input') and not old.get('task_input'):
+                                    # A search box opened on the same screen (YouTube's Control+F): the keys go
+                                    # there, even when a browser window has taken the keyboard (Will, November 1, 2026).
+                                    root.deiconify();root.lift()
+                                    try:foreground_window(root,typed)
+                                    except (AttributeError,OSError):pass
+                                    typed.focus_force()
                             if field.get('file_name_input') and old.get('mode')!='settings' and field.get('file_rename_value')!=old.get('file_rename_value'):
                                 typed.delete(0,'end');typed.insert(0,field['file_rename_value']);typed.selection_range(0,'end')
                             if mode!='email_draft' and not field.get('web_private') and not field.get('account_entry') and not field.get('media_form'):entry_label.configure(text='Web address or search; type, then press Enter. Escape cancels:' if mode=='search' else field.get('naming_label') or 'Document name; press Enter to save:' if mode=='document_name' else 'Favorite name; press Enter. Escape cancels:' if field.get('browser_name_input') else field.get('file_input_label','New file name, including extension')+'; press Enter. Escape cancels:' if field.get('file_name_input') else 'Type a command, then press Enter:')

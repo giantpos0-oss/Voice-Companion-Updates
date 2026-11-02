@@ -2224,6 +2224,30 @@ def close_browser_window():
     announce_main_menu()
     return 'awake'
 
+WEB_HOME={'google':'https://www.google.com/','bing':'https://www.bing.com/','brave':'https://search.brave.com/',
+          'duckduckgo':'https://duckduckgo.com/'}
+
+def open_own_chrome_for_web(session):
+    """Chrome is your web browser and your own Chrome has the Voice Companion extension: the Web browser
+    opens in your own Chrome, signed in as you, as YouTube does (Will, November 1, 2026: "sometimes I
+    open the web browser and it doesn't open up in Chrome"). Before, it used Voice Companion's own copy
+    of Chrome whenever your Chrome was closed. Returns True when your Chrome is linked now."""
+    if os.name!='nt' or getattr(session,'injected_backend',None) or getattr(session.backend,'regular',False):return False
+    if getattr(session.backend,'page',None) is not None:return False   # a browser already shows pages: keep it
+    try:
+        if session._saved_browser()!='chrome':return False
+        import chrome_setup
+        home=WEB_HOME.get(getattr(session,'search_engine','google'),WEB_HOME['google'])
+        result=chrome_setup.link_own_chrome(sys.modules[__name__],home,'Opening your own Chrome.')
+    except Exception:
+        return False
+    if APP_WINDOW is not None and hasattr(APP_WINDOW,'reclaim_focus'):APP_WINDOW.reclaim_focus()
+    if isinstance(result,str):speak(result)
+    return result is True
+
+# Every way into the web (the menu, a search, a favorite, a link in an email) goes through this first.
+WebSession.own_browser_opener=staticmethod(open_own_chrome_for_web)
+
 def open_browser_menu(regular=False):
     global web_session
     if os.name=='nt':
@@ -2233,6 +2257,7 @@ def open_browser_menu(regular=False):
         except OSError:
             speak('The browser extension connection could not start. Close other copies of Companion and try again.')
     web_session=web_session or WebSession(APP,progress=speak_status)
+    open_own_chrome_for_web(web_session)
     try:web_session.adopt_connected_browser()
     except Exception:
         speak('The regular browser tab could not be read. Reconnect it using the extension, then open this menu again.')

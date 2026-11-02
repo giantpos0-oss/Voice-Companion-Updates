@@ -304,6 +304,19 @@ class YouTubeScreen:
                         web.adopt_connected_browser()
                 except Exception:
                     pass
+                own = self.own_tab('list')
+                if own is not None:
+                    # Your own Chrome: YouTube keeps to its own tab, and finds it again after Chrome
+                    # relinks, instead of opening another (Will, November 1, 2026).
+                    try:
+                        own.goto(url, wait_until='domcontentloaded', timeout=30000)
+                    except Exception as exc:
+                        raise YouTubeError(yp.NOT_LOADED) from exc
+                    self.list_page = own
+                    self.opened_window = True
+                    web.snapshot = None
+                    self.lists.wait_ready()
+                    return notice
                 try:
                     # The first page goes through the web session, so a browser that cannot
                     # start is replaced by the other guided browser, and you are told.
@@ -343,8 +356,9 @@ class YouTubeScreen:
                 # The browser was closed (or never opened): open the list tab first, then the video's own tab.
                 view = self.view()
                 self.go(view['url'] if view and view.get('url') else yp.feed_url('home'))
+            reuse = self.own_tab('video', create=False)
             try:
-                self.video_page = self.list_page.context.new_page()
+                self.video_page = reuse or self.list_page.context.new_page()
                 self.video_page.set_default_timeout(10000)
                 self.single_tab = False
                 self.opened_window = True
@@ -1647,39 +1661,59 @@ class YouTubeScreen:
 
     def link_own_chrome(self, address, announce=''):
         """Your own Chrome, linked by the Voice Companion extension: True when it is linked now,
-        None when it cannot be (no extension, not Windows), or words saying what went wrong."""
+        None when it cannot be (no extension, not Windows), or words saying what went wrong.
+        A Chrome window Companion opens is remembered, to close when YouTube closes."""
         try:
-            import browser_cdp_relay
             import chrome_setup
         except Exception:
             return None
-        # Will, October 31, 2026: ads played and the video stopped after a minute, because this
-        # asked current(), which is None until your Chrome is linked, so your Chrome never opened.
-        relay = browser_cdp_relay.prepared()
-        if relay is None:
+        before = []
+        def opening():
+            before.append(self.chrome_windows())
+        result = chrome_setup.link_own_chrome(self.m, address, announce, before_open=opening)
+        if before:
+            if result is True:
+                self.note_opened_chrome(before[0])
+            self.keep_keyboard()
+        return result
+
+    def own_tab(self, kind, create=True):
+        """In your own Chrome: the YouTube tab to use for the lists (kind 'list') or the video ('video').
+        A YouTube tab already open is used again, the newest first, so relinking or starting
+        Companion again never leaves extra YouTube tabs. A new tab only when there is none.
+        None when YouTube is not in your own Chrome."""
+        web = getattr(self.m, 'web_session', None)
+        backend = getattr(web, 'backend', None)
+        if not getattr(backend, 'regular', False) or getattr(backend, 'context', None) is None:
             return None
-        if relay.connected.is_set():
-            return True
-        system = chrome_setup.WindowsChrome()
         try:
-            ready = system.supported() and system.extension_state() == 'enabled'
+            pages = [p for p in backend.context.pages if self.alive(p)]
         except Exception:
-            ready = False
-        if not ready:
             return None
-        if announce:
-            self.m.speak_status(announce)
-        before = self.chrome_windows()
-        if not system.open_chrome(address):
+        def is_youtube(page):
+            try:
+                url = page.url or ''
+            except Exception:
+                return False
+            return '://www.youtube.com/' in url or '://youtube.com/' in url or '://m.youtube.com/' in url
+        mine = [p for p in pages if is_youtube(p) and p is not self.list_page and p is not self.video_page]
+        watch = [p for p in mine if '/watch' in (p.url or '')]
+        lists = [p for p in mine if p not in watch]
+        found = (watch or lists) if kind == 'video' else (lists or watch)
+        if found:
+            page = found[-1]
+        elif create:
+            try:
+                page = backend.context.new_page()
+            except Exception:
+                return None
+        else:
             return None
-        import user_stop
         try:
-            user_stop.wait(relay.connected, OWN_CHROME_SECONDS)
-        except user_stop.Stopped:
-            return 'Stopped waiting for your own Chrome.'
-        self.note_opened_chrome(before)
-        self.keep_keyboard()
-        return True if relay.connected.is_set() else OWN_CHROME_NOT_LINKED
+            page.set_default_timeout(10000)
+        except Exception:
+            pass
+        return page
 
     CHROME_WINDOW_WAIT = 2.0   # seconds for Chrome's new window to show once the extension linked
 
