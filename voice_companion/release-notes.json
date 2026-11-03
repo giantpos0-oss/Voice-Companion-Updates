@@ -1,21 +1,18 @@
 {
-  "version": "0.2.199-test",
+  "version": "0.2.200-test",
   "status": "Testing build",
   "date": "November 3, 2026",
-  "baseline": "0.2.198-test",
-  "scope": "A new choice to hide your own Chrome while Companion uses it.",
+  "baseline": "0.2.199-test",
+  "scope": "Updates come from a new place.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "Hide your own Chrome",
+          "title": "Updates from a new place",
           "details": [
-            "In Options, Web browser, there is a new choice called Your own Chrome window.",
-            "Choose Hide it while Companion uses it. Then a Chrome window that Companion opens stays off the screen, the taskbar and Alt+Tab.",
-            "Companion still reads every page to you, and sound and video still play.",
-            "Say show browser window to bring it back. Say hide browser window to hide it again.",
-            "A page that needs you, such as a sign-in, brings it back by itself."
+            "Companion now gets its updates from a place that holds only the installers.",
+            "If that place cannot be reached, Companion uses the old place. You do not need to do anything."
           ]
         }
       ]
@@ -24,10 +21,9 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Your own Chrome windows are safe",
+          "title": "The newest update always wins",
           "details": [
-            "This choice is off unless you turn it on.",
-            "A Chrome window you opened yourself is never hidden."
+            "Companion checks both places and offers the newest update it finds."
           ]
         }
       ]
