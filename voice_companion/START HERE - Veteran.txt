@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.197-test.
+Guide version: 0.2.199-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -1640,6 +1640,8 @@ In Chrome, a file is saved first in Chrome's own folder. When it is finished, Co
 
 18.1 Set up Chrome and the extension
 You need this only to use your own Chrome, with the sites you are already signed in to. Embedded Edge works without it.
+The first time you open Web browser or YouTube, Companion sets this up for you as part of opening it. You do not need to ask. It installs Chrome if it is missing, adds the extension, and links Chrome to Companion. You may need to press Enable extension once in Chrome. Companion tells you how. To stop, say "Cancel". Then websites use embedded Edge, and Companion does not set it up again by itself.
+To set it up later, or again:
 1. Say "Set up Chrome". Or choose Set up Chrome in the web browser menu or in the web page menu. Or open Options, choose Web browser options, and choose Set up Chrome and the Voice Companion extension. Companion asks before each change. Say yes or no, or press Y or N.
 2. If Chrome is missing, Companion offers to install it. This takes a few minutes. Companion tells you how it is going. If Windows asks for permission, press Alt+Y.
 3. Companion adds the extension and opens Chrome. Chrome asks you to turn it on. Press Tab until you hear "Enable extension", then press Enter. Companion reads the Chrome buttons to you while you do this.
@@ -2051,6 +2053,10 @@ In the background, some pages need a real window. These are a Google sign-in, a 
 - Say "Show browser window" to see Chrome's window.
 - Say "Hide browser window" to run Chrome in the background again.
 - Both are also in the web page menu, under Options and help.
+Your own Chrome window has two choices. It changes only the Chrome windows that Companion opens for the web or YouTube. A Chrome window you opened yourself is never hidden.
+- Show it, as before. This is the first choice.
+- Hide it while Companion uses it. Your Chrome is not on the screen, the taskbar or Alt+Tab. Companion still reads every page to you, and sound and video still play.
+When it is hidden, a page that needs you brings it back by itself. That is a Google sign-in, a check that you are a person, a payment page, or a page where you choose a file. Say "Show browser window" to bring it back yourself. Say "Hide browser window" to hide it again.
 When Chrome opens again, the page loads again. Text you typed on the page is not kept, so switch before you fill in a form.
 Sometimes a card box or a file box shows up on a page you are already using. Then Companion does not open Chrome again by itself, so your answers stay. It tells you, and you can say "Show browser window" when you are ready. A button that opens a box for choosing a file also tells you to show the window first.
 If anything goes wrong, choose the first option to go back to how it was.

@@ -1673,7 +1673,20 @@ class YouTubeScreen:
         result = chrome_setup.link_own_chrome(self.m, address, announce, before_open=opening)
         if before:
             if result is True:
-                self.note_opened_chrome(before[0])
+                # A window hidden by "Your own Chrome window" is not listed as a normal window,
+                # so the windows Companion opened are taken from own_chrome_window too.
+                try:
+                    import own_chrome_window
+                    hidden = own_chrome_window.WINDOWS.mine - set(before[0])
+                except Exception:
+                    hidden = set()
+                if hidden:
+                    if not self.own_chrome_windows:
+                        import atexit
+                        atexit.register(close_own_chrome_at_exit, self)
+                    self.own_chrome_windows |= hidden
+                else:
+                    self.note_opened_chrome(before[0])
             self.keep_keyboard()
         return result
 
@@ -1918,6 +1931,19 @@ def navigation_key(m, key):
             'Escape': 'go back', 'Left': 'skip back', 'Right': 'skip forward', 'Next': 'page down', 'Prior': 'page up'}.get(key)
 
 
+def first_time_setup(m, s, mode):
+    """The first time YouTube opens: Chrome and the extension are set up first, then YouTube opens
+    (Will, November 2, 2026). True when setup started."""
+    try:
+        import chrome_setup
+        started = chrome_setup.first_run(m, mode, MODE)
+    except Exception:
+        return False
+    if started and mode not in (MODE, 'web'):
+        s.return_mode = 'media_menu' if mode in ('media_menu', 'awake', 'media') else mode
+    return bool(started)
+
+
 def open_screen(m, mode, lead=''):
     s = screen(m)
     if mode not in (MODE, 'web'):
@@ -2052,6 +2078,8 @@ def _handle(m, text, mode, typed=False):
                     s.ensure_menu()
                     m.speak_status('Searching YouTube.')
                     m.speak(s.search(match[1] or match[2]))
+                elif not getattr(m, 'TEXT_MODE', False) and first_time_setup(m, s, mode):
+                    return 'chrome_setup'
                 elif ask:
                     open_screen(m, mode)
                     m.speak(s.ask_search())

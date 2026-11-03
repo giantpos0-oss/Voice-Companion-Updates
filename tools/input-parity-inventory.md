@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 750
-- Already had both ways: 586
+- Actions inventoried: 751
+- Already had both ways: 587
 - Gaps found: 164
 - Gaps fixed (Added): 156
 - Not applicable (N/A, with reason): 8
@@ -1412,6 +1412,12 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Guided Chrome window
 
 - Voice: "Set Guided Chrome window to ..."
+- Keyboard: Alt+O, arrows to Web browser options, Tab to the field, arrows or Space, Enter to save
+- Status: Both
+
+### Your own Chrome window
+
+- Voice: "Set Your own Chrome window to ..."
 - Keyboard: Alt+O, arrows to Web browser options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 
