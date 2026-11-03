@@ -166,17 +166,46 @@ class ConfiguredReleaseFeedTests(unittest.TestCase):
     def test_check_uses_wills_bundled_repository(self):
         with tempfile.TemporaryDirectory() as folder:
             service=AppUpdates(folder,'1.2.2-test')
-            expected='https://github.com/willwalsh14-hub/voice-companion-updates/releases/latest/download/voice-companion-update.json'
+            # Updates come from the public releases-only repository; the source repository is the
+            # fallback while it is still public (November 2026, so the code can be made private).
+            expected='https://github.com/willwalsh14-hub/voice-companion-releases/releases/latest/download/voice-companion-update.json'
+            old='https://github.com/willwalsh14-hub/voice-companion-updates/releases/latest/download/voice-companion-update.json'
             self.assertEqual(service.manifest_url,expected)
+            self.assertEqual(service.fallback_urls,[old])
             with patch('app_updates.fetch_release',return_value=None) as fetch:
                 self.assertTrue(service.check())
                 self.assertEqual(service.events.get(timeout=2),('current',False))
-                fetch.assert_called_once_with(expected,'1.2.2-test')
+                self.assertEqual([c.args for c in fetch.call_args_list],[(expected,'1.2.2-test'),(old,'1.2.2-test')])
+
+
+class FeedFallbackTests(unittest.TestCase):
+    """While updates move to the releases-only repository, a feed that cannot be read is passed
+    over, and the newest release any feed offers is the one installed."""
+    def release(self, version):
+        return {'version':version,'installer_url':'https://example.org/s.exe','sha256':'a'*64,'size':10}
+
+    def test_a_missing_new_feed_falls_back_to_the_old_one(self):
+        from app_updates import fetch_first
+        def fetch(url,current):
+            if 'new' in url:raise OSError('HTTP Error 404')
+            return self.release('1.2.3-test')
+        with patch('app_updates.fetch_release',side_effect=fetch):
+            self.assertEqual(fetch_first('https://new/feed',['https://old/feed'],'1.2.2-test')['version'],'1.2.3-test')
+
+    def test_the_newest_release_wins_and_none_readable_is_an_error(self):
+        from app_updates import fetch_first
+        releases={'https://new/feed':self.release('1.2.3-test'),'https://old/feed':self.release('1.2.4-test')}
+        with patch('app_updates.fetch_release',side_effect=lambda url,current:releases[url]):
+            self.assertEqual(fetch_first('https://new/feed',['https://old/feed'],'1.2.2-test')['version'],'1.2.4-test')
+        with patch('app_updates.fetch_release',side_effect=OSError('offline')):
+            with self.assertRaises(OSError):fetch_first('https://new/feed',['https://old/feed'],'1.2.2-test')
+        with patch('app_updates.fetch_release',return_value=None):
+            self.assertIsNone(fetch_first('https://new/feed',['https://old/feed'],'1.2.2-test'))
 
 
 class DamagedUpdateFilesTests(unittest.TestCase):
     def test_damaged_settings_in_the_data_folder_use_the_bundled_feed(self):
-        bundled='https://github.com/willwalsh14-hub/voice-companion-updates/releases/latest/download/voice-companion-update.json'
+        bundled='https://github.com/willwalsh14-hub/voice-companion-releases/releases/latest/download/voice-companion-update.json'
         for text in ('[]','null','"feed"','{"manifest_url":','{"manifest_url":["x"]}'):
             with self.subTest(text=text),tempfile.TemporaryDirectory() as folder:
                 (Path(folder)/'update-settings.json').write_text(text)

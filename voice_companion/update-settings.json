@@ -1,3 +1,6 @@
 {
-  "manifest_url": "https://github.com/willwalsh14-hub/voice-companion-updates/releases/latest/download/voice-companion-update.json"
+  "manifest_url": "https://github.com/willwalsh14-hub/voice-companion-releases/releases/latest/download/voice-companion-update.json",
+  "fallback_urls": [
+    "https://github.com/willwalsh14-hub/voice-companion-updates/releases/latest/download/voice-companion-update.json"
+  ]
 }

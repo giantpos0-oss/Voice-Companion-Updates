@@ -51,6 +51,25 @@ def fetch_release(url, current):
     return validate_release(data, current)
 
 
+def fetch_first(url, fallbacks, current):
+    """The newest release any feed offers. A feed that cannot be read (not there yet, or no
+    longer public) is passed over. None when every readable feed says this copy is current;
+    the last error is raised when no feed could be read at all."""
+    newest, problem, answered = None, None, False
+    for feed in [url, *fallbacks]:
+        try:
+            release = fetch_release(feed, current)
+        except Exception as exc:
+            problem = exc
+            continue
+        answered = True
+        if release and (newest is None or version_key(release['version']) > version_key(newest['version'])):
+            newest = release
+    if not answered:
+        raise problem if problem is not None else ValueError('No update feed')
+    return newest
+
+
 def download_release(release, folder, canceled, progress=None):
     folder = Path(folder); folder.mkdir(parents=True, exist_ok=True)
     target = folder / 'VoiceCompanion-Setup.exe'
@@ -188,11 +207,17 @@ class AppUpdates:
         self.percent = 0
         self.phase = 'idle'
         self.manifest_url = ''
+        # Feeds tried in order when the first cannot be read: updates moved to a releases-only
+        # repository (November 2026), and copies keep working while that move is under way.
+        self.fallback_urls = []
         for config in (self.folder/'update-settings.json', self.resources/'update-settings.json'):
             if config.exists():
                 try:
-                    value = json.loads(config.read_text(encoding='utf-8-sig'))['manifest_url']
+                    settings = json.loads(config.read_text(encoding='utf-8-sig'))
+                    value = settings['manifest_url']
                     if value: self.manifest_url = https_url(value)
+                    fallbacks = settings.get('fallback_urls') or []
+                    self.fallback_urls = [https_url(item) for item in fallbacks if isinstance(item, str) and item][:3]
                 except (ValueError,KeyError,OSError,TypeError):
                     # A damaged file in the data folder must not stop the app or turn
                     # updates off: the feed that came with the app is used instead.
@@ -224,7 +249,7 @@ class AppUpdates:
         self.busy = True
         def work():
             try:
-                release = fetch_release(self.manifest_url,self.current)
+                release = fetch_first(self.manifest_url, self.fallback_urls, self.current)
                 self.events.put(('available',release) if release else ('current',manual))
             except Exception: self.events.put(('check_failed',manual))
             finally: self.busy = False

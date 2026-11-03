@@ -36,12 +36,17 @@ def operation_label(args):
     return {'create':'Creating the draft release', 'edit':'Publishing the verified release as latest'}.get(action, 'Contacting GitHub')
 
 
+# The token for the releases-only repository (a repository secret named RELEASES_TOKEN).
+# The workflow's own token can publish only to the repository it runs in.
+GH_ENV = None
+
+
 def gh_call(gh, *args, missing_ok=False):
     label = operation_label(args)
     progress(label + '.')
     started = time.monotonic()
     with subprocess.Popen([str(gh), *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                          text=True, encoding='utf-8', errors='replace') as process:
+                          text=True, encoding='utf-8', errors='replace', env=GH_ENV) as process:
         while True:
             try:
                 stdout, stderr = process.communicate(timeout=PROGRESS_INTERVAL)
@@ -56,14 +61,28 @@ def gh_call(gh, *args, missing_ok=False):
     return stdout
 
 
-def publish(setup, gh='gh', root=ROOT):
+FEED = r'https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/releases/latest/download/voice-companion-update\.json'
+
+
+def feed_repos(root=ROOT):
+    """The repositories whose release feeds installed copies read: the main feed first, then
+    the fallbacks (update-settings.json). Each release is published to every one of them."""
+    settings = json.loads((Path(root)/'update-settings.json').read_text())
+    repos = []
+    for feed in [settings['manifest_url'], *(settings.get('fallback_urls') or [])]:
+        match = re.fullmatch(FEED, feed)
+        if not match:
+            raise ValueError('Automatic publishing requires a configured GitHub release feed.')
+        if match[1] not in repos:
+            repos.append(match[1])
+    return repos
+
+
+def publish(setup, gh='gh', root=ROOT, repo=None):
     root = Path(root)
     version = re.search(r"APP_VERSION = '([^']+)'", (root/'companion.py').read_text())[1]
-    feed = json.loads((root/'update-settings.json').read_text())['manifest_url']
-    match = re.fullmatch(r'https://github\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/releases/latest/download/voice-companion-update\.json', feed)
-    if not match:
-        raise ValueError('Automatic publishing requires a configured GitHub release feed.')
-    repo = match[1]; tag = 'v' + version
+    repo = repo or feed_repos(root)[0]
+    tag = 'v' + version
     url = f'https://github.com/{repo}/releases/download/{tag}/VoiceCompanion-Setup.exe'
     progress('Preparing release '+version+'. Checking the local installer and successful-build record.')
     manifest = release_manifest(setup, version, url)
@@ -144,13 +163,48 @@ def main():
     global LOG_PATH
     LOG_PATH = ROOT/'VoiceCompanion-Publish-Log.txt'
     LOG_PATH.write_text('Voice Companion publishing progress\n', encoding='utf-8')
+    return publish_everywhere(args.setup, args.gh)
+
+
+def token_for(repo, environ=os.environ):
+    """The environment for gh to publish to repo: the workflow's own token for its own repository,
+    RELEASES_TOKEN for the releases-only repository. None when there is no token for it."""
+    if environ.get('GITHUB_ACTIONS') != 'true' or environ.get('GITHUB_REPOSITORY') == repo:
+        return dict(environ)
+    token = environ.get('RELEASES_TOKEN', '')
+    if not token:
+        return None
+    env = dict(environ); env['GH_TOKEN'] = token
+    return env
+
+
+def publish_everywhere(setup, gh='gh', root=ROOT, environ=os.environ):
+    """Publish to every feed's repository. Succeeds when at least one has the verified release;
+    each repository that could not be published to says why."""
+    global GH_ENV
+    published = []
     try:
-        progress('PUBLISHED AND VERIFIED: '+publish(args.setup, args.gh))
+        repos = feed_repos(root)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        progress('BUILD PASSED, PUBLISHING FAILED: '+str(exc)); return 1
+    for repo in repos:
+        env = token_for(repo, environ)
+        if env is None:
+            progress('NOT PUBLISHED TO '+repo+': the RELEASES_TOKEN secret is missing. Installed copies use the other feed.')
+            continue
+        GH_ENV = env
+        try:
+            progress('PUBLISHED AND VERIFIED: '+publish(setup, gh, root, repo=repo))
+            published.append(repo)
+        except (OSError, ValueError, KeyError, TypeError, RuntimeError) as exc:
+            progress('NOT PUBLISHED TO '+repo+': '+str(exc))
+        finally:
+            GH_ENV = None
+    if published:
         return 0
-    except (OSError, ValueError, KeyError, TypeError, RuntimeError) as exc:
-        progress('BUILD PASSED, PUBLISHING FAILED: '+str(exc))
-        progress('The local installer remains available. Run the installer builder again to retry; it includes sign-in and publishing.')
-        return 1
+    progress('BUILD PASSED, PUBLISHING FAILED: no feed could be published.')
+    progress('The local installer remains available. Run the installer builder again to retry; it includes sign-in and publishing.')
+    return 1
 
 if __name__ == '__main__': raise SystemExit(main())
 

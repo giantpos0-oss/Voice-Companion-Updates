@@ -119,6 +119,9 @@ jobs:
       - name: Publish verified installer and update feed
         if: github.ref == 'refs/heads/main'
         shell: pwsh
+        env:
+          # Publishes to the public releases-only repository too (voice-companion-releases).
+          RELEASES_TOKEN: ${{ secrets.RELEASES_TOKEN }}
         run: |
           & python -u ./voice_companion/publish_release.py --setup ./voice_companion/VoiceCompanion-Setup.exe --gh gh
           if ($LASTEXITCODE -ne 0) { throw 'Publishing failed. Read the progress log.' }

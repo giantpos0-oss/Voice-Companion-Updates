@@ -155,3 +155,49 @@ class ProgressProcessTests(unittest.TestCase):
             self.assertIn('completed.',output.getvalue())
             self.assertNotIn('private diagnostic',output.getvalue())
 
+
+
+class PublishEverywhereTests(unittest.TestCase):
+    """November 2026: each release goes to the public releases-only repository and, while it is
+    still public, to the source repository. One that cannot be published to says why."""
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
+        self.root=Path(self.temp.name)
+        (self.root/'update-settings.json').write_text(json.dumps({
+            'manifest_url':'https://github.com/owner/releases/releases/latest/download/voice-companion-update.json',
+            'fallback_urls':['https://github.com/owner/source/releases/latest/download/voice-companion-update.json']}))
+        self.calls=[]
+        import publish_release
+        self.module=publish_release
+        self.addCleanup(setattr,publish_release,'LOG_PATH',None)
+
+    def run_all(self, environ, fail=()):
+        def publish(setup, gh, root, repo=None):
+            self.calls.append((repo, (self.module.GH_ENV or {}).get('GH_TOKEN')))
+            if repo in fail:raise ValueError('Publishing requires a public repository.')
+            return 'https://github.com/'+repo+'/releases/tag/v1'
+        with patch.object(self.module,'publish',side_effect=publish):
+            return self.module.publish_everywhere('setup.exe','gh',self.root,environ)
+
+    def test_both_repositories_each_with_its_own_token(self):
+        environ={'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'owner/source','GH_TOKEN':'workflow','RELEASES_TOKEN':'releases'}
+        self.assertEqual(self.run_all(environ),0)
+        self.assertEqual(self.calls,[('owner/releases','releases'),('owner/source','workflow')])
+        self.assertIsNone(self.module.GH_ENV)
+
+    def test_without_the_releases_secret_the_source_still_publishes(self):
+        environ={'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'owner/source','GH_TOKEN':'workflow'}
+        self.assertEqual(self.run_all(environ),0)
+        self.assertEqual(self.calls,[('owner/source','workflow')])
+
+    def test_a_private_source_is_skipped_once_the_releases_repository_has_it(self):
+        environ={'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'owner/source','GH_TOKEN':'workflow','RELEASES_TOKEN':'releases'}
+        self.assertEqual(self.run_all(environ,fail=('owner/source',)),0)
+
+    def test_nothing_published_fails(self):
+        environ={'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'owner/source','GH_TOKEN':'workflow'}
+        self.assertEqual(self.run_all(environ,fail=('owner/source',)),1)
+
+    def test_the_shipped_settings_name_the_releases_repository_first(self):
+        import publish_release
+        self.assertEqual(publish_release.feed_repos(),['willwalsh14-hub/voice-companion-releases','willwalsh14-hub/voice-companion-updates'])
