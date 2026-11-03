@@ -81,7 +81,14 @@ MESSAGES = {
     'canceled_install': 'Chrome setup stopped. If Chrome was already installing, it may still finish on its own.',
     'answer': 'Say yes or no.',
     'busy': 'Chrome setup is still running. Say status to hear the steps again, or say cancel to stop.',
+    # The first time the web or YouTube opens (Will, November 2, 2026: "people should be able to do this
+    # seamlessly simply by launching the browser for the first time").
+    'first_run': 'Setting up Chrome for the web. This happens only once. Say cancel to stop.',
+    'first_linked': 'Chrome is linked to Voice Companion. You are all set.',
+    'first_canceled': ('Chrome setup stopped. Websites use embedded Edge for now. '
+                       'To set up Chrome later, say set up Chrome.'),
 }
+FIRST_RUN_FILE = 'chrome-first-setup.txt'
 
 
 class Registry:
@@ -357,8 +364,10 @@ class ChromeSetup:
     HINT_SECONDS = 40
     PROGRESS_SECONDS = 15
 
-    def __init__(self, system, connected, clock=time.monotonic, focus_reader=None):
+    def __init__(self, system, connected, clock=time.monotonic, focus_reader=None, automatic=False):
         self.system, self.connected, self.clock = system, connected, clock
+        # Automatic: the first-time setup. Each step goes ahead without a yes or no; cancel stops it.
+        self.automatic = automatic
         self.notices = queue.Queue()
         self.focus = focus_reader
         self.state = None
@@ -382,6 +391,32 @@ class ChromeSetup:
         if quiet and self.system.extension_state() == 'enabled':
             return self._finish(None)
         return self._extension_step(MESSAGES['ask_extension'])
+
+    def start_automatic(self):
+        """The first-time setup: install Chrome if it is missing, add the extension, and link."""
+        if not self.system.supported():
+            return self._finish(None)
+        if self.connected():
+            return self._finish(MESSAGES['first_linked'])
+        if self.system.find_chrome() is None:
+            self.state = 'installing'
+            self._begin_wait()
+            self.worker = threading.Thread(target=self._install, daemon=True)
+            self.worker.start()
+            return self._say(MESSAGES['installing'])
+        return self._add_extension_now()
+
+    def _add_extension_now(self):
+        state = self.system.extension_state()
+        if state == 'enabled':
+            return self._wait('linking', MESSAGES['already_added'])
+        if state == 'removed':
+            return self._open_store()
+        try:
+            self.system.add_extension()
+        except OSError:
+            return self._open_store()
+        return self._wait('extension', MESSAGES['added'])
 
     def offer(self, missing):
         """Ask first, when the Web browser opens and Chrome is not ready.
@@ -440,6 +475,8 @@ class ChromeSetup:
         if self.finished:
             return None
         self.canceled.set()
+        if self.automatic:
+            return self._finish(MESSAGES['first_canceled'])
         return self._finish(MESSAGES['canceled_install'] if self.state == 'installing' else MESSAGES['canceled'])
 
     def close(self):
@@ -455,7 +492,10 @@ class ChromeSetup:
         now = self.clock()
         if self.state == 'installing':
             if self.worker is not None and not self.worker.is_alive():
-                if self.result:
+                if self.result and self.automatic:
+                    self.state = None
+                    self.notices.put('Google Chrome is installed. ' + self._add_extension_now())
+                elif self.result:
                     self.state = None
                     self._ask('add_extension', MESSAGES['installed'])
                     self.notices.put(MESSAGES['installed'])
@@ -466,9 +506,12 @@ class ChromeSetup:
                 self.notices.put(MESSAGES['still_installing'])
         elif self.state in ('extension', 'store', 'linking'):
             if self.connected():
-                self.notices.put(self._finish(MESSAGES['linked']))
+                self.notices.put(self._finish(MESSAGES['first_linked' if self.automatic else 'linked']))
             elif now - self.started >= (self.LINK_SECONDS if self.state == 'linking' else self.WAIT_SECONDS):
-                if self.state == 'extension':
+                if self.state == 'extension' and self.automatic:
+                    self._stop_waiting()
+                    self.notices.put(self._open_store())
+                elif self.state == 'extension':
                     self._stop_waiting()
                     self.notices.put(self._ask('open_store', MESSAGES['ask_store']))
                 else:
@@ -641,16 +684,102 @@ def handle(app, text, mode):
         app.CONFIRM_CHOICE = 'yes'
     if setup.finished:
         target = finish(app, app.CHROME_SETUP_RETURN)
-        if target == 'browser_menu' and getattr(app, 'web_session', None) is not None:
-            app.speak(app.web_session.menu.start())
+        words = return_to(app, target)
+        if words:
+            app.speak(words)
         return target
     return 'chrome_setup'
 
 
 def finish(app, mode):
+    setup = app.CHROME_SETUP
     app.CHROME_SETUP = None
+    first_run_done(app, setup)
     app.sync_app_context(mode, True)
     return mode
+
+
+def first_run_due(app):
+    """True the first time the web or YouTube opens on a computer where your Chrome is not linked,
+    unless embedded Edge was chosen. Only ever once: the answer is kept in chrome-first-setup.txt."""
+    if getattr(app, 'APP_WINDOW', None) is None:
+        return False   # only in the app people use (with its window), never in text mode or tests
+    try:
+        if (Path(app.APP) / FIRST_RUN_FILE).exists():
+            return False
+        system = WindowsChrome()
+        if not system.supported():
+            return False
+        if relay_connected(app):
+            mark_first_run(app, 'linked')
+            return False
+        from web_assistant import saved_browser_choice
+        if saved_browser_choice(app.APP)[0] == 'webview2':
+            return False   # embedded Edge was chosen on purpose: leave it
+    except Exception:
+        return False
+    return True
+
+
+def mark_first_run(app, state):
+    from storage import write_text_atomic
+    try:
+        write_text_atomic(Path(app.APP) / FIRST_RUN_FILE, state)
+    except OSError:
+        pass
+
+
+def first_run(app, mode, back):
+    """Start the first-time setup as the web or YouTube opens. Returns 'chrome_setup', or None
+    when it is not due (then the web or YouTube opens as usual)."""
+    if not first_run_due(app):
+        return None
+    mark_first_run(app, 'started')   # asked once, whatever the answer
+    setup = ChromeSetup(WindowsChrome(), lambda: relay_connected(app), focus_reader=FocusReader(app.speak), automatic=True)
+    message = setup.start_automatic()
+    if setup.finished:
+        first_run_done(app, setup)
+        if message:
+            app.speak(message)
+        return None
+    app.speak(MESSAGES['first_run'] + ' ' + message)
+    app.CHROME_SETUP, app.CHROME_SETUP_RETURN = setup, back
+    return 'chrome_setup'
+
+
+def first_run_done(app, setup):
+    """After the first-time setup: Chrome becomes the web browser when it linked; after cancel,
+    the web keeps embedded Edge and is not set up again by itself."""
+    if setup is None or not getattr(setup, 'automatic', False):
+        return
+    if relay_connected(app):
+        mark_first_run(app, 'linked')
+        try:
+            from storage import write_text_atomic
+            write_text_atomic(Path(app.APP) / 'browser-choice.txt', 'chrome')
+        except Exception:
+            pass
+        web = getattr(app, 'web_session', None)
+        if web is not None:
+            web.saved_choice = 'chrome'
+            web.chrome_offer_declined = False
+    else:
+        mark_first_run(app, 'declined' if setup.canceled.is_set() else 'not linked')
+        web = getattr(app, 'web_session', None)
+        if web is not None:
+            web.chrome_offer_declined = True
+
+
+def return_to(app, target):
+    """Words for the screen setup returns to: the menu that was opening."""
+    if target == 'browser_menu' and getattr(app, 'web_session', None) is not None:
+        return app.web_session.menu.start()
+    if target == 'youtube':
+        try:
+            return __import__('youtube_screen').open_screen(app, 'youtube')
+        except Exception:
+            return None
+    return None
 
 
 def poll(app, mode):
@@ -668,10 +797,15 @@ def poll(app, mode):
         return mode
     target = app.CHROME_SETUP_RETURN
     app.CHROME_SETUP = None
+    first_run_done(app, setup)
     if mode == 'sleep':
         app.SLEEP_RETURN_MODE = target
         return mode
     if mode == 'chrome_setup':
+        if setup.automatic:
+            words = return_to(app, target)   # setup was part of opening it: carry on into it
+            if words:
+                app.speak_status(words)
         app.sync_app_context(target, True)
         return target
     return mode

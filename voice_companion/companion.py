@@ -51,7 +51,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.197-test'
+APP_VERSION = '0.2.198-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -2257,6 +2257,14 @@ def open_browser_menu(regular=False):
         except OSError:
             speak('The browser extension connection could not start. Close other copies of Companion and try again.')
     web_session=web_session or WebSession(APP,progress=speak_status)
+    # The first time: Chrome and the extension are set up as the web opens (Will, November 2, 2026).
+    try:
+        started=__import__('chrome_setup').first_run(sys.modules[__name__],'browser_menu','browser_menu')
+    except Exception:
+        started=None
+    if started:
+        web_session.menu.start()
+        return started
     open_own_chrome_for_web(web_session)
     try:web_session.adopt_connected_browser()
     except Exception:

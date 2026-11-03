@@ -1918,6 +1918,19 @@ def navigation_key(m, key):
             'Escape': 'go back', 'Left': 'skip back', 'Right': 'skip forward', 'Next': 'page down', 'Prior': 'page up'}.get(key)
 
 
+def first_time_setup(m, s, mode):
+    """The first time YouTube opens: Chrome and the extension are set up first, then YouTube opens
+    (Will, November 2, 2026). True when setup started."""
+    try:
+        import chrome_setup
+        started = chrome_setup.first_run(m, mode, MODE)
+    except Exception:
+        return False
+    if started and mode not in (MODE, 'web'):
+        s.return_mode = 'media_menu' if mode in ('media_menu', 'awake', 'media') else mode
+    return bool(started)
+
+
 def open_screen(m, mode, lead=''):
     s = screen(m)
     if mode not in (MODE, 'web'):
@@ -2052,6 +2065,8 @@ def _handle(m, text, mode, typed=False):
                     s.ensure_menu()
                     m.speak_status('Searching YouTube.')
                     m.speak(s.search(match[1] or match[2]))
+                elif not getattr(m, 'TEXT_MODE', False) and first_time_setup(m, s, mode):
+                    return 'chrome_setup'
                 elif ask:
                     open_screen(m, mode)
                     m.speak(s.ask_search())
