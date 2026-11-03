@@ -522,7 +522,9 @@ class OfferWhenOpeningWebBrowserTests(unittest.TestCase):
                    patch.object(chrome_setup, 'WindowsChrome', lambda: self.system),
                    patch.object(chrome_setup, 'FocusReader', lambda speak: FakeFocus()),
                    patch.object(chrome_setup, 'relay_connected', lambda app: bool(self.relay)),
-                   patch('browser_cdp_relay.prepare'), patch('browser_cdp_relay.current', return_value=None)]
+                   patch('browser_cdp_relay.prepare'), patch('browser_cdp_relay.current', return_value=None),
+                   # The first-time setup already ran (test_first_time_chrome.py); this is the offer after it.
+                   patch.object(chrome_setup, 'first_run_due', lambda app: False)]
         for item in patches:
             item.start(); self.addCleanup(item.stop)
 
