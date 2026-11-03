@@ -233,6 +233,20 @@ class Win32Desktop:
             return False
         return rect.right <= -10000 or rect.bottom <= -10000
 
+    def position(self, handle):
+        """(left, top) of the window, or None."""
+        rect = self.w.RECT()
+        if not self.user.GetWindowRect(handle, self.ctypes.byref(rect)):
+            return None
+        if rect.left <= self.OFF_SCREEN + 100 and rect.top <= self.OFF_SCREEN + 100:
+            return None   # already parked: no place of its own to go back to
+        return rect.left, rect.top
+
+    def place(self, handle, position):
+        """Move the window to (left, top), with no change of size, order or keyboard."""
+        left, top = position
+        self.user.SetWindowPos(handle, None, int(left), int(top), 0, 0, 0x0001 | 0x0004 | 0x0010)
+
     def untuck(self, handle, style=None):
         """The window's own style again, so it is back on the taskbar and in Alt+Tab."""
         if not self.user.IsWindow(handle): return

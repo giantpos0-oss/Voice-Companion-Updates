@@ -879,6 +879,7 @@ def link_own_chrome(app, address, announce='', before_open=None, clock=None):
     failed = LAUNCH.get('failed')
     if failed is not None and clock() - failed < LAUNCH_SECONDS:
         return OWN_CHROME_NOT_LINKED   # it just did not link: do not wait on it twice in a row
+    launched = None   # Chrome's windows before Companion started it, when it did
     started = LAUNCH['at']
     if started is not None and clock() - started < LAUNCH_SECONDS:
         # Already starting: wait for that Chrome, never open a second one.
@@ -889,6 +890,8 @@ def link_own_chrome(app, address, announce='', before_open=None, clock=None):
             app.speak_status(announce)
         if before_open is not None:
             before_open()
+        import own_chrome_window
+        launched = own_chrome_window.WINDOWS.current()
         if not system.open_chrome(address):
             browser_log(app, 'own Chrome: could not start Chrome')
             return None
@@ -904,6 +907,13 @@ def link_own_chrome(app, address, announce='', before_open=None, clock=None):
     if relay.connected.is_set():
         LAUNCH['at'] = LAUNCH['failed'] = None
         browser_log(app, 'own Chrome: linked after %.1f seconds' % (clock() - began))
+        if launched is not None:
+            # Companion started this Chrome: its window is Companion's, hidden when the option says so.
+            try:
+                import own_chrome_window
+                own_chrome_window.WINDOWS.opened(launched)
+            except Exception:
+                pass
         return True
     browser_log(app, 'own Chrome: not linked after %.0f seconds' % wait)
     LAUNCH['failed'] = clock()
