@@ -1,20 +1,21 @@
 {
-  "version": "0.2.198-test",
+  "version": "0.2.199-test",
   "status": "Testing build",
   "date": "November 3, 2026",
-  "baseline": "0.2.197-test",
-  "scope": "Chrome sets itself up the first time you open the web.",
+  "baseline": "0.2.198-test",
+  "scope": "A new choice to hide your own Chrome while Companion uses it.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "Chrome sets itself up",
+          "title": "Hide your own Chrome",
           "details": [
-            "The first time you open Web browser or YouTube, Companion sets up Chrome for you.",
-            "It installs Chrome if needed, adds the Voice Companion extension, and links Chrome.",
-            "You may need to press Enable extension once in Chrome. Companion tells you how.",
-            "Then the web or YouTube opens, in your own Chrome."
+            "In Options, Web browser, there is a new choice called Your own Chrome window.",
+            "Choose Hide it while Companion uses it. Then a Chrome window that Companion opens stays off the screen, the taskbar and Alt+Tab.",
+            "Companion still reads every page to you, and sound and video still play.",
+            "Say show browser window to bring it back. Say hide browser window to hide it again.",
+            "A page that needs you, such as a sign-in, brings it back by itself."
           ]
         }
       ]
@@ -23,10 +24,10 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Set up Chrome is still there",
+          "title": "Your own Chrome windows are safe",
           "details": [
-            "To set up Chrome later, or again, say set up Chrome.",
-            "If you say cancel during the first setup, Companion does not set it up again by itself."
+            "This choice is off unless you turn it on.",
+            "A Chrome window you opened yourself is never hidden."
           ]
         }
       ]

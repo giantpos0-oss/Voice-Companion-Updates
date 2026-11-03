@@ -115,7 +115,7 @@ def apply_settings(m,values):
     if (values.get('api_key') or values['engine']=='ai') and not values.get('ai_consent'):raise ValueError('Confirm permission to send narration text to OpenAI.')
     if values['radio_source']=='radio sure' and not read(m.APP/'radiosure-stations.json',[]):raise ValueError('Import a RadioSure station database first.')
     session=SettingsSession(*snapshot(m));session.values.update(values)
-    windows_before={key:m.PREFERENCES.get(key,DEFAULTS[key]) for key in ('thunderbird_window','browser_window')}
+    windows_before={key:m.PREFERENCES.get(key,DEFAULTS[key]) for key in ('thunderbird_window','browser_window','own_chrome_window')}
     # Validate every populated field before any preference is applied.
     from settings_model import CATEGORIES,fields
     for category in CATEGORIES:

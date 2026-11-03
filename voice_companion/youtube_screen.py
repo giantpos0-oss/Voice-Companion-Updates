@@ -1673,7 +1673,20 @@ class YouTubeScreen:
         result = chrome_setup.link_own_chrome(self.m, address, announce, before_open=opening)
         if before:
             if result is True:
-                self.note_opened_chrome(before[0])
+                # A window hidden by "Your own Chrome window" is not listed as a normal window,
+                # so the windows Companion opened are taken from own_chrome_window too.
+                try:
+                    import own_chrome_window
+                    hidden = own_chrome_window.WINDOWS.mine - set(before[0])
+                except Exception:
+                    hidden = set()
+                if hidden:
+                    if not self.own_chrome_windows:
+                        import atexit
+                        atexit.register(close_own_chrome_at_exit, self)
+                    self.own_chrome_windows |= hidden
+                else:
+                    self.note_opened_chrome(before[0])
             self.keep_keyboard()
         return result
 

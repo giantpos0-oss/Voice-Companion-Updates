@@ -346,7 +346,7 @@ WINDOW_AS_BEFORE = ('Chrome is set to show its window, as before. To run it in t
                     'Web browser, and choose Run the browser in the background.')
 WINDOW_NOT_CHROME = 'Only guided Chrome can run in the background. Embedded Edge is part of the Voice Companion window.'
 WINDOW_OWN_BROWSER = ('You are using your own browser, and it keeps its own window. Press Alt+Tab to find it. '
-                      'Only guided Chrome can run in the background.')
+                      'To hide your Chrome while Companion uses it, open Options, Web browser, Your own Chrome window.')
 WINDOW_FAILED = 'Chrome could not open again. Say open website to try again.'
 WINDOW_NEXT_SITE = ' It opens when you open a website.'
 WINDOW_NEEDED_HERE = {
@@ -2157,7 +2157,9 @@ class WebSession:
         """ "Show browser window" and "hide browser window". Returns what to say."""
         backend=self.backend
         if getattr(backend,'regular',False):
-            return WINDOW_OWN_BROWSER
+            # Your own Chrome, hidden by Options, Web browser, Your own Chrome window (own_chrome_window.py).
+            import own_chrome_window
+            return own_chrome_window.command(show) or WINDOW_OWN_BROWSER
         if not getattr(backend,'guided_chrome',lambda:False)():
             return WINDOW_NOT_CHROME
         if not CHROME_IN_BACKGROUND:
@@ -2286,6 +2288,12 @@ class WebSession:
         self.slider_field=None
         before_url=(self.snapshot or {}).get('url');before_epoch=(self.document_state or {}).get('epoch')
         result=self._refresh_page(read,preserve,wait)
+        own_hidden=getattr(self.backend,'regular',False) and __import__('own_chrome_window').WINDOWS.is_hidden()
+        if own_hidden and window_need(self.snapshot):
+            # Your own Chrome is hidden and this page needs you: it comes back by itself.
+            own=__import__('own_chrome_window')
+            own.WINDOWS.show()
+            result=own.NEEDED[window_need(self.snapshot)]+' '+own.SHOWN_NOW+' '+result
         need=window_need(self.snapshot) if self.snapshot and getattr(self.backend,'runs_hidden',lambda:False)() else None
         if need:
             epoch=(self.document_state or {}).get('epoch')

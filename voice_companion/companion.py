@@ -51,7 +51,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.198-test'
+APP_VERSION = '0.2.199-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -139,6 +139,7 @@ PREFERENCES_DAMAGED_NOTICE = 'Your saved options could not be read, so Voice Com
 VERBOSITY = PREFERENCES.get('verbosity','high')
 # Options, Web browser, "Guided Chrome window" (see web_assistant.CHROME_IN_BACKGROUND).
 __import__('web_assistant').CHROME_IN_BACKGROUND = PREFERENCES.get('browser_window') == 'Run the browser in the background'
+__import__('own_chrome_window').ENABLED = PREFERENCES.get('own_chrome_window') == 'Hide it while Companion uses it'
 INPUT_MODE = 'mixed'
 VOICE_PICK_INDEX = None
 VOICE_PICK_ORIGINAL = None
@@ -2194,6 +2195,11 @@ def window_options_changed(before):
         try:apply_thunderbird_window()
         except Exception:pass
         said.append(THUNDERBIRD_HIDDEN_OPTION if choice=='Hidden from the taskbar' else THUNDERBIRD_MINIMIZED_OPTION)
+    import own_chrome_window
+    choice=PREFERENCES.get('own_chrome_window',own_chrome_window.SHOW)
+    if choice!=before.get('own_chrome_window',own_chrome_window.SHOW):
+        own_chrome_window.set_enabled(choice)
+        said.append(own_chrome_window.OPTION_HIDE if choice==own_chrome_window.HIDE else own_chrome_window.OPTION_SHOW)
     choice=PREFERENCES.get('browser_window','Show the browser window, as before')
     if choice!=before.get('browser_window','Show the browser window, as before'):
         background=choice=='Run the browser in the background'
@@ -4243,7 +4249,7 @@ def _handle(text, mode, typed=False):
         return open_browser_menu()
     if command in CLOSE_BROWSER_COMMANDS and web_session and (mode in ('web','browser_menu') or mode=='awake' and web_session.snapshot):
         return close_browser_window()
-    if command in SHOW_BROWSER_COMMANDS+HIDE_BROWSER_COMMANDS and web_session and (mode in ('web','browser_menu') or mode=='awake' and web_session.snapshot):
+    if command in SHOW_BROWSER_COMMANDS+HIDE_BROWSER_COMMANDS and web_session and (mode in ('web','browser_menu','youtube') or mode=='awake' and web_session.snapshot):
         speak(web_session.browser_window(command in SHOW_BROWSER_COMMANDS))
         return mode
     if mode == 'tutorial':
