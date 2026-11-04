@@ -7,10 +7,19 @@ pull requests. Update this file as items are finished.
 ## Must do before launch
 
 ### Privacy of the beta and the code
-- Decision (Will, October 21): the code stays in this public repository.
-  Anyone can read the code, the GitHub issues and the release installers.
-- [ ] Remind testers that GitHub issues here are public: no passwords, email
-      contents or personal details in bug reports (the bug form says this too).
+- Decision (Will, November 2, 2026): the source code becomes private. Installers
+  and the update feed move to the public `willwalsh14-hub/voice-companion-releases`
+  (steps in `tools/releases-repository.md`).
+- Done (November 3): the releases repository exists, `RELEASES_TOKEN` is set,
+  and it has the bug report forms, the privacy policy and a README.
+- Done (November 3): the privacy policy contact is willwalsh14@gmail.com.
+- [ ] Confirm a release reached the releases repository (Claude).
+- [ ] **Will:** in the Chrome Web Store dashboard, set the extension's privacy
+      policy link to the copy in the releases repository. The copy here
+      disappears when this repository goes private.
+- [ ] Tell testers to report bugs on the releases repository's issues page.
+      Issues there are public: no passwords, email contents or personal details.
+- [ ] **Will:** make this repository private, once Claude says most copies have updated.
 
 ### Trust and installation
 - [ ] **Code-sign the installer and app (Will: buy a code-signing certificate, e.g. an OV or EV certificate or Azure Trusted Signing).**
@@ -162,7 +171,7 @@ Problems found in the October 2026 review. All fixed in 0.2.153-test, with tests
       check-in script.
 
 ## How bugs get fixed now
-1. A tester or Will opens a GitHub issue ("Something went wrong" form), or
+1. A tester or Will opens an issue on the releases repository ("Something went wrong" form), or
    tells Claude in one sentence.
 2. Claude reproduces it, adds a failing test, fixes it, runs
    `tools/run_checks.py --compare main`, and opens a pull request.

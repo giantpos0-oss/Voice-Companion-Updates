@@ -32,6 +32,7 @@ Do this only after Claude confirms a release reached the releases repository, an
 Then:
 
 - Build time on a private repository uses the free plan's included $12 a month. A self-hosted runner on a spare Windows PC is free.
-- Testers can no longer see or file GitHub issues there. Bug reports need another way in, such as email.
-- The privacy policy names the issues page as the contact. It needs another contact before the switch.
+- Testers file bugs on the [Voice Companion issues page](https://github.com/willwalsh14-hub/voice-companion-releases/issues/new/choose) in the releases repository.
+- The privacy policy contact is now willwalsh14@gmail.com, and a copy of the policy is in the releases repository.
+- Before the switch, set the Chrome Web Store privacy policy link to the [privacy policy in the releases repository](https://github.com/willwalsh14-hub/voice-companion-releases/blob/main/PRIVACY-POLICY.md).
 - Copies older than the release that moved the feed can no longer update, and need the installer once.
