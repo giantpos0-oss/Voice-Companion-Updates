@@ -154,5 +154,65 @@ class DamagedWordFiles(DocumentFlowCase):
         self.assertEqual(self.last(), 'Opened Blank.docx. Document. The document is empty.')
 
 
+class DiskFiles:
+    """File manager's Shell stand-in that really deletes and renames, as Windows does."""
+    def __init__(self, root):
+        from test_file_manager import FakeFiles
+        self.fake = FakeFiles(root)
+
+    def __getattr__(self, name):
+        return getattr(self.fake, name)
+
+    def operate(self, action, paths, destination=None, name=None):
+        from pathlib import Path
+        for path in map(Path, paths):
+            if action == 'delete':
+                path.unlink()
+            elif action == 'rename':
+                path.rename(path.with_name(name))
+
+
+class FileManagerFocusAfterChanges(unittest.TestCase):
+    """After Delete, focus stays where you were (the next item), not the top of the folder.
+    After Rename, focus is on the renamed item."""
+
+    def setUp(self):
+        import tempfile
+        from pathlib import Path
+        from file_manager import FileManager
+        from test_file_manager import settle
+        self.settle = settle
+        folder = tempfile.TemporaryDirectory(); self.addCleanup(folder.cleanup)
+        self.root = Path(folder.name)
+        for name in ('a.txt', 'b.txt', 'c.txt', 'd.txt'):
+            (self.root / name).write_text(name)
+        self.fm = FileManager(DiskFiles(self.root))
+        self.fm.refresh(str(self.root)); settle(self.fm)
+
+    def test_delete_keeps_the_place_in_the_list(self):
+        self.fm.index = 2
+        self.fm.command('delete'); self.fm.command('yes'); self.settle(self.fm)
+        self.assertEqual([i.name for i in self.fm.items], ['a.txt', 'b.txt', 'd.txt'])
+        self.assertEqual(self.fm.current().name, 'd.txt')
+
+    def test_deleting_the_last_item_lands_on_the_new_last_item(self):
+        self.fm.command('end')
+        self.fm.command('delete'); self.fm.command('yes'); self.settle(self.fm)
+        self.assertEqual(self.fm.current().name, 'c.txt')
+
+    def test_rename_focuses_the_renamed_item(self):
+        self.fm.index = 0
+        self.fm.command('rename'); self.fm.command('z.txt'); self.settle(self.fm)
+        self.assertEqual([i.name for i in self.fm.items], ['b.txt', 'c.txt', 'd.txt', 'z.txt'])
+        self.assertEqual(self.fm.current().name, 'z.txt')
+
+    def test_a_typed_name_that_starts_with_name_is_kept_whole(self):
+        self.fm.index = 0
+        self.fm.command('rename'); self.fm.command('Name tags.txt'); self.settle(self.fm)
+        self.assertTrue((self.root / 'Name tags.txt').exists())
+        self.fm.command('rename'); self.fm.command('rename to list.txt'); self.settle(self.fm)
+        self.assertTrue((self.root / 'list.txt').exists())
+
+
 if __name__ == '__main__':
     unittest.main()
