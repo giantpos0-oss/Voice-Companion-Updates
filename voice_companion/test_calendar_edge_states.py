@@ -186,5 +186,26 @@ class NoCalendarTests(CalendarHarness):
         self.assertEqual(self.said(), 'Thunderbird has no calendars turned on. Press F1 to learn how to add one.')
 
 
+class EmptyContactsTests(ContactsSourceHarness):
+    """No address books in Thunderbird and no contacts at all."""
+    thunderbird_env = {}
+
+    def setUp(self):
+        super().setUp()
+        self.stack.enter_context(mock.patch.object(
+            thunderbird_pim, 'contacts', return_value={'books': [], 'contacts': [], 'failed': 0, 'failedBooks': []}))
+
+    def test_control_l_does_not_speak_of_one_email_account(self):
+        mode = self.open()
+        self.press('Ctrl+L', mode)
+        self.assertEqual(self.said(), 'All your contacts are shown.')
+
+    def test_email_a_name_that_is_not_there_says_so(self):
+        # Before, the Contacts screen answered with its list of commands.
+        mode = self.open()
+        app.handle('Email John.', mode)
+        self.assertEqual(self.said(), 'No contact named john. No contacts yet. Press Control+N to add one, or say add contact.')
+
+
 if __name__ == '__main__':
     unittest.main()
