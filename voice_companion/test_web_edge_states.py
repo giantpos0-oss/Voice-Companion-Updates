@@ -113,5 +113,29 @@ class HiddenChromeAtExitTests(unittest.TestCase):
         register.assert_called_once_with(own_chrome_window.restore_at_exit)
 
 
+class FirstChromeSetupMainMenuTests(unittest.TestCase):
+    """Saying "main menu" during the first-time Chrome setup said only "Chrome setup stopped."
+    Cancel says that websites use embedded Edge for now and how to set Chrome up later;
+    main menu now says the same."""
+
+    def test_main_menu_during_first_time_setup_says_what_happens_next(self):
+        import chrome_setup
+        from types import SimpleNamespace
+        from test_first_time_chrome import FakeChrome
+        folder = tempfile.TemporaryDirectory(); self.addCleanup(folder.cleanup)
+        said = []
+        app = SimpleNamespace(APP=folder.name, speak=said.append, speak_status=said.append, CHROME_SETUP=None,
+                              CHROME_SETUP_RETURN=None, web_session=None, sync_app_context=lambda *a: None,
+                              APP_WINDOW=object(), normalized_command=lambda t: t.strip().casefold().rstrip('.'),
+                              speech_control=lambda t: None, spoken_control=lambda t: None)
+        chrome = FakeChrome(installed=True, extension=None)
+        with patch.object(chrome_setup, 'WindowsChrome', lambda: chrome), \
+                patch.object(chrome_setup, 'relay_connected', lambda app: False), \
+                patch.object(chrome_setup, 'FocusReader', lambda speak: Mock()):
+            self.assertEqual(chrome_setup.first_run(app, 'awake', 'browser_menu'), 'chrome_setup')
+            self.assertEqual(chrome_setup.handle(app, 'Main menu.', 'chrome_setup'), 'awake')
+        self.assertEqual(said[-1], chrome_setup.MESSAGES['first_canceled'])
+
+
 if __name__ == '__main__':
     unittest.main()

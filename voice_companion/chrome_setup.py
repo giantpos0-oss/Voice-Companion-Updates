@@ -669,8 +669,8 @@ def handle(app, text, mode):
         target = finish(app, app.CHROME_SETUP_RETURN)
         return app.handle(text, 'awake' if target == 'sleep' else target, typed=True)
     if command in ('main menu', 'go to main menu', 'back to main menu'):
-        setup.cancel()
-        app.speak(MESSAGES['canceled'])
+        # The same words as cancel: the first-time setup says what happens next.
+        app.speak(setup.cancel() or MESSAGES['canceled'])
         return finish(app, 'awake')
     asked = setup.question
     message = setup.respond(command)
