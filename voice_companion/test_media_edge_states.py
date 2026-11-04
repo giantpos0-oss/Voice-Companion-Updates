@@ -13,6 +13,12 @@ from test_media_new_veteran import NewVeteranMediaTestCase
 
 
 class EdgeStateTestCase(NewVeteranMediaTestCase):
+    def setUp(self):
+        super().setUp()
+        # Subscribe starts a background feed check; here it would still be writing to the
+        # data folder while the test removes it. The check has its own tests.
+        self.hub.start_podcast_refresh = lambda: True
+
     def key(self, name):
         return companion.media_navigation().keyboard(name)
 
@@ -218,6 +224,16 @@ class QuestionKeyTests(EdgeStateTestCase):
         self.assertEqual(self.key('F5'), 'Yes or no?')
         self.assertEqual(self.key('Delete'), 'Yes or no?')
         self.assertEqual(len(self.hub.presets()), 1)
+
+
+class MediaPlayerWithNoFileTests(EdgeStateTestCase):
+    """Playback speed with no file open asked for a number, then said to open a file first."""
+
+    def test_playback_speed_says_no_file_before_asking(self):
+        self.say('Media', 'Media player')
+        said = self.say('Playback speed')
+        self.assertEqual(said, 'No media file open. Choose Open a media file.')
+        self.assertEqual(self.mode, 'local_media')
 
 
 if __name__ == '__main__':
