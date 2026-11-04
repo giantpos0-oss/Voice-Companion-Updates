@@ -399,6 +399,9 @@ class TaskNavigation:
             m.speak('Menu closed. '+state+'Press Alt for the menu.')
             return mode
         if command == '@speed':
+            if m.media().player.kind != 'local':
+                # Asking for a number, then refusing it, wastes a step: say it first, as Status does.
+                m.speak('No media file open. Choose Open a media file.'); return mode
             self.prompt = ('speed {value}', 'local_media')
             m.speak('Playback speed. Type or say a number from 0.5 to 3, then Enter. Escape cancels.')
             return 'task_input'
