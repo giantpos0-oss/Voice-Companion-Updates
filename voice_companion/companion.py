@@ -1789,6 +1789,16 @@ def remembered(*savers):
     return ''
 
 
+def read_speech_settings(folder):
+    """The saved speech settings; {} on the first start or when the file is damaged or of the
+    wrong shape (a list, null, text). A damaged file must never stop speech from starting."""
+    try:
+        settings = json.loads((Path(folder) / 'speech-settings.json').read_text(encoding='utf-8-sig'))
+    except (OSError, ValueError):
+        return {}
+    return settings if isinstance(settings, dict) else {}
+
+
 def save_speech_settings():
     from storage import write_text_atomic
     write_text_atomic(APP / 'speech-settings.json',
@@ -6552,7 +6562,7 @@ if __name__ == '__main__':
                 import win32com.client
                 voice = win32com.client.Dispatch('SAPI.SpVoice')
             try:
-                settings = json.loads((APP / 'speech-settings.json').read_text(encoding='utf-8'))
+                settings = read_speech_settings(APP)
                 SPEECH_PITCH = max(-10,min(10,int(settings.get('pitch',0))))
                 SPEECH_RATE = max(-10, min(10, int(settings.get('rate', -1))))
                 SPEECH_VOLUME = max(0, min(100, int(settings.get('volume', 100))))
