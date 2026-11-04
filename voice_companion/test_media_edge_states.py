@@ -148,6 +148,18 @@ class DamagedDownloadLimitTests(EdgeStateTestCase):
         self.assertFalse([n for n in notices if 'could not' in n], notices)
 
 
+class SubscribeTwiceTests(EdgeStateTestCase):
+    """Subscribe on a show you already have said "Subscribed to" again, as if it were new."""
+
+    def test_subscribing_again_says_you_already_are(self):
+        self.say('Media', 'Podcasts', 'Search podcasts for history')
+        self.assertTrue(self.say('Subscribe').startswith('Subscribed to History Hour.'))
+        said = self.say('Subscribe')
+        self.assertEqual(said, 'You are already subscribed to History Hour. Say list subscriptions to hear them.')
+        saved = json.loads((self.hub.folder / 'podcast-subscriptions.json').read_text(encoding='utf-8'))
+        self.assertEqual([s['name'] for s in saved], ['History Hour'])
+
+
 class PlayerControlsReturnTests(EdgeStateTestCase):
     """Player controls named the wrong place for Escape after a saved recording."""
 

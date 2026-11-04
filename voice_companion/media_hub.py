@@ -1055,9 +1055,10 @@ class MediaHub:
             if not isinstance(subs,list):
                 # Kept for a helper to inspect; never replaced by a new list.
                 return 'Your podcast subscriptions file is damaged, so '+show['name']+' was not added. Ask your helper to check it.'
-            if not any(isinstance(s,dict) and s.get('feed')==show['feed'] for s in subs):
-                subs.append({**show,'download_limit':'manual','episodes':[]})
-                self._save('podcast-subscriptions.json',subs)
+            if any(isinstance(s,dict) and s.get('feed')==show['feed'] for s in subs):
+                return 'You are already subscribed to '+show['name']+'. Say list subscriptions to hear them.'
+            subs.append({**show,'download_limit':'manual','episodes':[]})
+            self._save('podcast-subscriptions.json',subs)
         self.start_podcast_refresh()
         return ('Subscribed to '+show['name']+'. The feed refreshes automatically while Companion runs. '
                 'Downloads are manual until you choose an auto download limit.')
