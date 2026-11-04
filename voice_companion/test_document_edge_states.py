@@ -237,5 +237,45 @@ class ReaderPickerFailure(DocumentFlowCase):
         self.assertEqual(nav.reader_return, 'reader_picker')
 
 
+class SelectingNothing(DocumentFlowCase):
+    """An empty paragraph, or a document whose paragraphs are all empty, has no text to select.
+    Before, it said "Selected:" with nothing after it, and Delete selection said "Deleted: ."
+    and made an Undo step that changed nothing."""
+
+    def open(self, *texts):
+        app.document = VoiceDocument(self.default, title='Nothing')
+        app.document.paragraphs = [Paragraph(text) for text in texts]
+        app.document.save()
+        self.said.clear()
+
+    def test_select_all_in_a_document_of_empty_paragraphs(self):
+        self.open('', '')
+        for said in ('select all', 'select paragraph'):
+            app.handle(said, 'document')
+            self.assertEqual(self.last(), 'The document is empty. There is no text to select.', said)
+            self.assertIsNone(app.document.selection)
+        self.assertEqual(self.press('Ctrl+A', 'document'), 'document')
+        self.assertEqual(self.last(), 'The document is empty. There is no text to select.')
+
+    def test_selecting_an_empty_paragraph_says_so(self):
+        self.open('Hello.', '')
+        app.handle('go to end of document', 'document')
+        app.handle('select paragraph', 'document')
+        self.assertEqual(self.last(), 'Paragraph 2 is empty. There is no text to select.')
+        self.assertIsNone(app.document.selection)
+        steps = len(app.document.undo_steps)
+        app.handle('delete selection', 'document')
+        self.assertNotIn('Deleted: .', self.last())
+        self.assertEqual(len(app.document.undo_steps), steps)
+        self.assertEqual([p.text for p in app.document.paragraphs], ['Hello.', ''])
+
+    def test_selected_spaces_are_said_as_blank(self):
+        self.open('Hello.', '   ')
+        app.handle('select last paragraph', 'document')
+        self.assertEqual(self.last(), 'Paragraph 2. Selected: blank.')
+        app.handle('what is selected', 'document')
+        self.assertEqual(self.last(), 'Selected: blank.')
+
+
 if __name__ == '__main__':
     unittest.main()

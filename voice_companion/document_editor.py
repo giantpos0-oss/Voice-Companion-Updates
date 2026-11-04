@@ -209,6 +209,12 @@ PARAGRAPH_ORDINALS = {'first':1, 'second':2, 'third':3, 'fourth':4, 'fifth':5,
                       'sixth':6, 'seventh':7, 'eighth':8, 'ninth':9, 'tenth':10}
 
 
+def selection_words(content):
+    """Selected text as it is said: spaces or line breaks alone are "blank.", as screen readers say."""
+    from keyboard_text import is_blank
+    return 'blank.' if is_blank(content) else content
+
+
 def text_review_request(command):
     """A selection command in the words every text screen uses (text_review.py), or None."""
     import text_review
@@ -1054,7 +1060,7 @@ class VoiceDocument:
             self._replace_selection(replacement)
             return 'Replaced ' + content + ' with ' + closed(replacement)
         if action in ('select', 'find'):
-            return ('Found and selected: ' if action == 'find' else 'Selected: ') + content
+            return ('Found and selected: ' if action == 'find' else 'Selected: ') + selection_words(content)
         if action in ('cut', 'delete') and any(p.table_id for p in self.paragraphs[selected.first_paragraph:selected.last_paragraph+1]) and selected.first_paragraph != selected.last_paragraph:
             if action == 'cut': copy_to_clipboard(content)
             self.checkpoint()
@@ -1329,8 +1335,9 @@ class VoiceDocument:
         structure = structural_selection_request(command)
         if structure:
             self.selection_candidates, self.selection_action = [], ''
-            if not self.paragraphs:
-                return 'The document is empty. There is no text to select.'
+            if not any(p.text for p in self.paragraphs):
+                # Empty paragraphs only (after Enter, or after the text was deleted): nothing to select.
+                return self.EMPTY_NOTICE + ' There is no text to select.'
             kind, reference = structure
             if kind == 'all':
                 selected = TextSelection(0, 0, len(self.paragraphs)-1, len(self.paragraphs[-1].text))
@@ -1371,6 +1378,9 @@ class VoiceDocument:
             if not 0 <= index < len(self.paragraphs):
                 return ('There is no ' + reference + ' paragraph here.' if reference in ('next','previous') else
                         'That paragraph number is not available. The document has ' + str(len(self.paragraphs)) + ' paragraphs.')
+            if not self.paragraphs[index].text:
+                self.selection = None
+                return 'Paragraph ' + str(index+1) + ' is empty. There is no text to select.'
             selected = TextSelection(index, 0, index, len(self.paragraphs[index].text))
             self.word_cursor = self.sentence_cursor = 0
             return 'Paragraph ' + str(index+1) + '. ' + self._apply_selection_action(selected, 'select')
@@ -1411,7 +1421,7 @@ class VoiceDocument:
                 return self._apply_selection_action(selected, action)
             return 'Say next, previous, that one, or cancel selection.'
         if command in ('what is selected', 'say selection', 'read selection', 'selected text', 'read selected text'):
-            return 'Selected: ' + self.selected_text() if self.selection else 'No text is selected.'
+            return 'Selected: ' + selection_words(self.selected_text()) if self.selection else 'No text is selected.'
         if command in ('clear selection', 'unselect', 'deselect', 'cancel selection'):
             self.selection = None
             return 'Selection cleared.'
