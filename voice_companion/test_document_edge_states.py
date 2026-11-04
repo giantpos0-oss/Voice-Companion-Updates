@@ -303,5 +303,18 @@ class SelectFromABlankLine(unittest.TestCase):
             self.assertEqual(reader.text[selection[0]:selection[1]], expected, want)
 
 
+class EmptyNoteSelection(unittest.TestCase):
+    """In an empty note, "Select all" said "This field is empty". A note is a note."""
+
+    def test_an_empty_note_says_the_note_is_empty(self):
+        from test_text_navigation import ScreenTests
+        case = ScreenTests('test_the_arrows_read_a_note_when_nothing_is_being_typed')
+        case.setUp(); self.addCleanup(case.doCleanups)
+        for said in ('select all', 'Select word.', 'what is selected'):
+            app.handle(said, 'note')
+            self.assertEqual(case.last(), 'The note is empty. There is no text to select.', said)
+        self.assertEqual(list(app.note_buffer), [])
+
+
 if __name__ == '__main__':
     unittest.main()

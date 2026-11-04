@@ -35681,7 +35681,7 @@
 },
 "note | read selection": {
 "said": [
-"This field is empty. There is no text to select."
+"The note is empty. There is no text to select."
 ],
 "screen_after": "note"
 },
@@ -36081,7 +36081,7 @@
 },
 "note | select first paragraph": {
 "said": [
-"This field is empty. There is no text to select."
+"The note is empty. There is no text to select."
 ],
 "screen_after": "note"
 },
@@ -36937,7 +36937,7 @@
 },
 "note | what is selected": {
 "said": [
-"This field is empty. There is no text to select."
+"The note is empty. There is no text to select."
 ],
 "screen_after": "note"
 },

@@ -4991,6 +4991,8 @@ def _handle(text, mode, typed=False):
             speak(editor_process(document,text))
             return mode
         if mode == 'note':
+            if not ' '.join(note_buffer).strip():
+                speak('The note is empty. There is no text to select.');return mode
             speak(note_selection.select(' '.join(note_buffer), text)[0])
             if note_selection.edited_text is not None: note_buffer[:] = [note_selection.edited_text]
             return mode
