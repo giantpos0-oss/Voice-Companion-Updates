@@ -331,16 +331,23 @@ class TaskNavigation:
         from document_reader import open_document
         path = Path(path)
         self.picker = None
+        def failed(words):
+            # One message: the reason, then where you are (a second message would stop the first).
+            files = getattr(self, 'reader_files', None)
+            if back == 'reader_picker' and files is not None:
+                # Picked from Open a document: stay on that file in the list, as a damaged PDF does.
+                m.FILE_MANAGER = files; self.picker = 'reader'
+                m.speak(words.rstrip('. ')+'. '+files.say_current()); return 'files'
+            return self.enter('reader_menu', words.rstrip('. ')+'. Document reader menu')
         if not path.is_file():
-            # One message: the reason, then the menu (a second message would stop the first).
-            return self.enter('reader_menu', path.name+' is no longer there. It may have been moved or deleted. Document reader menu')
+            return failed(path.name+' is no longer there. It may have been moved or deleted.')
         try:
             m.FILE_READER = open_document(path)
         except (ValueError, OSError) as error:
-            return self.enter('reader_menu', str(error).rstrip('. ')+'. Document reader menu')
+            return failed(str(error))
         except Exception:
             # A damaged file (not a real zip, broken XML, a missing part) must never stop the app.
-            return self.enter('reader_menu', path.name+' could not be opened. It may be damaged. Document reader menu')
+            return failed(path.name+' could not be opened. It may be damaged.')
         self.remember_read(path); self.reader_return = back
         if m.PREFERENCES.get('reader_auto_read', True):
             m.speak('Opened '+path.name+'. '+m.FILE_READER.reading.read(True))

@@ -214,5 +214,28 @@ class FileManagerFocusAfterChanges(unittest.TestCase):
         self.assertTrue((self.root / 'list.txt').exists())
 
 
+class ReaderPickerFailure(DocumentFlowCase):
+    """Document reader, Open a document: a damaged Word file picked from the list said so and then
+    went to the Document reader menu, so you lost your place. A damaged PDF or text file already
+    stayed in the list. Both now stay on the file you picked."""
+
+    def test_a_damaged_word_file_keeps_you_in_the_file_list(self):
+        from file_manager import FileManager
+        from test_file_manager import FakeFiles, settle
+        (self.elsewhere / 'Broken.docx').write_bytes(b'not a zip file')
+        (self.elsewhere / 'Good.txt').write_text('Fine.')
+        nav = app.task_navigation()
+        app.FILE_MANAGER = FileManager(FakeFiles(self.elsewhere))
+        app.FILE_MANAGER.refresh(str(self.elsewhere)); settle(app.FILE_MANAGER)
+        nav.picker = 'reader'
+        self.assertEqual(nav.selected_file(self.elsewhere / 'Broken.docx'), 'files')
+        self.assertTrue(self.last().startswith('This file is damaged or empty'), self.last())
+        self.assertTrue(self.last().endswith('Broken.docx, file. 1 of 2.'), self.last())
+        self.assertEqual(nav.picker, 'reader')
+        # The next pick still opens in the Document reader, and Escape comes back to the list.
+        self.assertEqual(nav.selected_file(self.elsewhere / 'Good.txt'), 'file_reader')
+        self.assertEqual(nav.reader_return, 'reader_picker')
+
+
 if __name__ == '__main__':
     unittest.main()
