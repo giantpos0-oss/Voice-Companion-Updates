@@ -128,9 +128,10 @@ class MediaNavigation:
                 choice='yes' if key=='Home' else 'no'
                 if choice==self.confirm_choice:return 'Start of list.' if key=='Home' else 'End of list.'
                 self.confirm_choice=choice;return choice.capitalize()+'.'
-            if key=='Enter':return self.command(self.confirm_choice)
+            # Space answers like Enter, as in every other Yes or No question.
+            if key in ('Enter','Space'):return self.command(self.confirm_choice)
             if key=='Escape':return self.command('no')
-            return ''
+            return 'Yes or no?'
         if self.form:
             if key=='Escape':self.form=None;self.revision+=1;return 'Canceled. '+self.announce()
             if key in ('Tab','ShiftTab'):return self.select_field((self.field_index+(-1 if key=='ShiftTab' else 1))%(len(self.form['fields'])+2))

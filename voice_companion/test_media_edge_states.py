@@ -199,5 +199,26 @@ class MidnightTests(EdgeStateTestCase):
         self.assertIsNotNone(nav.form)
 
 
+
+class QuestionKeyTests(EdgeStateTestCase):
+    """In a Yes or No question on Radio or Podcasts, Space said nothing, while on every
+    other screen it answers like Enter. Other keys said nothing either."""
+
+    def setUp(self):
+        super().setUp()
+        self.say('Media', 'Radio', 'Search radio', 'WGN', 'Save preset', 'List presets')
+        self.assertTrue(self.key('Delete').startswith('Delete preset '))
+
+    def test_space_answers_like_enter(self):
+        self.assertEqual(self.key('Up'), 'Yes.')
+        self.assertTrue(self.key('Space').startswith('Deleted preset '))
+        self.assertEqual(self.hub.presets(), [])
+
+    def test_other_keys_ask_again(self):
+        self.assertEqual(self.key('F5'), 'Yes or no?')
+        self.assertEqual(self.key('Delete'), 'Yes or no?')
+        self.assertEqual(len(self.hub.presets()), 1)
+
+
 if __name__ == '__main__':
     unittest.main()
