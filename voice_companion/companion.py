@@ -748,7 +748,7 @@ def process_keyboard_batch(mode):
 
 SLEEP_RETURN_MODE = 'awake'
 MAIN_MENU_HELP = ('help me', 'what can i say', 'what can i do', 'what do i say', 'i need help', 'please help',
-                  'help me please', 'what are my choices', 'what are my options')
+                  'help me please', 'help please', 'what are my choices', 'what are my options')
 MAIN_MENU_FIRST = 'You are on the main menu. It is the first screen, so there is nothing to go back to. Say a choice, or say help.'
 MAIN_MENU_NOT_UNDERSTOOD = 'I did not understand that. You are on the main menu. Press F1 for help.'
 MAIN_MENU_PROMPT = 'Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open.'

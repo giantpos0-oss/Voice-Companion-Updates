@@ -120,5 +120,35 @@ class TranscriptHeldOpenTests(unittest.TestCase):
             self.assertIn('After the file was closed.', (Path(folder) / speech_transcript.NAME).read_text(encoding='utf-8'))
 
 
+class HelpToleratesSpeechTests(CompanionTestCase):
+    """Recognizers write "e-mail" and add commas. "Help with e-mail." said there was no help
+    topic for e-mail, and "Help, please." on the main menu was not understood."""
+
+    def test_help_with_e_mail_opens_the_email_topic(self):
+        for words in ('Help with e-mail.', 'Help with E-mail', 'help with the e-mail'):
+            with self.subTest(words=words):
+                self.said.clear()
+                self.assertEqual(companion.handle(words, 'awake'), 'help')
+                self.assertNotIn('did not find', self.said[-1])
+                self.assertIn('read and organize email', self.said[-1].casefold())
+                companion.handle('main menu', 'help')
+
+    def test_topic_names_with_punctuation_still_match(self):
+        from onboard_help import HelpSession
+        notes = self.folder / 'Voice Companion Release Notes.txt'
+        notes.write_text('New in this version\n\nFaster startup.', encoding='utf-8')
+        session = HelpSession(companion.GUIDE, release_notes_path=notes)
+        for name in ('sleep exit and computer power', 'sleep, exit, and computer power', 'whats new', "what's new"):
+            with self.subTest(name=name):
+                self.assertNotIn('did not find', session.topic(name))
+
+    def test_help_please_with_a_comma_opens_help(self):
+        for words in ('Help, please.', 'Help please'):
+            with self.subTest(words=words):
+                self.assertEqual(companion.handle(words, 'awake'), 'help')
+                self.assertIn('User guide', self.said[-1])
+                companion.handle('main menu', 'help')
+
+
 if __name__ == '__main__':
     unittest.main()
