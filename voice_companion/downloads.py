@@ -204,6 +204,16 @@ def file_name(path):
     return '' if name.endswith(':') else name
 
 
+def folder_words(path):
+    """A folder as it is spoken: its name, or "drive E" for the top of a drive (a USB stick)."""
+    name = getattr(path, 'name', '') or file_name(path)
+    if name:
+        return name
+    from pathlib import PureWindowsPath
+    drive = PureWindowsPath(str(path)).drive.rstrip(':')
+    return 'drive ' + drive if len(drive) == 1 else str(path)
+
+
 def address_name(url):
     """A stand-in name from a web address, used only until the browser names the file."""
     text = str(url or '')
@@ -601,7 +611,7 @@ class DownloadManager:
             try:
                 target = self.mover(source, chosen)
             except OSError:
-                self.say(self.display(record) + ' finished downloading. It could not be moved, so it is still in ' + source.parent.name + '.')
+                self.say(self.display(record) + ' finished downloading. It could not be moved, so it is still in ' + folder_words(source.parent) + '.')
                 return
             with self.lock:
                 record.path, record.name = str(target), Path(target).name
@@ -653,7 +663,7 @@ class DownloadManager:
         if record.state == 'failed':
             text += ' ' + REASONS.get(record.reason, REASONS['unknown'])
         if record.path:
-            text += ' Folder: ' + (Path(record.path).parent.name or str(Path(record.path).parent)) + '.'
+            text += ' Folder: ' + folder_words(Path(record.path).parent) + '.'
         if record.url:
             from urllib.parse import urlsplit
             host = urlsplit(record.url).hostname

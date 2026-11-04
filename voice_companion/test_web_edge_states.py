@@ -60,5 +60,24 @@ class DialogWithoutButtonsTests(unittest.TestCase):
             self.assertEqual(app.navigation_key('Escape', 'web'), 'web key Escape')
 
 
+class DownloadFolderNameTests(unittest.TestCase):
+    """A download folder at the top of a drive, such as a USB stick (E:\\), has no
+    folder name. The empty Downloads list said "Files you download are saved in . "."""
+
+    def test_a_drive_is_named_as_a_drive(self):
+        from downloads import folder_words
+        from pathlib import PureWindowsPath
+        self.assertEqual(folder_words(PureWindowsPath('E:\\')), 'drive E')
+        self.assertEqual(folder_words(PureWindowsPath('C:\\Users\\Will\\Downloads')), 'Downloads')
+
+    def test_the_empty_list_names_the_drive(self):
+        import download_screen
+        from pathlib import PureWindowsPath
+        model = Mock(items=[]); model.folder.return_value = PureWindowsPath('E:\\')
+        with patch.object(download_screen, 'manager', return_value=model):
+            self.assertEqual(download_screen.describe(Mock()),
+                             'No downloads yet. Files you download are saved in drive E. Escape goes back.')
+
+
 if __name__ == '__main__':
     unittest.main()
