@@ -627,8 +627,6 @@ class CompanionWindow:
                     request=window_request(key,event.char,event.state,self.context)
                     if request=='':return 'break'
                 if request:pass
-                elif mode=='regular_browser' and not control and not typed.get() and key in ('Up','Down','Home','End','Return','space','Escape'):
-                    request='Enter' if key=='Return' else 'Space' if key=='space' else key
                 elif mode=='browser_menu' and not self.command_entry_active and not self.context.get('browser_name_input') and not control and not alt_held(event.state) and event.char and event.char.isalnum():request='Letter:'+event.char
                 elif mode=='note' and control and not shift and not alt_held(event.state) and key.lower()=='o':request='Ctrl+O'
                 elif mode=='web' and not control and alt_held(event.state) and key in ('Left','Right'):request='Web:Back' if key=='Left' else 'Web:Forward'

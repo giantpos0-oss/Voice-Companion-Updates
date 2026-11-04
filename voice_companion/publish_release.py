@@ -9,12 +9,22 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
-from app_updates import version_key
-from update_publisher import release_manifest
+from app_updates import MAX_INSTALLER, https_url, version_key
 from guide_files import GUIDE_NAMES, guide_sources, published_name
 from release_documents import load_notes, validate, STEM
 
 ROOT = Path(__file__).parent
+
+
+def release_manifest(setup, version, installer_url):
+    version_key(version); https_url(installer_url)
+    setup = Path(setup)
+    if not setup.is_file() or setup.suffix.lower() != '.exe': raise ValueError('Choose the finished Setup EXE, not a source ZIP.')
+    if not 1 <= setup.stat().st_size <= MAX_INSTALLER: raise ValueError('The installer must be smaller than 2 GiB for GitHub Releases.')
+    with setup.open('rb') as source:
+        if source.read(2) != b'MZ': raise ValueError('Choose a Windows Setup EXE.')
+        source.seek(0); digest = hashlib.file_digest(source,'sha256').hexdigest()
+    return {'schema':1,'version':version,'installer_url':installer_url,'sha256':digest,'size':setup.stat().st_size}
 
 
 LOG_PATH = None

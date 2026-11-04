@@ -51,21 +51,6 @@ class DocumentReader:
             return 'The link target is not in this document.'
         return 'Link: '+target+'. Say open website followed by the address to browse.'
 
-def xml_text(data):
-    root=ET.fromstring(data)
-    paragraphs=[]
-    for element in root.iter():
-        tag=element.tag.rsplit('}',1)[-1]
-        if tag in ('p','h'):
-            words=[]
-            for node in element.iter():
-                name=node.tag.rsplit('}',1)[-1]
-                if name in ('tab',):words.append('\t')
-                elif name in ('br','line-break'):words.append('\n')
-                elif name=='t' and node.text:words.append(node.text)
-            paragraphs.append(''.join(words) if words else ''.join(element.itertext()))
-    return '\n'.join(paragraphs)
-
 def decode(data):
     if data.startswith((b'\xff\xfe',b'\xfe\xff')):return data.decode('utf-16')
     try:return data.decode('utf-8-sig')

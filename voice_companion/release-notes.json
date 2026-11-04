@@ -1,18 +1,18 @@
 {
-  "version": "0.2.200-test",
+  "version": "0.2.201-test",
   "status": "Testing build",
   "date": "November 3, 2026",
-  "baseline": "0.2.199-test",
-  "scope": "Updates come from a new place.",
+  "baseline": "0.2.200-test",
+  "scope": "A cleanup after a full check of the app's code and safety.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "Updates from a new place",
+          "title": "Speech stays on your PC",
           "details": [
-            "Companion now gets its updates from a place that holds only the installers.",
-            "If that place cannot be reached, Companion uses the old place. You do not need to do anything."
+            "The Azure checkbox is gone from Input options. It did nothing unless a helper set up a hidden key.",
+            "Speech recognition now always runs on your PC. Your voice is never sent online for recognition."
           ]
         }
       ]
@@ -21,9 +21,16 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "The newest update always wins",
+          "title": "Less old code",
           "details": [
-            "Companion checks both places and offers the newest update it finds."
+            "Old parts that no one could reach were taken out. This makes the app smaller and easier to keep safe.",
+            "All your keys and commands work as before, old shortcut keys too."
+          ]
+        },
+        {
+          "title": "Updates are made in one place",
+          "details": [
+            "Updates are now shared only by the checked build on GitHub. The old way to share them by hand is gone."
           ]
         }
       ]

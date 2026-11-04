@@ -68,10 +68,6 @@ def looks_like_address(text):
 def contains_address(text):
     return bool(re.search(r'@|https?://|www\.|\b[A-Za-z0-9-]+\.(?:[A-Za-z]{2,})(?:\b|/)|\b(?:at|dot)\b.+\b(?:dot|com|org|net|co|edu)\b',str(text),re.I))
 
-def private_address_field(item):
-    return item.get('type') in ('password','email','url') or bool(re.search(r'\b(?:password|email|e-mail|web(?:site)? address|url)\b',str(item.get('label','')),re.I))
-
-
 def spoken_address_request(spoken):
     """The address in something said in the address box, or None for a search.
 

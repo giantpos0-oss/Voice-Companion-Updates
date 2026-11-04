@@ -202,12 +202,6 @@ def search_listing_filters(query, sp=''):
     return page(body, title=query + ' - YouTube', script=filter_data(query, sp) + '<script>window.searchFilter=' + repr(sp) + ';</script>')
 
 
-def no_results(query):
-    return page('<ytd-search><div id="contents"><ytd-background-promo-renderer><div id="title">No results found</div>'
-                '<div id="body">Try different keywords or remove search filters</div></ytd-background-promo-renderer></div></ytd-search>',
-                title=query + ' - YouTube')
-
-
 def history_signed_out():
     return page('<ytd-browse page-subtype="history"><ytd-background-promo-renderer><div id="title">Keep track of what you watch</div>'
                 '<div id="body">Watch history isn\'t viewable when signed out.</div>'

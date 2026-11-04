@@ -21,23 +21,18 @@ class DefaultBrowserTests(unittest.TestCase):
             self.assertEqual(session.browser, 'chrome')
             self.assertEqual(session.take_browser_notice(), '')
 
-    def test_a_removed_browser_becomes_embedded_edge_and_is_said_once(self):
-        for old, name in (('firefox', 'Firefox'), ('edge', 'Edge'), ('brave', 'Brave'), ('Firefox\n', 'Firefox')):
+    def test_an_old_saved_browser_quietly_means_embedded_edge(self):
+        # Will, November 3, 2026: the one-time notice for Edge, Brave or Firefox saved by an old
+        # version was removed. Such a choice simply means the default, and nothing breaks.
+        for old in ('firefox', 'edge', 'brave', 'Firefox\n', 'something else'):
             with self.subTest(old=old), tempfile.TemporaryDirectory() as folder:
                 (Path(folder) / 'browser-choice.txt').write_text(old, encoding='utf-8')
-                # Options shows embedded Edge without using up the notice.
                 self.assertEqual(web_assistant.browser_setting(folder), 'embedded Edge')
                 session = WebSession(Path(folder), FakeBackend())
                 self.assertEqual(session.browser, 'webview2')
-                self.assertEqual((Path(folder) / 'browser-choice.txt').read_text(encoding='utf-8'), 'webview2')
-                said = session._refresh(read=False)
-                self.assertTrue(said.startswith('Your guided browser was ' + name + '. Guided websites now use embedded Edge or Chrome'), said)
-                self.assertIn('say use Chrome', said)
-                self.assertNotIn('Your guided browser', session._refresh(read=False))
-                # A new session (the next start of Companion) says nothing more.
-                self.assertEqual(WebSession(Path(folder), FakeBackend()).take_browser_notice(), '')
+                self.assertEqual(session.take_browser_notice(), '')
 
-    def test_the_web_browser_menu_gives_the_notice(self):
+    def test_the_web_browser_menu_opens_as_usual(self):
         import companion
         with tempfile.TemporaryDirectory() as folder:
             (Path(folder) / 'browser-choice.txt').write_text('brave', encoding='utf-8')
@@ -46,7 +41,7 @@ class DefaultBrowserTests(unittest.TestCase):
             with mock.patch.object(companion, 'web_session', session), mock.patch.object(companion, 'speak', said.append), \
                     mock.patch('browser_cdp_relay.prepare'), mock.patch('browser_cdp_relay.current', return_value=None):
                 self.assertEqual(companion.open_browser_menu(), 'browser_menu')
-            self.assertTrue(said[-1].startswith('Your guided browser was Brave.'), said)
+            self.assertNotIn('Brave', said[-1])
             self.assertIn('Web browser menu', said[-1])
 
 

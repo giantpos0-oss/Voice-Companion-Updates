@@ -8,7 +8,6 @@ from document_editor import VoiceDocument
 from email_draft import VoiceEmail
 from web_assistant import _voice_value
 from settings_model import SettingsSession, DEFAULTS, fields
-from privacy_controls import cloud_recognition_allowed
 
 
 class AIDictationTests(unittest.TestCase):
@@ -67,8 +66,6 @@ class AIDictationTests(unittest.TestCase):
         key,value=session.voice_setting('dictation type ai based')
         session.set(key,value);self.assertEqual(session.values[key],'ai-based')
         session.cancel();self.assertEqual(session.values[key],'old school')
-        self.assertFalse(cloud_recognition_allowed('document',{'dictation_type':'ai-based','cloud_consent':True}))
-        self.assertTrue(cloud_recognition_allowed('document',{'dictation_type':'old school','cloud_consent':True}))
 
     def test_real_dispatch_scopes_note_cleanup_without_changing_commands(self):
         import companion

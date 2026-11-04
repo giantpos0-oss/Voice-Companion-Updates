@@ -247,7 +247,7 @@ def navigation_interrupted(error):
 DEFAULT_BROWSER = 'webview2'
 # Guided browsing offers two browsers: embedded Edge (WebView2, the default,
 # owned by Companion) and Chrome. Edge, Brave and Firefox were removed as
-# choices; a saved choice of one of them becomes embedded Edge, said once.
+# choices; asking for one says so (retired_browser_notice).
 GUIDED_BROWSERS = ('webview2', 'chrome')
 RETIRED_BROWSERS = ('edge', 'brave', 'firefox')
 BROWSER_NAMES = {'webview2': 'embedded Edge', 'chrome': 'Chrome', 'edge': 'Edge', 'brave': 'Brave', 'firefox': 'Firefox'}
@@ -275,8 +275,7 @@ def browser_key(value):
 
 
 def browser_setting(folder):
-    """The Guided browser option as Options shows it. Nothing is rewritten here,
-    so the Web browser screen still says once that an old choice changed."""
+    """The Guided browser option as Options shows it."""
     try:
         choice = (Path(folder) / 'browser-choice.txt').read_text(encoding='utf-8').strip().lower()
     except OSError:
@@ -293,10 +292,9 @@ def guided_backend(folder, browser):
 
 
 def saved_browser_choice(folder):
-    """The saved guided browser, and a notice to say once when an old choice was replaced.
+    """The saved guided browser (webview2 or chrome), and a notice to say once (always '' now).
 
-    A saved choice of Edge, Brave or Firefox becomes embedded Edge. The file is
-    rewritten, so the notice is given only once."""
+    Anything else saved, such as a choice from an old version, means the default, embedded Edge."""
     path = Path(folder) / 'browser-choice.txt'
     try:
         choice = path.read_text(encoding='utf-8').strip().lower()
@@ -304,13 +302,6 @@ def saved_browser_choice(folder):
         return None, ''
     if choice in GUIDED_BROWSERS:
         return choice, ''
-    if choice in RETIRED_BROWSERS:
-        try:
-            write_text_atomic(path, DEFAULT_BROWSER)
-        except OSError:
-            pass
-        return DEFAULT_BROWSER, ('Your guided browser was ' + browser_name(choice) + '. Guided websites now use embedded Edge or Chrome, '
-                                 'so Companion now uses embedded Edge. To use Chrome instead, say use Chrome.')
     return None, ''
 
 
@@ -2700,12 +2691,6 @@ class WebSession:
         self.list_focus=None
         return self.search(self.last_search,provider=engine)
 
-    def _search_readable(self):
-        if not self.snapshot: return False
-        links = [c for c in self.snapshot.get('controls', []) if c.get('role') == 'link'
-                 and self.address_allowed(c.get('href',''))]
-        return bool(links and _plain(self.snapshot.get('text')))
-
     def read(self):
         if not self.snapshot: return 'Open a website first.'
         if not str(self.snapshot.get('text', '')).strip():
@@ -2852,10 +2837,6 @@ class WebSession:
         self.list_focus = 'links'
         self.pending = None
         return (_label(links[index])+'.')
-
-    def _suggest_link(self, item):
-        host = urlsplit(item.get('href', '')).hostname or 'unknown site'
-        return 'Open link ' + _label(item) + ' on ' + host + '? Say yes, okay, confirm that, or no.'
 
     def _suggest(self):
         if self.suggestion_index is None or self.suggestion_index >= len(self.choices):

@@ -21,13 +21,13 @@ py -3.12 -c "import sys; assert sys.version_info[:2] == (3,12)" >nul 2>&1
 if errorlevel 1 goto python_failed
 :build
 echo.
-echo Checking installer builder. GitHub sign-in is prepared automatically before the long build.
+echo Checking installer builder. This build is for testing. Updates are published by the GitHub build.
 echo Building the offline Parakeet version and checking the packaged program.
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0build-windows.ps1" -Parakeet
 if errorlevel 1 goto build_failed
 if not exist "%~dp0VoiceCompanion-Setup.exe" goto build_failed
 echo.
-echo BUILD, INSTALL, AND PUBLISH PASSED. Open Voice Companion from the desktop icon or Start menu.
+echo BUILD AND INSTALL PASSED. Open Voice Companion from the desktop icon or Start menu.
 echo To install on another computer, copy VoiceCompanion-Setup.exe from this folder.
 pause
 exit /b 0
@@ -42,8 +42,8 @@ goto failed
 echo Python 3.12 could not be installed or found. Share this window with the trainer.
 goto failed
 :build_failed
-echo The build, installation checks, or publishing did not finish. Read the error above.
-echo Run this installer builder again after resolving the error. Sign-in and publishing are included.
+echo The build or installation checks did not finish. Read the error above.
+echo Run this installer builder again after resolving the error.
 echo Share the error shown above with the trainer.
 if exist "%~dp0VoiceCompanion-Build-Log.txt" (
   echo Opening the saved build log in Notepad.
