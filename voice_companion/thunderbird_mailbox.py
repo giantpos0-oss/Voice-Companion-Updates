@@ -4,6 +4,7 @@ ThunderbirdMailbox has the same methods as the Yahoo mailbox,
 so every email screen and voice command works unchanged. It talks
 to the Voice Companion Mail Connection add-on through thunderbird_bridge.
 """
+import re
 from email.utils import getaddresses
 
 from mailbox_access import MailboxError, html_text, message_date, reply_addresses
@@ -353,6 +354,9 @@ class ThunderbirdMailbox:
         def people(items):
             found = []
             for item in items or []:
+                if re.fullmatch(r'[^:<>@]*:\s*;', ' '.join(str(item or '').split())):
+                    # An empty group, such as "undisclosed-recipients:;": no address, as Yahoo says it.
+                    continue
                 name, address = person(item)
                 if name or address or str(item or '').strip():
                     found.append((name or ('' if address else ' '.join(str(item).split())), address))

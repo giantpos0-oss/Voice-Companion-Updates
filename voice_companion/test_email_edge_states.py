@@ -132,6 +132,19 @@ class DamagedOptionsTests(YahooSession):
             self.assertIn('1. noon', self.session.process('list links'), damaged)
 
 
+class UndisclosedRecipientsTests(unittest.TestCase):
+    # Newsletters sent by blind copy say "To: undisclosed-recipients:;". Yahoo said
+    # "No To address." Thunderbird read the words with the colon and semicolon.
+    def test_thunderbird_empty_group_is_no_to_address(self):
+        from thunderbird_mailbox import ThunderbirdMailbox
+        box = ThunderbirdMailbox(ADDRESS, {'account_id': 'account1'})
+        info = {'recipients': ['undisclosed-recipients:;'], 'ccList': ['Sam Lee', 'Pat <pat@example.com>']}
+        with patch('thunderbird_mailbox.call', return_value=info):
+            people = box.message_headers('5')
+        self.assertEqual(people['to'], [])
+        self.assertEqual(people['cc'], [('Sam Lee', ''), ('Pat', 'pat@example.com')])
+
+
 class EmptySenderTests(YahooSession):
     # Some bounce and system messages say "From: <>": no name and no address.
     # It was spoken as the symbols "<>" in the list and in "Who is it from?".
