@@ -118,6 +118,8 @@ class TranscriptHeldOpenTests(unittest.TestCase):
             transcript.said('After the file was closed.')
             self.assertTrue((Path(folder) / speech_transcript.OLD_NAME).exists())
             self.assertIn('After the file was closed.', (Path(folder) / speech_transcript.NAME).read_text(encoding='utf-8'))
+            # Close the transcript before the folder is removed: Windows cannot delete an open file.
+            transcript.stop()
 
 
 class HelpToleratesSpeechTests(CompanionTestCase):
