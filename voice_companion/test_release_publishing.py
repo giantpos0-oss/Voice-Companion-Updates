@@ -195,6 +195,23 @@ class PublishEverywhereTests(unittest.TestCase):
         environ={'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'owner/source','GH_TOKEN':'workflow','RELEASES_TOKEN':'releases'}
         self.assertEqual(self.run_all(environ,fail=('owner/source',)),0)
 
+    def test_a_skipped_repository_names_itself_in_the_run_annotations(self):
+        # Will, November 3, 2026: 0.2.201 skipped the releases repository and said so only deep in
+        # the log. Every skip or failure must show as a GitHub annotation.
+        import contextlib,io
+        out=io.StringIO()
+        environ={'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'owner/source','GH_TOKEN':'workflow'}
+        with contextlib.redirect_stdout(out):self.assertEqual(self.run_all(environ),0)
+        self.assertIn('::warning title=Not published to owner/releases::',out.getvalue())
+        self.assertIn('RELEASES_TOKEN',out.getvalue())
+        out=io.StringIO()
+        environ['RELEASES_TOKEN']='releases'
+        with contextlib.redirect_stdout(out):self.run_all(environ,fail=('owner/releases',))
+        self.assertIn('::warning title=Not published to owner/releases::Publishing requires a public repository.',out.getvalue())
+        out=io.StringIO()
+        with contextlib.redirect_stdout(out):self.run_all(environ)
+        self.assertIn('::notice title=Published to owner/releases::',out.getvalue())
+
     def test_nothing_published_fails(self):
         environ={'GITHUB_ACTIONS':'true','GITHUB_REPOSITORY':'owner/source','GH_TOKEN':'workflow'}
         self.assertEqual(self.run_all(environ,fail=('owner/source',)),1)

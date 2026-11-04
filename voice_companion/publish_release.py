@@ -188,6 +188,14 @@ def token_for(repo, environ=os.environ):
     return env
 
 
+def annotate(environ, level, title, message):
+    """On GitHub, show the result for each repository in the run's annotations, which can be
+    read without the full log (CLAUDE.md: every failure must name itself)."""
+    if environ.get('GITHUB_ACTIONS') == 'true':
+        clean = str(message).replace('%', '%25').replace('\r', '').replace('\n', '%0A')
+        print('::' + level + ' title=' + title + '::' + clean, flush=True)
+
+
 def publish_everywhere(setup, gh='gh', root=ROOT, environ=os.environ):
     """Publish to every feed's repository. Succeeds when at least one has the verified release;
     each repository that could not be published to says why."""
@@ -200,20 +208,25 @@ def publish_everywhere(setup, gh='gh', root=ROOT, environ=os.environ):
     for repo in repos:
         env = token_for(repo, environ)
         if env is None:
-            progress('NOT PUBLISHED TO '+repo+': the RELEASES_TOKEN secret is missing. Installed copies use the other feed.')
+            reason = 'the RELEASES_TOKEN secret is missing. Installed copies use the other feed.'
+            progress('NOT PUBLISHED TO '+repo+': '+reason)
+            annotate(environ, 'warning', 'Not published to '+repo, reason)
             continue
         GH_ENV = env
         try:
-            progress('PUBLISHED AND VERIFIED: '+publish(setup, gh, root, repo=repo))
+            url = publish(setup, gh, root, repo=repo)
+            progress('PUBLISHED AND VERIFIED: '+url)
+            annotate(environ, 'notice', 'Published to '+repo, url)
             published.append(repo)
         except (OSError, ValueError, KeyError, TypeError, RuntimeError) as exc:
             progress('NOT PUBLISHED TO '+repo+': '+str(exc))
+            annotate(environ, 'warning', 'Not published to '+repo, str(exc))
         finally:
             GH_ENV = None
     if published:
         return 0
     progress('BUILD PASSED, PUBLISHING FAILED: no feed could be published.')
-    progress('The local installer remains available. Run the installer builder again to retry; it includes sign-in and publishing.')
+    progress('Nothing was shared. Run the GitHub build again to retry.')
     return 1
 
 if __name__ == '__main__': raise SystemExit(main())
