@@ -1402,7 +1402,7 @@
 },
 "awake | delete preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -2298,13 +2298,13 @@
 },
 "awake | list podcast": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
 "awake | list podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -2322,7 +2322,7 @@
 },
 "awake | list recordings": {
 "said": [
-"No radio recordings yet."
+"No radio recordings yet. Choose a station and say record radio."
 ],
 "screen_after": "media"
 },
@@ -2346,7 +2346,7 @@
 },
 "awake | list subscriptions": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -2543,7 +2543,7 @@
 },
 "awake | my podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -3025,7 +3025,7 @@
 },
 "awake | open preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -3212,7 +3212,7 @@
 },
 "awake | play preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -3272,7 +3272,7 @@
 },
 "awake | podcast list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -3284,7 +3284,7 @@
 },
 "awake | podcasts list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -3619,7 +3619,7 @@
 },
 "awake | remove preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -4353,13 +4353,13 @@
 },
 "awake | subscription list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
 "awake | subscriptions list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -7225,7 +7225,7 @@
 },
 "document | delete preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media",
 "text": [
@@ -8521,7 +8521,7 @@
 },
 "document | list podcast": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -8530,7 +8530,7 @@
 },
 "document | list podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -8593,7 +8593,7 @@
 },
 "document | list subscriptions": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -8881,7 +8881,7 @@
 },
 "document | my podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -9593,7 +9593,7 @@
 },
 "document | open preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media",
 "text": [
@@ -9859,7 +9859,7 @@
 },
 "document | play preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media",
 "text": [
@@ -9949,7 +9949,7 @@
 },
 "document | podcast list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -9967,7 +9967,7 @@
 },
 "document | podcasts list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -10467,7 +10467,7 @@
 },
 "document | remove preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media",
 "text": [
@@ -11543,7 +11543,7 @@
 },
 "document | subscription list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -11552,7 +11552,7 @@
 },
 "document | subscriptions list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -14857,7 +14857,7 @@
 },
 "email_draft | delete preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media",
 "text": [
@@ -16211,7 +16211,7 @@
 },
 "email_draft | list podcast": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -16220,7 +16220,7 @@
 },
 "email_draft | list podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -16283,7 +16283,7 @@
 },
 "email_draft | list subscriptions": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -16572,7 +16572,7 @@
 },
 "email_draft | my podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -17294,7 +17294,7 @@
 },
 "email_draft | open preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media",
 "text": [
@@ -17560,7 +17560,7 @@
 },
 "email_draft | play preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media",
 "text": [
@@ -17650,7 +17650,7 @@
 },
 "email_draft | podcast list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -17668,7 +17668,7 @@
 },
 "email_draft | podcasts list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -18168,7 +18168,7 @@
 },
 "email_draft | remove preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media",
 "text": [
@@ -19249,7 +19249,7 @@
 },
 "email_draft | subscription list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -19258,7 +19258,7 @@
 },
 "email_draft | subscriptions list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media",
 "text": [
@@ -27320,7 +27320,7 @@
 },
 "mailbox | delete preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -28517,13 +28517,13 @@
 },
 "mailbox | list podcast": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
 "mailbox | list podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -28577,7 +28577,7 @@
 },
 "mailbox | list subscriptions": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -28829,7 +28829,7 @@
 },
 "mailbox | my podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -29485,7 +29485,7 @@
 },
 "mailbox | open preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -29721,7 +29721,7 @@
 },
 "mailbox | play preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -29805,7 +29805,7 @@
 },
 "mailbox | podcast list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -29820,7 +29820,7 @@
 },
 "mailbox | podcasts list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -30263,7 +30263,7 @@
 },
 "mailbox | remove preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -31269,13 +31269,13 @@
 },
 "mailbox | subscription list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
 "mailbox | subscriptions list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -33610,7 +33610,7 @@
 },
 "note | delete preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -34476,13 +34476,13 @@
 },
 "note | list podcast": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
 "note | list podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -34524,7 +34524,7 @@
 },
 "note | list subscriptions": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -34716,7 +34716,7 @@
 },
 "note | my podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -35190,7 +35190,7 @@
 },
 "note | open preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -35369,7 +35369,7 @@
 },
 "note | play preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -35429,7 +35429,7 @@
 },
 "note | podcast list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -35441,7 +35441,7 @@
 },
 "note | podcasts list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -35776,7 +35776,7 @@
 },
 "note | remove preset": {
 "said": [
-"I could not find that preset. Say list presets."
+"No radio presets yet. Select a station and say save preset."
 ],
 "screen_after": "media"
 },
@@ -36493,13 +36493,13 @@
 },
 "note | subscription list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
 "note | subscriptions list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -40641,13 +40641,13 @@
 },
 "web | list podcast": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
 "web | list podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -40713,7 +40713,7 @@
 },
 "web | list subscriptions": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -40992,7 +40992,7 @@
 },
 "web | my podcasts": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -42057,7 +42057,7 @@
 },
 "web | podcast list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -42073,7 +42073,7 @@
 },
 "web | podcasts list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
@@ -43656,13 +43656,13 @@
 },
 "web | subscription list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },
 "web | subscriptions list": {
 "said": [
-"No podcast subscriptions yet."
+"No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe."
 ],
 "screen_after": "media"
 },

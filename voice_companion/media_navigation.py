@@ -214,7 +214,8 @@ class MediaNavigation:
             return 'Nothing is playing. Choose '+('a station' if self.section=='radio' else 'an episode')+' first.'
         if self.view!='controls':self.controls_return=back or (self.view,self.item_index)
         self.form=None;self.pending=None;self.view='controls';self.focus='items';self.item_index=0;self.revision+=1
-        back_to={'episodes':'the episodes','downloads':'the downloads','stations':'the stations','presets':'the presets','shows':'the podcasts'}.get((self.controls_return or ('',))[0],'the menu')
+        back_to={'episodes':'the episodes','downloads':'the downloads','stations':'the stations','presets':'the presets','shows':'the podcasts',
+                 'recordings':'the recordings','station_choices':'the station choices','scheduled':'the scheduled recordings','categories':'the categories'}.get((self.controls_return or ('',))[0],'the menu')
         return lead+'Player controls. '+self.announce()+' Escape goes back to '+back_to+'.'
     def leave_controls(self):
         view,index=getattr(self,'controls_return',None) or ('',0)
@@ -272,6 +273,7 @@ class MediaNavigation:
                     match=re.fullmatch(r'(\d{1,2})(?::(\d\d))?\s*(am|pm)',v[1],re.I)
                     if not match or not 1<=int(match[1])<=12 or int(match[2] or 0)>59:return 'Enter a time such as 8 PM or 8:30 AM.'
                     when=datetime.combine(h.clock().date()+timedelta(days=v[0]=='tomorrow'),datetime.min.time()).replace(hour=int(match[1])%12+(12 if match[3].lower()=='pm' else 0),minute=int(match[2] or 0))
+                    if when<=h.clock() and v[0]=='today' and when.hour==0:return '12 AM today has passed. For midnight tonight, choose tomorrow and 12 AM.'
                     if when<=h.clock():return 'Choose a future time.'
                     result=h.schedule(station,when,int(v[2]),v[3]=='yes')
             else:

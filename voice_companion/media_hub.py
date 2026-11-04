@@ -105,6 +105,16 @@ def _episode_count(value):
     return number if 1<=number<=10000 else None
 
 
+def _download_limit(value):
+    """A saved automatic download setting: 'manual', 'all' or a number. A damaged one is manual."""
+    if value in ('manual', 'all'): return value
+    if isinstance(value, int) and not isinstance(value, bool) and 1 <= value <= 10000: return value
+    return 'manual'
+
+
+NO_PRESETS = 'No radio presets yet. Select a station and say save preset.'
+
+
 def _radio_number(value):
     """A station result number, including common spoken ordinals."""
     value = value.casefold().strip()
@@ -400,7 +410,7 @@ class MediaHub:
         if cmd in ('list presets', 'radio presets', 'my presets', 'preset list',
                    'list favorites', 'favorites list', 'favorite list', 'list radio favorites'):
             saved = self.presets()
-            if not saved: return 'No radio presets yet. Select a station and say save preset.'
+            if not saved: return NO_PRESETS
             self.preset_index = 0
             self.preset_browsing = True
             return (name_first('Preset 1 of ' + str(len(saved)) + ': ' + saved[0]['name'] +
@@ -438,6 +448,7 @@ class MediaHub:
             return 'Saved preset ' + name + '. Say play preset ' + name + ' later.'
         match = re.fullmatch(r'(?:play|open) preset(?: (.+))?', cmd)
         if match:
+            if not self.presets(): return NO_PRESETS
             saved, index = self.selected_preset(match[1] or '')
             if index is None: return 'I could not find that preset. Say list presets.'
             station = saved[index]
@@ -451,6 +462,7 @@ class MediaHub:
             return 'Playing preset ' + station['name'] + '. Say pause or stop.'
         match = re.fullmatch(r'(?:delete|remove) preset(?: (.+))?', cmd)
         if match:
+            if not self.presets(): return NO_PRESETS
             saved, index = self.selected_preset(match[1] or '')
             if index is None: return 'I could not find that preset. Say list presets.'
             self.preset_index = index
@@ -599,12 +611,22 @@ class MediaHub:
         return (online_error + 'Found '+_counted(len(self.stations),'station')+'. Station 1: '+self.stations[0]['name']+'. '
                 'Say next or previous to browse, that one to play, or play followed by a number.')
 
+    def station_number_problem(self, number):
+        """What to say when a station number is not in the results, else None."""
+        if not self.stations: return 'Search for stations first.'
+        if 1 <= int(number) <= len(self.stations): return None
+        if len(self.stations) == 1: return 'There is only 1 station in these results. Say play station 1.'
+        return ('There are only ' + str(len(self.stations)) + ' stations in these results. '
+                'Say a number from 1 to ' + str(len(self.stations)) + '.')
+
     def station(self, number):
-        i = int(number)-1
-        if not 0<=i<len(self.stations): raise ValueError('That station number is unavailable. Search radio again.')
-        return self.stations[i]
+        problem = self.station_number_problem(number)
+        if problem: raise ValueError(problem)
+        return self.stations[int(number)-1]
 
     def play_station(self, number):
+        problem = self.station_number_problem(number)
+        if problem: return problem
         station = self.station(number)
         self.station_choices = []
         self.station_index = int(number)-1
@@ -1056,8 +1078,9 @@ class MediaHub:
         self.browsing_episodes=False
         self.episode_index=None
         return ('Found '+_counted(len(subs),'subscription')+'. Subscription 1: '+subs[0]['name']+
-                ', automatic downloads '+str(subs[0].get('download_limit','manual'))+
-                '. Say next or previous, that one to open episodes, or subscribe.' if subs else 'No podcast subscriptions yet.')
+                ', automatic downloads '+str(_download_limit(subs[0].get('download_limit')))+
+                '. Say next or previous, that one to open episodes, or subscribe.' if subs else
+                'No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe.')
 
     def set_auto_download(self, limit, number=None):
         policy=_episode_count(limit)
@@ -1112,7 +1135,7 @@ class MediaHub:
                 new=sum(e['url'] not in old for e in episodes) if old else 0
                 entry['episodes']=episodes
                 entry['last_checked']=time.time()
-                policy=entry.get('download_limit','manual')
+                policy=_download_limit(entry.get('download_limit'))
                 self._save('podcast-subscriptions.json',current)
             if new: self.notify(_counted(new,'new episode')+' in '+show['name']+'.')
             if policy!='manual': pending.append((show,episodes,policy))
@@ -1132,7 +1155,7 @@ class MediaHub:
             url=episode['url']
             with self._lock:
                 current=self._load('podcast-subscriptions.json',[])
-                selected=next((s.get('download_limit','manual') for s in (current if isinstance(current,list) else [])
+                selected=next((_download_limit(s.get('download_limit')) for s in (current if isinstance(current,list) else [])
                                if isinstance(s,dict) and s.get('feed')==feed),'manual')
                 if selected!=policy: return
                 manifest=self._load_as('podcast-auto-files.json',{})
@@ -1229,6 +1252,7 @@ class MediaHub:
         except (OSError,ValueError,TypeError,AttributeError,TimeoutError): return []
 
     def chapter(self, direction):
+        if not getattr(self.player,'kind',None): return 'No audio is playing. Choose an episode first.'
         if not self.chapters: return 'This episode does not provide supported chapter markers.'
         try:
             current=self.player.control('position')
@@ -1269,6 +1293,7 @@ class MediaHub:
         if match:
             amount=_interval_seconds(match[2])
             if amount is None: return 'Say a time such as 15 seconds, 30 minutes, or one hour.'
+            if not getattr(self.player,'kind',None): return 'No audio is playing. Choose a station or episode first.'
             direction=-amount if match[1] in ('rewind','back','go back') else amount
             noun={'podcast':'episode','local':'track'}.get(getattr(self.player,'kind',None),'audio')
             try: message=seek_message(self.player,direction,noun)
@@ -1404,7 +1429,9 @@ class MediaHub:
     def recordings(self):
         """Saved radio recordings in the one order used for listing, keyboard browsing, and playing."""
         folder=self._path('Radio Recordings')
-        return sorted((p for p in folder.iterdir() if p.is_file()),key=lambda p:p.name.casefold()) if folder.exists() else []
+        # Only sound files: Windows can add desktop.ini or Thumbs.db to a folder.
+        return sorted((p for p in folder.iterdir() if p.is_file() and p.suffix.lower() in AUDIO_EXTENSIONS),
+                      key=lambda p:p.name.casefold()) if folder.exists() else []
 
     def play_download(self, number):
         files=self.downloads()
@@ -1533,6 +1560,8 @@ class MediaHub:
                     self.browsing_episodes=False
                     return ('Podcast '+str(self.show_index+1)+': '+self.shows[self.show_index]['name']+
                             '. Say next or previous to browse podcasts.') if self.shows and self.show_index is not None else 'Search for podcasts first.'
+            if cmd in ('download this episode','download that one','download selected episode') and not self.browsing_episodes:
+                return 'Open a podcast and choose an episode first. Then say download this episode.'
             if cmd in ('search','search for','search podcast','search podcasts','find podcast','find podcasts'):
                 self.awaiting_podcast_search=True
                 return 'What podcast would you like to find? Say its name.'
@@ -1619,6 +1648,7 @@ class MediaHub:
             except (OSError,ValueError,TimeoutError): return 'IPRD refresh failed. The last saved catalog remains available; Radio Browser still searches live.'
         match=re.fullmatch(r'(?:record station (\d+)|record radio)(?: for (\d+) minutes?)?',cmd)
         if match:
+            if match[1] and self.station_number_problem(match[1]): return self.station_number_problem(match[1])
             station=self.station(match[1]) if match[1] else self.current_station
             if not station: return 'Play or select a station first.'
             return self.record_now(station,int(match[2] or 30))
@@ -1627,10 +1657,14 @@ class MediaHub:
         match=re.fullmatch(r'(?:schedule|record) station (\d+) (today|tomorrow) at (\d{1,2})(?::(\d\d))?\s*(am|pm) for (\d+) minutes?( every day)?',cmd)
         if match:
             number,day,hour,minute,period,duration,repeat=match.groups()
+            if self.station_number_problem(number): return self.station_number_problem(number)
             hour=int(hour)
             if not 1<=hour<=12 or int(minute or 0)>59: return 'Say a time such as 8 PM or 8:30 AM.'
             date=self.clock().date()+(timedelta(days=1) if day=='tomorrow' else timedelta())
             when=datetime.combine(date,datetime.min.time()).replace(hour=hour%12+(12 if period=='pm' else 0),minute=int(minute or 0))
+            if day=='today' and when<=self.clock() and when.hour==0:
+                # At night, "today at 12 AM" was this morning. Midnight tonight is tomorrow's 12 AM.
+                return '12 AM today has passed. For midnight tonight, say tomorrow at 12 AM.'
             return self.schedule(self.station(number),when,int(duration),bool(repeat))
         if cmd in ('list scheduled recordings','what recordings are scheduled'):
             jobs=self._load('radio-schedule.json',[])
@@ -1646,8 +1680,9 @@ class MediaHub:
                 name=self._scheduled_name(jobs.pop(i));self._save('radio-schedule.json',jobs)
             return 'Canceled scheduled recording of '+name+'.' if name else 'Canceled a damaged schedule entry.'
         if cmd in ('list recordings','list radio recordings'):
-            names=[p.name for p in self.recordings()]
-            return 'Recordings: '+ '; '.join(f'{i}. {n}' for i,n in enumerate(names[:30],1)) if names else 'No radio recordings yet.'
+            # Named as the keys list them, without .mp3.
+            names=[p.stem for p in self.recordings()]
+            return 'Recordings: '+ '; '.join(f'{i}. {n}' for i,n in enumerate(names[:30],1)) if names else 'No radio recordings yet. Choose a station and say record radio.'
         match=re.fullmatch(r'play recording (\d+)',cmd)
         if match: return self.play_recording(match[1])
         match=re.fullmatch(r'(?:search|find) podcasts? (?:for|called|about|in category) (.+)',text,re.I)
@@ -1693,7 +1728,8 @@ class MediaHub:
         if match: return self.download_episode(match[1])
         if cmd in ('list downloads','downloaded podcasts'):
             files=self.downloads()
-            return 'Downloads: '+ '; '.join(f'{i}. {p.stem}' for i,p in enumerate(files[:30],1)) if files else 'No downloaded episodes yet.'
+            return 'Downloads: '+ '; '.join(f'{i}. {p.stem}' for i,p in enumerate(files[:30],1)) if files else (
+                'No downloaded episodes yet. Open a podcast, choose an episode, and say download this episode.')
         match=re.fullmatch(r'play download (\d+)',cmd)
         if match: return self.play_download(match[1])
         match=re.fullmatch(r'import radiosure (.+\.rsd)',text,re.I)
