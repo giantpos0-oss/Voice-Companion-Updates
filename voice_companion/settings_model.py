@@ -65,13 +65,36 @@ def spoken_font(value, choices):
     return starts[0] if len(starts) == 1 else None
 
 
+def voice_fields(context):
+    """The voice list of each synthesizer: SAPI, eSpeak and AI."""
+    return {'windows':Field('windows_voice','SAPI voice','choice',tuple(context.get('windows_voices',()))),
+            'espeak':Field('espeak_voice','eSpeak voice','choice',tuple(context.get('espeak_voices',()))),
+            'ai':Field('ai_voice','AI voice','choice',tuple(context.get('ai_voices',())))}
+
+
+def voice_field(context):
+    """Voice options shows the voice list of the synthesizer in use (context['engine'])."""
+    engine=str(context.get('engine') or 'SAPI').lower()
+    return voice_fields(context)['espeak' if engine=='espeak' else 'ai' if engine=='ai' else 'windows']
+
+
+def all_fields(context):
+    """Every setting, including the voice lists of the synthesizers not in use, which are not shown
+    but still answer spoken commands such as "set AI voice to alloy"."""
+    found=[f for category in CATEGORIES for f in fields(category,context)]
+    shown={f.key for f in found}
+    return found+[f for f in voice_fields(context).values() if f.key not in shown]
+
+
 def fields(category, context):
     if category!='Startup and exit options':category=category.removesuffix(' options')
     category={'Word processor':'Documents','Auto-update':'Updates','Notes':'Notepad'}.get(category,category)
     definitions = {
         'Verbosity':[Field('verbosity','Verbosity','choice',('high','medium','low')),Field('punctuation','Spoken punctuation','choice',('none','some','most','all')),Field('dictation_echo','Echo dictated text','choice',('phrase by phrase','at the end of a sentence','do not echo dictated text')),Field('typing_echo','Typing echo','choice',('words','characters','characters and words','none')),Field('phonetic_enabled','Delayed phonetic pronunciation','check'),Field('phonetic_delay','Phonetic delay in seconds','choice',('0.5','1','2')),Field('capital_letters','When encountering capital letters','choice',('raise pitch','lower pitch','play a sound','say cap','do nothing'))],
-        'Voice':[Field('pitch','Voice pitch','choice',tuple(str(x) for x in range(-10,11))),Field('rate','Speech rate','choice',tuple(str(x) for x in range(-10,11))),Field('volume','Speech volume','choice',tuple(str(x) for x in range(101))),Field('duck_audio','Audio ducking','check'),Field('duck_level','Ducking level','choice',DUCK_LEVELS),Field('duck_other_apps','Also lower other apps while Companion speaks','check')],
-        'Synthesizer':[Field('engine','Synthesizer','choice',tuple(context.get('engines',('SAPI',)))),Field('windows_voice','SAPI voice','choice',tuple(context.get('windows_voices',()))),Field('espeak_voice','eSpeak voice','choice',tuple(context.get('espeak_voices',()))),Field('ai_voice','AI voice','choice',tuple(context.get('ai_voices',()))),Field('api_key','AI API key; blank keeps the saved key','password'),Field('ai_consent','Allow narration text to be sent to OpenAI','check'),Field('remove_ai','Remove saved AI key','check')],
+        # Will, November 4, 2026: the voice is chosen here, as in a screen reader's voice settings, and
+        # Up Arrow raises rate, pitch and volume, so the highest value is listed first.
+        'Voice':[voice_field(context),Field('rate','Speech rate','choice',tuple(str(x) for x in range(10,-11,-1))),Field('pitch','Voice pitch','choice',tuple(str(x) for x in range(10,-11,-1))),Field('volume','Speech volume','choice',tuple(str(x) for x in range(100,-1,-1))),Field('duck_audio','Audio ducking','check'),Field('duck_level','Ducking level','choice',DUCK_LEVELS),Field('duck_other_apps','Also lower other apps while Companion speaks','check')],
+        'Synthesizer':[Field('engine','Synthesizer','choice',tuple(context.get('engines',('SAPI',)))),Field('api_key','AI API key; blank keeps the saved key','password'),Field('ai_consent','Allow narration text to be sent to OpenAI','check'),Field('remove_ai','Remove saved AI key','check')],
         'Input':[Field('input_mode','Command and dictation mode','choice',tuple(INPUT_MODES.values())),Field('dictation_type','Dictation type','choice',('old school','ai-based'))],
         'Email':[Field('email_format','Email format','choice',('plain text','html')),Field('email_account','Sending account','choice',tuple(context.get('accounts',()))),Field('email_list_size','Messages per list','choice',('10','20','30','40','50','100','1000','all')),Field('email_header_names','Announce email header names','check'),Field('email_header_order','Spoken email headers; Space toggles; Alt+Up or Alt+Down moves','headers'),Field('thunderbird_window','Thunderbird window','choice',('Minimized, as before','Hidden from the taskbar')),Field('email_status_words','Say read, unread, flagged and importance','check'),Field('add_account','Add an email account','action')],
         'Notepad':[Field('open_notepad','Open Notepad','action')],
@@ -101,6 +124,7 @@ class SettingsSession:
         if self.values.get('display_font'):context.setdefault('display_font',self.values['display_font'])
         self.context = context
         if self.values.get('engine')=='windows' and 'SAPI' in context.get('engines',('SAPI',)):self.values['engine']='SAPI'
+        self.context['engine']=self.values.get('engine') or 'SAPI'
         self.values.setdefault('podcast_limits',copy.deepcopy(context.get('podcast_limits',{})))
         self.category = 0
         self.closed = False
@@ -127,7 +151,7 @@ class SettingsSession:
         if key=='phonetic_delay':
             value=str(value).lower().replace(' seconds','').replace(' second','').strip()
             value={'half':'0.5','half a':'0.5','point five':'0.5','one':'1','two':'2','.5':'0.5'}.get(value,value)
-        field=next((f for category in CATEGORIES for f in fields(category,self.context) if f.key==key),None)
+        field=next((f for f in all_fields(self.context) if f.key==key),None)
         if field is None or field.kind=='action': raise ValueError('Unknown setting.')
         if field.kind=='check':
             if isinstance(value,str):
@@ -158,6 +182,7 @@ class SettingsSession:
                 from downloads import folder_setting
                 value=folder_setting(value)
         self.values[key]=value
+        if key=='engine':self.context['engine']=value   # Voice options lists this synthesizer's voices
         if key=='podcast_feed': self.values['podcast_limit']=str(self.values.get('podcast_limits',{}).get(value,'manual'))
         if key=='podcast_limit' and self.values.get('podcast_feed'):self.values['podcast_limits'][self.values['podcast_feed']]=value
         return field.label + (' hidden' if field.kind=='password' else ' '+('on' if value is True else 'off' if value is False else value))
@@ -182,12 +207,11 @@ class SettingsSession:
         if download:return 'podcast_limit',download[1].lower()
         match=re.fullmatch(r'(?:set )?(?:verbosity|punctuation)(?: to)? (.+)',command,re.I)
         if match: return ('verbosity' if 'verbosity' in command.lower() else 'punctuation',match[1].lower())
-        for category in CATEGORIES:
-            for field in fields(category,self.context):
-                if field.kind=='action': continue
-                for label in (field.label,field.key.replace('_',' ')):
-                    match=re.fullmatch(r'(?:(?:set|use|choose|select) )?'+re.escape(label)+r'[,:;]?(?: to)?[,:;]? (.+)',command,re.I)
-                    if match:return field.key,match[1].strip(' ,;:')
+        for field in all_fields(self.context):
+            if field.kind=='action': continue
+            for label in (field.label,field.key.replace('_',' ')):
+                match=re.fullmatch(r'(?:(?:set|use|choose|select) )?'+re.escape(label)+r'[,:;]?(?: to)?[,:;]? (.+)',command,re.I)
+                if match:return field.key,match[1].strip(' ,;:')
         return None
     def cancel(self): self.closed=True; self.values=copy.deepcopy(self.original)
 

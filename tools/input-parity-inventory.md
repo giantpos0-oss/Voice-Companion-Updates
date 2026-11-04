@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 750
-- Already had both ways: 586
+- Actions inventoried: 748
+- Already had both ways: 584
 - Gaps found: 164
 - Gaps fixed (Added): 156
 - Not applicable (N/A, with reason): 8
@@ -1139,15 +1139,21 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Voice options
 
-### Voice pitch
+### SAPI voice
 
-- Voice: "Set Voice pitch to ..."
+- Voice: "Set SAPI voice to ..."
 - Keyboard: Alt+O, arrows to Voice options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 
 ### Speech rate
 
 - Voice: "Set Speech rate to ..."
+- Keyboard: Alt+O, arrows to Voice options, Tab to the field, arrows or Space, Enter to save
+- Status: Both
+
+### Voice pitch
+
+- Voice: "Set Voice pitch to ..."
 - Keyboard: Alt+O, arrows to Voice options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 
@@ -1180,24 +1186,6 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Synthesizer
 
 - Voice: "Set Synthesizer to ..."
-- Keyboard: Alt+O, arrows to Synthesizer options, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### SAPI voice
-
-- Voice: "Set SAPI voice to ..."
-- Keyboard: Alt+O, arrows to Synthesizer options, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### eSpeak voice
-
-- Voice: "Set eSpeak voice to ..."
-- Keyboard: Alt+O, arrows to Synthesizer options, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### AI voice
-
-- Voice: "Set AI voice to ..."
 - Keyboard: Alt+O, arrows to Synthesizer options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 

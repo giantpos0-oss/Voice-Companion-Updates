@@ -266,7 +266,7 @@ class NativeSettings:
                 collect();key,value=setting
                 if not editing[0]:baseline[0]=copy.deepcopy(self.session.values);editing[0]=True
                 message=self.session.set(key,value)
-                self.session.category=next(i for i,name in enumerate(CATEGORIES) if any(f.key==key for f in __import__('settings_model').fields(name,self.session.context)))
+                self.session.category=next((i for i,name in enumerate(CATEGORIES) if any(f.key==key for f in __import__('settings_model').fields(name,self.session.context))),CATEGORIES.index('Voice options'))
                 send(category[0],0x186,self.session.category,0);render(key);announce_value(focused_control()) if key in ('rate','pitch','volume','engine','windows_voice','espeak_voice','ai_voice') else self.announce(message);last_focus[0]=focused_control();return
             if cmd in ('on','off','toggle'):
                 hwnd=get_focus();hwnd=parent(hwnd) if parent(hwnd) in controls else hwnd;field=controls.get(hwnd)

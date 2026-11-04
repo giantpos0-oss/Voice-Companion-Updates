@@ -29,6 +29,9 @@ DEVELOPER_ID = 'lmpkdmlehooibijenhkhpbjcgjehjbig'
 EXTENSION_IDS = (STORE_ID, DEVELOPER_ID)
 EXTENSION_NAME = 'Voice Companion Browser Connection'
 STORE_PAGE = 'https://chromewebstore.google.com/detail/' + STORE_ID
+# Chrome started with no address opens your own start pages, which Google sync can bring to a new
+# computer (Will, November 4, 2026: a blindness website opened by itself). Setup always names a page.
+BLANK_PAGE = 'about:blank'
 WEB_STORE_UPDATE_URL = 'https://clients2.google.com/service/update2/crx'
 CHROME_INSTALLER_URL = 'https://dl.google.com/chrome/install/latest/chrome_installer.exe'
 EXTENSION_KEY = 'Software\\Google\\Chrome\\Extensions\\' + STORE_ID
@@ -555,7 +558,7 @@ class ChromeSetup:
         self.state = state
         self.hinted = False
         self._begin_wait()
-        if not self.system.open_chrome(address):
+        if not self.system.open_chrome(address or BLANK_PAGE):
             message = message + ' ' + MESSAGES['no_open']
         if self.focus is not None:
             self.focus.start()
@@ -798,6 +801,8 @@ def poll(app, mode):
     target = app.CHROME_SETUP_RETURN
     app.CHROME_SETUP = None
     first_run_done(app, setup)
+    if mode != 'sleep' and relay_connected(app):
+        take_keyboard_back(app)
     if mode == 'sleep':
         app.SLEEP_RETURN_MODE = target
         return mode
@@ -809,6 +814,17 @@ def poll(app, mode):
         app.sync_app_context(target, True)
         return target
     return mode
+
+
+def take_keyboard_back(app):
+    """Chrome had the keyboard while you turned the extension on. Once it links, Companion's
+    window comes to the front with the keyboard, with no Alt+Tab (Will, November 4, 2026)."""
+    window = getattr(app, 'APP_WINDOW', None)
+    if window is not None and hasattr(window, 'reclaim_focus'):
+        try:
+            window.reclaim_focus()
+        except Exception:
+            pass
 
 
 def startup_request(app, mode):

@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.203-test.
+Guide version: 0.2.204-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -428,7 +428,7 @@ To use the keyboard, press Alt+O and open Voice options. Use Tab to reach a sett
 3. Choose a voice from that system.
 4. Listen to the sample and confirm your choice.
 Use "Next voice", "Previous voice", and "Okay" to choose. Say "Cancel voice" to keep your old choice.
-With the keyboard, press Alt+O and choose Synthesizer options. Tab to the voice list, choose with the arrows, then choose OK.
+With the keyboard, press Alt+O and choose Voice options. The voice list is first. Choose with the arrows, then choose OK. It lists the voices of the synthesizer in use. To change the synthesizer, use Synthesizer options.
 The speech systems are:
 - SAPI: the voices that come with Windows.
 - eSpeak: a small voice with US and UK English choices.
@@ -862,9 +862,10 @@ Connect an account before you rely on Companion to send or sort email. Companion
 - Thunderbird, for Gmail, Outlook, Microsoft 365, and most other email.
 - Yahoo, for a Yahoo address.
 1. Say "Add account". Or press Alt+O, choose Email options, then choose Add an email account.
-2. Choose Thunderbird or Yahoo. Say its name, or press T or Y, then Enter.
+2. Choose Thunderbird or Yahoo. Say its name, or press T or Y, then Enter. You can also use Up and Down Arrow, then Enter.
 3. Follow the steps Companion gives. Ask your helper if you need help with a sign-in page.
 4. Open the inbox and send a test message to someone you know.
+If no account is set up yet, opening Email starts these steps for you. Choose Email on the main menu, or say "Email".
 You can also say "Add Gmail account" or "Add Outlook account". Companion adds it to Thunderbird. See part 10.4.
 Older versions of Companion could connect Gmail and Outlook by themselves. They now work only through Thunderbird. If you had one of those accounts, Companion removes it the first time it starts and tells you. Your drafts and contacts are kept. To use that address again, say "Add account" and choose Thunderbird.
 Yahoo uses an app password, not your normal password. To make one, sign in to Yahoo, open Account security, and choose Generate app password. Copy it. Then follow these steps.
@@ -1958,9 +1959,11 @@ The choice is used in every part of the app, and is kept after you close it.
 Letter names, such as Alpha after A, use your normal voice. Whole words and sentences keep their usual voice. With an AI voice, single letters use the local voice so you hear them quickly. Private password text is never read aloud.
 
 25.3 Voice and Synthesizer options
-In Voice options, you can change Voice pitch, Speech rate, and Speech volume. Voice options also hold the audio ducking settings. See part 25.4.
+In Voice options, you can choose the voice, then change Speech rate, Voice pitch, and Speech volume. Voice options also hold the audio ducking settings. See part 25.4.
+- The voice list shows the voices of the synthesizer in use.
+- Up Arrow raises the rate, pitch, or volume. Down Arrow lowers it.
 Listen to the voice sample before you save. Control silences the sample. Escape cancels the category.
-In Synthesizer options, you can choose SAPI, eSpeak, or an AI voice when one is set up. This category also holds the private AI service key.
+In Synthesizer options, you can choose SAPI, eSpeak, or an AI voice when one is set up. Then choose the voice in Voice options. This category also holds the private AI service key.
 - The checkbox Allow narration text to be sent to OpenAI gives your permission for online speech.
 - A blank key box keeps the saved key.
 - To remove the saved key, check Remove saved AI key and choose OK.
