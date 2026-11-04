@@ -116,7 +116,10 @@ class SpeechWorker:
             self.ready.set()
         except Exception as exc:
             self.problem = type(exc).__name__
-            self.busy_since = None
+            if generation == self.generation:
+                # No voice thread is left: count it as stuck from now, so a later call after
+                # STUCK_SECONDS tries to make a voice again instead of staying silent for good.
+                self.busy_since = self.clock()
             self.ready.set()
             return
         while generation == self.generation:

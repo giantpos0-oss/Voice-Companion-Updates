@@ -152,6 +152,30 @@ class SpeechWorkerTests(unittest.TestCase):
         self.assertTrue(wait_for(lambda: 'Main menu.' in voice.said), voice.calls)
         self.assertEqual(voice.paused, 0)
 
+    def test_a_new_voice_that_fails_once_is_tried_again(self):
+        """The voice stopped answering and was given up. Making the new one failed once (Windows
+        audio busy), and then no voice thread was left: every later message was silent."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+        stuck, fresh = FakeVoice(hang=release), FakeVoice()
+        made = iter([stuck, OSError('audio busy'), fresh])
+        def factory():
+            voice = next(made)
+            if isinstance(voice, Exception):
+                raise voice
+            return voice
+        worker = SpeechWorker(factory=factory, pump=lambda: None)
+        worker.STUCK_SECONDS = 0.3
+        self.addCleanup(setattr, worker, 'generation', -1)
+        worker.Speak('Welcome.', 1)
+        self.assertTrue(wait_for(lambda: stuck.calls))
+        time.sleep(0.35)
+        worker.Speak('Main menu.', 1)                  # gives up the stuck voice; the new one fails
+        self.assertTrue(wait_for(lambda: worker.problem == 'OSError'))
+        time.sleep(0.35)
+        worker.Speak('Email.', 1)                      # tries again
+        self.assertTrue(wait_for(lambda: 'Email.' in fresh.said), worker.problem)
+
     def test_a_voice_that_cannot_start_leaves_a_safe_default(self):
         def broken():
             raise OSError('no audio')
