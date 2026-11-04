@@ -67,18 +67,34 @@ class LiveDialogTests(LiveBrowser):
         self.assertEqual(self.session.refresh_changed(), '')
 
     def test_unsaved_changes_keep_the_page_and_a_second_try_leaves(self):
-        self.page.click('#note'); self.page.keyboard.type('hello')
+        # This test failed now and then on main with no saved output (sweep logs, October 30 to
+        # November 4, 2026). Each step now records what was said and how long it took, and a
+        # failure prints that record, so one failed run names its cause.
         notice = 'This page has changes that are not saved, so it stayed open. To leave it anyway, try again. The changes will be lost.'
-        started = time.monotonic()
-        self.assertEqual(self.at('Next page'), notice)
-        self.assertLess(time.monotonic() - started, 4)
-        self.assertEqual(self.page.url, 'https://fixture.test/')
-        self.assertEqual(self.session.open('https://fixture.test/next').split(' Arrived')[0], 'Page loaded: Next. Site: fixture.test.')
+        steps = []
+        def step(name, action):
+            started = time.monotonic()
+            try:
+                said = action()
+            except Exception as exc:
+                said = 'raised ' + type(exc).__name__ + ': ' + str(exc)[:300]
+            steps.append('%s: %.2f seconds, said %r, page %s' % (name, time.monotonic() - started, said, self.page.url))
+            return said, time.monotonic() - started
+        def check(ok):
+            if not ok:
+                self.fail('Steps so far:\n' + '\n'.join(steps))
+        self.page.click('#note'); self.page.keyboard.type('hello')
+        said, took = step('Enter on Next page with changes', lambda: self.at('Next page'))
+        check(said == notice and took < 4 and self.page.url == 'https://fixture.test/')
+        said, _ = step('second try by address', lambda: self.session.open('https://fixture.test/next'))
+        check(said.split(' Arrived')[0] == 'Page loaded: Next. Site: fixture.test.')
         # The same is true when an address is opened.
-        self.page.go_back(); self.session._refresh()
+        step('back to the form', lambda: (self.page.go_back(), self.session._refresh())[1])
         self.page.click('#note'); self.page.keyboard.type('again')
-        self.assertEqual(self.session.open('https://fixture.test/next'), notice)
-        self.assertTrue(self.session.open('https://fixture.test/next').startswith('Page loaded: Next.'))
+        said, _ = step('open an address with changes', lambda: self.session.open('https://fixture.test/next'))
+        check(said == notice)
+        said, _ = step('open it again', lambda: self.session.open('https://fixture.test/next'))
+        check(said.startswith('Page loaded: Next.'))
 
     def test_unsaved_changes_and_forward(self):
         notice = 'This page has changes that are not saved, so it stayed open. To leave it anyway, try again. The changes will be lost.'
