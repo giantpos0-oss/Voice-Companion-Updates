@@ -130,5 +130,29 @@ class LastContactOnThisComputerTests(ContactsSourceHarness):
         self.assertNotIn('no longer in Thunderbird', self.everything_said())
 
 
+class DatesThatDoNotExistTests(CalendarHarness):
+    """"Add lunch February 30 at noon": before, the event was put on the day on screen at noon,
+    named "February 30 lunch". "Move event to February 29 at 2" moved it to 2 PM the same day."""
+
+    def test_adding_says_why_and_asks_again(self):
+        mode = self.open()
+        mode = app.handle('add event February 30 at 3 PM called Lunch', mode)
+        self.assertEqual(mode, 'task_input')
+        self.assertEqual(self.said(), 'There is no February 30. Say another date. Escape cancels.')
+        self.assertIsNone(calendar_screen.PENDING)
+        mode = app.handle('February 29 at 3 PM', mode)
+        self.assertEqual(self.said(), 'February 29 is only in a leap year, such as 2028. Say the year too. Escape cancels.')
+        mode = app.handle('tomorrow at 3 PM called Lunch', mode)
+        self.assertEqual(mode, 'calendar')
+        self.assertTrue(self.said().startswith('Add Lunch, Tomorrow, Tuesday, October 27, three PM'), self.said())
+
+    def test_moving_says_why_and_asks_again(self):
+        mode = self.open()
+        mode = app.handle('move event to February 30 at 2', mode)
+        self.assertEqual(mode, 'task_input')
+        self.assertEqual(self.said(), 'There is no February 30. Say another date. Escape cancels.')
+        self.assertIsNone(calendar_screen.PENDING)
+
+
 if __name__ == '__main__':
     unittest.main()

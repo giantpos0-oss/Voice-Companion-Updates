@@ -725,6 +725,9 @@ def add_step(m, step, value):
     global DRAFT
     now = m.CLOCK()
     if step == 'when':
+        if missing_date(value, today(m)):
+            # "February 30 at 3 PM": never the day on screen with "February 30" in the name.
+            return prompt(m, 'when', date_problem(m, value))
         found = parse_when(value, now, future=True, base=DAY)
         if found.day is None:
             return prompt(m, 'when', 'I did not catch a day or time. Say something like tomorrow at 3 PM, '
@@ -1158,6 +1161,8 @@ def edit_step(m, step, value):
             return ask(m, 'edit-name', 'That name is too long. Say a shorter name. Escape cancels.')
         EDIT['title'] = title
     elif step == 'when':
+        if missing_date(value, today(m)):
+            return ask(m, 'edit-when', date_problem(m, value))      # never the same day at that time
         found = parse_when(value, now, future=True, base=event.start.date())
         if found.day is None and not re.match(r'\s*(?:at|from|between)\b', value, re.I):
             found = parse_when('at ' + value, now, future=True, base=event.start.date())     # "3", "10:30"
