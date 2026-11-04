@@ -349,6 +349,10 @@ class UndoStep:
         return sum(len(p.text) for p in self.paragraphs)
 
 
+class _DamagedPart(Exception):
+    """A part of a Word file that cannot be read (open_existing names it as damaged)."""
+
+
 @dataclass
 class VoiceDocument:
     folder: Path
@@ -445,8 +449,14 @@ class VoiceDocument:
             # <w:b w:val="0"/> and <w:u w:val="none"/> mean the formatting is off.
             node = props.find(ns + tag) if props is not None else None
             return node is not None and node.get(ns + 'val', 'true').lower() not in ('0', 'false', 'off', 'none')
+        def whole_number(value):
+            # A size or spacing that is not a number means the file is damaged.
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                raise _DamagedPart from None
         def points(node):
-            half_points = int(node.get(ns + 'val'))
+            half_points = whole_number(node.get(ns + 'val'))
             return half_points // 2 if half_points % 2 == 0 else half_points / 2
         def parse_paragraph(node, table_id=0, row=0, column=0):
             style = node.find('./' + ns + 'pPr/' + ns + 'pStyle')
@@ -487,20 +497,27 @@ class VoiceDocument:
                 points(size) if size is not None else 0, table_id, row, column,
                 parsed_runs if len(parsed_runs) > 1 or any(r.highlight for r in parsed_runs) else [],
                 align.get(ns+'val', 'left') if align is not None else 'left',
-                int(spacing.get(ns+'line', '0')) if spacing is not None else 0,
+                whole_number(spacing.get(ns+'line', '0')) if spacing is not None else 0,
                 spacing.get(ns+'lineRule', 'auto') if spacing is not None else 'auto'))
         body = root.find(ns+'body')
-        for block in body:
-            if block.tag == ns+'p':
-                parse_paragraph(block)
-            elif block.tag == ns+'tbl':
-                table_id = max((p.table_id for p in document.paragraphs), default=0) + 1
-                for row, tr in enumerate(block.findall(ns+'tr'), 1):
-                    for column, tc in enumerate(tr.findall(ns+'tc'), 1):
-                        cells = tc.findall(ns+'p')
-                        if len(cells) != 1:
-                            raise ValueError('This table has a cell structure this editor cannot preserve.')
-                        parse_paragraph(cells[0], table_id, row, column)
+        try:
+            if body is None:
+                raise _DamagedPart
+            for block in body:
+                if block.tag == ns+'p':
+                    parse_paragraph(block)
+                elif block.tag == ns+'tbl':
+                    table_id = max((p.table_id for p in document.paragraphs), default=0) + 1
+                    for row, tr in enumerate(block.findall(ns+'tr'), 1):
+                        for column, tc in enumerate(tr.findall(ns+'tc'), 1):
+                            cells = tc.findall(ns+'p')
+                            if len(cells) != 1:
+                                raise ValueError('This table has a cell structure this editor cannot preserve.')
+                            parse_paragraph(cells[0], table_id, row, column)
+        except _DamagedPart:
+            # No body, or a size or spacing that is not a number: name it, never Python's words.
+            from document_reader import damaged_words
+            raise ValueError(damaged_words(path, 'This document is empty or damaged, so it could not be opened.')) from None
         return document
 
     @property

@@ -3,6 +3,7 @@ blank paragraphs, the very start and end, selections of nothing, and damaged fil
 
 Each test here failed before its fix."""
 import unittest
+import zipfile
 
 import companion as app
 from document_editor import Paragraph, VoiceDocument
@@ -114,6 +115,43 @@ class EmptyAndBlankWording(DocumentFlowCase):
         app.handle('make this bold', 'document')
         app.handle('undo', 'document')
         self.assertTrue(self.last().endswith('Paragraph 2 of 2. Empty paragraph.'), self.last())
+
+
+W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+
+
+class DamagedWordFiles(DocumentFlowCase):
+    """A Word file with a broken part must be named as damaged, never stop the app or read out
+    Python's own words ("invalid literal for int()")."""
+
+    def make(self, name, xml):
+        path = self.elsewhere / name
+        with zipfile.ZipFile(path, 'w') as archive:
+            archive.writestr('word/document.xml', xml)
+        return path
+
+    def test_broken_parts_say_the_file_is_damaged(self):
+        cases = {
+            'No body.docx': '<w:document ' + W + '></w:document>',
+            'Bad size.docx': '<w:document ' + W + '><w:body><w:p><w:r><w:rPr><w:sz w:val="big"/></w:rPr>'
+                             '<w:t>Hi</w:t></w:r></w:p></w:body></w:document>',
+            'No size.docx': '<w:document ' + W + '><w:body><w:p><w:r><w:rPr><w:sz/></w:rPr>'
+                            '<w:t>Hi</w:t></w:r></w:p></w:body></w:document>',
+            'Bad spacing.docx': '<w:document ' + W + '><w:body><w:p><w:pPr><w:spacing w:line="wide"/></w:pPr>'
+                                '<w:r><w:t>Hi</w:t></w:r></w:p></w:body></w:document>',
+        }
+        for name, xml in cases.items():
+            with self.subTest(name=name):
+                path = self.make(name, xml)
+                with self.assertRaises(ValueError) as caught:
+                    app.task_navigation().open_document(path)
+                self.assertTrue(str(caught.exception).startswith('This document is empty or damaged'), str(caught.exception))
+                self.assertIsNone(app.document)
+
+    def test_a_word_file_with_an_empty_body_opens_as_an_empty_document(self):
+        path = self.make('Blank.docx', '<w:document ' + W + '><w:body></w:body></w:document>')
+        self.assertEqual(app.task_navigation().open_document(path), 'document')
+        self.assertEqual(self.last(), 'Opened Blank.docx. Document. The document is empty.')
 
 
 if __name__ == '__main__':
