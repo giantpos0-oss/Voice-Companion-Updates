@@ -20,7 +20,7 @@ from xml.etree import ElementTree as ET
 from vosk import KaldiRecognizer, Model, SetLogLevel
 from document_editor import VoiceDocument, structural_selection_request, document_control_request, LINE_BREAK_COMMANDS, checked_document_name, existing_document, UNDO_REQUESTS
 from field_selection import FieldSelection, selection_command
-from email_draft import VoiceEmail, normalize_recipient, email_field_destination
+from email_draft import VoiceEmail, normalize_recipient, email_field_destination, saved_draft_names
 from address_book import AddressBook
 from media_hub import MediaHub
 from email_delivery import DeliveryError, delivery_note, message_parts, submit
@@ -5613,15 +5613,13 @@ def _handle(text, mode, typed=False):
         speak(mail_session.process('open inbox'))
         return 'mailbox'
     if command in EMAIL_DRAFT_COMMANDS[:3]:
-        folder = APP / 'Email Drafts'
-        names = sorted((p.stem for p in folder.glob('*.json')), key=str.casefold) if folder.exists() else []
+        names = saved_draft_names(APP / 'Email Drafts')
         speak('Your email drafts are: ' + ', '.join(names[:20]) + ('. There are more drafts.' if len(names) > 20 else '.')
               if names else 'You have no saved email drafts yet.')
         return mode
     if command in EMAIL_DRAFT_COMMANDS[3:]:
         # A list to choose from with arrows and Enter (Control+O in email), or by voice.
-        folder = APP / 'Email Drafts'
-        names = sorted((p.stem for p in folder.glob('*.json')), key=str.casefold) if folder.exists() else []
+        names = saved_draft_names(APP / 'Email Drafts')
         speak(open_named_list('Email drafts', [(name, 'open email draft ' + name) for name in names]) if names
               else 'You have no saved email drafts yet.')
         return mode

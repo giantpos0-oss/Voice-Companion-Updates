@@ -96,5 +96,33 @@ class EmptyFolderNumberTests(YahooSession):
         self.assertEqual(self.session.process('read message 4'), 'That number is not on this page. Say list messages.')
 
 
+class DraftLeftoverTests(unittest.TestCase):
+    # A power cut while a draft is saved can leave "Lunch.writing.json" behind. It was
+    # listed as a draft named "Lunch.writing", and opening it said the file was damaged.
+    def setUp(self):
+        from test_email_new_veteran import CompanionCase
+        self.case = CompanionCase('last')
+        self.case.setUp()
+        self.addCleanup(self.case.doCleanups)
+        from email_draft import VoiceEmail
+        draft = VoiceEmail(self.case.folder / 'Email Drafts', title='Lunch')
+        draft.recipient, draft.subject = 'friend@example.com', 'Lunch'
+        draft.save()
+        (self.case.folder / 'Email Drafts' / 'Lunch.writing.json').write_text('{"title": "Lu', encoding='utf-8')
+
+    def test_drafts_list_leaves_out_unfinished_save_files(self):
+        import companion
+        companion.handle('list email drafts', 'awake')
+        self.assertEqual(self.case.last(), 'Your email drafts are: Lunch.')
+        companion.handle('open email draft', 'awake')
+        self.assertIn('Email drafts list. Lunch', self.case.last())
+        self.assertIn('1 of 1', self.case.last())
+
+    def test_saved_draft_names_skip_temporary_files(self):
+        from email_draft import saved_draft_names
+        self.assertEqual(saved_draft_names(self.case.folder / 'Email Drafts'), ['Lunch'])
+        self.assertEqual(saved_draft_names(self.case.folder / 'No such folder'), [])
+
+
 if __name__ == '__main__':
     unittest.main()
