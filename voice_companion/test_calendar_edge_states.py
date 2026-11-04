@@ -207,5 +207,28 @@ class EmptyContactsTests(ContactsSourceHarness):
         self.assertEqual(self.said(), 'No contact named john. No contacts yet. Press Control+N to add one, or say add contact.')
 
 
+class AcrossMidnightDetailsTests(unittest.TestCase):
+    """Enter on an event that ends after midnight, read on a day other than the day it starts.
+    Before: "Party. Yesterday, Sunday, October 25, ten PM to one AM tomorrow." (it ended today)."""
+
+    def test_the_end_is_the_next_day_not_tomorrow(self):
+        from datetime import date, datetime
+        import calendar_events
+        from test_calendar_screen import ZONE
+        with mock.patch.object(calendar_events, 'LOCAL_ZONE', ZONE):
+            item = {'id': 'p', 'calendarId': 'c', 'calendar': 'Home', 'title': 'Party', 'allDay': False,
+                    'start': calendar_events.utc_ms(datetime(2026, 10, 25, 22)), 'end': calendar_events.utc_ms(datetime(2026, 10, 26, 1))}
+            event = calendar_events.from_thunderbird(item)
+            self.assertEqual(event.details(date(2026, 10, 26)),
+                             'Party. Yesterday, Sunday, October 25, ten PM to one AM the next day. Calendar: Home.')
+            self.assertEqual(event.details(date(2026, 10, 25)),
+                             'Party. Today, Sunday, October 25, ten PM to one AM tomorrow. Calendar: Home.')
+            # The delete question names the day, so "tomorrow" there is only right when that day is today.
+            clock = mock.Mock(CLOCK=lambda: datetime(2026, 10, 23, 9))
+            with mock.patch.object(calendar_screen, 'DAY', date(2026, 10, 25)):
+                self.assertEqual(calendar_screen.delete_question(clock, event),
+                                 'Delete Party, Sunday, October 25, ten PM to one AM the next day? Say Yes or No. Escape keeps it.')
+
+
 if __name__ == '__main__':
     unittest.main()

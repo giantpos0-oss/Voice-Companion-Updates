@@ -71,9 +71,9 @@ class Event:
         first = datetime.combine(day, time())
         return self.start < first + timedelta(days=1) and self.end > first or self.start == first and self.end == first
 
-    def when(self, day):
+    def when(self, day, next_day=' tomorrow'):
         """The time part as said on a given day: 'ten thirty AM to eleven AM', 'All day',
-        'Until one AM', 'Ten PM to one AM tomorrow'."""
+        'Until one AM', 'Ten PM to one AM tomorrow'. next_day: the words for an end the day after."""
         if self.all_day:
             last = (self.end - timedelta(days=1)).date()
             if last > day:
@@ -86,7 +86,7 @@ class Event:
             return 'Until ' + spoken_time(self.end)
         if self.length <= timedelta(0):
             return spoken_time(self.start)
-        end = spoken_time(self.end) + ('' if ends_today else ' tomorrow' if self.end.date() == day + timedelta(days=1) else
+        end = spoken_time(self.end) + ('' if ends_today else next_day if self.end.date() == day + timedelta(days=1) else
                                        ' on ' + later_day(self.end.date(), day))
         return spoken_time(self.start) + ' to ' + end
 
@@ -98,7 +98,9 @@ class Event:
     def details(self, today):
         """What Enter says: title, day and time, place, notes, calendar, and whether it repeats."""
         day = self.start.date()
-        parts = [self.name, spoken_day(day, today) + ', ' + self.when(day)[0].lower() + self.when(day)[1:]]
+        # "Tomorrow" only when the event starts today; else "the next day" (it may end today).
+        hours = self.when(day, ' tomorrow' if day == today else ' the next day')
+        parts = [self.name, spoken_day(day, today) + ', ' + hours[0].lower() + hours[1:]]
         if self.location:
             parts.append('Place: ' + self.location)
         if self.notes.strip():

@@ -914,7 +914,8 @@ def on_day(day, m):
 
 
 def delete_question(m, event):
-    hours = event.when(DAY)[0].lower() + event.when(DAY)[1:]
+    hours = event.when(DAY, ' tomorrow' if DAY == today(m) else ' the next day')     # the day said may not be today
+    hours = hours[0].lower() + hours[1:]
     if event.recurring:
         return (event.name + ' repeats. Delete only this one, ' + on_day(DAY, m) + ', ' + hours + ', or all of them? '
                 'Say this one, all, or no. Escape keeps it.')
