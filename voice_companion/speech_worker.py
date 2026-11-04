@@ -180,8 +180,10 @@ class SpeechWorker:
         self.stuck()
         with self.lock:
             if purge:
-                # Stop means stop: speech still waiting is dropped, settings are kept.
-                self.jobs = collections.deque(j for j in self.jobs if j[0] not in ('speak', 'resume'))
+                # Stop means stop: speech still waiting is dropped, settings are kept. Pause and
+                # Resume are kept in pairs: SAPI stays paused until Resume, even after a purge, so
+                # a dropped Resume left the voice silent for good (interrupt_speech after Pause).
+                self.jobs = collections.deque(j for j in self.jobs if j[0] != 'speak')
             self.jobs.append(job)
             self.lock.notify()
 
