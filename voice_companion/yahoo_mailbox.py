@@ -106,6 +106,9 @@ def message_body(msg):
         plain = msg.get_body(preferencelist=('plain',))
         if plain is not None:
             body.plain = str(plain_body(part_text(plain)))
+            if not str(body).strip() and body.plain.strip():
+                # A picture-only HTML part: the words are in the plain part, never "No readable body".
+                body = plain_body(body.plain)
         return body
     except (ValueError, TypeError, UnicodeError, LookupError, KeyError, AttributeError) as exc:
         raise MailboxError('This message could not be read. Say next message to go on.') from exc

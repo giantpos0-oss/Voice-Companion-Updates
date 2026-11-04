@@ -245,6 +245,9 @@ class ThunderbirdMailbox:
             body = html_text(parts['html'])
             if parts.get('plain'):
                 body.plain = str(plain_body(parts['plain']))
+                if not str(body).strip() and body.plain.strip():
+                    # A picture-only HTML part: the words are in the plain part, never "No readable body".
+                    body = plain_body(body.plain)
         else:
             body = plain_body(parts.get('plain', ''))
         if cut:
