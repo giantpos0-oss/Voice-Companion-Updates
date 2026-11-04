@@ -166,5 +166,25 @@ class DatesThatDoNotExistTests(CalendarHarness):
         self.assertIsNone(calendar_screen.PENDING)
 
 
+class NoCalendarTests(CalendarHarness):
+    """Thunderbird has no calendars turned on (or only ones that cannot be changed)."""
+
+    def setUp(self):
+        super().setUp()
+        self.stack.enter_context(mock.patch.object(thunderbird_pim, 'calendars', return_value=[]))
+        self.stack.enter_context(mock.patch.object(thunderbird_pim, 'events', return_value={'events': [], 'failed': []}))
+
+    def test_adding_from_the_main_menu_stays_on_the_main_menu(self):
+        # Before, Calendar opened without a word, so the person did not know where they were.
+        mode = app.handle('add appointment tomorrow at 3 PM called doctor', 'awake')
+        self.assertEqual(mode, 'awake')
+        self.assertEqual(self.said(), 'Thunderbird has no calendar that can be changed. Press F1 to learn how to add one.')
+
+    def test_control_l_does_not_speak_of_one_email_account(self):
+        mode = self.open()
+        self.press('Ctrl+L', mode)
+        self.assertEqual(self.said(), 'Thunderbird has no calendars turned on. Press F1 to learn how to add one.')
+
+
 if __name__ == '__main__':
     unittest.main()

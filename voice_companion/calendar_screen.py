@@ -181,7 +181,7 @@ def show(m, day, opening=False):
     elif opening and CALENDARS and all(c.get('type') == 'storage' for c in CALENDARS):
         words += ' ' + GUIDANCE
     elif opening and not CALENDARS:
-        words += ' Thunderbird has no calendars turned on. Press F1 to learn how to add one.'
+        words += ' ' + NO_CALENDARS
     return words
 
 
@@ -328,6 +328,12 @@ def handle(m, text, mode, typed=False):
             opened = open_screen(m, mode, quiet=True)
             if opened != MODE:
                 return opened
+            if not writable():
+                # Nothing can be added: stay on the main menu and say why (Calendar opened without a word).
+                words = NOTICE if NOTICE and not CALENDARS else NOTHING_TO_CHANGE
+                reset()
+                m.speak(words)
+                return mode
             return start_adding(m, raw)
         return None
     try:
@@ -520,6 +526,9 @@ def start_choosing(m, first=None, lead=''):
         except thunderbird_pim.PimError as exc:
             m.speak(str(exc))
             return MODE
+    if not CALENDARS:
+        m.speak(NO_CALENDARS)      # not "one email account": there are none
+        return MODE
     if not choosing():
         m.speak('You have one email account in Thunderbird, so all your calendars are shown.')
         return MODE
@@ -686,6 +695,8 @@ def ask(m, action, words, optional=False):
     return 'task_input'
 
 
+NOTHING_TO_CHANGE = 'Thunderbird has no calendar that can be changed. Press F1 to learn how to add one.'
+NO_CALENDARS = 'Thunderbird has no calendars turned on. Press F1 to learn how to add one.'
 WHEN_PROMPT = 'New event. When is it? For example, say tomorrow at 3 PM, or Friday all day. Escape cancels.'
 
 
@@ -700,7 +711,7 @@ def start_adding(m, raw=''):
         m.speak(str(exc))
         return MODE
     if not writable():
-        m.speak('Thunderbird has no calendar that can be changed. Press F1 to learn how to add one.')
+        m.speak(NOTHING_TO_CHANGE)
         return MODE
     words = ADD.sub('', m.normalized_command(raw), count=1).strip() if raw else ''
     if not words:
