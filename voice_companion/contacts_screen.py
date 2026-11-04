@@ -116,11 +116,12 @@ def choose_sources(m):
     if BOOK.local_contacts():
         items.append({'id': contacts_book.LOCAL_ID, 'name': 'Saved on this computer'})
     first = SOURCES is None
+    before = '' if first else SOURCES.words(SOURCE)     # named from the old list: the new one no longer has it
     SOURCES = pim_sources.Sources('contacts', items)
     if first:
         SOURCE, SOURCE_NOTICE = pim_sources.resolve(m.APP, 'contacts', SOURCES)
     elif not SOURCES.has(SOURCE):
-        SOURCE_NOTICE = SOURCES.words(SOURCE) + ' is no longer in Thunderbird, so all address books are shown.' if SOURCES.active() else ''
+        SOURCE_NOTICE = before + ' is no longer in Thunderbird, so all address books are shown.' if SOURCES.active() else ''
         SOURCE = pim_sources.ALL
         pim_sources.remember(m.APP, 'contacts', SOURCE, SOURCES.words(SOURCE))
 

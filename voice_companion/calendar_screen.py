@@ -91,12 +91,13 @@ def load_calendars(m):
     global CALENDARS, SOURCES, SOURCE, SOURCE_NOTICE
     CALENDARS = [c for c in thunderbird_pim.calendars() if isinstance(c, dict)]
     first = SOURCES is None
+    before = '' if first else SOURCES.words(SOURCE)     # named from the old list: the new one no longer has it
     SOURCES = pim_sources.Sources('calendar', CALENDARS)
     if first:
         SOURCE, SOURCE_NOTICE = pim_sources.resolve(m.APP, 'calendar', SOURCES)
     elif not SOURCES.has(SOURCE):
         # The calendar on screen was removed in Thunderbird while Calendar was open.
-        SOURCE_NOTICE = SOURCES.words(SOURCE) + ' is no longer in Thunderbird, so all calendars are shown.' if SOURCES.active() else ''
+        SOURCE_NOTICE = before + ' is no longer in Thunderbird, so all calendars are shown.' if SOURCES.active() else ''
         SOURCE = pim_sources.ALL
         pim_sources.remember(m.APP, 'calendar', SOURCE, SOURCES.words(SOURCE))
     return CALENDARS
