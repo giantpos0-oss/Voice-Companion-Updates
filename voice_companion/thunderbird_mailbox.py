@@ -372,7 +372,8 @@ class ThunderbirdMailbox:
         for found in reply_addresses(action, sender, to, copied, own_address):
             if found.casefold() not in [a.casefold() for a in recipients]:
                 recipients.append(found)
-        subject = info.get('subject') or '(no subject)'
+        # A blank subject stays blank: "(no subject)" is only how the list says it.
+        subject = str(info.get('subject') or '')
         prefix = 'Fwd: ' if action == 'forward' else 'Re: '
         if subject.casefold().startswith(prefix.casefold()): prefix = ''
         # Thunderbird quotes or includes the original itself, like Outlook, so
@@ -380,7 +381,7 @@ class ThunderbirdMailbox:
         context = {'action': action, 'source_id': message_id, 'message_id': info.get('headerMessageId', ''),
                    'recipient': recipients[0] if action != 'forward' and recipients else '',
                    'cc': recipients[1:] if action == 'reply_all' else [],
-                   'subject': prefix + subject, 'original_body': ''}
+                   'subject': (prefix + subject).strip(), 'original_body': ''}
         if action == 'forward':
             # The original files go with the forward. None: an older add-on that cannot add them.
             try:

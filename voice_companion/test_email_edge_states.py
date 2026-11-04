@@ -93,6 +93,30 @@ class MissingCharsetTests(YahooSession):
         self.assertIn('Café', said)
 
 
+class NoSubjectReplyTests(YahooSession):
+    # "(no subject)" is only how the list shows a blank subject. A reply or forward to
+    # such a message was sent with the subject "Re: (no subject)", words the sender never wrote.
+    def test_yahoo_reply_and_forward_to_a_blank_subject(self):
+        uid = self.server.add('Inbox', message(raw=b'From: Sam <sam@example.com>\nSubject: \n\nCall me.\n'))
+        box = YahooMailbox(ADDRESS, APP_PASSWORD, self.server.factory)
+        reply = box.response_context(str(uid), 'reply', ADDRESS, 'INBOX')
+        self.assertEqual(reply['subject'], 'Re:')
+        forward = box.response_context(str(uid), 'forward', ADDRESS, 'INBOX')
+        self.assertEqual(forward['subject'], 'Fwd:')
+        self.assertEqual(forward['original_subject'], '')
+        # The list still says it plainly.
+        self.assertIn('No subject', self.session.process('open inbox'))
+
+    def test_thunderbird_reply_to_a_blank_subject(self):
+        from thunderbird_mailbox import ThunderbirdMailbox
+        box = ThunderbirdMailbox(ADDRESS, {'account_id': 'account1'})
+        info = {'author': 'Sam <sam@example.com>', 'subject': '', 'recipients': [ADDRESS], 'headerMessageId': 'm1'}
+        with patch('thunderbird_mailbox.call', return_value=info):
+            self.assertEqual(box.response_context('5', 'reply', ADDRESS)['subject'], 'Re:')
+        with patch('thunderbird_mailbox.call', return_value={'author': 'Sam <sam@example.com>', 'subject': 'Plans'}):
+            self.assertEqual(box.response_context('5', 'reply', ADDRESS)['subject'], 'Re: Plans')
+
+
 class EmptySenderTests(YahooSession):
     # Some bounce and system messages say "From: <>": no name and no address.
     # It was spoken as the symbols "<>" in the list and in "Who is it from?".
