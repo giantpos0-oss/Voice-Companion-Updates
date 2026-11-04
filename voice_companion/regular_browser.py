@@ -105,19 +105,3 @@ class HostConnection:
             if self.connection is not None: self.connection.close()
             self.connection = None
             return {}
-
-
-COMMANDS = {'read page':'read', 'read this page':'read', 'read':'read', 'next':'next', 'next control':'next',
-            'previous':'previous', 'previous control':'previous', 'activate':'activate', 'open':'activate',
-            'select':'space', 'select radio button':'space',
-            'first control':'first', 'last control':'last', 'next heading':'heading', 'previous heading':'previousHeading',
-            'disconnect browser':'disconnect', 'regular browser key down':'next', 'regular browser key up':'previous',
-            'regular browser key enter':'activate', 'regular browser key space':'space',
-            'regular browser key home':'first', 'regular browser key end':'last'}
-HELP = ('Regular browser connection. Open the Voice Companion extension in Chrome or Edge and choose Connect this tab. '
-        'In Voice Companion, say read page, next control, previous control, first control, last control, next heading, '
-        'previous heading, activate, or select radio button. Up and Down move between controls, Enter activates, '
-        'Space selects a radio button or checkbox, and Home and End reach the boundaries. '
-        'For typing, switch to your browser and use its normal keyboard controls. Return here for reading and navigation. '
-        'Say main menu or press Escape to leave. The browser tab stays open. '
-        'This testing connection does not yet provide the guided browser’s full virtual cursor or hands-free form filling.')

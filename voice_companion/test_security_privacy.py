@@ -1,10 +1,10 @@
-import contextlib,io,json,tempfile,unittest
+import contextlib,importlib.util,io,json,tempfile,unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock,patch
 from urllib import request,error
 from network_security import NoServiceRedirect,secure_service_open
-from privacy_controls import narration_allowed,cloud_recognition_allowed
+from privacy_controls import narration_allowed
 
 class SecurityPrivacyTests(unittest.TestCase):
     def test_credentials_are_not_forwarded_on_any_redirect(self):
@@ -32,16 +32,15 @@ class SecurityPrivacyTests(unittest.TestCase):
         with patch('ai_voice_settings.load',return_value={'key':'KEY'}),patch.object(app,'PREFERENCES',{}),patch.object(app,'AI_SPEECH',None),patch('ai_speech.AISpeech') as engine:
             self.assertFalse(app.configure_ai_speech());engine.assert_not_called()
 
-    def test_online_recognition_is_off_by_default_and_stays_off_in_private_workflows(self):
+    def test_microphone_audio_never_goes_online(self):
+        # Will, November 3, 2026: the Azure recognition checkbox did nothing without a hidden key
+        # and was removed. Speech recognition is offline only.
         from settings_model import DEFAULTS,fields
-        self.assertFalse(DEFAULTS['cloud_consent'])
-        self.assertIn('cloud_consent',[f.key for f in fields('Input',{})])
-        for mode in ('awake','document','email_draft','web','settings','sleep'):
-            self.assertFalse(cloud_recognition_allowed(mode,{}))
-        for mode in ('web','settings','sleep','exit'):
-            self.assertFalse(cloud_recognition_allowed(mode,{'cloud_consent':True}))
-        self.assertFalse(cloud_recognition_allowed('awake',{'cloud_consent':True},account_setup=True))
-        self.assertTrue(cloud_recognition_allowed('document',{'cloud_consent':True}))
+        self.assertNotIn('cloud_consent',DEFAULTS)
+        self.assertNotIn('cloud_consent',[f.key for f in fields('Input',{})])
+        self.assertIsNone(importlib.util.find_spec('cloud_recognition'))
+        source=(Path(__file__).parent/'companion.py').read_text(encoding='utf-8')
+        self.assertNotIn('CloudRecognition',source)
 
     def test_normal_narration_does_not_write_user_content_to_console(self):
         import companion as app
@@ -63,14 +62,6 @@ class ThemeAndCleanupTests(unittest.TestCase):
             self.assertGreaterEqual(contrast(colors[color],colors[background]),4.5)
             if background=='black':self.assertEqual(color,'white')
 
-    def test_private_workflow_cleanup_closes_stream_when_cloud_stop_fails(self):
-        from cloud_recognition import CloudRecognition
-        cloud=CloudRecognition.__new__(CloudRecognition);cloud.active=True
-        stream=cloud.stream=Mock();cloud.recognizer=Mock()
-        cloud.recognizer.stop_continuous_recognition_async.side_effect=RuntimeError('offline')
-        cloud.stop();cloud.stop()
-        stream.close.assert_called_once();self.assertFalse(cloud.active)
-        self.assertIsNone(cloud.recognizer);self.assertIsNone(cloud.stream)
 
 class SourceSecurityChecks(unittest.TestCase):
     def test_scanner_blocks_unsafe_patterns_without_printing_the_secret(self):

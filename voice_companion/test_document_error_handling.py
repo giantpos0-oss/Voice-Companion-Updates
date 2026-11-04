@@ -111,8 +111,8 @@ class SavedWordsReachTheDisk(DocumentFlowCase):
 
 
 class DocumentsFromTheOldFolder(unittest.TestCase):
-    """Before October 19, 2026, documents were kept in the app's own folder. They are copied to
-    Documents, Voice Companion once. A document deleted or renamed after that must stay gone."""
+    """Before October 19, 2026, documents were kept in the app's own folder. Documents now go to
+    Documents, Voice Companion; the old folder is never touched."""
     def setUp(self):
         import os, tempfile
         from contextlib import ExitStack
@@ -129,25 +129,13 @@ class DocumentsFromTheOldFolder(unittest.TestCase):
         (self.legacy / 'Letter.docx').write_bytes(b'old letter')
         (self.legacy / 'List.docx').write_bytes(b'old list')
 
-    def test_old_documents_are_copied_once(self):
+    def test_old_folder_is_left_alone(self):
+        # Will, November 3, 2026: the one-time copy from the old folder was removed. Every tester
+        # already has the new folder. The old copies are never touched or removed.
         folder = app.documents_folder()
         self.assertEqual(folder, self.root / 'Home' / 'Documents' / 'Voice Companion')
-        self.assertEqual(sorted(p.name for p in folder.iterdir()), ['Letter.docx', 'List.docx'])
-        (folder / 'Letter.docx').unlink()           # deleted in File manager, or renamed
-        self.assertEqual(sorted(p.name for p in app.documents_folder().iterdir()), ['List.docx'])
-        self.assertTrue((self.legacy / 'Letter.docx').exists())   # the old copy is never removed
-
-    def test_a_copy_that_fails_does_not_stop_the_app_and_is_tried_again(self):
-        import shutil
-        real = shutil.copy2
-        def copy(source, target, *a, **k):
-            if Path(source).name == 'List.docx': raise PermissionError(13, 'in use')
-            return real(source, target, *a, **k)
-        with patch('shutil.copy2', side_effect=copy):
-            folder = app.documents_folder()
-        self.assertFalse(any(folder.glob('*.docx')))   # no half-moved folder
-        self.assertEqual(sorted(p.name for p in app.documents_folder().iterdir()), ['Letter.docx', 'List.docx'])
-        self.assertEqual((folder / 'Letter.docx').read_bytes(), b'old letter')
+        self.assertFalse(folder.exists())
+        self.assertEqual(sorted(p.name for p in self.legacy.iterdir()), ['Letter.docx', 'List.docx'])
 
 
 class RecentDocumentsOnAFullDisk(DocumentFlowCase):

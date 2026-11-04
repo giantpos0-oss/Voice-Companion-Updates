@@ -49,7 +49,7 @@ Guide maintenance for every release: Update START HERE - Veteran.txt whenever a 
 Version 0.2.54 uses a Python packaging launcher so filenames with spaces remain intact. All --add-data options use SOURCE:DEST. Build tests no longer open File Explorer on a temporary Documents folder. Extract the complete updated ZIP to a new folder and run the same double-click builder used previously.
 
 AUTOMATIC UPDATE DISTRIBUTION
-Read UPDATES - Trainer.txt. Configure your real GitHub repository with SET UP UPDATES - Double click.cmd before building the client installer. After building and testing, use the helper to prepare the finished Setup and manifest for the matching latest release. This ZIP is configured for willwalsh14-hub/voice-companion-updates. Build and test Setup, then prepare and publish the matching release files; configuration alone does not publish a release.
+Updates are published only by the GitHub build. Read GITHUB AUTOMATED BUILDS.txt. A build made with BUILD INSTALLER - Double click.cmd is for testing on this computer and is never published.
 
 
 

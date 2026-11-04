@@ -414,6 +414,3 @@ def spoken_day(day, today):
     return {0: 'Today, ', 1: 'Tomorrow, ', -1: 'Yesterday, '}.get(offset, '') + name
 
 
-def spoken_clock(moment):
-    """A time in words, as the app's clock says it: 'three thirty PM'."""
-    return spoken_time(moment)

@@ -18,6 +18,3 @@ def name_first(text):
     return text[:match.start()] + menu_label(item.rstrip('. ')) + ', ' + match['index'] + ' of ' + match['count'] + '.' + boundary
 
 
-def list_item(name, index, count):
-    from menu_navigation import announce_item
-    return announce_item(name,index,count)

@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 751
-- Already had both ways: 587
+- Actions inventoried: 750
+- Already had both ways: 586
 - Gaps found: 164
 - Gaps fixed (Added): 156
 - Not applicable (N/A, with reason): 8
@@ -1274,12 +1274,6 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Dictation type
 
 - Voice: "Set Dictation type to ..."
-- Keyboard: Alt+O, arrows to Input options, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### Allow microphone audio to be sent to Azure for recognition
-
-- Voice: "Set cloud consent to ..."
 - Keyboard: Alt+O, arrows to Input options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 

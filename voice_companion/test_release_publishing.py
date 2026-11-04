@@ -103,11 +103,6 @@ class PublishingTests(unittest.TestCase):
         self.assertEqual(self.commands,[])
         (self.root/'VoiceCompanion-Build-Passed.json').unlink()
         with self.assertRaises(OSError):self.run_publish()
-    def test_builder_publishes_after_installed_checks_and_not_in_auth_transcript(self):
-        script=(Path(__file__).parent/'build-windows.ps1').read_text()
-        self.assertGreater(script.rindex("  Invoke-BuildPublishing"),script.index('INSTALL PASSED.'))
-        self.assertLess(script.index('Stop-Transcript'),script.rindex("  Invoke-BuildPublishing"))
-        self.assertIn('if (-not $NoPublish)',script)
     def test_only_not_found_is_treated_as_missing(self):
         from unittest.mock import MagicMock
         for stderr,missing in (('HTTP 404',True),('HTTP 403',False)):
@@ -130,12 +125,18 @@ class PublishingTests(unittest.TestCase):
         self.assertTrue(messages[-1].endswith('completed.'))
         self.assertEqual(process.communicate.call_count,2)
 
-    def test_builder_restarts_logging_and_requires_matching_publication(self):
-        script=(Path(__file__).parent/'build-windows.ps1').read_text()
-        self.assertIn('finally {',script)
-        self.assertIn("'VoiceCompanion-Published.json'",script)
-        self.assertIn('$published.sha256 -ne $built.sha256',script)
-        self.assertGreater(script.index('BUILD, INSTALL, AND PUBLISH PASSED:'),script.index('$published.sha256 -ne $built.sha256'))
+    def test_only_the_github_build_publishes(self):
+        # Will, November 3, 2026: the old hand publishing tools were removed. A build on
+        # your own computer is for testing; the GitHub workflow runs publish_release.py.
+        folder=Path(__file__).parent
+        script=(folder/'build-windows.ps1').read_text()
+        self.assertNotIn('publish-windows.ps1',script)
+        self.assertNotIn('publish_release.py',script)
+        self.assertIn('Local build only.',script)
+        for name in ('update_publisher.py','github_login.py','publish-windows.ps1','PUBLISH UPDATE - Double click.cmd','SET UP UPDATES - Double click.cmd'):
+            self.assertFalse((folder/name).exists(),name)
+        workflow=(folder.parent/'.github'/'workflows'/'windows-installer.yml').read_text()
+        self.assertIn('publish_release.py',workflow)
 
 class ProgressProcessTests(unittest.TestCase):
     @unittest.skipIf(__import__('os').name == 'nt', 'POSIX child executable fixture')

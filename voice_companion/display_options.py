@@ -357,7 +357,7 @@ SCREEN_NAMES = {
     'reader_recent': 'Document reader: Recent documents', 'file_reader': 'Document reader', 'notepad_menu': 'Notepad menu',
     'note': 'Note', 'mailbox': 'Email', 'email_draft': 'Email draft', 'contacts': 'Contacts', 'calendar': 'Calendar',
     'downloads': 'Downloads', 'attachments': 'Attachments', 'web': 'Web page', 'browser_menu': 'Web browser menu',
-    'search': 'Web search', 'regular_browser': 'Regular browser', 'help': 'Help', 'tutorial': 'Tutorial',
+    'search': 'Web search', 'help': 'Help', 'tutorial': 'Tutorial',
     'media_menu': 'Media menu', 'media': 'Radio', 'podcast': 'Podcasts', 'local_media': 'Media player', 'youtube': 'YouTube',
     'settings': 'Options', 'document_name': 'Name the document', 'document_save': 'Save the document', 'draft_leave': 'Leave the email', 'document_replace': 'Replace a file',
     'power_confirm': 'Shut down or restart', 'exit_confirm': 'Exit Voice Companion', 'update_offer': 'Update available',

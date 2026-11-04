@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.200-test.
+Guide version: 0.2.201-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -2007,7 +2007,6 @@ About AI-based dictation:
 - Text appears after a short pause at the end of each phrase. Speed depends on the PC. Keep phrases short.
 - Cleanup does not fix every stumble or add words you left out. It keeps your grammar and meaning. It leaves "very, very" and "had had" alone.
 - Read your text, and use Undo if needed. If the AI model fails, the app tells you and uses basic offline speech.
-Allow microphone audio to be sent to Azure for recognition is off at first. Turn it on only if you agree to send audio and your helper has set up that service. It stays off in web forms, settings, and AI-based dictation. After you change it, say "Go to sleep", then "Wake up", to start a new voice session.
 In Email options:
 - Choose plain text or HTML. HTML keeps formatting such as bold text and links.
 - Sending account chooses the address for new mail.

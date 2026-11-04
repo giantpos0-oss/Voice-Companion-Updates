@@ -317,19 +317,6 @@ def save_stream(folder, name, chunks, progress=None, expected=None, stop=None):
         raise
 
 
-def save_file_copy(source, folder, name=None):
-    """Copy a file on this computer into folder under a free name."""
-    source = Path(source)
-    def chunks():
-        with open(source, 'rb') as file:
-            while True:
-                block = file.read(MB)
-                if not block:
-                    return
-                yield block
-    return save_stream(folder, name or source.name, chunks())
-
-
 def opened_folder(app_folder):
     """Where attachments opened from a message are kept. Copies older than two days are removed."""
     folder = Path(app_folder) / 'Opened attachments'

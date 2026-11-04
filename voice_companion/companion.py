@@ -28,8 +28,7 @@ from mail_accounts import AccountError, ProtectedStore, account_token, connect, 
 from mail_voice import MailSession
 from mailbox_access import MailboxError
 from practice_tutorial import PracticeTutorial
-from cloud_recognition import CloudRecognition
-from privacy_controls import narration_allowed,cloud_recognition_allowed
+from privacy_controls import narration_allowed
 from parakeet_recognition import ParakeetRecognition
 from browser_navigation import prepare_address
 from web_assistant import RefreshPacer, WebSession
@@ -51,7 +50,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.200-test'
+APP_VERSION = '0.2.201-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -68,22 +67,7 @@ def documents_folder():
                 folder = Path(os.path.expandvars(winreg.QueryValueEx(key, 'Personal')[0]))
         except (OSError, ValueError):
             pass
-    target = folder / 'Voice Companion'
-    legacy = APP / 'Documents'
-    # Documents from before October 19, 2026 are copied once, when the new folder is made.
-    # Copying on every call brought back documents the person had deleted or renamed.
-    # They are copied to a side folder first, so a failed copy leaves no half-filled folder
-    # and is tried again next time. The old copies are never removed.
-    if legacy.exists() and not target.exists() and legacy.resolve() != target.resolve():
-        moving = folder / 'Voice Companion.moving'
-        try:
-            moving.mkdir(parents=True, exist_ok=True)
-            for old in legacy.glob('*.docx'):
-                shutil.copy2(old, moving / old.name)
-            os.replace(moving, target)
-        except OSError as error:
-            print('Old documents could not be copied yet:', error, file=sys.stderr)
-    return target
+    return folder / 'Voice Companion'
 
 def document_format_command(command):
     if structural_selection_request(command) or document_control_request(command):
@@ -1212,10 +1196,6 @@ def _navigation_key(key,mode):
     if mode=='file_reader' and key=='Escape':return 'back to files'
     if mode=='file_reader':
         return {'Insert+F':'what formatting','CapsLock+F':'what formatting','Insert+Shift+Down':'what is selected','CapsLock+Shift+Down':'what is selected','Insert+Down':'say all','CapsLock+Down':'say all','H':'next heading','Shift+H':'previous heading','T':'next table','Shift+T':'previous table','K':'next link','Shift+K':'previous link','L':'next list','Shift+L':'previous list','B':'next bookmark','Shift+B':'previous bookmark','N':'next footnote','Shift+N':'previous footnote','Enter':'follow link'}.get(key)
-    if mode=='regular_browser':
-        if key=='Escape':return 'main menu'
-        if key in ('Up','Down','Home','End','Enter','Space'):return 'regular browser key '+key
-        return None
     if mode=='web' and web_session and web_session.list_focus in ('links','headings') and key in ('Up','Down','Left','Right','Home','End','Enter','Escape'):
         web_session.list_prefix='';web_session.list_prefix_time=0
     if NAMED_LIST and key in ('Up','Down','Left','Right','Enter','Escape'):return {'Up':'previous','Left':'previous','Down':'next','Right':'next','Enter':'okay','Escape':'close list'}[key]
@@ -2072,16 +2052,6 @@ def poll_dictation_echo():
     if text:speak(text)
 
 
-def discard_feedback_events(cloud):
-    """Drop narration transcripts, keeping connection errors for fallback."""
-    remaining=[]
-    while True:
-        try:event=cloud.events.get_nowait()
-        except queue.Empty:break
-        if event[0]!='text':remaining.append(event)
-    for event in remaining:cloud.events.put(event)
-
-
 def remember_question(text):
     """F1 says the open yes or no question again. Anything else said (but the choice itself) ends it."""
     global LAST_YES_NO
@@ -2467,26 +2437,6 @@ def open_saved_note(spoken, mode):
     speak('Opened the note from ' + notepad.spoken_date(note.stamp) + '. ' + (note.text.strip() or 'It is empty.'))
     speak_prompt('Speak to add to it. Say save note when finished.')
     return 'note'
-
-
-def podcast_search(topic):
-    if not topic:
-        speak('What podcast topic would you like?')
-        return 'podcast'
-    url = 'https://itunes.apple.com/search?media=podcast&entity=podcast&limit=5&term=' + urllib.parse.quote(topic)
-    try:
-        with urllib.request.urlopen(url, timeout=12) as response:
-            shows = json.load(response).get('results', [])
-        if not shows:
-            speak('I found no podcasts for ' + topic)
-        else:
-            names = ', '.join(p.get('collectionName', 'untitled') for p in shows[:3])
-            speak('I found: ' + names + '. Say open first podcast to open the first result.')
-            global last_podcasts
-            last_podcasts = shows
-    except (OSError, ValueError):
-        speak('Podcast search could not connect. Please try later.')
-    return 'awake'
 
 
 UNSAVED_DOCUMENT = ('Your change is in the document, but the file could not be saved. It may be open in another program, '
@@ -6307,8 +6257,6 @@ def main():
     recognizer = KaldiRecognizer(model, sample_rate)
     mode = 'sleep'
     media()  # Restore scheduled radio recordings after an app restart.
-    cloud = None
-    cloud_failed = False
     parakeet = None
     if os.getenv('VOICE_COMPANION_SPEECH', '').lower() == 'parakeet' or PARAKEET_MODEL.is_dir():
         try:
@@ -6449,10 +6397,6 @@ def main():
                     if notice: speak(notice)
                 continue
             if AUDIO_OVERFLOW:
-                if cloud:
-                    cloud.stop()
-                    cloud = None
-                    cloud_failed = True
                 recover_audio_overflow(recognizer, utterance)
                 continue
             if startup_speaking:
@@ -6464,10 +6408,6 @@ def main():
                 # No synthesizer's readback may become another command or
                 # dictated paragraph, including while the app is in background.
                 # Keep local silence/sleep/exit controls available during feedback.
-                if cloud:
-                    # Pause audio feeding rather than permanently dropping the
-                    # cloud recognizer after each spoken app response.
-                    discard_feedback_events(cloud)
                 if narration_busy:settings_quiet_until=time.monotonic()+0.3
                 if time.monotonic()<settings_quiet_until:
                     settings_audio_blocked=True
@@ -6484,42 +6424,6 @@ def main():
                 if settings_audio_blocked:
                     recognizer.Reset();utterance.clear();settings_audio_blocked=False
                     continue
-            if cloud and not cloud_recognition_allowed(mode,PREFERENCES,account_setup):
-                cloud.stop();cloud=None
-                recognizer.Reset();utterance.clear()
-            if cloud and cloud.active:
-                cloud.write(audio)
-                if recognizer.AcceptWaveform(audio):
-                    local_control = json.loads(recognizer.Result()).get('text', '').lower()
-                    if spoken_control(local_control) or speech_control(local_control):
-                        mode = handle(local_control, mode)
-                        # Pausing narration does not require shutting down online recognition.
-                        if mode in ('sleep', 'exit'):
-                            cloud.stop()
-                            cloud = None
-                        if mode == 'exit':
-                            return 0
-                        continue
-                elif mode != 'sleep' and fast_offline_silence(recognizer, utterance):
-                    continue
-                while not cloud.events.empty():
-                    event, payload = cloud.events.get_nowait()
-                    if event == 'error':
-                        cloud.stop()
-                        cloud = None
-                        cloud_failed = True
-                        speak('Cloud dictation lost its connection. I am switching to offline speech.')
-                        break
-                    mode = handle(payload, mode)
-                    if mode in ('sleep', 'exit'):
-                        cloud.stop()
-                        cloud = None
-                        break
-                if mode == 'exit':
-                    return 0
-                # Keep offline recognition fresh for fallback, but do not act on
-                # its lower-accuracy guesses while cloud recognition is active.
-                continue
             if mode != 'sleep' and parakeet:
                 utterance.extend(audio)
                 # Never send more than 25 seconds as one model request.
@@ -6568,22 +6472,6 @@ def main():
                 for wake in WAKE:
                     if wake in heard:
                         mode = resume_from_sleep()
-                        if not cloud_failed and not parakeet and cloud_recognition_allowed(mode,PREFERENCES,account_setup):
-                            try:
-                                while True:
-                                    try:AUDIO.get_nowait()
-                                    except queue.Empty:break
-                                cloud = CloudRecognition()
-                                cloud.start()
-                                speak('Cloud recognition is active.')
-                            except (ImportError, ValueError):
-                                cloud = None
-                                cloud_failed = True
-                                speak('Cloud speech is not configured. Using offline speech.')
-                            except Exception:
-                                cloud = None
-                                cloud_failed = True
-                                speak('Cloud speech is unavailable. Using offline speech.')
                         remainder = heard.split(wake, 1)[1].strip()
                         if remainder:
                             mode = handle(remainder, mode)

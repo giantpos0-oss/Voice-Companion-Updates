@@ -2,7 +2,7 @@ import hashlib,json,queue,tempfile,threading,unittest
 from pathlib import Path
 from unittest.mock import Mock,patch
 from app_updates import AppUpdates,download_release,fetch_release,validate_release,version_key
-from update_publisher import release_manifest
+from publish_release import release_manifest
 import companion
 
 class Response:
