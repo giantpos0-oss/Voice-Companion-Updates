@@ -1,6 +1,6 @@
 # Voice Companion Browser Connection Privacy Policy
 
-Effective date: October 16, 2026
+Effective date: November 3, 2026
 
 ## Scope and publisher
 
@@ -52,7 +52,6 @@ The native messaging host allows only explicitly approved extension identities. 
 
 This policy will be updated when the extension's data practices change. The effective date identifies the latest revision.
 
-For privacy questions or requests, open an issue at:
-https://github.com/willwalsh14-hub/voice-companion-updates/issues
+For privacy questions or requests, email [willwalsh14@gmail.com](mailto:willwalsh14@gmail.com).
 
-Issues are public. Do not include passwords, account details, private webpage content, or other sensitive information in a public issue.
+Do not include passwords, account details, or private webpage content in your email.
