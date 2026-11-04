@@ -110,12 +110,15 @@ class WordProcessorOptionsTests(unittest.TestCase):
             target = Path(folder) / 'preferences.json'
             target.write_text('{"document_font": "Calibri"}', encoding='utf-8')
             replaced = []
-            real_replace = Path.replace
-            def watch(self, other):
-                replaced.append((self.name, Path(other).name));return real_replace(self, other)
-            with patch.object(Path, 'replace', watch):
+            import os
+            import storage
+            real_replace = os.replace
+            def watch(source, other):
+                replaced.append((Path(source).name, Path(other).name));return real_replace(source, other)
+            # The shared atomic writer (storage.write_text_atomic) writes a side file, then replaces.
+            with patch.object(storage.os, 'replace', watch):
                 save_preferences(Mock(APP=Path(folder), PREFERENCES={'document_font': 'Arial'}))
-            self.assertEqual(replaced, [('preferences.writing', 'preferences.json')])
+            self.assertEqual(replaced, [('preferences.json.writing', 'preferences.json')])
             self.assertIn('"Arial"', target.read_text(encoding='utf-8'))
 
 

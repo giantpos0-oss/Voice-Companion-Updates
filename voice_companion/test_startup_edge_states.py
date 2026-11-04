@@ -150,5 +150,26 @@ class HelpToleratesSpeechTests(CompanionTestCase):
                 companion.handle('main menu', 'help')
 
 
+class OptionsSaveTests(unittest.TestCase):
+    """preferences.json was written to a side file and put in place without being flushed to the
+    disk, and a failed write (a full disk) left preferences.writing behind. The shared atomic
+    writer flushes first and removes its side file on failure, as the other settings files do."""
+
+    def test_a_failed_save_keeps_the_old_options_and_leaves_no_side_file(self):
+        import app_settings
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as folder:
+            folder = Path(folder)
+            (folder / 'preferences.json').write_text('{"verbosity": "low"}', encoding='utf-8')
+            m = SimpleNamespace(APP=folder, PREFERENCES={'verbosity': 'high'})
+            with patch('storage.os.fsync', side_effect=OSError(28, 'No space left on device')):
+                with self.assertRaises(OSError):
+                    app_settings.save_preferences(m)
+            self.assertEqual(json.loads((folder / 'preferences.json').read_text(encoding='utf-8')), {'verbosity': 'low'})
+            self.assertEqual(sorted(p.name for p in folder.iterdir()), ['preferences.json'])
+            app_settings.save_preferences(m)
+            self.assertEqual(json.loads((folder / 'preferences.json').read_text(encoding='utf-8')), {'verbosity': 'high'})
+
+
 if __name__ == '__main__':
     unittest.main()
