@@ -18,7 +18,7 @@
         {
           "title": "Choose text by word, line or to the end in documents",
           "details": [
-            "Extend selection, Select to end of line and Select to the end now work in documents and emails you write.",
+            "You can now extend a selection, or select to the end of a line, in documents and emails.",
             "Before, some of these were typed into your text."
           ]
         }
@@ -35,7 +35,7 @@
             "Companion starts even if the speech settings file is damaged.",
             "F1 repeats the update question when the microphone is off.",
             "Help with e-mail finds the email topic. Help, please works on the main menu.",
-            "The speech transcript keeps every line, even when the old transcript is open in another program.",
+            "The speech transcript keeps every line, even when an old copy is open.",
             "Options are saved more safely.",
             "The guide no longer mentions a setting that was removed."
           ]
@@ -74,8 +74,8 @@
             "Emails you write say Beginning of message and End of message.",
             "Damaged Word files say what to do next, in plain words.",
             "A damaged Word file keeps you on the file you picked.",
-            "The option to not read a document when it opens now works for every kind of file.",
-            "Select previous paragraph no longer skips a paragraph.",
+            "If you turned off reading a file when it opens, that now works for all files.",
+            "Select previous paragraph no longer skips one.",
             "In File manager, Delete and Rename keep your place.",
             "A new name like Name tags is kept whole."
           ]
@@ -101,8 +101,8 @@
             "Only sound files are listed as recordings.",
             "Subscribing to a show you already have says so.",
             "Space answers Yes or No questions on Radio and Podcasts.",
-            "Escape hints name the list you go back to.",
-            "Midnight tonight is explained when you schedule a recording.",
+            "Escape tips name the list you go back to.",
+            "When you set a recording for 12 AM, you hear that midnight tonight is 12 AM tomorrow.",
             "With no internet, radio search tells you to check your connection."
           ]
         }

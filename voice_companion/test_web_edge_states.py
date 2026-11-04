@@ -51,7 +51,8 @@ class DialogWithoutButtonsTests(unittest.TestCase):
     def test_a_second_escape_on_the_same_dialog_opens_the_web_browser_menu(self):
         import companion as app
         session = self.session([])
-        with patch.object(app, 'web_session', session), patch.object(app, 'interrupt_speech'):
+        # Earlier tests can leave a spoken list open; that would take Escape first.
+        with patch.object(app, 'web_session', session), patch.object(app, 'interrupt_speech'), patch.object(app, 'NAMED_LIST', None):
             self.assertEqual(app.navigation_key('Escape', 'web'), 'web key Escape')
             session.keyboard('Escape')
             self.assertEqual(app.navigation_key('Escape', 'web'), 'web browser menu')
