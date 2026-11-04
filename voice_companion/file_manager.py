@@ -287,7 +287,9 @@ class FileManager:
             self.revision+=1
             return location_name(path)+'. '+self.say_current()
         return self.start_job(lambda:self.backend.roots() if path is None else self.backend.list(path),done,'Loading drive list.' if path is None else 'Opening folder.')
-    def refresh_here(self):return self.refresh(self.location,preserve=self.current().path if self.current() else None)
+    def refresh_here(self,focus=None):
+        # On the same item; when it is gone (deleted), at the same place in the list, not the top.
+        return self.refresh(self.location,preserve=focus or (self.current().path if self.current() else None),restore_index=self.index)
     def targets(self):
         targets=[i for i in self.items if i.path in self.selected] or ([self.current()] if self.current() else [])
         if not targets:raise ValueError('This folder is empty.' if self.location is not None and not self.items else 'No item is selected.')
@@ -318,7 +320,8 @@ class FileManager:
                 self.pending=None
                 return self.mutate('delete',paths)
             if action=='rename':
-                name=re.sub(r'^(?:rename to|name|call it)\s+','',text,flags=re.I)
+                # "Rename to budget" or "Call it budget"; a typed name such as "Name tags.txt" is kept whole.
+                name=re.sub(r'^(?:rename (?:it )?to|call it|name it)\s+','',text,flags=re.I)
                 valid_name(name);self.pending=None;return self.mutate('rename',paths,name=name)
             if action in ('search','search all'):
                 if not text.strip():raise ValueError('Enter part of a name, or press Escape to cancel.')
@@ -419,8 +422,9 @@ class FileManager:
         name=re.sub(r'^open(?: file| folder| drive)?\s+','',text,flags=re.I);self.choose(name)
         return self.command('open')
     def mutate(self,action,paths,**kwargs):
-        return self.start_job(lambda:self.backend.operate(action,paths,**kwargs),lambda _:self.after_change('File action complete.'),'Working on '+str(len(paths))+(' item.' if len(paths)==1 else ' items.'),mutating=True)
-    def after_change(self,message):
-        self.selected.clear();self.refresh_here();return message+' Refreshing folder.'
+        focus=str(Path(paths[0]).with_name(kwargs['name'])) if action=='rename' and kwargs.get('name') else None
+        return self.start_job(lambda:self.backend.operate(action,paths,**kwargs),lambda _:self.after_change('File action complete.',focus),'Working on '+str(len(paths))+(' item.' if len(paths)==1 else ' items.'),mutating=True)
+    def after_change(self,message,focus=None):
+        self.selected.clear();self.refresh_here(focus);return message+' Refreshing folder.'
     def finish_open(self,reader):self.opened=reader;return 'Opened '+reader.title+'. Read-only document. '+''.join(w.rstrip(' .')+'. ' for w in reader.warnings[:3])+reader.reading.read(True)
     def finish_pick(self,path):self.opened=path;return 'Selected '+path.name+'.'
