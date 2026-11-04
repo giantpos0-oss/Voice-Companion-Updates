@@ -112,6 +112,8 @@ class OwnChromeWindows:
             except Exception:
                 continue
             self.hidden[handle] = (style, place)
+        if self.hidden:
+            watch_exit()
         return len(self.hidden)
 
     def show(self, forward=True):
@@ -145,6 +147,27 @@ class OwnChromeWindows:
 
 
 WINDOWS = OwnChromeWindows()
+EXIT_WATCHED = False
+
+
+def restore_at_exit():
+    """Companion is closing: your hidden Chrome goes back on the screen, the taskbar and Alt+Tab,
+    without taking the keyboard. It is your own Chrome; once Companion is gone nothing else could show it."""
+    try:
+        WINDOWS.show(forward=False)
+    except Exception:
+        pass
+
+
+def watch_exit():
+    """Run restore_at_exit when Companion closes. Registered the first time a window is hidden, so it
+    runs after YouTube closes the windows it opened (exit handlers run newest first)."""
+    global EXIT_WATCHED
+    if EXIT_WATCHED:
+        return
+    import atexit
+    atexit.register(restore_at_exit)
+    EXIT_WATCHED = True
 
 
 def set_enabled(choice):

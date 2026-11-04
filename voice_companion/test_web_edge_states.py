@@ -79,5 +79,39 @@ class DownloadFolderNameTests(unittest.TestCase):
                              'No downloads yet. Files you download are saved in drive E. Escape goes back.')
 
 
+class HiddenChromeAtExitTests(unittest.TestCase):
+    """Options, Web browser, Your own Chrome window: "Hide it while Companion uses it".
+    When Companion closed, a Chrome window it had hidden stayed off the screen, the
+    taskbar and Alt+Tab. It is the person's own Chrome, and nothing could bring it back."""
+
+    def test_exit_puts_hidden_chrome_back_without_taking_the_keyboard(self):
+        import own_chrome_window
+        from test_own_chrome_window import FakeDesktop
+        desktop = FakeDesktop([7])
+        windows = own_chrome_window.OwnChromeWindows(desktop=lambda: desktop, sleep=lambda s: None)
+        self.addCleanup(setattr, own_chrome_window, 'ENABLED', False)
+        own_chrome_window.ENABLED = True
+        before = windows.current()
+        desktop.open[42] = {'style': 0x100, 'pos': (300, 200), 'parked': False}
+        windows.opened(before)
+        self.assertTrue(desktop.open[42]['parked'])
+        with patch.object(own_chrome_window, 'WINDOWS', windows):
+            own_chrome_window.restore_at_exit()
+        self.assertFalse(desktop.open[42]['parked'])
+        self.assertEqual(desktop.open[42]['pos'], (300, 200))
+        self.assertEqual(desktop.forward, [])   # back on the taskbar, not pulled in front
+
+    def test_restore_is_registered_to_run_at_exit_once_a_window_is_hidden(self):
+        import own_chrome_window
+        from test_own_chrome_window import FakeDesktop
+        desktop = FakeDesktop([42])
+        windows = own_chrome_window.OwnChromeWindows(desktop=lambda: desktop, sleep=lambda s: None)
+        windows.mine.add(42)
+        with patch('atexit.register') as register, patch.object(own_chrome_window, 'EXIT_WATCHED', False):
+            windows.hide()
+            windows.hide()
+        register.assert_called_once_with(own_chrome_window.restore_at_exit)
+
+
 if __name__ == '__main__':
     unittest.main()
