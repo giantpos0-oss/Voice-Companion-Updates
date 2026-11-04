@@ -65,5 +65,36 @@ class BlankHtmlTests(YahooSession):
         self.assertEqual(body.plain, 'Your benefits letter is ready.')
 
 
+class EmptySenderTests(YahooSession):
+    # Some bounce and system messages say "From: <>": no name and no address.
+    # It was spoken as the symbols "<>" in the list and in "Who is it from?".
+    def test_a_sender_with_no_name_or_address_is_unknown_sender(self):
+        self.server.add('Inbox', message(raw=b'From: <>\nSubject: Returned mail\n\nIt could not be delivered.\n'))
+        said = self.session.process('open inbox')
+        self.assertIn('Unknown sender. Returned mail.', said)
+        self.assertNotIn('<>', said)
+        self.assertEqual(self.session.process('who is it from'), 'From: Unknown sender.')
+
+    def test_a_name_without_an_address_is_still_said(self):
+        from mail_voice import sender_name
+        self.assertEqual(sender_name({'from': 'Sam Lee'}), 'Sam Lee')
+        self.assertEqual(sender_name({'from': '"" <>'}), 'Unknown sender')
+
+
+class EmptyFolderNumberTests(YahooSession):
+    # "An empty folder is an empty list, the same for every key and command."
+    # A number said in an empty folder said "That number is not on this page."
+    def test_message_numbers_in_an_empty_folder_say_empty_list(self):
+        self.assertIn('Empty list', self.session.process('open inbox'))
+        for command in ('read message 1', 'open message 2', 'select message 1', 'mark message one',
+                        'select messages 1 through 3'):
+            self.assertIn('Empty list. No messages on this page of Inbox.', self.session.process(command), command)
+
+    def test_a_number_past_the_end_still_says_so(self):
+        self.server.add('Inbox', message(subject='Only one'))
+        self.session.process('open inbox')
+        self.assertEqual(self.session.process('read message 4'), 'That number is not on this page. Say list messages.')
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -180,6 +180,9 @@ def sender_address(row):
 
 def sender_name(row):
     from email.utils import parseaddr
+    if not re.search(r'\w', row.get('sender_name') or row.get('from') or ''):
+        # "From: <>" (some bounce and system messages): never the symbols read aloud.
+        return 'Unknown sender'
     name,address=parseaddr(row.get('from',''))
     return row.get('sender_name') or name or (row.get('from','') if '@' not in row.get('from','') else 'Sender name unavailable') or 'Unknown sender'
 
@@ -673,6 +676,9 @@ class MailSession:
         return self._summary(self.current,True) + ' Say open current message to read it.'
 
     def _number(self, value):
+        if not self.rows:
+            # "Read message 1" in an empty folder: an empty list, as every other key says it.
+            raise MailboxError(self._empty_list())
         n = NUMBER_WORDS.get(str(value), None)
         if n is None:
             n = int(value)
