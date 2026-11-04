@@ -62,10 +62,10 @@ def unit_span(reader, unit, caret, where=0):
     index = next((i for i, (a, b) in enumerate(spans) if a <= caret < b), None)
     if index is None:
         # Between units (a space, a blank line): the next one is "here".
-        index = next((i for i, (a, b) in enumerate(spans) if a >= caret), len(spans) - 1)
+        index = next((i for i, (a, b) in enumerate(spans) if a >= caret), len(spans))
         if where < 0:
             index -= 1
-        where = 0 if where > 0 else where
+        where = 0   # the next or previous one is the unit just after or just before the gap
     index = max(0, min(len(spans) - 1, index + where))
     a, b = spans[index]
     text = reader.text

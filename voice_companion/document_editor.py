@@ -209,6 +209,18 @@ PARAGRAPH_ORDINALS = {'first':1, 'second':2, 'third':3, 'fourth':4, 'fifth':5,
                       'sixth':6, 'seventh':7, 'eighth':8, 'ninth':9, 'tenth':10}
 
 
+def selection_words(content):
+    """Selected text as it is said: spaces or line breaks alone are "blank.", as screen readers say."""
+    from keyboard_text import is_blank
+    return 'blank.' if is_blank(content) else content
+
+
+def text_review_request(command):
+    """A selection command in the words every text screen uses (text_review.py), or None."""
+    import text_review
+    return text_review.request(command)
+
+
 def structural_selection_request(command):
     command = command.lower().strip().rstrip('.!?')
     if command in ('select all', 'select all text', 'select everything',
@@ -343,6 +355,10 @@ class UndoStep:
         return sum(len(p.text) for p in self.paragraphs)
 
 
+class _DamagedPart(Exception):
+    """A part of a Word file that cannot be read (open_existing names it as damaged)."""
+
+
 @dataclass
 class VoiceDocument:
     folder: Path
@@ -439,8 +455,14 @@ class VoiceDocument:
             # <w:b w:val="0"/> and <w:u w:val="none"/> mean the formatting is off.
             node = props.find(ns + tag) if props is not None else None
             return node is not None and node.get(ns + 'val', 'true').lower() not in ('0', 'false', 'off', 'none')
+        def whole_number(value):
+            # A size or spacing that is not a number means the file is damaged.
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                raise _DamagedPart from None
         def points(node):
-            half_points = int(node.get(ns + 'val'))
+            half_points = whole_number(node.get(ns + 'val'))
             return half_points // 2 if half_points % 2 == 0 else half_points / 2
         def parse_paragraph(node, table_id=0, row=0, column=0):
             style = node.find('./' + ns + 'pPr/' + ns + 'pStyle')
@@ -481,20 +503,27 @@ class VoiceDocument:
                 points(size) if size is not None else 0, table_id, row, column,
                 parsed_runs if len(parsed_runs) > 1 or any(r.highlight for r in parsed_runs) else [],
                 align.get(ns+'val', 'left') if align is not None else 'left',
-                int(spacing.get(ns+'line', '0')) if spacing is not None else 0,
+                whole_number(spacing.get(ns+'line', '0')) if spacing is not None else 0,
                 spacing.get(ns+'lineRule', 'auto') if spacing is not None else 'auto'))
         body = root.find(ns+'body')
-        for block in body:
-            if block.tag == ns+'p':
-                parse_paragraph(block)
-            elif block.tag == ns+'tbl':
-                table_id = max((p.table_id for p in document.paragraphs), default=0) + 1
-                for row, tr in enumerate(block.findall(ns+'tr'), 1):
-                    for column, tc in enumerate(tr.findall(ns+'tc'), 1):
-                        cells = tc.findall(ns+'p')
-                        if len(cells) != 1:
-                            raise ValueError('This table has a cell structure this editor cannot preserve.')
-                        parse_paragraph(cells[0], table_id, row, column)
+        try:
+            if body is None:
+                raise _DamagedPart
+            for block in body:
+                if block.tag == ns+'p':
+                    parse_paragraph(block)
+                elif block.tag == ns+'tbl':
+                    table_id = max((p.table_id for p in document.paragraphs), default=0) + 1
+                    for row, tr in enumerate(block.findall(ns+'tr'), 1):
+                        for column, tc in enumerate(tr.findall(ns+'tc'), 1):
+                            cells = tc.findall(ns+'p')
+                            if len(cells) != 1:
+                                raise ValueError('This table has a cell structure this editor cannot preserve.')
+                            parse_paragraph(cells[0], table_id, row, column)
+        except _DamagedPart:
+            # No body, or a size or spacing that is not a number: name it, never Python's words.
+            from document_reader import damaged_words
+            raise ValueError(damaged_words(path, 'This document is empty or damaged, so it could not be opened.')) from None
         return document
 
     @property
@@ -686,7 +715,7 @@ class VoiceDocument:
         if not self.paragraphs:
             return done + self.EMPTY_NOTICE
         p = self.paragraphs[self.cursor]
-        return done + (self.describe_cell() if p.table_id else f'Paragraph {self.cursor + 1} of {len(self.paragraphs)}. ' + (p.text or 'Empty paragraph.'))
+        return done + (self.describe_cell() if p.table_id else f'Paragraph {self.cursor + 1} of {len(self.paragraphs)}. ' + (p.text.strip() or 'Empty paragraph.'))
 
     @staticmethod
     def spacing_description(p):
@@ -1031,7 +1060,7 @@ class VoiceDocument:
             self._replace_selection(replacement)
             return 'Replaced ' + content + ' with ' + closed(replacement)
         if action in ('select', 'find'):
-            return ('Found and selected: ' if action == 'find' else 'Selected: ') + content
+            return ('Found and selected: ' if action == 'find' else 'Selected: ') + selection_words(content)
         if action in ('cut', 'delete') and any(p.table_id for p in self.paragraphs[selected.first_paragraph:selected.last_paragraph+1]) and selected.first_paragraph != selected.last_paragraph:
             if action == 'cut': copy_to_clipboard(content)
             self.checkpoint()
@@ -1069,6 +1098,42 @@ class VoiceDocument:
         self.changed()
         self.word_cursor = word_position
         return action.capitalize() + ' applied to: ' + content
+
+    def _caret_offset(self):
+        """The place in the whole text where dictation or a move left you."""
+        if not self.paragraphs:
+            return 0
+        self.cursor = max(0, min(len(self.paragraphs) - 1, self.cursor))
+        base = sum(len(p.text)+1 for p in self.paragraphs[:self.cursor])
+        length = len(self.paragraphs[self.cursor].text)
+        source = self.navigation_position or self.insertion_position
+        if source and source[0] == self.cursor:
+            return base + max(0, min(length, source[1]))
+        if self.reading.text == '\n'.join(p.text for p in self.paragraphs) and base <= self.reading.position <= base + length:
+            return self.reading.position
+        return base
+
+    def _review_selection(self, want):
+        """Grow the selection, or select to an end, with text_review's rules."""
+        import text_review
+        self.selection_candidates, self.selection_action = [], ''
+        text = '\n'.join(p.text for p in self.paragraphs)
+        if not text.strip():
+            return self.EMPTY_NOTICE + ' There is no text to select.'
+        reader = ReadingCursor(); reader.set_text(text)
+        reader.position = self._caret_offset()
+        def offset(paragraph, column):
+            return sum(len(p.text)+1 for p in self.paragraphs[:paragraph]) + column
+        old = None
+        if self.selection:
+            old = (offset(self.selection.first_paragraph, self.selection.first_offset),
+                   offset(self.selection.last_paragraph, self.selection.last_offset))
+        new, said = text_review.apply(reader, old, want)
+        if new and new != old:
+            first, last = self._location(new[0]), self._location(new[1])
+            self.selection = TextSelection(first[0], first[1], last[0], last[1])
+            self.cursor = first[0]
+        return said
 
     def process(self, raw):
         self.drop_stale_selection()
@@ -1119,7 +1184,7 @@ class VoiceDocument:
             self.pending_spacing = False
             self.pending_spacing_candidate = None
         if navigation in ('next paragraph','previous paragraph'):
-            if not self.paragraphs: return 'The document is empty.'
+            if not self.paragraphs: return self.EMPTY_NOTICE
             old = self.cursor
             self.cursor = max(0,min(len(self.paragraphs)-1,self.cursor+(1 if navigation=='next paragraph' else -1)))
             self.word_cursor = self.sentence_cursor = 0
@@ -1127,10 +1192,10 @@ class VoiceDocument:
             self.reading.set_text('\n'.join(p.text for p in self.paragraphs))
             self.reading.position = sum(len(p.text)+1 for p in self.paragraphs[:self.cursor])
             # At the first or last paragraph, say so; repeating it alone sounded like a move.
-            edge = '' if self.cursor != old else 'End of document. ' if navigation == 'next paragraph' else 'Beginning of document. '
+            edge = '' if self.cursor != old else ('End of ' if navigation == 'next paragraph' else 'Beginning of ') + self.EDGE_NAME + '. '
             return edge + self.process('read current paragraph')
         if navigation in ('start of line','end of line'):
-            if not self.paragraphs: return 'The document is empty.'
+            if not self.paragraphs: return self.EMPTY_NOTICE
             p = self.paragraphs[self.cursor]
             offset = min(line_source[1], len(p.text)) if line_source and line_source[0] == self.cursor else len(p.text)
             start = p.text.rfind('\n', 0, offset) + 1
@@ -1177,7 +1242,7 @@ class VoiceDocument:
         if command in START_COMMANDS + END_COMMANDS:
             self.selection = None
             self.selection_candidates, self.selection_action = [], ''
-            if not self.paragraphs: return 'The document is empty.'
+            if not self.paragraphs: return self.EMPTY_NOTICE
             at_start = command in START_COMMANDS
             self.cursor = 0 if at_start else len(self.paragraphs)-1
             p = self.paragraphs[self.cursor]
@@ -1187,7 +1252,7 @@ class VoiceDocument:
             self.sentence_cursor = 0 if at_start else max(0,len(re.findall(r'\S.*?(?:[.!?](?=\s|$)|$)',p.text,re.S))-1)
             self.reading.set_text('\n'.join(p.text for p in self.paragraphs), reset=True)
             if not at_start: self.reading.position = len(self.reading.text)
-            return ('Beginning' if at_start else 'End')+' of document. '+(self.describe_cell() if p.table_id else p.text or 'Empty paragraph.')
+            return ('Beginning' if at_start else 'End')+' of '+self.EDGE_NAME+'. '+(self.describe_cell() if p.table_id else p.text.strip() or 'Empty paragraph.')
         if command in LINE_BREAK_COMMANDS:
             self.selection_candidates, self.selection_action = [], ''
             if self.selection and self.selected_text():
@@ -1270,8 +1335,9 @@ class VoiceDocument:
         structure = structural_selection_request(command)
         if structure:
             self.selection_candidates, self.selection_action = [], ''
-            if not self.paragraphs:
-                return 'The document is empty. There is no text to select.'
+            if not any(p.text for p in self.paragraphs):
+                # Empty paragraphs only (after Enter, or after the text was deleted): nothing to select.
+                return self.EMPTY_NOTICE + ' There is no text to select.'
             kind, reference = structure
             if kind == 'all':
                 selected = TextSelection(0, 0, len(self.paragraphs)-1, len(self.paragraphs[-1].text))
@@ -1312,9 +1378,17 @@ class VoiceDocument:
             if not 0 <= index < len(self.paragraphs):
                 return ('There is no ' + reference + ' paragraph here.' if reference in ('next','previous') else
                         'That paragraph number is not available. The document has ' + str(len(self.paragraphs)) + ' paragraphs.')
+            if not self.paragraphs[index].text:
+                self.selection = None
+                return 'Paragraph ' + str(index+1) + ' is empty. There is no text to select.'
             selected = TextSelection(index, 0, index, len(self.paragraphs[index].text))
             self.word_cursor = self.sentence_cursor = 0
             return 'Paragraph ' + str(index+1) + '. ' + self._apply_selection_action(selected, 'select')
+        review = text_review_request(command)
+        if review and review[0] in ('extend', 'to'):
+            # "Extend selection by word" and "Select to end of line" (guide 5.3): the same words as
+            # on every screen you read. Before, they were typed into the text or not found.
+            return self._review_selection(review)
         if self.selection_candidates:
             if command in ('first item','last item','start of list','end of list'):
                 self.selection_index=0 if command in ('first item','start of list') else len(self.selection_candidates)-1
@@ -1347,7 +1421,7 @@ class VoiceDocument:
                 return self._apply_selection_action(selected, action)
             return 'Say next, previous, that one, or cancel selection.'
         if command in ('what is selected', 'say selection', 'read selection', 'selected text', 'read selected text'):
-            return 'Selected: ' + self.selected_text() if self.selection else 'No text is selected.'
+            return 'Selected: ' + selection_words(self.selected_text()) if self.selection else 'No text is selected.'
         if command in ('clear selection', 'unselect', 'deselect', 'cancel selection'):
             self.selection = None
             return 'Selection cleared.'
@@ -1370,7 +1444,7 @@ class VoiceDocument:
             command = 'delete paragraph'
         if command in ('delete line', 'delete current line'):
             if not self.paragraphs:
-                return 'The document is empty.'
+                return self.EMPTY_NOTICE
             p = self.paragraphs[self.cursor]
             position_source = self.navigation_position or self.insertion_position
             offset = min(position_source[1], len(p.text)) if position_source and position_source[0] == self.cursor else 0
@@ -1529,20 +1603,20 @@ class VoiceDocument:
             self.changed()
             return 'New paragraph.'
         if command in ('read document', 'read all'):
-            return ' '.join(p.text for p in self.paragraphs) or 'The document is empty.'
+            return ' '.join(p.text for p in self.paragraphs) or self.EMPTY_NOTICE
         if command in ('read paragraph', 'read current paragraph', 'where am i'):
             if not self.paragraphs:
-                return 'The document is empty.'
+                return self.EMPTY_NOTICE
             p = self.paragraphs[self.cursor]
             if p.table_id:
                 return self.describe_cell()
             # Headings say their level first, as screen readers do (Will, October 30, 2026).
             # Other formatting is said only when asked (say formatting, Insert+F).
             return ((f'Paragraph {self.cursor + 1} of {len(self.paragraphs)}. ' if command=='where am i' else '') +
-                    heading_words(p) + (p.text or ('Empty heading.' if heading_level(p) else 'Empty paragraph.')))
+                    heading_words(p) + (p.text.strip() or ('Empty heading.' if heading_level(p) else 'Empty paragraph.')))
         if command in ('read sentence', 'read current sentence', 'next sentence', 'previous sentence'):
             if not self.paragraphs:
-                return 'The document is empty.'
+                return self.EMPTY_NOTICE
             sentences = re.split(r'(?<=[.!?])\s+', self.paragraphs[self.cursor].text.strip())
             sentences = [s for s in sentences if s]
             if not sentences:
@@ -1555,7 +1629,7 @@ class VoiceDocument:
             return sentences[self.sentence_cursor]
         if command in ('read word', 'next word', 'previous word', 'spell word'):
             if not self.paragraphs:
-                return 'The document is empty.'
+                return self.EMPTY_NOTICE
             words = self.paragraphs[self.cursor].text.split()
             if not words:
                 return 'This paragraph is empty.'
@@ -1624,7 +1698,7 @@ class VoiceDocument:
             return self.process('read paragraph')
         if command in ('delete paragraph', 'remove paragraph'):
             if not self.paragraphs:
-                return 'The document is empty.'
+                return self.EMPTY_NOTICE
             if self.table_cell():
                 return 'In a table, say clear cell or delete table. A table cell cannot be removed by deleting a paragraph.'
             self.checkpoint()
@@ -1640,7 +1714,7 @@ class VoiceDocument:
         whole_paragraph = re.match(r'replace (?:the |current |this )?paragraph with (.+)$', text, re.I | re.S)
         if whole_paragraph:
             if not self.paragraphs:
-                return 'The document is empty.'
+                return self.EMPTY_NOTICE
             self.checkpoint()
             self.paragraphs[self.cursor].text = whole_paragraph[1]
             self.changed()
@@ -1820,15 +1894,15 @@ class VoiceDocument:
             value = {'centre':'center', 'justified':'both'}.get(alignment.group(1), alignment.group(1))
             return self.format_current(alignment=value)
         if command in ('read line spacing', 'what is the line spacing', 'what line spacing', 'line spacing status'):
-            return self.spacing_description(self.paragraphs[self.cursor]) if self.paragraphs else 'The document is empty.'
+            return self.spacing_description(self.paragraphs[self.cursor]) if self.paragraphs else self.EMPTY_NOTICE
         if command == 'read document line spacing':
             if not self.paragraphs:
-                return 'The document is empty.'
+                return self.EMPTY_NOTICE
             descriptions = {self.spacing_description(p) for p in self.paragraphs}
             return descriptions.pop() + ' throughout the document.' if len(descriptions) == 1 else 'Line spacing varies between paragraphs. Say read line spacing in each paragraph.'
         if command in ('reset document line spacing', 'default document line spacing'):
             if not self.paragraphs:
-                return 'The document is empty.'
+                return self.EMPTY_NOTICE
             self.checkpoint()
             for p in self.paragraphs:
                 p.line_spacing_twips = 0
@@ -1837,7 +1911,7 @@ class VoiceDocument:
             return 'Restored default line spacing throughout the document.'
         if command in ('default line spacing', 'reset line spacing', 'remove line spacing'):
             if not self.paragraphs:
-                return 'The document is empty.'
+                return self.EMPTY_NOTICE
             self.checkpoint()
             self.paragraphs[self.cursor].line_spacing_twips = 0
             self.paragraphs[self.cursor].line_spacing_rule = 'auto'
@@ -1949,7 +2023,7 @@ class VoiceDocument:
 
     def formatting_report(self, detail='all'):
         self.drop_stale_selection()
-        if not self.paragraphs: return 'The document is empty.'
+        if not self.paragraphs: return self.EMPTY_NOTICE
         selected = self.selection
         paragraphs = self.paragraphs[selected.first_paragraph:selected.last_paragraph+1] if selected else [self.paragraphs[self.cursor]]
         styles = []
@@ -1984,7 +2058,7 @@ class VoiceDocument:
     def format_current(self, **changes):
         self.drop_stale_selection()
         if not self.paragraphs:
-            return 'The document is empty.'
+            return self.EMPTY_NOTICE
         self.checkpoint()
         if self.selection:
             selected = self.selection

@@ -106,6 +106,9 @@ def message_body(msg):
         plain = msg.get_body(preferencelist=('plain',))
         if plain is not None:
             body.plain = str(plain_body(part_text(plain)))
+            if not str(body).strip() and body.plain.strip():
+                # A picture-only HTML part: the words are in the plain part, never "No readable body".
+                body = plain_body(body.plain)
         return body
     except (ValueError, TypeError, UnicodeError, LookupError, KeyError, AttributeError) as exc:
         raise MailboxError('This message could not be read. Say next message to go on.') from exc
@@ -563,13 +566,14 @@ class YahooMailbox:
                                            addresses('Cc'), own_address):
                 if address.casefold() not in [a.casefold() for a in recipients]:
                     recipients.append(address)
-            subject = _header(msg, 'Subject', '(no subject)')
+            # A blank subject stays blank: "(no subject)" is only how the list says it.
+            subject = _header(msg, 'Subject')
             prefix = 'Fwd: ' if action == 'forward' else 'Re: '
             if subject.casefold().startswith(prefix.casefold()): prefix = ''
             context = {'action': action, 'source_id': str(message_id), 'message_id': _header(msg, 'Message-ID'),
                        'references': _header(msg, 'References'),
                        'recipient': recipients[0] if action != 'forward' and recipients else '',
-                       'cc': recipients[1:] if action == 'reply_all' else [], 'subject': prefix + subject,
+                       'cc': recipients[1:] if action == 'reply_all' else [], 'subject': (prefix + subject).strip(),
                        'original_from': _header(msg, 'From'), 'original_subject': subject,
                        'original_body': message_body(msg) if action == 'forward' else ''}
             if action == 'forward':

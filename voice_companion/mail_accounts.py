@@ -210,7 +210,7 @@ class ProtectedStore:
         selected = self.selected()
         if selected and selected[0] == provider: address = selected[1]
         elif len(accounts) == 1: address = accounts[0][1]
-        elif not accounts: raise AccountError('This email account is not connected.')
+        elif not accounts: raise AccountError('This email account is not connected. Say add account to connect it.')
         else: raise AccountError('Several accounts are connected. Say switch to followed by the email address.')
         path = self._account_path(provider, address)
         if not path.exists(): path = self._path(provider)

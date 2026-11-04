@@ -36,9 +36,10 @@ def ai_account(folder):
         return {}
 
 def save_preferences(m):
-    m.APP.mkdir(parents=True,exist_ok=True)
-    target=m.APP/'preferences.json';temp=target.with_suffix('.writing')
-    temp.write_text(json.dumps(m.PREFERENCES),encoding='utf-8');temp.replace(target)
+    # Flushed to the disk before it replaces the old file, and no side file is left when it
+    # fails, as for every other settings file (storage.write_text_atomic).
+    from storage import write_text_atomic
+    write_text_atomic(m.APP/'preferences.json',json.dumps(m.PREFERENCES))
 
 def snapshot(m):
     from ai_voice_settings import VOICES

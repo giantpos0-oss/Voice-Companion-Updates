@@ -113,7 +113,12 @@ class Transcript:
                 line = stamp + ' [' + (str(self.mode or '') or 'none') + '] ' + line + '\n'
                 self._open()
                 if self.file.tell() and self.file.tell() + len(line.encode('utf-8')) > self.limit:
-                    self._rotate()
+                    try:
+                        self._rotate()
+                    except OSError:
+                        # The old transcript is held (open in Word, or being scanned): keep
+                        # writing here, a little past the limit, and move it on a later line.
+                        pass
                     self._open()
                 self.file.write(line)
             self.problem = None

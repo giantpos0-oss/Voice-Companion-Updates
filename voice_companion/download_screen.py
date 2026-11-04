@@ -89,7 +89,7 @@ def describe(m, index=None):
     records = items(m)
     follow(records)
     if not records:
-        return 'No downloads yet. Files you download are saved in ' + manager(m).folder().name + '. Escape goes back.'
+        return 'No downloads yet. Files you download are saved in ' + downloads.folder_words(manager(m).folder()) + '. Escape goes back.'
     index = INDEX if index is None else index
     return announce_item(manager(m).label(records[index]), index, len(records), hotkey=False)
 

@@ -59,6 +59,15 @@ def part_text(part):
     """Text of one message part. An unknown character set is read as UTF-8
     instead of hiding the whole message."""
     try:
-        return part.get_content()
+        text = part.get_content()
     except LookupError:
         return (part.get_payload(decode=True) or b'').decode('utf-8', 'replace')
+    if '�' in text and (part.get_content_charset() or 'us-ascii') in ('us-ascii', 'ascii'):
+        # Accented letters sent without a character set: read them as Thunderbird does,
+        # UTF-8 first, then Windows Western text, never as unknown symbols.
+        raw = part.get_payload(decode=True) or b''
+        try:
+            return raw.decode('utf-8')
+        except UnicodeDecodeError:
+            return raw.decode('cp1252', 'replace')
+    return text

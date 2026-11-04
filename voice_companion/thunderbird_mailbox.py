@@ -4,6 +4,7 @@ ThunderbirdMailbox has the same methods as the Yahoo mailbox,
 so every email screen and voice command works unchanged. It talks
 to the Voice Companion Mail Connection add-on through thunderbird_bridge.
 """
+import re
 from email.utils import getaddresses
 
 from mailbox_access import MailboxError, html_text, message_date, reply_addresses
@@ -245,6 +246,9 @@ class ThunderbirdMailbox:
             body = html_text(parts['html'])
             if parts.get('plain'):
                 body.plain = str(plain_body(parts['plain']))
+                if not str(body).strip() and body.plain.strip():
+                    # A picture-only HTML part: the words are in the plain part, never "No readable body".
+                    body = plain_body(body.plain)
         else:
             body = plain_body(parts.get('plain', ''))
         if cut:
@@ -350,6 +354,9 @@ class ThunderbirdMailbox:
         def people(items):
             found = []
             for item in items or []:
+                if re.fullmatch(r'[^:<>@]*:\s*;', ' '.join(str(item or '').split())):
+                    # An empty group, such as "undisclosed-recipients:;": no address, as Yahoo says it.
+                    continue
                 name, address = person(item)
                 if name or address or str(item or '').strip():
                     found.append((name or ('' if address else ' '.join(str(item).split())), address))
@@ -369,7 +376,8 @@ class ThunderbirdMailbox:
         for found in reply_addresses(action, sender, to, copied, own_address):
             if found.casefold() not in [a.casefold() for a in recipients]:
                 recipients.append(found)
-        subject = info.get('subject') or '(no subject)'
+        # A blank subject stays blank: "(no subject)" is only how the list says it.
+        subject = str(info.get('subject') or '')
         prefix = 'Fwd: ' if action == 'forward' else 'Re: '
         if subject.casefold().startswith(prefix.casefold()): prefix = ''
         # Thunderbird quotes or includes the original itself, like Outlook, so
@@ -377,7 +385,7 @@ class ThunderbirdMailbox:
         context = {'action': action, 'source_id': message_id, 'message_id': info.get('headerMessageId', ''),
                    'recipient': recipients[0] if action != 'forward' and recipients else '',
                    'cc': recipients[1:] if action == 'reply_all' else [],
-                   'subject': prefix + subject, 'original_body': ''}
+                   'subject': (prefix + subject).strip(), 'original_body': ''}
         if action == 'forward':
             # The original files go with the forward. None: an older add-on that cannot add them.
             try:

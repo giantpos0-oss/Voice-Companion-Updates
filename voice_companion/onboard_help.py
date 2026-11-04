@@ -7,6 +7,11 @@ from pathlib import Path
 from reading_navigation import ReadingCursor, reading_request
 
 
+def plain_words(text):
+    """Words only, lower case: "Sleep, exit, and computer power" is "sleep exit and computer power"."""
+    return ' '.join(re.sub(r"[^\w\s]", ' ', str(text).casefold()).split())
+
+
 class HelpReadingCursor(ReadingCursor):
     """Read complete blocks without advancing past text that has not been requested."""
     def read(self, how=False):
@@ -72,7 +77,8 @@ class HelpSession:
         return 'User guide. ' + self._item()
 
     def topic(self, name):
-        wanted = name.casefold().strip()
+        # Recognizers add punctuation and write "e-mail": compare words only, on both sides.
+        wanted = plain_words(name).replace('e mail', 'email')
         # "Help with the microphone": people say the, my or a before the name.
         wanted = re.sub(r'^(?:the|my|a|an) ', '', wanted)
         aliases = {
@@ -123,9 +129,9 @@ class HelpSession:
                 'clock': 'check the time and date', 'yes or no': 'answer yes or no', 'lessons': 'start the audio tutorial',
                 'transcript': 'keep a transcript of what companion says',
                 'speech transcript': 'keep a transcript of what companion says'}.get(wanted)
-        wanted = aliases.get(wanted, wanted)
+        wanted = plain_words(aliases.get(wanted, wanted))
         matches = [i for i, topic in enumerate(self.topics)
-                   if topic['name'].casefold() == wanted or topic['name'].casefold().startswith(wanted)]
+                   if plain_words(topic['name']) == wanted or plain_words(topic['name']).startswith(wanted)]
         if len(matches) != 1:
             # Say so in plain words, then where you are: the topic list, at the current chapter.
             self.level = 'topics'

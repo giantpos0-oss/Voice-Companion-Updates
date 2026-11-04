@@ -180,6 +180,9 @@ def sender_address(row):
 
 def sender_name(row):
     from email.utils import parseaddr
+    if not re.search(r'\w', row.get('sender_name') or row.get('from') or ''):
+        # "From: <>" (some bounce and system messages): never the symbols read aloud.
+        return 'Unknown sender'
     name,address=parseaddr(row.get('from',''))
     return row.get('sender_name') or name or (row.get('from','') if '@' not in row.get('from','') else 'Sender name unavailable') or 'Unknown sender'
 
@@ -482,11 +485,19 @@ class MailSession:
         self.current = 1
         return self.folder_name + '. ' + self._summary(1,True) + (' More messages are available.' if self.next_cursor else '') + notice
 
+    def _preferences(self):
+        """The saved options, or none when the file is missing or damaged (the usual options are used,
+        as everywhere else in Voice Companion)."""
+        import json
+        try:
+            preferences = json.loads((Path(getattr(self, 'folder', '')) / 'preferences.json').read_text(encoding='utf-8'))
+        except (OSError, ValueError, TypeError):
+            return {}
+        return preferences if isinstance(preferences, dict) else {}
+
     def _summary(self, number, announce_boundary=False):
         row = self.rows[number - 1]
-        import json
-        try:preferences=json.loads((Path(getattr(self,'folder',''))/'preferences.json').read_text(encoding='utf-8'))
-        except (OSError,ValueError,TypeError):preferences={}
+        preferences=self._preferences()
         order=preferences.get('email_header_order','from, subject, date').split(',')
         parts=[]
         status = status_words(row) if preferences.get('email_status_words', True) else ''
@@ -673,6 +684,9 @@ class MailSession:
         return self._summary(self.current,True) + ' Say open current message to read it.'
 
     def _number(self, value):
+        if not self.rows:
+            # "Read message 1" in an empty folder: an empty list, as every other key says it.
+            raise MailboxError(self._empty_list())
         n = NUMBER_WORDS.get(str(value), None)
         if n is None:
             n = int(value)
@@ -702,10 +716,7 @@ class MailSession:
         self.attachments_for = (row['id'], self.folder_id)
         self.body_content=body or ''
         self.body_format=None
-        import json
-        try:format=json.loads((Path(self.folder)/'preferences.json').read_text(encoding='utf-8')).get('email_format','html')
-        except (OSError,ValueError):format='html'
-        self.set_format(format)
+        self.set_format(self._preferences().get('email_format','html'))
         self.body_offset = 0
         self.reading.set_text(self.body_text, reset=True)
         # Only "Message opened." before the words (Will, October 2026). From, To, CC, Subject
@@ -1014,9 +1025,7 @@ class MailSession:
                            'open it', 'read email', 'open email'):
                 return self._read(self.current) if self.current else 'Say read message followed by a number first.'
             if command in ('list links','read links','list buttons','read buttons') or re.fullmatch(r'(?:open|activate) (?:link|button) (\d+)',command):
-                import json
-                try:format=json.loads((Path(self.folder)/'preferences.json').read_text(encoding='utf-8')).get('email_format','html')
-                except (OSError,ValueError):format='html'
+                format=self._preferences().get('email_format','html')
                 if self.view!='message':return 'Open a message first.'
                 if format!='html':return 'Choose HTML under Options, Email, Email format to navigate links.'
                 from email_reader import message_controls,safe_link

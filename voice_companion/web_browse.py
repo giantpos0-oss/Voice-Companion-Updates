@@ -209,7 +209,7 @@ class BrowseCursor:
         if current and kind(current)=='cell' and (self.table!=current['table'] or self.cell_at(self.row,self.column) is not current):self.table=current['table'];self.row=current['row'];self.column=current['column']
         if current and kind(current)=='table':self.table=current['key']
         cells=self.cells()
-        if not cells:return 'Move to a table with T first.'
+        if not cells:return 'This table is empty.' if current and kind(current)=='table' else 'Move to a table with T first.'
         row,column=self.row,self.column
         maxrow=max(e['row']+e.get('rowspan',1)-1 for e in cells);maxcol=max(e['column']+e.get('colspan',1)-1 for e in cells)
         cell=self.cell_at(row,column)

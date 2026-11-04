@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.202-test.
+Guide version: 0.2.203-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -2200,7 +2200,6 @@ When you ask for help, give the app version, what you tried, and the exact messa
 29.5 Understand privacy and online services
 Offline speech works on your computer. It does not send your microphone audio to a speech service.
 Online services need your permission:
-- Online recognition needs your permission in Input options.
 - An AI voice needs your permission in Synthesizer options. Having a service key does not give permission on its own. Some older AI setups may ask you to confirm again.
 - To stop online narration, choose another voice, turn off Allow narration text to be sent to OpenAI, and save. Any AI speech still waiting is cleared.
 The app keeps the documents, drafts, contacts, favorites, and history you use. Account sign-ins and AI keys are protected for your Windows user account. Documents and drafts are ordinary files, so protect your computer and your Windows account.

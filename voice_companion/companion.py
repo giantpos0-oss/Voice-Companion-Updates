@@ -20,7 +20,7 @@ from xml.etree import ElementTree as ET
 from vosk import KaldiRecognizer, Model, SetLogLevel
 from document_editor import VoiceDocument, structural_selection_request, document_control_request, LINE_BREAK_COMMANDS, checked_document_name, existing_document, UNDO_REQUESTS
 from field_selection import FieldSelection, selection_command
-from email_draft import VoiceEmail, normalize_recipient, email_field_destination
+from email_draft import VoiceEmail, normalize_recipient, email_field_destination, saved_draft_names
 from address_book import AddressBook
 from media_hub import MediaHub
 from email_delivery import DeliveryError, delivery_note, message_parts, submit
@@ -50,7 +50,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.202-test'
+APP_VERSION = '0.2.203-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -748,7 +748,7 @@ def process_keyboard_batch(mode):
 
 SLEEP_RETURN_MODE = 'awake'
 MAIN_MENU_HELP = ('help me', 'what can i say', 'what can i do', 'what do i say', 'i need help', 'please help',
-                  'help me please', 'what are my choices', 'what are my options')
+                  'help me please', 'help please', 'what are my choices', 'what are my options')
 MAIN_MENU_FIRST = 'You are on the main menu. It is the first screen, so there is nothing to go back to. Say a choice, or say help.'
 MAIN_MENU_NOT_UNDERSTOOD = 'I did not understand that. You are on the main menu. Press F1 for help.'
 MAIN_MENU_PROMPT = 'Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open.'
@@ -1231,7 +1231,7 @@ def _navigation_key(key,mode):
         if key in ('Up','Down','Left','Right','Home','End','Enter','Escape'):
             return {'Up':'previous','Left':'previous','Down':'next','Right':'next','Home':'home','End':'end','Enter':'enter','Escape':'escape'}[key]
         if key.startswith('Letter:'):return key
-    if mode=='web' and key in ('Escape','Web:Escape') and web_session and isinstance(web_session.snapshot,dict) and web_session.snapshot.get('modal_key') and not web_session.list_focus:return 'web key Escape'
+    if mode=='web' and key in ('Escape','Web:Escape') and web_session and isinstance(web_session.snapshot,dict) and web_session.snapshot.get('modal_key') and not web_session.list_focus and web_session.snapshot.get('modal_key')!=getattr(web_session,'modal_escape',None):return 'web key Escape'
     if mode=='web' and key=='Escape' and web_session and not (web_session.list_focus or web_session.keyboard_field or isinstance(getattr(web_session,'slider_field',None),dict)):return 'web browser menu'
     if mode=='web' and key=='Web:Escape' and web_session and web_session.keyboard_field is None and not web_session.list_focus and not isinstance(getattr(web_session,'slider_field',None),dict):return 'web browser menu'
     if mode=='web' and key in ('F6','F7'):return 'list headings' if key=='F6' else 'list links'
@@ -1360,6 +1360,14 @@ def poll_file_manager(mode):
                 # Escape comes back to this file in the list (Will, November 1, 2026).
                 task_navigation().reader_return='reader_picker';task_navigation().reader_files=FILE_MANAGER
             notice=notice or 'Opened '+FILE_READER.title+'. Read-only document. '+FILE_READER.reading.read(True)
+            if not PREFERENCES.get('reader_auto_read',True):
+                # Options, Document reader: "Read a document aloud when it opens" is off. It was
+                # obeyed only by Word files (task_navigation.read_file); now by every file.
+                from task_navigation import READER_BACK_WORDS
+                FILE_READER.reading.position=FILE_READER.reading.continuation=0
+                warnings=''.join(w.rstrip(' .')+'. ' for w in FILE_READER.warnings[:3])
+                notice=('Opened '+FILE_READER.title+'. '+warnings+'Press Control+R to read it. Escape goes back to '
+                        +READER_BACK_WORDS.get(task_navigation().reader_return,'the file list')+'.')
             if mode=='sleep':SLEEP_RETURN_MODE='file_reader'
             else:mode='file_reader'
         if notice:speak(notice)
@@ -1789,6 +1797,16 @@ def remembered(*savers):
     return ''
 
 
+def read_speech_settings(folder):
+    """The saved speech settings; {} on the first start or when the file is damaged or of the
+    wrong shape (a list, null, text). A damaged file must never stop speech from starting."""
+    try:
+        settings = json.loads((Path(folder) / 'speech-settings.json').read_text(encoding='utf-8-sig'))
+    except (OSError, ValueError):
+        return {}
+    return settings if isinstance(settings, dict) else {}
+
+
 def save_speech_settings():
     from storage import write_text_atomic
     write_text_atomic(APP / 'speech-settings.json',
@@ -2056,7 +2074,8 @@ def remember_question(text):
     """F1 says the open yes or no question again. Anything else said (but the choice itself) ends it."""
     global LAST_YES_NO
     if not isinstance(text,str):return
-    if 'yes or no' in text.casefold():LAST_YES_NO=text
+    # With the microphone off, a question says "Press Y or N" instead of "yes or no".
+    if 'yes or no' in text.casefold() or 'press y or n' in text.casefold():LAST_YES_NO=text
     elif text not in ('Yes.','No.','Start of list.','End of list.'):LAST_YES_NO=''
 
 
@@ -4991,6 +5010,8 @@ def _handle(text, mode, typed=False):
             speak(editor_process(document,text))
             return mode
         if mode == 'note':
+            if not ' '.join(note_buffer).strip():
+                speak('The note is empty. There is no text to select.');return mode
             speak(note_selection.select(' '.join(note_buffer), text)[0])
             if note_selection.edited_text is not None: note_buffer[:] = [note_selection.edited_text]
             return mode
@@ -5613,15 +5634,13 @@ def _handle(text, mode, typed=False):
         speak(mail_session.process('open inbox'))
         return 'mailbox'
     if command in EMAIL_DRAFT_COMMANDS[:3]:
-        folder = APP / 'Email Drafts'
-        names = sorted((p.stem for p in folder.glob('*.json')), key=str.casefold) if folder.exists() else []
+        names = saved_draft_names(APP / 'Email Drafts')
         speak('Your email drafts are: ' + ', '.join(names[:20]) + ('. There are more drafts.' if len(names) > 20 else '.')
               if names else 'You have no saved email drafts yet.')
         return mode
     if command in EMAIL_DRAFT_COMMANDS[3:]:
         # A list to choose from with arrows and Enter (Control+O in email), or by voice.
-        folder = APP / 'Email Drafts'
-        names = sorted((p.stem for p in folder.glob('*.json')), key=str.casefold) if folder.exists() else []
+        names = saved_draft_names(APP / 'Email Drafts')
         speak(open_named_list('Email drafts', [(name, 'open email draft ' + name) for name in names]) if names
               else 'You have no saved email drafts yet.')
         return mode
@@ -5884,7 +5903,7 @@ def announce_startup():
 
     Every startup path comes here: normal, microphone off or broken, after an update,
     an update offered, Chrome setup asked for by the installer. Returns the first mode."""
-    global SLEEP_RETURN_MODE, STARTUP_NOTICES, STARTUP_QUESTION, PREFERENCES_DAMAGED
+    global SLEEP_RETURN_MODE, STARTUP_NOTICES, STARTUP_QUESTION, PREFERENCES_DAMAGED, LAST_YES_NO
     import startup_speech
     if STARTUP_NOTICES is None:STARTUP_NOTICES = []
     mode = startup_update_mode()
@@ -5924,6 +5943,8 @@ def announce_startup():
     notices, STARTUP_NOTICES = STARTUP_NOTICES, None
     STARTUP_QUESTION = None
     speak(startup_speech.announcement(APP_VERSION, microphone_state(), update_result, notices, question))
+    # F1 says the startup question again, not the whole startup announcement.
+    if question and LAST_YES_NO:LAST_YES_NO=str(question).strip()
     return mode
 
 
@@ -6552,7 +6573,7 @@ if __name__ == '__main__':
                 import win32com.client
                 voice = win32com.client.Dispatch('SAPI.SpVoice')
             try:
-                settings = json.loads((APP / 'speech-settings.json').read_text(encoding='utf-8'))
+                settings = read_speech_settings(APP)
                 SPEECH_PITCH = max(-10,min(10,int(settings.get('pitch',0))))
                 SPEECH_RATE = max(-10, min(10, int(settings.get('rate', -1))))
                 SPEECH_VOLUME = max(0, min(100, int(settings.get('volume', 100))))

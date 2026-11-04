@@ -148,6 +148,15 @@ def match_choices(items, request):
     return [item for _, item in scored[:5]]
 
 
+NO_FORM_FIELDS = 'I did not find readable form fields on this page.'
+
+
+def button_turned_off(button):
+    """A form's only button is turned off (disabled) by the site: nothing is pressed."""
+    return ('The ' + _label(button) + ' button is turned off on the page, so nothing was submitted. '
+            'The site may need another answer first. Say review form to hear the fields.')
+
+
 class Favorites:
     UNREADABLE = 'Your favorites could not be opened just now. Try again in a moment.'
     UNSAVED = 'Your favorites could not be saved just now. Nothing changed. Try again in a moment.'
@@ -1831,6 +1840,7 @@ class WebSession:
             self._refresh(read=False)
 
     def keyboard(self,key,direct_submit=False):
+        self.modal_escape=None   # set again below when Escape leaves a dialog open
         if key=='Refresh':
             # Reload is the recovery route: it must not first capture the same
             # changing document that caused the failed action.
@@ -1911,7 +1921,15 @@ class WebSession:
                 if (self.snapshot or {}).get('modal_key'):
                     self.backend.page.keyboard.press('Escape')
                     result=self._refresh(read=False,wait=False)
-                    return ('Dialog remains open. Move to its Close button.' if self.snapshot.get('modal_key') else result if 'Dialog closed.' in result else 'Dialog closed. '+result)
+                    modal=self.snapshot.get('modal_key')
+                    if modal:
+                        # A second Escape on this dialog opens the web browser menu (companion.navigation_key),
+                        # so a dialog that will not close never traps the keyboard.
+                        self.modal_escape=modal
+                        if any(kind(e) in ('button','link','menuitem') for e in (self.snapshot.get('elements') or []) if e.get('key')!=modal):
+                            return 'Dialog remains open. Move to its Close button, or press Escape again for the web browser menu.'
+                        return 'Dialog remains open. It has no Close button. Press Escape again for the web browser menu.'
+                    return result if 'Dialog closed.' in result else 'Dialog closed. '+result
                 self.pending=None;self.submit_pending=None;return 'Leave website.'
             elif key in ('Activate','Space'):
                 if self.keyboard_field:return describe(self.keyboard_field)
@@ -3085,6 +3103,7 @@ class WebSession:
         self.review_submission = None
         self.review_parts = self._form_parts(current)
         self.review_cursor = 0
+        if not self.review_parts: return NO_FORM_FIELDS
         return self._next_review()
 
     @staticmethod
@@ -3191,6 +3210,7 @@ class WebSession:
         if len(buttons) != 1:
             return 'I cannot identify one final form button. Ask your helper to inspect this page.'
         button = buttons[0]
+        if button.get('disabled'): return button_turned_off(button)
         if re.search(r'\b(pay|purchase|transfer|withdraw|deposit|wire|send money)\b',
                      _label(button) + ' ' + current.get('title',''), re.I):
             return 'This may move money. Ask your helper to review the accounts, amount, and final action in the browser.'
@@ -3215,6 +3235,7 @@ class WebSession:
                        _label(c) == _label(button) and c.get('in_form') == button.get('in_form')]
             if len(matches) != 1:
                 return 'The submit button changed. Submission canceled; review the form again.'
+            if matches[0].get('disabled'): return button_turned_off(button)
             if self._form_signature(current) != pending['signature']:
                 return 'A form answer changed. Submission canceled; review the form again.'
             self.progress('Loading page.')
@@ -3277,6 +3298,7 @@ class WebSession:
     def command(self, spoken):
         """A spoken web command. Nothing here may stop the app: an unexpected error
         is said plainly, and its details are kept in web-command-error.txt."""
+        self.modal_escape=None
         try:return self._command(spoken)
         except WebError as exc:return str(exc)
         except Exception as exc:

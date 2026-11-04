@@ -121,6 +121,61 @@ class SpeechWorkerTests(unittest.TestCase):
         self.assertNotIn('Second.', voice.said)
         self.assertEqual(voice.Volume, 50)
 
+    def test_stop_after_pause_still_resumes_the_voice(self):
+        """Pause, then any key or command: interrupt_speech() calls Resume and then Speak with purge.
+        SAPI stays paused until Resume, and a purge does not resume it. If the purge dropped the
+        waiting Resume, the voice stayed paused and Companion went silent for good."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        class PausingVoice(FakeVoice):
+            paused = 0
+            def Pause(self):
+                super().Pause(); self.paused += 1
+            def Resume(self):
+                super().Resume(); self.paused = max(0, self.paused - 1)
+            def Speak(self, text, flags):
+                if self.paused and text:
+                    self.calls.append(('Speak', text, flags)); return 1   # queued in SAPI, never heard
+                return super().Speak(text, flags)
+
+        voice = PausingVoice(hang=release)
+        worker, made = self.worker([voice])
+        worker.STUCK_SECONDS = 30
+        worker.Speak('Long answer.', 1)
+        self.assertTrue(wait_for(lambda: voice.calls))      # the voice is busy, so the next calls wait in line
+        worker.Pause()                                      # "Pause"
+        worker.Resume(); worker.Speak('', 3)                # interrupt_speech() from the next key
+        voice.hang = None
+        release.set()
+        worker.Speak('Main menu.', 1)
+        self.assertTrue(wait_for(lambda: 'Main menu.' in voice.said), voice.calls)
+        self.assertEqual(voice.paused, 0)
+
+    def test_a_new_voice_that_fails_once_is_tried_again(self):
+        """The voice stopped answering and was given up. Making the new one failed once (Windows
+        audio busy), and then no voice thread was left: every later message was silent."""
+        release = threading.Event()
+        self.addCleanup(release.set)
+        stuck, fresh = FakeVoice(hang=release), FakeVoice()
+        made = iter([stuck, OSError('audio busy'), fresh])
+        def factory():
+            voice = next(made)
+            if isinstance(voice, Exception):
+                raise voice
+            return voice
+        worker = SpeechWorker(factory=factory, pump=lambda: None)
+        worker.STUCK_SECONDS = 0.3
+        self.addCleanup(setattr, worker, 'generation', -1)
+        worker.Speak('Welcome.', 1)
+        self.assertTrue(wait_for(lambda: stuck.calls))
+        time.sleep(0.35)
+        worker.Speak('Main menu.', 1)                  # gives up the stuck voice; the new one fails
+        self.assertTrue(wait_for(lambda: worker.problem == 'OSError'))
+        time.sleep(0.35)
+        worker.Speak('Email.', 1)                      # tries again
+        self.assertTrue(wait_for(lambda: 'Email.' in fresh.said), worker.problem)
+
     def test_a_voice_that_cannot_start_leaves_a_safe_default(self):
         def broken():
             raise OSError('no audio')
