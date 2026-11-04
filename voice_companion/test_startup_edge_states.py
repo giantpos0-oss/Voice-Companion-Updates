@@ -97,5 +97,28 @@ class GuideMatchesTheAppTests(unittest.TestCase):
                 self.assertIn('An AI voice needs your permission in Synthesizer options.', text)
 
 
+class TranscriptHeldOpenTests(unittest.TestCase):
+    """At about 2 MB the transcript moves to speech-transcript-old.txt. When that file was held
+    (open in Word, or being scanned), the move failed for every line, so every later line was
+    lost until it was let go: the transcript stopped in the middle of what a helper wanted to read."""
+
+    def test_lines_are_kept_when_the_old_transcript_cannot_be_replaced(self):
+        import speech_transcript
+        from speech_transcript import Transcript
+        with tempfile.TemporaryDirectory() as folder:
+            transcript = Transcript(limit=200); self.addCleanup(transcript.stop)
+            transcript.start(folder)
+            with patch('speech_transcript.os.replace', side_effect=PermissionError('in use')):
+                for number in range(10):
+                    transcript.said('Sentence number ' + str(number) + ' is here.')
+            text = (Path(folder) / speech_transcript.NAME).read_text(encoding='utf-8')
+            self.assertIn('Sentence number 9 is here.', text)
+            self.assertEqual(text.count('Sentence number'), 10)
+            # Once the old file is free again, the transcript moves as usual.
+            transcript.said('After the file was closed.')
+            self.assertTrue((Path(folder) / speech_transcript.OLD_NAME).exists())
+            self.assertIn('After the file was closed.', (Path(folder) / speech_transcript.NAME).read_text(encoding='utf-8'))
+
+
 if __name__ == '__main__':
     unittest.main()
