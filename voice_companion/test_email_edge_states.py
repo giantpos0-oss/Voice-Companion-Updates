@@ -124,6 +124,20 @@ class EmptyFolderNumberTests(YahooSession):
         self.assertEqual(self.session.process('read message 4'), 'That number is not on this page. Say list messages.')
 
 
+class AccountRemovedTests(unittest.TestCase):
+    # A helper removes the account while the inbox is open. The next command said only
+    # "This email account is not connected." with nothing to do next.
+    def test_inbox_command_after_the_account_is_removed_says_what_to_do(self):
+        folder = tempfile.mkdtemp()
+        session = MailSession('yahoo', folder)
+        session.rows = [{'id': '1', 'from': 'Sam <sam@example.com>', 'subject': 'Hi'}]
+        session.current = 1
+        said = session.process('list messages')
+        self.assertIn('not connected', said)
+        self.assertIn('Say add account', said)
+        self.assertEqual(session.rows[0]['subject'], 'Hi')   # the list you had is kept
+
+
 class DraftLeftoverTests(unittest.TestCase):
     # A power cut while a draft is saved can leave "Lunch.writing.json" behind. It was
     # listed as a draft named "Lunch.writing", and opening it said the file was damaged.
