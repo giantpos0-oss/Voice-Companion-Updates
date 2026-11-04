@@ -277,5 +277,31 @@ class SelectingNothing(DocumentFlowCase):
         self.assertEqual(self.last(), 'Selected: blank.')
 
 
+class SelectFromABlankLine(unittest.TestCase):
+    """On a blank line (between two paragraphs), "Select previous paragraph" skipped the paragraph
+    just above and selected the one before it."""
+
+    def test_previous_is_the_one_just_before_the_blank_line(self):
+        import text_review
+        from reading_navigation import ReadingCursor
+        text = 'First.\n\nSecond.\n\nThird.'
+        for unit in ('paragraph', 'line', 'word', 'sentence'):
+            with self.subTest(unit=unit):
+                reader = ReadingCursor(); reader.set_text(text)
+                reader.position = text.index('Third') - 1   # the blank line
+                selection, said = text_review.apply(reader, None, ('unit', unit, -1))
+                self.assertEqual(text[selection[0]:selection[1]], 'Second.')
+                self.assertEqual(said, 'Selected Second.')
+
+    def test_previous_from_the_very_end_after_spaces(self):
+        import text_review
+        from reading_navigation import ReadingCursor
+        reader = ReadingCursor(); reader.set_text('One two.  ')
+        for want, expected in (((-1), 'two.'), (0, 'two.'), (1, 'two.')):
+            reader.position = len(reader.text)
+            selection, said = text_review.apply(reader, None, ('unit', 'word', want))
+            self.assertEqual(reader.text[selection[0]:selection[1]], expected, want)
+
+
 if __name__ == '__main__':
     unittest.main()
