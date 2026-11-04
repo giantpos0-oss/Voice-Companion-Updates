@@ -8,6 +8,11 @@ import re
 import hashlib
 from pathlib import Path
 
+from storage import keep_damaged, read_saved_list, write_text_atomic
+
+UNREADABLE = 'The contacts saved on this computer could not be opened just now. Try again in a moment.'
+UNSAVED = 'The contacts saved on this computer could not be saved just now. Try again in a moment.'
+
 def normalize_recipient(value):
     from email_draft import normalize_recipient as normalize
     return normalize(value)
@@ -18,11 +23,22 @@ class AddressBook:
         suffix = '-' + hashlib.sha256(account.casefold().encode('utf-8')).hexdigest()[:16] if account else ''
         self.path = Path(folder) / ('address-book' + suffix + '.json')
 
+    def _read(self):
+        """(contacts, damaged text). A damaged file reads as empty, and its text is kept beside it
+        before the next save. A file Windows holds for a moment raises ValueError with plain words,
+        so it is never written over with a shorter list."""
+        try:
+            values, damaged = read_saved_list(self.path, {})
+        except OSError as exc:
+            raise ValueError(UNREADABLE) from exc
+        if not isinstance(values, dict):
+            values, damaged = {}, json.dumps(values, ensure_ascii=False)
+        return values, damaged
+
     def all(self):
         try:
-            values = json.loads(self.path.read_text(encoding='utf-8'))
-            return values if isinstance(values, dict) else {}
-        except (OSError, ValueError):
+            return self._read()[0]
+        except ValueError:
             return {}
 
     def get(self, name):
@@ -39,13 +55,13 @@ class AddressBook:
             raise ValueError('Use a shorter phone number.')
         if address or not phone:
             address = normalize_recipient(address)
-        entries = self.all()
+        entries, damaged = self._read()
         # Contacts once brought in from Google Contacts are ordinary local contacts now.
         entry = {'name': name, 'address': address or ''}
         if phone:
             entry['phone'] = phone
         entries[name.casefold()] = entry
-        self._write(entries)
+        self._write(entries, damaged)
         return address
 
     def replace(self, old_name, name, address, phone=''):
@@ -60,7 +76,7 @@ class AddressBook:
             raise ValueError('A contact needs an email address or a phone number.')
         if address:
             address = normalize_recipient(address)
-        entries = self.all()
+        entries, damaged = self._read()
         old_key, new_key = old_name.strip().casefold(), name.casefold()
         if old_key not in entries:
             raise ValueError(old_name.strip() + ' is no longer in your contacts.')
@@ -72,19 +88,22 @@ class AddressBook:
             entry['phone'] = phone
         del entries[old_key]
         entries[new_key] = entry
-        self._write(entries)
+        self._write(entries, damaged)
         return address
 
     def delete(self, name):
-        entries = self.all()
+        entries, damaged = self._read()
         if name.strip().casefold() not in entries: return False
         del entries[name.strip().casefold()]
-        self._write(entries)
+        self._write(entries, damaged)
         return True
 
-    def _write(self, entries):
-        # Atomic: a temporary file, then replace, so a crash never leaves half an address book.
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = self.path.with_suffix('.writing.json')
-        temporary.write_text(json.dumps(entries, ensure_ascii=False, indent=2), encoding='utf-8')
-        temporary.replace(self.path)
+    def _write(self, entries, damaged=None):
+        """Atomic: a temporary file, then replace, so a crash never leaves half an address book.
+        A damaged file is kept first (address-book.damaged.json). A failure says so plainly."""
+        try:
+            if damaged is not None:
+                keep_damaged(self.path, damaged)
+            write_text_atomic(self.path, json.dumps(entries, ensure_ascii=False, indent=2))
+        except OSError as exc:
+            raise ValueError(UNSAVED) from exc

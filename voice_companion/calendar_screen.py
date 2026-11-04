@@ -91,12 +91,13 @@ def load_calendars(m):
     global CALENDARS, SOURCES, SOURCE, SOURCE_NOTICE
     CALENDARS = [c for c in thunderbird_pim.calendars() if isinstance(c, dict)]
     first = SOURCES is None
+    before = '' if first else SOURCES.words(SOURCE)     # named from the old list: the new one no longer has it
     SOURCES = pim_sources.Sources('calendar', CALENDARS)
     if first:
         SOURCE, SOURCE_NOTICE = pim_sources.resolve(m.APP, 'calendar', SOURCES)
     elif not SOURCES.has(SOURCE):
         # The calendar on screen was removed in Thunderbird while Calendar was open.
-        SOURCE_NOTICE = SOURCES.words(SOURCE) + ' is no longer in Thunderbird, so all calendars are shown.' if SOURCES.active() else ''
+        SOURCE_NOTICE = before + ' is no longer in Thunderbird, so all calendars are shown.' if SOURCES.active() else ''
         SOURCE = pim_sources.ALL
         pim_sources.remember(m.APP, 'calendar', SOURCE, SOURCES.words(SOURCE))
     return CALENDARS
@@ -180,7 +181,7 @@ def show(m, day, opening=False):
     elif opening and CALENDARS and all(c.get('type') == 'storage' for c in CALENDARS):
         words += ' ' + GUIDANCE
     elif opening and not CALENDARS:
-        words += ' Thunderbird has no calendars turned on. Press F1 to learn how to add one.'
+        words += ' ' + NO_CALENDARS
     return words
 
 
@@ -306,6 +307,10 @@ def handle(m, text, mode, typed=False):
                     and mode not in ('awake',):
                 return None     # "what's on" alone is only for the main menu; elsewhere it may be about a page
             return tell_day(m, asked['day'] or 'today', mode)
+        if asked and asked['day'] and missing_date(raw, today(m)) and (
+                mode == 'awake' or 'calendar' in command or 'schedule' in command):
+            m.speak(missing_date(raw, today(m)))     # "What's on February 30?": why, not "I did not understand"
+            return mode
         if mode == 'awake' and command in OPEN:
             return open_screen(m, mode)
         wanted = SHOW.fullmatch(command)
@@ -323,6 +328,12 @@ def handle(m, text, mode, typed=False):
             opened = open_screen(m, mode, quiet=True)
             if opened != MODE:
                 return opened
+            if not writable():
+                # Nothing can be added: stay on the main menu and say why (Calendar opened without a word).
+                words = NOTICE if NOTICE and not CALENDARS else NOTHING_TO_CHANGE
+                reset()
+                m.speak(words)
+                return mode
             return start_adding(m, raw)
         return None
     try:
@@ -445,8 +456,8 @@ def command_here(m, raw, command):
         m.speak(show(m, day))
         return MODE
     asked_for = re.fullmatch(r'(?:go to|jump to|move to|show|show me|open|read) (?:the )?(?:date |day )?(.+)', command)
-    if asked_for and looks_like_date(asked_for[1]):
-        # "go to February 30": a date was meant. Say why, and ask again.
+    if asked_for and looks_like_date(asked_for[1]) or missing_date(raw, today(m)):
+        # "go to February 30", "What's on February 30?": a date was meant. Say why, and ask again.
         return ask(m, 'go-to', date_problem(m, raw))
     m.speak('Calendar. Say next event, next day, today, read event, add event, edit event, or delete event. '
             'Press F1 for help, or Escape for the main menu.')
@@ -515,6 +526,9 @@ def start_choosing(m, first=None, lead=''):
         except thunderbird_pim.PimError as exc:
             m.speak(str(exc))
             return MODE
+    if not CALENDARS:
+        m.speak(NO_CALENDARS)      # not "one email account": there are none
+        return MODE
     if not choosing():
         m.speak('You have one email account in Thunderbird, so all your calendars are shown.')
         return MODE
@@ -681,6 +695,8 @@ def ask(m, action, words, optional=False):
     return 'task_input'
 
 
+NOTHING_TO_CHANGE = 'Thunderbird has no calendar that can be changed. Press F1 to learn how to add one.'
+NO_CALENDARS = 'Thunderbird has no calendars turned on. Press F1 to learn how to add one.'
 WHEN_PROMPT = 'New event. When is it? For example, say tomorrow at 3 PM, or Friday all day. Escape cancels.'
 
 
@@ -695,7 +711,7 @@ def start_adding(m, raw=''):
         m.speak(str(exc))
         return MODE
     if not writable():
-        m.speak('Thunderbird has no calendar that can be changed. Press F1 to learn how to add one.')
+        m.speak(NOTHING_TO_CHANGE)
         return MODE
     words = ADD.sub('', m.normalized_command(raw), count=1).strip() if raw else ''
     if not words:
@@ -724,6 +740,9 @@ def add_step(m, step, value):
     global DRAFT
     now = m.CLOCK()
     if step == 'when':
+        if missing_date(value, today(m)):
+            # "February 30 at 3 PM": never the day on screen with "February 30" in the name.
+            return prompt(m, 'when', date_problem(m, value))
         found = parse_when(value, now, future=True, base=DAY)
         if found.day is None:
             return prompt(m, 'when', 'I did not catch a day or time. Say something like tomorrow at 3 PM, '
@@ -895,7 +914,8 @@ def on_day(day, m):
 
 
 def delete_question(m, event):
-    hours = event.when(DAY)[0].lower() + event.when(DAY)[1:]
+    hours = event.when(DAY, ' tomorrow' if DAY == today(m) else ' the next day')     # the day said may not be today
+    hours = hours[0].lower() + hours[1:]
     if event.recurring:
         return (event.name + ' repeats. Delete only this one, ' + on_day(DAY, m) + ', ' + hours + ', or all of them? '
                 'Say this one, all, or no. Escape keeps it.')
@@ -1157,6 +1177,8 @@ def edit_step(m, step, value):
             return ask(m, 'edit-name', 'That name is too long. Say a shorter name. Escape cancels.')
         EDIT['title'] = title
     elif step == 'when':
+        if missing_date(value, today(m)):
+            return ask(m, 'edit-when', date_problem(m, value))      # never the same day at that time
         found = parse_when(value, now, future=True, base=event.start.date())
         if found.day is None and not re.match(r'\s*(?:at|from|between)\b', value, re.I):
             found = parse_when('at ' + value, now, future=True, base=event.start.date())     # "3", "10:30"

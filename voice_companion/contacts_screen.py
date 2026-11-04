@@ -113,14 +113,18 @@ def choose_sources(m):
         # Thunderbird did not answer this time: its address books are not gone, and the one chosen is kept.
         return
     items = [dict(b) for b in BOOK.books]
-    if BOOK.local_contacts():
+    chosen = SOURCE if SOURCES is not None else pim_sources.saved(m.APP, 'contacts').get('choice')
+    if BOOK.local_contacts() or chosen == 'source:' + contacts_book.LOCAL_ID:
+        # Kept while it is chosen, even once empty: deleting its last contact leaves an empty list here,
+        # not every address book and "no longer in Thunderbird".
         items.append({'id': contacts_book.LOCAL_ID, 'name': 'Saved on this computer'})
     first = SOURCES is None
+    before = '' if first else SOURCES.words(SOURCE)     # named from the old list: the new one no longer has it
     SOURCES = pim_sources.Sources('contacts', items)
     if first:
         SOURCE, SOURCE_NOTICE = pim_sources.resolve(m.APP, 'contacts', SOURCES)
     elif not SOURCES.has(SOURCE):
-        SOURCE_NOTICE = SOURCES.words(SOURCE) + ' is no longer in Thunderbird, so all address books are shown.' if SOURCES.active() else ''
+        SOURCE_NOTICE = before + ' is no longer in Thunderbird, so all address books are shown.' if SOURCES.active() else ''
         SOURCE = pim_sources.ALL
         pim_sources.remember(m.APP, 'contacts', SOURCE, SOURCES.words(SOURCE))
 
@@ -447,6 +451,11 @@ def command_here(m, raw, command):
     by_name = email_by_name(m, command, MODE)
     if by_name is not None:
         return by_name
+    asked = EMAIL_TO.fullmatch(command)
+    if asked and asked['name'].strip() not in RESERVED and '@' not in asked['name'] and len(asked['name'].split()) <= 3:
+        # "Email John" here, and no John: say so, not the list of commands.
+        m.speak('No contact named ' + asked['name'].strip() + '. ' + describe())
+        return MODE
     # A name said on its own selects that contact.
     matches = contacts_book.find(CONTACTS, command, loose=True) if command else []
     if len(matches) == 1:
@@ -542,6 +551,9 @@ def start_choosing(m, first=None, lead=''):
     global PENDING, CHOICE, CHOICES, VIEW
     if not choosing() and BOOK is not None and BOOK.unread:
         m.speak(BOOK.notice)    # not "one email account": Thunderbird could not be read
+        return MODE
+    if not choosing() and not (BOOK is not None and BOOK.books):
+        m.speak('All your contacts are shown.')     # no address books in Thunderbird: not "one email account"
         return MODE
     if not choosing():
         m.speak('You have one email account in Thunderbird, so all your contacts are shown.')
