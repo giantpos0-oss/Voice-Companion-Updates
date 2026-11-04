@@ -288,7 +288,7 @@ class FlowTests(unittest.TestCase):
         self.assertEqual(setup.poll(), [MESSAGES['installed']])
         self.assertEqual(setup.question, 'add_extension')
         self.assertEqual(setup.respond('yes please'), MESSAGES['added'])
-        self.assertEqual((system.added, system.opened, setup.focus.started), (1, [None], 1))
+        self.assertEqual((system.added, system.opened, setup.focus.started), (1, [chrome_setup.BLANK_PAGE], 1))
         clock.now += 5; self.assertEqual(setup.poll(), [])
         linked.append(True)
         self.assertEqual(setup.poll(), [MESSAGES['linked']])
@@ -368,7 +368,7 @@ class FlowTests(unittest.TestCase):
         system = FakeSystem(state='enabled')
         setup, clock, _ = flow(system)
         self.assertEqual(setup.start(), MESSAGES['already_added'])
-        self.assertIsNone(setup.question); self.assertEqual(system.opened, [None])
+        self.assertIsNone(setup.question); self.assertEqual(system.opened, [chrome_setup.BLANK_PAGE])
         clock.now += 60; self.assertEqual(setup.poll(), [MESSAGES['not_linking']])
 
     def test_quiet_start_from_the_installer_says_nothing_when_already_set_up(self):

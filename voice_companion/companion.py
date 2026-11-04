@@ -50,7 +50,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.203-test'
+APP_VERSION = '0.2.204-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -167,6 +167,8 @@ ACCOUNT_MENU_INDEX = None
 # Spoken name and account type, in menu order. Thunderbird uses its own sign-in and
 # is how Gmail, Outlook and Microsoft 365 work (Will, October 2026: no direct sign-in).
 ACCOUNT_TYPES = (('Thunderbird, for Gmail, Outlook, Microsoft 365 and most email', 'thunderbird'), ('Yahoo', 'yahoo'))
+# Email opened with no account at all goes straight to adding one (Will, November 4, 2026).
+NO_ACCOUNT_YET = "No email account is set up yet. Let's add one."
 ACCOUNT_TYPE_PROMPT = ('Which email account type? Thunderbird (T) works with Gmail, Outlook, Microsoft 365 and most other email. '
                        'Yahoo (Y) uses a Yahoo app password. Press a letter then Enter, or say the account type. Say cancel to stop.')
 # Gmail and Microsoft mail are set up in Thunderbird; these words start that.
@@ -3530,6 +3532,19 @@ def handle_mailbox_screen(text, command, mode, typed):
     return 'mailbox'
 
 
+def no_email_account(store, mode):
+    """Email was opened and no account is in use. With no account at all, adding one starts at
+    once: the same account type list as "add account", by voice or with the arrows and Enter."""
+    global account_setup, ACCOUNT_MENU_INDEX
+    if connected_accounts(store):
+        speak_prompt('No email account is selected. Say add account, or list email accounts.')
+        return mode
+    account_setup = True
+    ACCOUNT_MENU_INDEX = None
+    speak_prompt(NO_ACCOUNT_YET + ' ' + ACCOUNT_TYPE_PROMPT)
+    return mode
+
+
 def close_email_draft(mode, discard, notice=None):
     """Close the email draft and go back to the inbox. discard: remove what was not saved."""
     global email_draft, mail_session, pending_send, MAIN_MENU_LEAD
@@ -5203,9 +5218,7 @@ def _handle(text, mode, typed=False):
             'check my mail', 'read email', 'read mail', 'read my mail', 'open mail', 'open my mail'):
         selected = store.selected()
         if not selected:
-            speak_prompt('No email account is selected. Say add account, or list email accounts.' if connected_accounts(store) else
-                         'No email account is set up yet. Say add account to set one up.')
-            return mode
+            return no_email_account(store, mode)
         mail_session = MailSession(selected[0], APP, progress=mail_progress)
         speak(mail_session.process('open inbox'))
         return 'mailbox'
@@ -5612,9 +5625,7 @@ def _handle(text, mode, typed=False):
         if command in ('check email', 'read my email'):
             selected = store.selected()
             if not selected:
-                speak_prompt('No email account is selected. Say add account, or list email accounts.' if connected_accounts(store) else
-                         'No email account is set up yet. Say add account to set one up.')
-                return mode
+                return no_email_account(store, mode)
             provider = selected[0]
         else:
             words = account_picker_words()

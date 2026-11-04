@@ -428,15 +428,25 @@ class TutorialQuestionsTests(unittest.TestCase):
 
 
 class FirstTimeEmailTests(CompanionTestCase):
-    def test_email_with_no_account_points_only_to_add_account(self):
-        # Heard: "No email account is selected. Say add account, or list email accounts."
-        # With no account at all, list email accounts only says there are none.
+    def test_email_with_no_account_starts_adding_one(self):
+        # Will, November 4, 2026: Email with no account said only "say add account". It now goes
+        # straight to choosing the account type, by voice or with the arrows and Enter.
         store = Mock(); store.selected.return_value = None; store.accounts.return_value = []
+        self.addCleanup(setattr, companion, 'account_setup', False)
         with patch.object(companion, 'ProtectedStore', Mock(return_value=store)):
             for phrase in ('Email.', 'check email', 'Open the inbox.'):
                 with self.subTest(phrase=phrase):
+                    companion.account_setup = False
                     self.assertEqual(companion.handle(phrase, 'awake'), 'awake')
-                    self.assertEqual(self.said[-1], 'No email account is set up yet. Say add account to set one up.')
+                    self.assertEqual(self.said[-1], companion.NO_ACCOUNT_YET + ' ' + companion.ACCOUNT_TYPE_PROMPT)
+                    self.assertTrue(companion.account_setup)
+            # The keyboard works on the list at once.
+            self.assertIsNone(companion.navigation_key('Down', 'awake'))
+            self.assertIn('Thunderbird', self.said[-1])
+            self.assertEqual(companion.navigation_key('Enter', 'awake'), 'thunderbird')
+            companion.handle('cancel', 'awake')
+            self.assertEqual(self.said[-1], 'Account setup canceled.')
+            companion.account_setup = False
             store.accounts.return_value = [('yahoo', 'vet@yahoo.com'), ('thunderbird', 'me@gmail.com')]
             companion.handle('Email.', 'awake')
             self.assertEqual(self.said[-1], 'No email account is selected. Say add account, or list email accounts.')

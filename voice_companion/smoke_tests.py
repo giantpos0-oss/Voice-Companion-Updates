@@ -316,8 +316,9 @@ class VoiceCompanionSmokeTests(unittest.TestCase):
             CryptProtectData=lambda data, *args: b'protected:' + data,
             CryptUnprotectData=lambda data, *args: ('Voice Companion', data[len(b'protected:'):]))
         with patch.dict(sys.modules, {'win32crypt': fake_dpapi}), patch.object(companion, 'speak') as speech:
+            # With no account, Email starts adding one at once (Will, November 4, 2026).
             self.assertEqual(companion.handle('email', 'awake'), 'awake')
-            self.assertIn('add account', speech.call_args.args[0])
+            self.assertIn('Which email account type', speech.call_args.args[0])
             self.assertEqual(companion.handle('add account', 'awake'), 'awake')
             self.assertIn('Which email account type', speech.call_args.args[0])
             # Gmail works through Thunderbird: choosing it starts adding a Thunderbird account.

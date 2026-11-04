@@ -93,6 +93,19 @@ class AutomaticSetupTests(unittest.TestCase):
         self.assertIn(('open', chrome_setup.STORE_PAGE), chrome.calls)
         self.assertIsNone(setup.question)
 
+    def test_chrome_opens_on_a_blank_page_never_your_own_start_pages(self):
+        # Will, November 4, 2026: on a new computer, Chrome opened a blindness website he never
+        # asked for. Chrome started with no address opens your own (synced) start pages.
+        chrome = FakeChrome()
+        setup, _ = self.setup_for(chrome, {'now': False})
+        setup.start_automatic()
+        opened = [call for call in chrome.calls if isinstance(call, tuple)]
+        self.assertEqual(opened, [('open', chrome_setup.BLANK_PAGE)])
+        chrome = FakeChrome(extension='enabled')
+        setup, _ = self.setup_for(chrome, {'now': False})
+        setup.start_automatic()
+        self.assertEqual([c for c in chrome.calls if isinstance(c, tuple)], [('open', chrome_setup.BLANK_PAGE)])
+
     def test_cancel_says_how_to_set_it_up_later(self):
         setup, _ = self.setup_for(FakeChrome(), {'now': False})
         setup.start_automatic()
@@ -140,6 +153,19 @@ class FirstRunTests(unittest.TestCase):
         self.assertEqual((self.folder / 'browser-choice.txt').read_text(encoding='utf-8'), 'chrome')
         self.assertEqual((self.folder / chrome_setup.FIRST_RUN_FILE).read_text(encoding='utf-8'), 'linked')
         self.assertEqual(self.app.web_session.saved_choice, 'chrome')
+
+    def test_once_linked_companion_takes_the_keyboard_back(self):
+        # Will, November 4, 2026: after choosing Enable in Chrome, he had to Alt+Tab back.
+        # The Web browser menu must have the keyboard at once.
+        window = Mock()
+        self.app.APP_WINDOW = window
+        menu = Mock(); menu.start.return_value = 'Web browser menu.'
+        self.app.web_session = SimpleNamespace(menu=menu, saved_choice=None, chrome_offer_declined=None)
+        chrome_setup.first_run(self.app, 'awake', 'browser_menu')
+        window.reclaim_focus.assert_not_called()          # Chrome needs the keyboard while you enable it
+        self.linked['now'] = True
+        self.assertEqual(chrome_setup.poll(self.app, 'chrome_setup'), 'browser_menu')
+        window.reclaim_focus.assert_called_once()
 
     def test_cancel_keeps_embedded_edge_and_is_remembered(self):
         self.app.web_session = SimpleNamespace(menu=Mock(), saved_choice=None, chrome_offer_declined=None)

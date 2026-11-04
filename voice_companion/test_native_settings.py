@@ -85,11 +85,14 @@ class NativeSettingsTests(unittest.TestCase):
         self.wait(lambda:self.session.category==1)
         self.assertFalse(self.u.GetDlgItem(hwnd,200))
         self.u.PostMessageW(categories,0x100,0x0D,0)
-        # Wait for the checkbox itself: rendering the two preceding combo boxes
+        # Find Audio ducking by its setting, not a fixed number: the voice list moved into Voice
+        # options (0.2.204). Controls are numbered 200 plus the field's place on the page.
+        index=next(i for i,f in enumerate(self.session.current_fields()) if f.key=='duck_audio')
+        # Wait for the checkbox itself: rendering the preceding combo boxes
         # can still be in progress when the first control appears.
-        self.wait(lambda:bool(self.u.GetDlgItem(hwnd,203)))
-        checkbox=self.u.GetDlgItem(hwnd,203)
-        for _ in range(3):self.panel.command('next setting')
+        self.wait(lambda:bool(self.u.GetDlgItem(hwnd,200+index)))
+        checkbox=self.u.GetDlgItem(hwnd,200+index)
+        for _ in range(index):self.panel.command('next setting')
         self.wait(lambda:any('Audio ducking' in message for message in self.notices))
         before=bool(self.u.SendMessageW(checkbox,0xF0,0,0))
         # Queue real keystrokes so IsDialogMessage handles checkbox activation.
@@ -167,9 +170,10 @@ class NativeSettingsTests(unittest.TestCase):
         self.wait(lambda:'Z' in self.notices)
         self.panel.command('synthesizer')
         self.wait(lambda:self.session.category==2)
-        for _ in range(3):self.panel.command('next setting')
+        index=next(i for i,f in enumerate(self.session.current_fields()) if f.key=='api_key')
+        for _ in range(index):self.panel.command('next setting')
         self.wait(lambda:any('AI API key; blank keeps the saved key, password edit, hidden.' in message for message in self.notices))
-        password=self.u.GetDlgItem(hwnd,204)
+        password=self.u.GetDlgItem(hwnd,200+index)
         self.assertTrue(password)
         before=len(self.notices)
         self.u.PostMessageW(password,0x102,ord('Q'),0)

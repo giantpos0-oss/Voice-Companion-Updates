@@ -1,25 +1,25 @@
 {
-  "version": "0.2.203-test",
+  "version": "0.2.204-test",
   "status": "Testing build",
   "date": "November 4, 2026",
-  "baseline": "0.2.202-test",
-  "scope": "Many fixes for empty lists, blank items and damaged files, in every part of the app.",
+  "baseline": "0.2.203-test",
+  "scope": "Smoother first-time Chrome and email setup, and easier voice options.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "A way out of a stuck web dialog",
+          "title": "Email helps you add your first account",
           "details": [
-            "Some web pages show a box that will not close.",
-            "Press Escape twice on that box. The web browser menu opens, so you can go on."
+            "If no email account is set up, opening Email now starts adding one.",
+            "Choose Thunderbird or Yahoo by voice, by letter, or with the arrows and Enter."
           ]
         },
         {
-          "title": "Choose text by word, line or to the end in documents",
+          "title": "Choose your voice in Voice options",
           "details": [
-            "You can now extend a selection, or select to the end of a line, in documents and emails.",
-            "Before, some of these were typed into your text."
+            "The voice list is now first in Voice options. It shows the voices of the synthesizer in use.",
+            "Synthesizer options is where you pick SAPI, eSpeak, or an AI voice."
           ]
         }
       ]
@@ -28,82 +28,23 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Speech, startup and Help",
+          "title": "Back to Companion after Chrome setup",
           "details": [
-            "After Pause, speech comes back when you press a key or give a command.",
-            "If the voice fails to restart once, Companion tries again later instead of staying silent.",
-            "Companion starts even if the speech settings file is damaged.",
-            "F1 repeats the update question when the microphone is off.",
-            "Help with e-mail finds the email topic. Help, please works on the main menu.",
-            "The speech transcript keeps every line, even when an old copy is open.",
-            "Options are saved more safely.",
-            "The guide no longer mentions a setting that was removed."
+            "Once you turn on the extension in Chrome, Companion comes back to the front by itself.",
+            "The Web browser menu is ready for your keys. You do not need Alt+Tab."
           ]
         },
         {
-          "title": "Email",
+          "title": "No surprise web pages",
           "details": [
-            "Emails that hold only a picture now read their words.",
-            "A blank sender is read as Unknown sender, not as symbols.",
-            "Accented letters, like the e in Cafe, are read correctly.",
-            "Message numbers in an empty folder say Empty list.",
-            "A reply to a message with no subject no longer says no subject in its subject line.",
-            "A damaged Options file no longer stops the inbox.",
-            "A removed account tells you to say add account.",
-            "A save cut short no longer leaves a fake draft in your list.",
-            "Newsletters sent to hidden readers say No To address."
+            "Chrome setup now opens Chrome on a blank page.",
+            "Pages you set to open when Chrome starts no longer open during setup."
           ]
         },
         {
-          "title": "Calendar and Contacts",
+          "title": "Up Arrow raises the value",
           "details": [
-            "Contacts saved on this computer are never lost when the file is damaged, held or saved by Notepad.",
-            "A date that does not exist, like February 30, is named and asked again.",
-            "Events that end after midnight say the next day when they do not start today.",
-            "Deleting the last contact keeps you in the same list.",
-            "A removed calendar or address book is named correctly.",
-            "With no calendar to save in, adding an event says why and keeps you where you were.",
-            "Control+L and Email with no match give clear answers."
-          ]
-        },
-        {
-          "title": "Documents, notes and files",
-          "details": [
-            "Selecting in an empty document or note says there is no text to select.",
-            "A line of only spaces is read as Empty paragraph.",
-            "Emails you write say Beginning of message and End of message.",
-            "Damaged Word files say what to do next, in plain words.",
-            "A damaged Word file keeps you on the file you picked.",
-            "If you turned off reading a file when it opens, that now works for all files.",
-            "Select previous paragraph no longer skips one.",
-            "In File manager, Delete and Rename keep your place.",
-            "A new name like Name tags is kept whole."
-          ]
-        },
-        {
-          "title": "Web",
-          "details": [
-            "Your own Chrome comes back when Companion closes, even if it was hidden.",
-            "An empty table says This table is empty.",
-            "A download folder on a USB drive is named, like drive E.",
-            "Main menu during Chrome setup tells you how to set it up later.",
-            "Submit form tells you when the page has turned off its Send button.",
-            "Review form on a page with no fields says so."
-          ]
-        },
-        {
-          "title": "Radio, podcasts and the player",
-          "details": [
-            "Seek and chapter keys with nothing playing tell you to choose a station or episode first.",
-            "With no presets, Play preset says how to save one.",
-            "Empty lists of shows, downloads and recordings say what to do next.",
-            "A station number past the end says how many stations there are.",
-            "Only sound files are listed as recordings.",
-            "Subscribing to a show you already have says so.",
-            "Space answers Yes or No questions on Radio and Podcasts.",
-            "Escape tips name the list you go back to.",
-            "When you set a recording for 12 AM, you hear that midnight tonight is 12 AM tomorrow.",
-            "With no internet, radio search tells you to check your connection."
+            "In Voice options, Up Arrow now raises speech rate, voice pitch, and volume. Down Arrow lowers them."
           ]
         }
       ]
