@@ -1231,7 +1231,7 @@ def _navigation_key(key,mode):
         if key in ('Up','Down','Left','Right','Home','End','Enter','Escape'):
             return {'Up':'previous','Left':'previous','Down':'next','Right':'next','Home':'home','End':'end','Enter':'enter','Escape':'escape'}[key]
         if key.startswith('Letter:'):return key
-    if mode=='web' and key in ('Escape','Web:Escape') and web_session and isinstance(web_session.snapshot,dict) and web_session.snapshot.get('modal_key') and not web_session.list_focus:return 'web key Escape'
+    if mode=='web' and key in ('Escape','Web:Escape') and web_session and isinstance(web_session.snapshot,dict) and web_session.snapshot.get('modal_key') and not web_session.list_focus and web_session.snapshot.get('modal_key')!=getattr(web_session,'modal_escape',None):return 'web key Escape'
     if mode=='web' and key=='Escape' and web_session and not (web_session.list_focus or web_session.keyboard_field or isinstance(getattr(web_session,'slider_field',None),dict)):return 'web browser menu'
     if mode=='web' and key=='Web:Escape' and web_session and web_session.keyboard_field is None and not web_session.list_focus and not isinstance(getattr(web_session,'slider_field',None),dict):return 'web browser menu'
     if mode=='web' and key in ('F6','F7'):return 'list headings' if key=='F6' else 'list links'

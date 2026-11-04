@@ -1831,6 +1831,7 @@ class WebSession:
             self._refresh(read=False)
 
     def keyboard(self,key,direct_submit=False):
+        self.modal_escape=None   # set again below when Escape leaves a dialog open
         if key=='Refresh':
             # Reload is the recovery route: it must not first capture the same
             # changing document that caused the failed action.
@@ -1911,7 +1912,15 @@ class WebSession:
                 if (self.snapshot or {}).get('modal_key'):
                     self.backend.page.keyboard.press('Escape')
                     result=self._refresh(read=False,wait=False)
-                    return ('Dialog remains open. Move to its Close button.' if self.snapshot.get('modal_key') else result if 'Dialog closed.' in result else 'Dialog closed. '+result)
+                    modal=self.snapshot.get('modal_key')
+                    if modal:
+                        # A second Escape on this dialog opens the web browser menu (companion.navigation_key),
+                        # so a dialog that will not close never traps the keyboard.
+                        self.modal_escape=modal
+                        if any(kind(e) in ('button','link','menuitem') for e in (self.snapshot.get('elements') or []) if e.get('key')!=modal):
+                            return 'Dialog remains open. Move to its Close button, or press Escape again for the web browser menu.'
+                        return 'Dialog remains open. It has no Close button. Press Escape again for the web browser menu.'
+                    return result if 'Dialog closed.' in result else 'Dialog closed. '+result
                 self.pending=None;self.submit_pending=None;return 'Leave website.'
             elif key in ('Activate','Space'):
                 if self.keyboard_field:return describe(self.keyboard_field)
@@ -3277,6 +3286,7 @@ class WebSession:
     def command(self, spoken):
         """A spoken web command. Nothing here may stop the app: an unexpected error
         is said plainly, and its details are kept in web-command-error.txt."""
+        self.modal_escape=None
         try:return self._command(spoken)
         except WebError as exc:return str(exc)
         except Exception as exc:
