@@ -79,5 +79,42 @@ class EditorSelectionByVoice(DocumentFlowCase):
         self.assertEqual([p.text for p in app.email_draft.paragraphs], ['Dear Sam. See you soon.'])
 
 
+class EmptyAndBlankWording(DocumentFlowCase):
+    """An email draft is a message, not a document; a paragraph of spaces is empty, not silence."""
+
+    def draft(self, text=''):
+        from email_draft import VoiceEmail
+        app.email_draft = VoiceEmail(self.root / 'Email Drafts', recipient='sam@example.com', subject='Hi',
+                                     compose_step='body')
+        if text:
+            app.email_draft.append_text(text)
+        self.said.clear()
+
+    def test_the_ends_of_a_draft_are_the_ends_of_the_message(self):
+        self.draft('Dear Sam.')
+        app.handle('go to beginning of document', 'email_draft')
+        self.assertEqual(self.last(), 'Beginning of message. Dear Sam.')
+        app.handle('go to end of document', 'email_draft')
+        self.assertEqual(self.last(), 'End of message. Dear Sam.')
+
+    def test_an_empty_draft_says_the_message_body_is_empty(self):
+        self.draft()
+        for said in ('go to end of document', 'next paragraph', 'read sentence', 'next word', 'go to end of line'):
+            app.handle(said, 'email_draft')
+            self.assertEqual(self.last(), 'The message body is empty.', said)
+
+    def test_a_paragraph_of_spaces_is_said_as_empty(self):
+        app.document = VoiceDocument(self.default, title='Spaces')
+        app.document.paragraphs = [Paragraph('Hello.'), Paragraph('   ')]
+        app.document.save()
+        app.handle('go to end of document', 'document')
+        self.assertEqual(self.last(), 'End of document. Empty paragraph.')
+        app.handle('where am I', 'document')
+        self.assertEqual(self.last(), 'Paragraph 2 of 2. Empty paragraph.')
+        app.handle('make this bold', 'document')
+        app.handle('undo', 'document')
+        self.assertTrue(self.last().endswith('Paragraph 2 of 2. Empty paragraph.'), self.last())
+
+
 if __name__ == '__main__':
     unittest.main()

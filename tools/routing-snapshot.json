@@ -13777,7 +13777,7 @@
 },
 "email_draft | beginning of document": {
 "said": [
-"Beginning of document. Hello world."
+"Beginning of message. Hello world."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -15202,7 +15202,7 @@
 },
 "email_draft | end of document": {
 "said": [
-"End of document. Hello world."
+"End of message. Hello world."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -15623,7 +15623,7 @@
 },
 "email_draft | go to beginning of document": {
 "said": [
-"Beginning of document. Hello world."
+"Beginning of message. Hello world."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -15650,7 +15650,7 @@
 },
 "email_draft | go to end of document": {
 "said": [
-"End of document. Hello world."
+"End of message. Hello world."
 ],
 "screen_after": "email_draft",
 "text": [
