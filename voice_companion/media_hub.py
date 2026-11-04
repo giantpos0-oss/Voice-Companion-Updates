@@ -606,7 +606,10 @@ class MediaHub:
                                   'codec':text(entry.get('codec')), 'hls':bool(entry.get('hls')),
                                   'uuid':text(entry.get('stationuuid')), 'source':text(entry.get('source')) or 'Radio Browser'})
             if len(self.stations)>=30: break
-        if not self.stations: return online_error + 'No matching stations. Try another name or genre.'
+        if not self.stations:
+            # With the directory out of reach, another name would not help.
+            return online_error + 'No matching stations. ' + ('Check the internet connection, then try again.' if online_error
+                                                              else 'Try another name or genre.')
         self.station_index = 0
         return (online_error + 'Found '+_counted(len(self.stations),'station')+'. Station 1: '+self.stations[0]['name']+'. '
                 'Say next or previous to browse, that one to play, or play followed by a number.')
@@ -645,8 +648,9 @@ class MediaHub:
         match or the one with exactly that name, or offer a short list of up to five."""
         found = self.search_radio('name', name)
         if not self.stations:
-            unavailable = 'The live directory is unavailable. ' if found.startswith('The live directory') else ''
-            return unavailable + 'I could not find a station called ' + name + '. Check the name, or say Radio to search for stations.'
+            if found.startswith('The live directory'):
+                return 'The live directory is unavailable. I could not search for ' + name + '. Check the internet connection, then try again.'
+            return 'I could not find a station called ' + name + '. Check the name, or say Radio to search for stations.'
         wanted = [word for word in _station_words(name) if word not in self.STATION_FILLER]
         def words(station): return [word for word in _station_words(station['name']) if word not in self.STATION_FILLER]
         exact = [i for i, station in enumerate(self.stations) if words(station) == wanted]

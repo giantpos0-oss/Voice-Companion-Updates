@@ -1766,7 +1766,7 @@
 },
 "awake | find station": {
 "said": [
-"The live directory is unavailable. No matching stations. Try another name or genre."
+"The live directory is unavailable. No matching stations. Check the internet connection, then try again."
 ],
 "screen_after": "media"
 },

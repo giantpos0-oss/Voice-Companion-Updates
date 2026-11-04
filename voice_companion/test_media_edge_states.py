@@ -236,5 +236,26 @@ class MediaPlayerWithNoFileTests(EdgeStateTestCase):
         self.assertEqual(self.mode, 'local_media')
 
 
+class NoInternetTests(EdgeStateTestCase):
+    """With the station directory out of reach, a search said "Try another name or genre",
+    and "Play WGN" said to check the name. The name is fine: the internet is the problem."""
+
+    def setUp(self):
+        super().setUp()
+        def offline(url):
+            raise OSError('no network')
+        self.hub.fetch_json = offline
+
+    def test_search_says_to_check_the_internet(self):
+        said = self.say('Media', 'Radio', 'Search radio', 'WGN')
+        self.assertEqual(said, 'The live directory is unavailable. No matching stations. '
+                               'Check the internet connection, then try again.')
+
+    def test_play_by_name_says_to_check_the_internet(self):
+        said = self.say('Play WGN')
+        self.assertEqual(said, 'The live directory is unavailable. I could not search for WGN. '
+                               'Check the internet connection, then try again.')
+
+
 if __name__ == '__main__':
     unittest.main()
