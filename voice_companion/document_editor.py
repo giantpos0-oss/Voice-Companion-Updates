@@ -209,6 +209,12 @@ PARAGRAPH_ORDINALS = {'first':1, 'second':2, 'third':3, 'fourth':4, 'fifth':5,
                       'sixth':6, 'seventh':7, 'eighth':8, 'ninth':9, 'tenth':10}
 
 
+def text_review_request(command):
+    """A selection command in the words every text screen uses (text_review.py), or None."""
+    import text_review
+    return text_review.request(command)
+
+
 def structural_selection_request(command):
     command = command.lower().strip().rstrip('.!?')
     if command in ('select all', 'select all text', 'select everything',
@@ -1070,6 +1076,42 @@ class VoiceDocument:
         self.word_cursor = word_position
         return action.capitalize() + ' applied to: ' + content
 
+    def _caret_offset(self):
+        """The place in the whole text where dictation or a move left you."""
+        if not self.paragraphs:
+            return 0
+        self.cursor = max(0, min(len(self.paragraphs) - 1, self.cursor))
+        base = sum(len(p.text)+1 for p in self.paragraphs[:self.cursor])
+        length = len(self.paragraphs[self.cursor].text)
+        source = self.navigation_position or self.insertion_position
+        if source and source[0] == self.cursor:
+            return base + max(0, min(length, source[1]))
+        if self.reading.text == '\n'.join(p.text for p in self.paragraphs) and base <= self.reading.position <= base + length:
+            return self.reading.position
+        return base
+
+    def _review_selection(self, want):
+        """Grow the selection, or select to an end, with text_review's rules."""
+        import text_review
+        self.selection_candidates, self.selection_action = [], ''
+        text = '\n'.join(p.text for p in self.paragraphs)
+        if not text.strip():
+            return self.EMPTY_NOTICE + ' There is no text to select.'
+        reader = ReadingCursor(); reader.set_text(text)
+        reader.position = self._caret_offset()
+        def offset(paragraph, column):
+            return sum(len(p.text)+1 for p in self.paragraphs[:paragraph]) + column
+        old = None
+        if self.selection:
+            old = (offset(self.selection.first_paragraph, self.selection.first_offset),
+                   offset(self.selection.last_paragraph, self.selection.last_offset))
+        new, said = text_review.apply(reader, old, want)
+        if new and new != old:
+            first, last = self._location(new[0]), self._location(new[1])
+            self.selection = TextSelection(first[0], first[1], last[0], last[1])
+            self.cursor = first[0]
+        return said
+
     def process(self, raw):
         self.drop_stale_selection()
         text = raw.strip()
@@ -1315,6 +1357,11 @@ class VoiceDocument:
             selected = TextSelection(index, 0, index, len(self.paragraphs[index].text))
             self.word_cursor = self.sentence_cursor = 0
             return 'Paragraph ' + str(index+1) + '. ' + self._apply_selection_action(selected, 'select')
+        review = text_review_request(command)
+        if review and review[0] in ('extend', 'to'):
+            # "Extend selection by word" and "Select to end of line" (guide 5.3): the same words as
+            # on every screen you read. Before, they were typed into the text or not found.
+            return self._review_selection(review)
         if self.selection_candidates:
             if command in ('first item','last item','start of list','end of list'):
                 self.selection_index=0 if command in ('first item','start of list') else len(self.selection_candidates)-1
