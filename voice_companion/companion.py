@@ -2066,7 +2066,8 @@ def remember_question(text):
     """F1 says the open yes or no question again. Anything else said (but the choice itself) ends it."""
     global LAST_YES_NO
     if not isinstance(text,str):return
-    if 'yes or no' in text.casefold():LAST_YES_NO=text
+    # With the microphone off, a question says "Press Y or N" instead of "yes or no".
+    if 'yes or no' in text.casefold() or 'press y or n' in text.casefold():LAST_YES_NO=text
     elif text not in ('Yes.','No.','Start of list.','End of list.'):LAST_YES_NO=''
 
 
@@ -5894,7 +5895,7 @@ def announce_startup():
 
     Every startup path comes here: normal, microphone off or broken, after an update,
     an update offered, Chrome setup asked for by the installer. Returns the first mode."""
-    global SLEEP_RETURN_MODE, STARTUP_NOTICES, STARTUP_QUESTION, PREFERENCES_DAMAGED
+    global SLEEP_RETURN_MODE, STARTUP_NOTICES, STARTUP_QUESTION, PREFERENCES_DAMAGED, LAST_YES_NO
     import startup_speech
     if STARTUP_NOTICES is None:STARTUP_NOTICES = []
     mode = startup_update_mode()
@@ -5934,6 +5935,8 @@ def announce_startup():
     notices, STARTUP_NOTICES = STARTUP_NOTICES, None
     STARTUP_QUESTION = None
     speak(startup_speech.announcement(APP_VERSION, microphone_state(), update_result, notices, question))
+    # F1 says the startup question again, not the whole startup announcement.
+    if question and LAST_YES_NO:LAST_YES_NO=str(question).strip()
     return mode
 
 
