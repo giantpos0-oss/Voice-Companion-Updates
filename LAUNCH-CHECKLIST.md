@@ -19,7 +19,14 @@ pull requests. Update this file as items are finished.
       disappears when this repository goes private.
 - [ ] Tell testers to report bugs on the releases repository's issues page.
       Issues there are public: no passwords, email contents or personal details.
-- [ ] **Will:** make this repository private, once Claude says most copies have updated.
+- Decision (Will, November 4, 2026): **stay public for now.** Private builds would cost
+  about $90 to $100 a month at the current pace (about 100 Windows build minutes a
+  release, about 100 releases a month; GitHub Free includes $12, about 1,200 Windows
+  minutes). Revisit closer to launch, when releases slow down, or with a self-hosted
+  runner on a spare Windows PC (free).
+- [ ] **Will, later:** make this repository private. Before that, every copy must be on
+      0.2.200 or newer (ask testers to say "What version?"). Then remove the fallback
+      feed from `update-settings.json` in the next release.
 
 ### Trust and installation
 - [ ] **Code-sign the installer and app (Will: buy a code-signing certificate, e.g. an OV or EV certificate or Azure Trusted Signing).**

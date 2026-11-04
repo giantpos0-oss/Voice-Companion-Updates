@@ -31,7 +31,7 @@ Do this only after Claude confirms a release reached the releases repository, an
 
 Then:
 
-- Build time on a private repository uses the free plan's included $12 a month. A self-hosted runner on a spare Windows PC is free.
+- Build time on a private repository is billed. GitHub Free includes $12 a month, about 1,200 Windows minutes. A release uses about 100 Windows minutes, so that covers about 12 releases a month. At about 100 releases a month that is $90 to $100. A self-hosted runner on a spare Windows PC is free.
 - Testers file bugs on the [Voice Companion issues page](https://github.com/willwalsh14-hub/voice-companion-releases/issues/new/choose) in the releases repository.
 - The privacy policy contact is now willwalsh14@gmail.com, and a copy of the policy is in the releases repository.
 - Before the switch, set the Chrome Web Store privacy policy link to the [privacy policy in the releases repository](https://github.com/willwalsh14-hub/voice-companion-releases/blob/main/PRIVACY-POLICY.md).
