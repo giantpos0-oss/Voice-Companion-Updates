@@ -105,5 +105,30 @@ class LocalAddressBookFileTests(unittest.TestCase):
         self.assertFalse(book.path.exists())
 
 
+class LastContactOnThisComputerTests(ContactsSourceHarness):
+    """Two accounts, "Saved on this computer" shown, and its only contact deleted. Before, the
+    view jumped to every address book without a word, and later said "Saved on this computer is
+    no longer in Thunderbird"."""
+
+    def test_deleting_the_only_one_leaves_an_empty_list_here(self):
+        from address_book import AddressBook
+        AddressBook(self.root, 'me@gmail.com').save('Zed Local', 'zed@example.com')
+        mode = self.open()
+        app.handle('show saved on this computer', mode)
+        self.assertTrue(self.said().startswith('Showing Saved on this computer. 1 contact. Zed Local'), self.said())
+        app.handle('delete contact', mode)
+        app.handle('yes', mode)
+        self.assertEqual(self.said(), 'Deleted Zed Local. No contacts here. Press Control+L to show another address book, '
+                                      'or Control+N to add a contact.')
+        app.handle('where am i', mode)
+        self.assertEqual(self.said(), 'Contacts. Showing Saved on this computer. No contacts here. Press Control+L to show '
+                                      'another address book, or Control+N to add a contact.')
+        app.handle('close contacts', mode)
+        self.open()
+        self.assertEqual(self.said(), 'Contacts. Showing Saved on this computer. No contacts here. Press Control+L to show '
+                                      'another address book, or Control+N to add a contact.')
+        self.assertNotIn('no longer in Thunderbird', self.everything_said())
+
+
 if __name__ == '__main__':
     unittest.main()

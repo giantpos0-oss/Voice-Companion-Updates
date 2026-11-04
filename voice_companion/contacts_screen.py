@@ -113,7 +113,10 @@ def choose_sources(m):
         # Thunderbird did not answer this time: its address books are not gone, and the one chosen is kept.
         return
     items = [dict(b) for b in BOOK.books]
-    if BOOK.local_contacts():
+    chosen = SOURCE if SOURCES is not None else pim_sources.saved(m.APP, 'contacts').get('choice')
+    if BOOK.local_contacts() or chosen == 'source:' + contacts_book.LOCAL_ID:
+        # Kept while it is chosen, even once empty: deleting its last contact leaves an empty list here,
+        # not every address book and "no longer in Thunderbird".
         items.append({'id': contacts_book.LOCAL_ID, 'name': 'Saved on this computer'})
     first = SOURCES is None
     before = '' if first else SOURCES.words(SOURCE)     # named from the old list: the new one no longer has it
