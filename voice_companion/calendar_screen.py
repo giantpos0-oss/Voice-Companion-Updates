@@ -307,6 +307,10 @@ def handle(m, text, mode, typed=False):
                     and mode not in ('awake',):
                 return None     # "what's on" alone is only for the main menu; elsewhere it may be about a page
             return tell_day(m, asked['day'] or 'today', mode)
+        if asked and asked['day'] and missing_date(raw, today(m)) and (
+                mode == 'awake' or 'calendar' in command or 'schedule' in command):
+            m.speak(missing_date(raw, today(m)))     # "What's on February 30?": why, not "I did not understand"
+            return mode
         if mode == 'awake' and command in OPEN:
             return open_screen(m, mode)
         wanted = SHOW.fullmatch(command)
@@ -446,8 +450,8 @@ def command_here(m, raw, command):
         m.speak(show(m, day))
         return MODE
     asked_for = re.fullmatch(r'(?:go to|jump to|move to|show|show me|open|read) (?:the )?(?:date |day )?(.+)', command)
-    if asked_for and looks_like_date(asked_for[1]):
-        # "go to February 30": a date was meant. Say why, and ask again.
+    if asked_for and looks_like_date(asked_for[1]) or missing_date(raw, today(m)):
+        # "go to February 30", "What's on February 30?": a date was meant. Say why, and ask again.
         return ask(m, 'go-to', date_problem(m, raw))
     m.speak('Calendar. Say next event, next day, today, read event, add event, edit event, or delete event. '
             'Press F1 for help, or Escape for the main menu.')

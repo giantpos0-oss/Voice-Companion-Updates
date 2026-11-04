@@ -146,6 +146,18 @@ class DatesThatDoNotExistTests(CalendarHarness):
         self.assertEqual(mode, 'calendar')
         self.assertTrue(self.said().startswith('Add Lunch, Tomorrow, Tuesday, October 27, three PM'), self.said())
 
+    def test_asking_about_a_day_that_does_not_exist_says_why(self):
+        self.assertEqual(app.handle("What's on my calendar for February 30?", 'awake'), 'awake')
+        self.assertEqual(self.said(), 'There is no February 30.')
+        app.handle('What do I have on February 29?', 'awake')
+        self.assertEqual(self.said(), 'February 29 is only in a leap year, such as 2028. Say the year too.')
+        mode = self.open()
+        for words in ("What's on February 30?", 'February 30.'):
+            with self.subTest(words=words):
+                self.assertEqual(app.handle(words, mode), 'task_input')
+                self.assertEqual(self.said(), 'There is no February 30. Say another date. Escape cancels.')
+                app.handle('escape', 'task_input')
+
     def test_moving_says_why_and_asks_again(self):
         mode = self.open()
         mode = app.handle('move event to February 30 at 2', mode)
