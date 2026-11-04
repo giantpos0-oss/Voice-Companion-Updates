@@ -121,7 +121,8 @@ def gone_words(gone):
 
 
 READER_BACK_WORDS = {'reader_recent': 'your recent documents', 'reader_picker': 'the file list',
-                     'recent_documents': 'your recent documents', 'files': 'the file list'}
+                     'recent_documents': 'your recent documents', 'files': 'the file list',
+                     'downloads': 'your downloads', 'attachments': 'the attachment list'}
 
 
 class TaskNavigation:

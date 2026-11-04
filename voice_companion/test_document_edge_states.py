@@ -316,5 +316,42 @@ class EmptyNoteSelection(unittest.TestCase):
         self.assertEqual(list(app.note_buffer), [])
 
 
+class ReaderAutoReadOption(DocumentFlowCase):
+    """Options, Document reader, "Read a document aloud when it opens" turned off: a text file or
+    PDF chosen with Open a document (Control+O), or in File manager, was still read aloud.
+    Only Word files obeyed the option."""
+
+    def open_through_the_list(self, picker):
+        import time
+        from file_manager import FileManager
+        from test_file_manager import FakeFiles, settle
+        (self.elsewhere / 'Notes.txt').write_text('The front desk opens at nine.')
+        app.PREFERENCES['reader_auto_read'] = False
+        app.FILE_MANAGER = FileManager(FakeFiles(self.elsewhere))
+        app.FILE_MANAGER.refresh(str(self.elsewhere)); settle(app.FILE_MANAGER)
+        if picker:
+            app.FILE_MANAGER.pick_extensions = {'.txt', '.docx'}; app.FILE_MANAGER.pick_label = 'document'
+        app.task_navigation().picker = 'reader' if picker else None
+        self.said.clear()
+        app.handle('open Notes.txt', 'files')
+        mode, until = 'files', time.monotonic() + 5
+        while mode == 'files' and time.monotonic() < until:
+            mode = app.poll_file_manager(mode); time.sleep(0.01)
+        self.assertEqual(mode, 'file_reader')
+        return ' '.join(self.said)
+
+    def test_open_a_document_honours_the_option(self):
+        heard = self.open_through_the_list(picker=True)
+        self.assertNotIn('front desk', heard)
+        self.assertIn('Opened Notes.txt. Press Control+R to read it. Escape goes back to the file list.', heard)
+        app.handle('read from top', 'file_reader')
+        self.assertIn('front desk', self.last())
+
+    def test_file_manager_honours_the_option(self):
+        heard = self.open_through_the_list(picker=False)
+        self.assertNotIn('front desk', heard)
+        self.assertIn('Press Control+R to read it.', heard)
+
+
 if __name__ == '__main__':
     unittest.main()

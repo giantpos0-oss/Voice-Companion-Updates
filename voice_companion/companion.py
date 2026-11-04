@@ -1360,6 +1360,14 @@ def poll_file_manager(mode):
                 # Escape comes back to this file in the list (Will, November 1, 2026).
                 task_navigation().reader_return='reader_picker';task_navigation().reader_files=FILE_MANAGER
             notice=notice or 'Opened '+FILE_READER.title+'. Read-only document. '+FILE_READER.reading.read(True)
+            if not PREFERENCES.get('reader_auto_read',True):
+                # Options, Document reader: "Read a document aloud when it opens" is off. It was
+                # obeyed only by Word files (task_navigation.read_file); now by every file.
+                from task_navigation import READER_BACK_WORDS
+                FILE_READER.reading.position=FILE_READER.reading.continuation=0
+                warnings=''.join(w.rstrip(' .')+'. ' for w in FILE_READER.warnings[:3])
+                notice=('Opened '+FILE_READER.title+'. '+warnings+'Press Control+R to read it. Escape goes back to '
+                        +READER_BACK_WORDS.get(task_navigation().reader_return,'the file list')+'.')
             if mode=='sleep':SLEEP_RETURN_MODE='file_reader'
             else:mode='file_reader'
         if notice:speak(notice)
