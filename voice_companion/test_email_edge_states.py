@@ -65,6 +65,34 @@ class BlankHtmlTests(YahooSession):
         self.assertEqual(body.plain, 'Your benefits letter is ready.')
 
 
+class MissingCharsetTests(YahooSession):
+    # Some mail programs send accented letters without saying which character set they
+    # used. "Café" was read as "Caf" and two unknown symbols. Thunderbird reads these as
+    # UTF-8, or as Windows Western text when they are not UTF-8.
+    def read(self, raw):
+        self.server.add('Inbox', message(raw=raw))
+        self.session.process('open inbox')
+        return self.session.process('read message 1')
+
+    def test_utf8_letters_without_a_character_set_are_read(self):
+        said = self.read(b'From: a@example.com\nSubject: Menu\n\nCaf\xc3\xa9 au lait at noon.\n')
+        self.assertIn('Café au lait at noon.', said)
+        self.assertNotIn('�', said)
+
+    def test_html_without_a_character_set_is_read(self):
+        said = self.read(b'From: a@example.com\nSubject: Menu\nContent-Type: text/html\n\n<p>Jos\xc3\xa9 is here.</p>\n')
+        self.assertIn('José is here.', said)
+
+    def test_western_letters_without_a_character_set_are_read(self):
+        said = self.read(b'From: a@example.com\nSubject: Menu\nContent-Type: text/plain; charset=us-ascii\n'
+                         b'Content-Transfer-Encoding: 8bit\n\nCaf\xe9 \x93open\x94 today.\n')
+        self.assertIn('Café “open” today.', said)
+
+    def test_a_declared_character_set_is_kept(self):
+        said = self.read(b'From: a@example.com\nSubject: Menu\nContent-Type: text/plain; charset=iso-8859-1\n\nCaf\xe9\n')
+        self.assertIn('Café', said)
+
+
 class EmptySenderTests(YahooSession):
     # Some bounce and system messages say "From: <>": no name and no address.
     # It was spoken as the symbols "<>" in the list and in "Who is it from?".
