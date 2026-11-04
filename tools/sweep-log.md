@@ -7,6 +7,128 @@ The format for each night:
 - a heading with the date and the version
 - under it, a "Fixed" list and a "Questions for Will" list
 
+## November 4, 2026 (night 5, empty and edge states): version 0.2.203-test
+
+Release pull request 132. Night count: sweeps since November 1 run Monday, Wednesday and Friday, so tonight is sweep night 5 (November 2 was night 4; it left no log entry). No new Windows-only tests, so no try branch.
+
+### Fixed
+
+#### Startup, speech and Help
+- After Pause, the main Windows voice stayed silent: a stop threw away the waiting Resume. Stop now drops only waiting speech.
+- One failed voice restart left no voice for the rest of the session. It now tries again on the next call.
+- A damaged speech-settings.json (a list, null, text or a byte order mark) stopped startup. It now uses no saved settings.
+- F1 was silent in the update question with the microphone off ("Press Y or N"). At startup, F1 repeated the whole announcement instead of the question.
+- Guide part 29.5 asked for a permission for online recognition, which was removed in 0.2.201. Line removed.
+- "Help with e-mail." and chapter names without commas found no topic. "Help, please." now works on the main menu.
+- The transcript lost every line when speech-transcript-old.txt was held open. It now keeps writing and moves the file later. The Thunderbird log gets the same fix.
+- Options are saved with the shared atomic writer (it now flushes to disk and leaves no preferences.writing).
+
+#### Email
+- Picture-only emails (HTML with no words) said "No readable body." Yahoo and Thunderbird now read the plain part.
+- "From: <>" was read as symbols. Now "Unknown sender."
+- Message numbers in an empty folder said "That number is not on this page." Now "Empty list."
+- A save cut short left "Name.writing" in the drafts list.
+- Accented letters in messages with no character set were garbled. Now UTF-8 first, then Windows Western.
+- A removed account now adds "Say add account to connect it."
+- Replies and forwards to a blank subject were sent as "Re: (no subject)." Now "Re:" or "Fwd:".
+- A damaged preferences.json stopped every inbox command. Email now uses one shared reader.
+- "undisclosed-recipients:;" was read with its symbols on Thunderbird. Now "No To address."
+
+#### Calendar and Contacts
+- A removed calendar or address book was named "All calendars" after Refresh.
+- Contacts saved on this computer: a damaged file was written over by the next contact; a file with a byte order mark read as empty; a held file was replaced. All fixed, with a .damaged.json copy kept.
+- Deleting the last contact on "Saved on this computer" jumped to every address book.
+- February 30, and February 29 in a non-leap year, put the event on the day on screen. Now it names the problem and asks again, for add and move.
+- "What's on my calendar for February 30?" was not understood. Now it says why.
+- Adding an event with no calendar to save in opened Calendar without a word. It now stays on the main menu and says why.
+- Control+L with no calendars or no address books spoke of one email account.
+- "Email John" with no John read the command list. Now "No contact named john."
+- Enter and Delete on an event past midnight said "tomorrow" for a day that is not today. Now "the next day."
+
+#### Documents, notes and files
+- Extend selection, Select to end of line, Select to the end and Select to the beginning did not work in documents and drafts. The editor now uses the shared selection rules.
+- Selecting nothing said "Selected:" and Delete added an empty Undo step.
+- Drafts said "Beginning of document" and "The document is empty."
+- A paragraph of only spaces was silent. Now "Empty paragraph."
+- Damaged Word files read out Python errors, or stopped the command.
+- A damaged Word file from Open a document lost the file list place.
+- "Read a document aloud when it opens," turned off, was ignored for text and PDF files.
+- Select previous paragraph, word and sentence skipped one on a blank line.
+- Empty note selection said "This field is empty."
+- File manager: Delete and Rename now keep focus in place. "Name tags.txt" is no longer cut to "tags.txt."
+
+#### Web
+- A page dialog with no buttons trapped Escape. The message now says if it has a button, and a second Escape opens the web browser menu.
+- Arrows in an empty table said "Move to a table with T first." Now "This table is empty."
+- A download folder at the top of a drive was named as nothing. Now "drive E."
+- Your own Chrome, hidden while Companion used it, stayed hidden after Companion closed. It now comes back.
+- Main menu during Chrome setup gave a shorter message than Cancel.
+- Review form on a page with no fields said only "End of form review."
+- Submit form offered a disabled button, then said the result was uncertain.
+- The flaky test test_unsaved_changes_keep_the_page_and_a_second_try_leaves could not be made to fail here (8 alone, 10 under load, 2 full live runs). It now records each step, its timing and the page, and prints that record on failure.
+
+#### Media
+- Seek and chapter keys with nothing loaded said the audio cannot seek or has no chapters.
+- Playback speed with no media file asked for a number first.
+- Play or delete preset with no presets said "I could not find that preset."
+- Empty subscriptions, downloads and recordings now say what to do next.
+- Download with no episode open gave the general Podcasts help.
+- "Play station 9" with 3 results gave a raw error. Now it gives the range. Same for Record and Schedule.
+- Radio Recordings listed desktop.ini and Thumbs.db, and said ".mp3" aloud.
+- A damaged automatic download setting was read raw and stopped the background feed check.
+- Subscribing twice said "Subscribed" again.
+- Space was silent in Yes or No questions on Radio and Podcasts.
+- Player controls' Escape hint named the menu instead of the list Escape goes to.
+- Scheduling for 12 AM today at night now explains that midnight tonight is 12 AM tomorrow.
+- With no internet, radio search and "Play WGN" now say to check the connection.
+
+#### Found while merging
+- The new web Escape test failed only in the full run, because an earlier test left a spoken list open. The test now clears that state first.
+
+#### Found while shipping
+- The first Windows build failed: the new transcript test left its file open, and Windows cannot delete an open file when the temporary folder is removed. The test now closes the transcript first. The second build passed, and 0.2.203-test was published.
+
+### Open items for the next sweep
+- Keyboard voice (keyboard_speech.py) still calls the Windows voice directly, with the same freeze risk 0.2.196 fixed for the main voice.
+- If the Windows voice takes more than 5 seconds to start, the chosen voice is not applied, and the next save can write the default over it.
+- Thunderbird add-on: delete uses messages.delete(ids, false). On an IMAP account set to "Remove it immediately" this may delete for good. A fix would move to the account's Trash folder. It needs a try branch with real Thunderbird. From Thunderbird 137 the second argument is an options object.
+- The Document reader shows "This document has no readable text." as the text of an empty file, so Copy can copy it.
+
+### Questions for Will (not answered yet)
+
+#### Startup and Help
+- Should "Wake up" said while awake say "I am awake"?
+- Should a setting name said alone ("Verbosity", "Rate") say the current value and choices?
+- In the tutorial, should "Where am I?" say where you are in the tutorial?
+- Should a bare "Explain command" ask which command?
+- Should Page Up and Page Down move by a page on the main menu, Help and tutorial lists, or say they do nothing?
+
+#### Email
+- Should the message list say the address when a sender has no name?
+- On a forward or a reply with no address, should a sentence said in the To field go into the message?
+- Should a reply go to every Reply-To address?
+- Should a damaged draft offer to open its last good backup copy?
+
+#### Calendar and Contacts
+- Should the day's list say "the next day" for events past midnight, as Enter and Delete now do?
+- Should the Thunderbird add-on move deleted mail to Trash itself, so it never deletes for good?
+- "Go to the 31st" in a 30-day month goes to next month's 31st. Should it say the month has no 31st?
+
+#### Documents
+- Should an empty file open in the Document reader with no text at all?
+- Should a Word file too large for the editor open in the Document reader by itself?
+- Should "Go to beginning of message" and "Go to end of message" be commands in a draft?
+- Should "Select letter" work in documents?
+
+#### Web
+- Is a second Escape on a stuck dialog opening the web browser menu the right way out?
+- Should Tab on an empty page and the first reading use the same words?
+- After an empty Enter in the search box with a page open, should the search box stay open?
+
+#### Media
+- Should YouTube in your own Chrome only reuse tabs Companion opened?
+- While one show plays and you browse another, should "Next episode" go to the next episode of the show that is playing?
+
 ## October 31, 2026 (night 3, a code review of error handling): version 0.2.189-test
 
 Release pull request 111. No new Windows-only tests, so no try branch. All three checks were green at 10:07 AM UTC. This session's permission check blocked the merge, so Will merged it himself. It was published at 4:05 PM UTC.
