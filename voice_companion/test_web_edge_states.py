@@ -137,5 +137,41 @@ class FirstChromeSetupMainMenuTests(unittest.TestCase):
         self.assertEqual(said[-1], chrome_setup.MESSAGES['first_canceled'])
 
 
+class FormEdgeTests(unittest.TestCase):
+    def session(self, controls, url='https://example.com/form'):
+        folder = tempfile.TemporaryDirectory(); self.addCleanup(folder.cleanup)
+        snapshot = {'title': 'Form', 'url': url, 'text': 'Form', 'controls': controls}
+        backend = Mock(); backend.snapshot.side_effect = lambda: snapshot
+        session = WebSession(folder.name, backend)
+        session.snapshot = snapshot
+        return session, backend
+
+    def test_review_form_with_no_fields_says_so(self):
+        # It said only "End of form review."
+        session, _ = self.session([{'key': 'b', 'role': 'button', 'label': 'Go', 'tag': 'button', 'type': 'submit', 'in_form': True}])
+        self.assertEqual(session.review_form(), 'I did not find readable form fields on this page.')
+
+    def test_a_disabled_submit_button_is_not_offered(self):
+        # Submit form asked "yes to submit" for a button the site had turned off, and yes then said
+        # "The submission result is uncertain. Do not repeat it" although nothing was sent.
+        name = {'key': 'n', 'role': 'field', 'label': 'Name', 'tag': 'input', 'type': 'text', 'value': 'Will'}
+        send = {'key': 'b', 'role': 'button', 'label': 'Send', 'tag': 'button', 'type': 'submit', 'in_form': True, 'disabled': True}
+        session, backend = self.session([name, send])
+        said = session.prepare_submit()
+        self.assertEqual(said, 'The Send button is turned off on the page, so nothing was submitted. '
+                               'The site may need another answer first. Say review form to hear the fields.')
+        self.assertIsNone(session.submit_pending)
+        backend.activate.assert_not_called()
+
+    def test_a_button_turned_off_after_review_is_not_pressed(self):
+        name = {'key': 'n', 'role': 'field', 'label': 'Name', 'tag': 'input', 'type': 'text', 'value': 'Will'}
+        send = {'key': 'b', 'role': 'button', 'label': 'Send', 'tag': 'button', 'type': 'submit', 'in_form': True}
+        session, backend = self.session([name, send])
+        self.assertIn('yes to submit', session.prepare_submit())
+        send['disabled'] = True
+        self.assertTrue(session.confirm_submit().startswith('The Send button is turned off on the page, so nothing was submitted.'))
+        backend.activate.assert_not_called()
+
+
 if __name__ == '__main__':
     unittest.main()

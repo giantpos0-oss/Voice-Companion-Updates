@@ -148,6 +148,15 @@ def match_choices(items, request):
     return [item for _, item in scored[:5]]
 
 
+NO_FORM_FIELDS = 'I did not find readable form fields on this page.'
+
+
+def button_turned_off(button):
+    """A form's only button is turned off (disabled) by the site: nothing is pressed."""
+    return ('The ' + _label(button) + ' button is turned off on the page, so nothing was submitted. '
+            'The site may need another answer first. Say review form to hear the fields.')
+
+
 class Favorites:
     UNREADABLE = 'Your favorites could not be opened just now. Try again in a moment.'
     UNSAVED = 'Your favorites could not be saved just now. Nothing changed. Try again in a moment.'
@@ -3094,6 +3103,7 @@ class WebSession:
         self.review_submission = None
         self.review_parts = self._form_parts(current)
         self.review_cursor = 0
+        if not self.review_parts: return NO_FORM_FIELDS
         return self._next_review()
 
     @staticmethod
@@ -3200,6 +3210,7 @@ class WebSession:
         if len(buttons) != 1:
             return 'I cannot identify one final form button. Ask your helper to inspect this page.'
         button = buttons[0]
+        if button.get('disabled'): return button_turned_off(button)
         if re.search(r'\b(pay|purchase|transfer|withdraw|deposit|wire|send money)\b',
                      _label(button) + ' ' + current.get('title',''), re.I):
             return 'This may move money. Ask your helper to review the accounts, amount, and final action in the browser.'
@@ -3224,6 +3235,7 @@ class WebSession:
                        _label(c) == _label(button) and c.get('in_form') == button.get('in_form')]
             if len(matches) != 1:
                 return 'The submit button changed. Submission canceled; review the form again.'
+            if matches[0].get('disabled'): return button_turned_off(button)
             if self._form_signature(current) != pending['signature']:
                 return 'A form answer changed. Submission canceled; review the form again.'
             self.progress('Loading page.')
