@@ -84,5 +84,18 @@ class F1RepeatsTheUpdateQuestionTests(CompanionTestCase):
                 companion.handle('no', 'update_offer')
 
 
+class GuideMatchesTheAppTests(unittest.TestCase):
+    """Online (Azure) recognition and its permission were removed in 0.2.201, but the guide's
+    privacy part still told people to give that permission in Input options."""
+
+    def test_the_guide_no_longer_asks_for_online_recognition_permission(self):
+        folder = Path(__file__).resolve().parent
+        for name in ('START HERE - Veteran.txt', 'START HERE - Veteran.html'):
+            with self.subTest(name=name):
+                text = (folder / name).read_text(encoding='utf-8')
+                self.assertNotIn('Online recognition', text)
+                self.assertIn('An AI voice needs your permission in Synthesizer options.', text)
+
+
 if __name__ == '__main__':
     unittest.main()
