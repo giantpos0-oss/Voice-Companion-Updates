@@ -30,6 +30,15 @@ def flushed_write(path, data):
         raise
 
 
+def saved_draft_names(folder):
+    """The saved drafts in a folder, by name. A file left by a save that a power cut
+    stopped ("Lunch.writing.json") is not a draft of its own."""
+    folder = Path(folder)
+    if not folder.is_dir():
+        return []
+    return sorted((p.stem for p in folder.glob('*.json') if not p.stem.endswith('.writing')), key=str.casefold)
+
+
 def email_field_destination(spoken):
     """Recognize short field navigation even with common speech homophones."""
     words = re.sub(r'[^a-z ]', ' ', spoken.casefold()).split()
