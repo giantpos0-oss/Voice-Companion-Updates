@@ -117,6 +117,21 @@ class NoSubjectReplyTests(YahooSession):
             self.assertEqual(box.response_context('5', 'reply', ADDRESS)['subject'], 'Re: Plans')
 
 
+class DamagedOptionsTests(YahooSession):
+    # Voice Companion uses the usual options when preferences.json is damaged. Email read
+    # the file on its own, and a file holding a list or null stopped every inbox command
+    # with "Email could not complete that request".
+    def test_inbox_works_with_damaged_options(self):
+        self.server.add('Inbox', message(subject='Lunch', body='See you at noon.',
+                                         html='<p>See you at <a href="https://example.com">noon</a>.</p>'))
+        for damaged in ('null', '[]', '"html"', '5'):
+            with open(self.folder + '/preferences.json', 'w', encoding='utf-8') as file:
+                file.write(damaged)
+            self.assertIn('Lunch', self.session.process('open inbox'), damaged)
+            self.assertIn('See you at', self.session.process('read message 1'), damaged)
+            self.assertIn('1. noon', self.session.process('list links'), damaged)
+
+
 class EmptySenderTests(YahooSession):
     # Some bounce and system messages say "From: <>": no name and no address.
     # It was spoken as the symbols "<>" in the list and in "Who is it from?".
