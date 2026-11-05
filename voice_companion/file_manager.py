@@ -18,6 +18,7 @@ class Item:
     created:float|None=None
     modified:float|None=None
     added:float|None=None
+    size:int|None=None
     def label(self):return self.name+', '+('drive' if self.drive else 'folder' if self.folder else 'file')
 
 START_PLACES = {'drive list': None, 'drives': None, 'c drive': 'C:\\', 'c': 'C:\\',
@@ -124,7 +125,10 @@ class ShellFiles:
                 value=e.ExtendedProperty(name)
                 return value.timestamp() if hasattr(value,'timestamp') else None
             except Exception:return None
-        return Item(Path(str(e.Path)).name if e.IsFileSystem and not drive else str(e.Name),str(e.Path),bool(e.IsFolder),drive,bool(e.IsFileSystem),date('System.DateCreated') if not drive else None,date('System.DateModified') if not drive else None)
+        def size():
+            try:return None if drive or e.IsFolder else int(e.Size)
+            except Exception:return None
+        return Item(Path(str(e.Path)).name if e.IsFileSystem and not drive else str(e.Name),str(e.Path),bool(e.IsFolder),drive,bool(e.IsFileSystem),date('System.DateCreated') if not drive else None,date('System.DateModified') if not drive else None,size=size())
     @shell_thread
     def roots(self):
         shell=self._shell();result=[]
@@ -168,6 +172,18 @@ class ShellFiles:
         if not folder or not folder.ParentFolder:return None
         parent=str(folder.ParentFolder.Self.Path)
         return None if parent.startswith('::') else parent
+    @shell_thread
+    def extended(self,path):
+        """The Windows details of a file, as File Explorer shows them: music tags and more."""
+        from file_tools import SHELL_DETAILS,detail_text
+        shell=self._shell();folder=shell.NameSpace(str(Path(path).parent))
+        item=folder.ParseName(Path(path).name) if folder else None
+        if item is None:return []
+        found=[]
+        for label,name in SHELL_DETAILS:
+            try:found.append((label,detail_text(label,item.ExtendedProperty(name))))
+            except Exception:continue
+        return found
     def clipboard(self,paths,cut):
         import struct,win32clipboard
         # DROPFILES: native Explorer CF_HDROP, followed by UTF-16 file names.
@@ -232,17 +248,29 @@ class ShellFiles:
         operation.PerformOperations()
         if operation.GetAnyOperationsAborted():raise ValueError('Windows did not finish every item. Refresh and check the folder before trying again.')
 
-MENU=(('Open','Enter','open'),('Select or unselect current item','Space','toggle selection'),('Select all','Ctrl+A','select all'),('Clear selection','Ctrl+Shift+A','clear selection'),('Rename','F2','rename'),('Delete','Delete','delete'),('Copy','Ctrl+C','copy'),('Cut','Ctrl+X','cut'),('Paste','Ctrl+V','paste'),('Refresh','F5','refresh'),('Previous folder','Escape','go back'),('Drive list','Ctrl+D','drive list'),('Read file manager help','F1','file manager help'),('Main menu','Say Main menu','main menu'))
-SORT_MENU=(('Name','Alt+N','sort by name'),('Date created','Alt+C','sort by date created'),('Date modified','Alt+M','sort by date modified'),('Date added (first seen here)','Alt+D','sort by date added'),('Ascending','Alt+A','sort ascending'),('Descending','Alt+Z','sort descending'))
-MENU=MENU[:-1]+(('Search current list','Ctrl+E','search files'),('Search subfolders','Ctrl+Shift+F','search subfolders'),('Clear search','Ctrl+Shift+X','clear search'),('Sort files','Alt+S','sort files'),*SORT_MENU,('Email this file','Ctrl+N','email this file'),('Attach to open email draft','Ctrl+O','attach to draft'),('Main menu','Alt+Home','main menu'))
+# The Alt menu (Will, November 4, 2026): groups, not one long list. Enter opens a group; Escape
+# goes back to the groups, then to the files. No Tab stops: Search and Sort live here.
+ACTIONS=(('Open','Enter','open'),('Tag or untag','Space','toggle tag'),('Tag all','Ctrl+A','tag all'),('Clear tags','Ctrl+Shift+A','clear tags'),
+         ('What is tagged','Ctrl+Shift+T','what is tagged'),('Rename','F2','rename'),('Delete','Delete','delete'),('Copy','Ctrl+C','copy'),
+         ('Cut','Ctrl+X','cut'),('Paste','Ctrl+V','paste'),('Zip','Alt+Z','zip'),('Unzip','Alt+U','unzip'),('Properties','Alt+Enter','properties'),
+         ('Email this file','Ctrl+N','email this file'),('Attach to open email draft','Ctrl+O','attach to draft'))
+SEARCH_MENU=(('Search current list','Ctrl+F','search files'),('Search subfolders','Ctrl+Shift+F','search subfolders'),('Clear search','Ctrl+Shift+X','clear search'))
+SORT_MENU=(('Name','Ctrl+1','sort key name'),('Date modified','Ctrl+2','sort key date modified'),('Type','Ctrl+3','sort key type'),('Size','Ctrl+4','sort key size'),
+           ('Date created','Ctrl+5','sort key date created'),('Date added (first seen here)','Alt+D','sort by date added'),
+           ('Ascending','Ctrl+Shift+Up','sort ascending'),('Descending','Ctrl+Shift+Down','sort descending'))
+GO_MENU=(('Refresh','F5','refresh'),('Previous folder','Escape','go back'),('Drive list','Ctrl+D','drive list'),('File manager help','F1','file manager help'),('Main menu','Alt+Home','main menu'))
+GROUPS={'actions':('Actions',ACTIONS),'search':('Search',SEARCH_MENU),'sort':('Sort',SORT_MENU),'go':('Go to',GO_MENU)}
+MENU=tuple((name,'','open group '+key) for key,(name,_) in GROUPS.items())
 # Email this file and Attach to draft need the app (attachment_screen.py); File manager hands them over.
 ATTACH_COMMANDS=('email this file','attach to draft')
+# Control+1 to Control+5 (sort key ...): the same key again flips ascending and descending.
+SORT_KEYS=('name','date modified','type','size','date created')
 
-HELP='File manager. Up Arrow and Down Arrow move through items. Home and End reach the list boundaries. Enter opens. Escape goes up one folder, then back to the drive list. Say an item name, or open followed by its name. Space toggles selection. Say select, unselect, mark, unmark, check, or uncheck, with an item name if needed. Control+A selects all; Control+Shift+A clears selections. F2 renames. Delete asks you to confirm removal. Control+C copies; Control+X cuts; Control+V pastes in the current folder. F5 refreshes. Alt opens the file manager menu with all keyboard and voice commands. Control+D returns to drives. Type the first few letters of an item to jump to it. Repeated letters cycle matches. Backspace removes a letter. Control+F searches names in this list; Control+Shift+F searches subfolders. Control+Shift+X clears search. Alt+S opens Sort. Control+Shift+1 through 4 sorts by name, date created, date modified, or date added. Control+Shift+Up Arrow and Control+Shift+Down Arrow choose ascending and descending. Date added means first seen here. Tab and Shift+Tab reach Search, Sort, Clear search and Drives buttons. Alt+Home returns to the main menu. Say Main menu to leave File manager.'
+HELP='File manager. Up Arrow and Down Arrow move through items. Home and End reach the list boundaries. Enter opens. Escape goes up one folder, then back to the drive list. Say an item name, or open followed by its name. Space tags or untags an item: Companion tags. Tags stay when you open another folder, so you can tag items in several folders. Copy, cut, delete, zip, and email act on every tagged item, or on the current item when nothing is tagged. Control+A tags all; Control+Shift+A clears tags; Control+Shift+T says what is tagged. F2 renames. Delete asks you to confirm removal. Control+C copies; Control+X cuts; Control+V pastes in the current folder. Alt+Z zips. Alt+U unzips into a new folder. Alt+Enter shows properties; use the arrows to read them. Control+1 sorts by name, Control+2 by date modified, Control+3 by type, Control+4 by size, and Control+5 by date created. Press the same key again to switch between ascending and descending. Control+F searches names in this list; Control+Shift+F searches subfolders. Control+Shift+X clears search. F5 refreshes. Control+D returns to drives. Type the first few letters of an item to jump to it. Alt opens the File manager menu, in groups: Actions, Search, Sort, and Go to. Alt+Home returns to the main menu.'
 
 class FileManager:
     def __init__(self,backend=None):
-        self.backend=backend or ShellFiles();self.items=[];self.index=0;self.location=None;self.history=[];self.selected=set();self.menu=False;self.menu_index=0;self.pending=None;self.busy=False;self.events=queue.Queue();self.opened=None;self.revision=0;self.job_id=0;self.mutating=False
+        self.backend=backend or ShellFiles();self.items=[];self.index=0;self.location=None;self.history=[];self.selected=set();self.tag_items={};self.properties=[];self.zip_suggestion='';self.menu=False;self.menu_index=0;self.pending=None;self.busy=False;self.events=queue.Queue();self.opened=None;self.revision=0;self.job_id=0;self.mutating=False
         from file_explorer import FileView
         from regular_browser import data_folder
         self.view=FileView(data_folder()/'file-dates' if backend is None else None)
@@ -263,12 +291,26 @@ class FileManager:
         if error:return error
         try:return done(value)
         except (ValueError,OSError) as exc:return str(exc)
-    def menu_items(self):return SORT_MENU if self.menu=='sort' else MENU
+    def menu_items(self):
+        if self.menu=='properties':return tuple((line,'','') for line in self.properties)
+        return GROUPS[self.menu][1] if self.menu in GROUPS else MENU
     def labels(self):
         if self.busy:return ['File manager is working']
         if self.pending:return ['Yes','No'] if self.pending[0]=='delete' else []
-        if self.menu:return [name+'. '+spoken_key(key)+'. Say '+voice+'.' for name,key,voice in self.menu_items()]
-        return [i.label()+(', selected' if i.path in self.selected else '') for i in self.items]
+        if self.menu=='properties':return list(self.properties)
+        if self.menu is True:return [name+', group.' for name,_,_ in MENU]
+        if self.menu:return [name+'. '+(spoken_key(key)+'. ' if key else '')+'Say '+voice.replace('sort key ','sort by ')+'.' for name,key,voice in self.menu_items()]
+        return [i.label()+(', tagged' if i.path in self.selected else '') for i in self.items]
+    # Companion tags -------------------------------------------------------------------------
+    def tag(self,item):self.selected.add(item.path);self.tag_items[item.path]=item
+    def untag(self,path):self.selected.discard(path);self.tag_items.pop(path,None)
+    def clear_tags(self):self.selected.clear();self.tag_items.clear()
+    def tagged(self):
+        """The tagged items in the order they were tagged, from any folder."""
+        return [item for path,item in self.tag_items.items() if path in self.selected]
+    def tag_count(self):
+        count=len(self.selected)
+        return ('No items' if not count else count_items(count))+' tagged.'
     def current(self):return self.items[self.index] if self.items and 0<=self.index<len(self.items) else None
     def say_current(self):
         labels=self.labels();i=self.menu_index if self.menu else self.index
@@ -281,7 +323,8 @@ class FileManager:
             if path!=self.location:self.view.filter=''
             self.view.prefix='';self.view.searching=False
             self.view.all_items=self.view.dated(items,path,prune=True)
-            self.location=path;self.items=self.view.shown();self.selected.clear();items=self.items
+            # Companion tags stay when another folder opens (Will, November 4, 2026, as in Leasey).
+            self.location=path;self.items=self.view.shown();items=self.items
             found=next((n for n,i in enumerate(items) if i.path==preserve),None)
             self.index=found if found is not None else min(restore_index,max(0,len(items)-1)) if restore_index is not None else 0
             self.revision+=1
@@ -291,9 +334,9 @@ class FileManager:
         # On the same item; when it is gone (deleted), at the same place in the list, not the top.
         return self.refresh(self.location,preserve=focus or (self.current().path if self.current() else None),restore_index=self.index)
     def targets(self):
-        targets=[i for i in self.items if i.path in self.selected] or ([self.current()] if self.current() else [])
+        targets=self.tagged() or ([self.current()] if self.current() else [])
         if not targets:raise ValueError('This folder is empty.' if self.location is not None and not self.items else 'No item is selected.')
-        if self.location is None or any(i.drive or not i.filesystem for i in targets):raise ValueError('Choose files or folders inside a drive. Drives and virtual locations cannot be renamed, deleted, copied, or cut.')
+        if self.location is None and not self.tagged() or any(i.drive or not i.filesystem for i in targets):raise ValueError('Choose files or folders inside a drive. Drives and virtual locations cannot be renamed, deleted, copied, or cut.')
         return targets
     def choose(self,name):
         # A recognizer ends "Photos." with a period; Windows names never end in one.
@@ -303,7 +346,14 @@ class FileManager:
         self.index=matches[0][0]
     def command(self,text):
         text=text.strip();cmd=text.casefold().rstrip('.!?')
-        cmd={'first item':'home','last item':'end','start of list':'home','end of list':'end','activate current item':'open','open current item':'open','select current item':'select','unselect current item':'unselect'}.get(cmd,cmd)
+        cmd={'first item':'home','last item':'end','start of list':'home','end of list':'end','activate current item':'open','open current item':'open','select current item':'select','unselect current item':'unselect',
+             # Companion tags: the older selection words still work.
+             'toggle selection':'toggle tag','select all':'tag all','mark all':'tag all','check all':'tag all',
+             'clear selection':'clear tags','unselect all':'clear tags','unmark all':'clear tags','uncheck all':'clear tags','deselect all':'clear tags','untag all':'clear tags','remove tags':'clear tags',
+             'what is selected':'what is tagged',"what's selected":'what is tagged','say selection':'what is tagged','read selection':'what is tagged','what did i select':'what is tagged',
+             "what's tagged":'what is tagged','list tags':'what is tagged','say tags':'what is tagged','read tags':'what is tagged',
+             'zip it':'zip','zip files':'zip','zip these':'zip','compress':'zip','unzip it':'unzip','unzip files':'unzip','extract':'unzip','extract all':'unzip',
+             'file properties':'properties','show properties':'properties','item properties':'properties','what are the properties':'properties'}.get(cmd,cmd)
         if cmd in ('file manager help','help with file manager','help for file manager','help','commands'):return HELP
         if self.busy:
             if cmd in ('escape','go back','cancel') and not self.mutating:
@@ -319,6 +369,13 @@ class FileManager:
             if action=='delete' and cmd in ('yes','okay','ok','confirm','enter'):
                 self.pending=None
                 return self.mutate('delete',paths)
+            if action=='zip':
+                from file_tools import make_zip,with_zip_type
+                name=with_zip_type(valid_name(re.sub(r'^(?:name it|call it)\s+','',text,flags=re.I).rstrip('.!?') or self.zip_suggestion))
+                target=Path(self.location)/name
+                if target.exists():raise ValueError('A file named '+name+' is already here. Nothing was replaced. Type another name.')
+                self.pending=None
+                return self.start_job(lambda:make_zip(paths,target),lambda count:self.after_change('Zipped '+count_items(len(paths))+' into '+name+'.',str(target)),'Zipping '+count_items(len(paths))+'.',mutating=True)
             if action=='rename':
                 # "Rename to budget" or "Call it budget"; a typed name such as "Name tags.txt" is kept whole.
                 name=re.sub(r'^(?:rename (?:it )?to|call it|name it)\s+','',text,flags=re.I)
@@ -329,11 +386,23 @@ class FileManager:
                 return self.command(('search subfolders for ' if action=='search all' else 'search files for ')+text)
             return 'Delete the selected items? Say Yes or No. Escape cancels.'
         if cmd in ('file manager menu','alt','menu'):
-            self.menu=not self.menu;self.menu_index=0;return ('File manager menu. ' if self.menu else 'Files. ')+self.say_current()
-        if self.menu:
-            if cmd in ('escape','go back','cancel'):self.menu=False;return self.say_current()
+            self.menu=False if self.menu else True;self.menu_index=0;return ('File manager menu. ' if self.menu else 'Files. ')+self.say_current()
+        if cmd.startswith('open group '):
+            key=cmd[len('open group '):]
+            if key in GROUPS:self.menu=key;self.menu_index=0;return GROUPS[key][0]+'. '+self.say_current()
+        if self.menu=='properties':
+            if cmd in ('escape','go back','cancel','close','close properties','properties'):self.menu=False;self.properties=[];return self.say_current()
+            if cmd in ('enter','okay','ok','open','activate','confirm','repeat'):return self.say_current()
+        elif self.menu:
+            if cmd in ('escape','go back','cancel'):
+                if self.menu in GROUPS:
+                    group=self.menu;self.menu=True;self.menu_index=list(GROUPS).index(group)
+                    return 'File manager menu. '+self.say_current()
+                self.menu=False;return self.say_current()
             if cmd in ('enter','okay','ok','open','activate','confirm'):
-                command=self.menu_items()[self.menu_index][2];self.menu=False
+                command=self.menu_items()[self.menu_index][2]
+                if self.menu is True:return self.command(command)
+                self.menu=False
                 if command in ATTACH_COMMANDS:return '__attach__:'+command
                 return self.command(command)
             if cmd not in ('next','previous','up','down','home','end','first','last','file backspace') and not cmd.startswith('file letters '):
@@ -362,25 +431,66 @@ class FileManager:
                 path,index=self.history.pop()
                 return self.refresh(path,preserve=self.location,restore_index=index)
             return self.start_job(lambda:self.backend.parent(self.location),lambda path:self.refresh(path),'Opening parent folder.')
-        if cmd in ('select all','mark all','check all'):
-            self.targets();self.selected={i.path for i in self.items if not i.drive and i.filesystem};return count_items(len(self.selected))+' selected.'
-        if cmd in ('what is selected',"what's selected",'say selection','read selection','what did i select'):
-            # As in Email and the Document reader: the selected names, in list order.
-            names=[i.name for i in self.items if i.path in self.selected]
-            if not names:return 'Nothing is selected. '+self.say_current()
-            return count_items(len(names))+' selected: '+', '.join(names)+'.'
-        if cmd in ('clear selection','unselect all','unmark all','uncheck all','deselect all'):
-            self.selected.clear();return 'Selection cleared.'
-        match=re.fullmatch(r'(select|unselect|deselect|mark|unmark|check|uncheck)(?:\s+(.+))?',text,re.I)
-        if cmd=='toggle selection' or match:
+        if cmd=='tag all':
+            if self.location is None:raise ValueError('Open a folder first. Drives cannot be tagged.')
+            if not self.items:raise ValueError('This folder is empty.')
+            for item in self.items:
+                if not item.drive and item.filesystem:self.tag(item)
+            return 'Tagged all. '+self.tag_count()
+        if cmd=='what is tagged':
+            names=[i.name for i in self.tagged()]
+            if not names:return 'Nothing is tagged. '+self.say_current()
+            return count_items(len(names))+' tagged: '+', '.join(names)+'.'
+        if cmd=='clear tags':
+            self.clear_tags();return 'Tags cleared.'
+        match=re.fullmatch(r'(select|unselect|deselect|mark|unmark|check|uncheck|tag|untag)(?:\s+(.+))?',text,re.I)
+        if cmd=='toggle tag' or match:
             if match and match[2]:self.choose(match[2])
             item=self.current()
             if self.location is not None and not self.items:raise ValueError('This folder is empty.')
-            if self.location is None or not item or item.drive or not item.filesystem:raise ValueError('Choose a file or folder inside a drive before selecting.')
-            selected=item.path not in self.selected if cmd=='toggle selection' else match[1].lower() in ('select','mark','check')
-            if selected:self.selected.add(item.path)
-            else:self.selected.discard(item.path)
-            return ('' if selected else 'Unselected. ')+self.say_current()
+            if self.location is None or not item or item.drive or not item.filesystem:raise ValueError('Choose a file or folder inside a drive to tag it.')
+            tagged=item.path not in self.selected if cmd=='toggle tag' else match[1].lower() in ('select','mark','check','tag')
+            if tagged:self.tag(item)
+            else:self.untag(item.path)
+            return ('Tagged. ' if tagged else 'Untagged. ')+self.tag_count()
+        if cmd=='zip':
+            if self.location is None:raise ValueError('Open a folder before zipping. The zip file is saved in the folder you are in.')
+            from file_tools import zip_name
+            targets=self.targets();paths=[i.path for i in targets]
+            self.zip_suggestion=zip_name(paths,self.location)
+            self.pending=('zip',paths)
+            return 'Zip '+(targets[0].name if len(targets)==1 else count_items(len(targets)))+'. Name for the zip file: '+self.zip_suggestion+'. Press Enter to use it, or type another name. Escape cancels.'
+        if cmd=='unzip':
+            targets=self.targets()
+            zips=[i for i in targets if not i.folder and Path(i.path).suffix.lower()=='.zip']
+            if not zips:raise ValueError((targets[0].name+' is not a zip file.' if len(targets)==1 else 'None of the tagged items is a zip file.')+' Choose a zip file, then press Alt+U.')
+            skipped=len(targets)-len(zips)
+            from file_tools import unzip_file
+            def work():
+                done=[];problems=[]
+                for item in zips:
+                    try:done.append((item,*unzip_file(item.path)))
+                    except (ValueError,OSError) as exc:problems.append(str(exc))
+                return done,problems
+            def finished(result):
+                done,problems=result
+                words=' '.join('Unzipped '+item.name+' into the '+folder.name+' folder, '+count_items(count)+'.' for item,folder,count in done)
+                if skipped:words+=' '+count_items(skipped)+' that are not zip files were left alone.'
+                words=(words+' '+' '.join(problems)).strip()
+                if not done:
+                    self.clear_tags();return words
+                return self.after_change(words,str(done[-1][1]) if len(done)==1 and Path(done[-1][1]).parent==Path(self.location or '') else None)
+            return self.start_job(work,finished,'Unzipping '+(zips[0].name if len(zips)==1 else count_items(len(zips)))+'.',mutating=True)
+        if cmd=='properties':
+            item=self.current()
+            if self.location is None or not item:raise ValueError('Choose a file or folder to hear its properties.')
+            if item.drive or not item.filesystem:raise ValueError('Properties are for files and folders inside a drive.')
+            from file_tools import properties
+            extended=getattr(self.backend,'extended',None)
+            def shown(lines):
+                self.properties=lines;self.menu='properties';self.menu_index=0
+                return 'Properties of '+item.name+'. '+self.say_current()+' Use the arrows to read more. Escape closes.'
+            return self.start_job(lambda:properties(item.path,extended),shown,'Reading properties.')
         if cmd in ('copy','copy selected','cut','cut selected'):
             paths=[i.path for i in self.targets()];cut=cmd.startswith('cut')
             return self.start_job(lambda:self.backend.clipboard(paths,cut),lambda _:count_items(len(paths))+' '+('cut. Open the destination and paste to move them.' if cut else 'copied.'),'Preparing file clipboard.',mutating=True)
@@ -425,6 +535,6 @@ class FileManager:
         focus=str(Path(paths[0]).with_name(kwargs['name'])) if action=='rename' and kwargs.get('name') else None
         return self.start_job(lambda:self.backend.operate(action,paths,**kwargs),lambda _:self.after_change('File action complete.',focus),'Working on '+str(len(paths))+(' item.' if len(paths)==1 else ' items.'),mutating=True)
     def after_change(self,message,focus=None):
-        self.selected.clear();self.refresh_here(focus);return message+' Refreshing folder.'
+        self.clear_tags();self.refresh_here(focus);return message+' Refreshing folder.'
     def finish_open(self,reader):self.opened=reader;return 'Opened '+reader.title+'. Read-only document. '+''.join(w.rstrip(' .')+'. ' for w in reader.warnings[:3])+reader.reading.read(True)
     def finish_pick(self,path):self.opened=path;return 'Selected '+path.name+'.'

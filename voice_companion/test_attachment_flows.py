@@ -280,6 +280,8 @@ class DraftAttachmentTests(FlowTestCase):
         self.assertEqual(mode, 'files')
         self.assertEqual(draft.attachments, [])
         app.handle_keyboard('escape', mode); self.settle_files(mode)
+        # Companion tags stay when a folder opens (Will, November 4, 2026): untag the folder.
+        app.FILE_MANAGER.choose('Old letters'); app.handle_keyboard('toggle selection', mode)
         app.FILE_MANAGER.choose('letter.txt'); app.handle_keyboard('toggle selection', mode)
         app.FILE_MANAGER.choose('photo.jpg'); app.handle_keyboard('toggle selection', mode)
         self.assertEqual(self.press('Enter', mode), 'email_draft')
@@ -355,7 +357,7 @@ class FileManagerEmailTests(FlowTestCase):
         self.assertEqual(app.handle('Email this file.', mode), 'files')
         self.assertEqual(self.last(), 'Old letters is a folder. Choose files, not folders.')
         app.FILE_MANAGER.choose('letter.txt')
-        self.press('Alt', mode)
+        self.press('Alt', mode); self.press('Enter', mode)   # the Actions group
         index = next(i for i, item in enumerate(app.FILE_MANAGER.menu_items()) if item[2] == 'email this file')
         app.FILE_MANAGER.menu_index = index
         self.assertEqual(self.press('Enter', mode), 'email_draft')

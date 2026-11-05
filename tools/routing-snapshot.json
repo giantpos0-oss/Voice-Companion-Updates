@@ -5166,6 +5166,12 @@
 ],
 "screen_after": "youtube"
 },
+"awake | zip": {
+"said": [
+"I did not understand that. You are on the main menu. Press F1 for help."
+],
+"screen_after": "awake"
+},
 "document | Add appointment tomorrow at 3 PM called doctor": {
 "said": [
 "Add appointment tomorrow at 3 PM called doctor"
@@ -12709,6 +12715,15 @@
 "screen_after": "document",
 "text": [
 "Hello world. Second sentence. youtube"
+]
+},
+"document | zip": {
+"said": [
+"zip"
+],
+"screen_after": "document",
+"text": [
+"Hello world. Second sentence. zip"
 ]
 },
 "email_draft | Add appointment tomorrow at 3 PM called doctor": {
@@ -20417,6 +20432,15 @@
 "Hello world. youtube"
 ]
 },
+"email_draft | zip": {
+"said": [
+"zip"
+],
+"screen_after": "email_draft",
+"text": [
+"Hello world. zip"
+]
+},
 "help | Add appointment tomorrow at 3 PM called doctor": {
 "said": [
 "I did not understand that. Say next to hear a topic, or press Escape to leave Help."
@@ -25447,6 +25471,12 @@
 "screen_after": "help"
 },
 "help | youtube": {
+"said": [
+"I did not understand that. Say next to hear a topic, or press Escape to leave Help."
+],
+"screen_after": "help"
+},
+"help | zip": {
 "said": [
 "I did not understand that. Say next to hear a topic, or press Escape to leave Help."
 ],
@@ -32235,6 +32265,15 @@
 ],
 "screen_after": "youtube"
 },
+"mailbox | zip": {
+"calls": [
+"call.process('zip')"
+],
+"said": [
+"session handled: zip"
+],
+"screen_after": "mailbox"
+},
 "note | Add appointment tomorrow at 3 PM called doctor": {
 "said": [
 "Add appointment tomorrow at 3 PM called doctor"
@@ -37268,6 +37307,12 @@
 "note | youtube": {
 "said": [
 "youtube"
+],
+"screen_after": "note"
+},
+"note | zip": {
+"said": [
+"zip"
 ],
 "screen_after": "note"
 },
@@ -44676,6 +44721,16 @@
 ],
 "said": [
 "session handled: youtube"
+],
+"screen_after": "web"
+},
+"web | zip": {
+"calls": [
+"call.command('zip')",
+"call.page_revision.__ne__(<mock>)"
+],
+"said": [
+"session handled: zip"
 ],
 "screen_after": "web"
 }

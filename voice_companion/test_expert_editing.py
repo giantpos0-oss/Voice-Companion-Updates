@@ -281,14 +281,16 @@ class FileManagerCountsAndSelection(unittest.TestCase):
         self.assertIn('3 items copied.', (self.run_command('select all'), self.run_command('copy'))[1])
 
     def test_what_is_selected(self):
-        for heard in ('what is selected', "What's selected?", 'say selection'):
+        # Selection is Companion tags now (Will, November 4, 2026); the old words still work.
+        for heard in ('what is selected', "What's selected?", 'say selection', 'what is tagged'):
             with self.subTest(heard=heard):
-                self.fm.selected.clear()
-                self.assertEqual(self.fm.command(heard), 'Nothing is selected. apple.txt, file. 1 of 3.')
+                self.fm.clear_tags()
+                self.assertEqual(self.fm.command(heard), 'Nothing is tagged. apple.txt, file. 1 of 3.')
         self.fm.command('toggle selection'); self.fm.command('end'); self.fm.command('toggle selection')
-        self.assertEqual(self.fm.command('what is selected'), '2 items selected: apple.txt, cherry.txt.')
+        self.assertEqual(self.fm.command('what is selected'), '2 items tagged: apple.txt, cherry.txt.')
         self.fm.command('select all')
-        self.assertEqual(self.fm.command('what is selected'), '3 items selected: apple.txt, Banana.docx, cherry.txt.')
+        # Tag all adds the rest; the list is in the order they were tagged.
+        self.assertEqual(self.fm.command('what is selected'), '3 items tagged: apple.txt, cherry.txt, Banana.docx.')
 
 
 if __name__ == '__main__':
