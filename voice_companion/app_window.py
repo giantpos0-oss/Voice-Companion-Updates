@@ -526,7 +526,6 @@ class CompanionWindow:
                     if alt_held(event.state) and key.lower() in ('s','n','c','m','d','a','z','u'):file_key='Alt+'+key.upper()
                     if alt_held(event.state) and key=='Home':file_key='Alt+Home'
                     if alt_held(event.state) and key in ('Return','KP_Enter'):file_key='Alt+Enter'
-                    if control and not shift and not alt_held(event.state) and 49<=event.keycode<=53:file_key='Ctrl+'+chr(event.keycode)
                     if control and key=='Home':file_key='Ctrl+Home'
                     if event.widget==file_list and not control and not alt_held(event.state) and event.char and event.char.isprintable() and key!='space':
                         self.commands.put(('keyboard','Letter:'+event.char));return 'break'
