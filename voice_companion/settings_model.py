@@ -100,7 +100,7 @@ def fields(category, context):
         'Notepad':[Field('open_notepad','Open Notepad','action')],
         'Display':[Field('display_colors','Color scheme','choice',display_options.SCHEMES),Field('display_text_size','Text size','choice',display_options.SIZE_CHOICES),Field('display_font','Screen font','choice',display_options.font_choices(context.get('display_fonts'),context.get('display_font'))),Field('display_bold','Bold text','check'),Field('display_highlight','Highlight color','choice',display_options.HIGHLIGHTS),Field('display_spacing','Line spacing on screen','choice',display_options.SPACING),Field('display_full_screen','Show the window full screen','check')],
         'Document reader':[Field('reader_auto_read','Read a document aloud when it opens','check')],
-        'File manager':[Field('file_manager_start','Start File manager in; type a folder path or pick one','combo',('drive list','C drive','Documents','Desktop','Downloads','Music'))],
+        'File manager':[Field('file_manager_start','Start File manager in; type a folder path or pick one','combo',('drive list',)+tuple(context.get('file_places',{})))],
         'Documents':[Field('document_font','Font for new documents','choice',font_choices(context)),Field('document_size','Font size for new documents','choice',tuple(str(x) for x in range(6,73))),Field('document_spacing','Line spacing for new documents','choice',('single','one and a half','double')),Field('document_alignment','Alignment for new documents','choice',('left','center','right','justify'))],
         'Web browser':[Field('web_search_engine','Default search engine','choice',('google','bing','brave','duckduckgo')),Field('web_keep_open','Keep browser window open','check'),Field('web_auto_read','Automatic page reading','check'),Field('browser','Guided browser','choice',('embedded Edge','Chrome')),Field('browser_window','Guided Chrome window','choice',('Show the browser window, as before','Run the browser in the background')),Field('own_chrome_window','Your own Chrome window','choice',('Show it, as before','Hide it while Companion uses it')),Field('download_folder','Download folder; leave empty for your Downloads folder','text'),Field('chrome_setup','Set up Chrome and the Voice Companion extension','action')],
         'Radio':[Field('keep_audio_playing','Keep audio playing in the background','check'),Field('duck_while_keys','Lower the volume while I use the keyboard','check'),Field('radio_source','Station database','choice',('all','radio browser','iprd','radio sure')),Field('radio_presets','List radio presets','action'),Field('radio_recordings','List scheduled recordings','action')],
@@ -174,9 +174,15 @@ class SettingsSession:
                 if not headers or len(headers)!=len(set(headers)) or any(x not in ('from','subject','date','size') for x in headers):raise ValueError('Enter unique headers separated by commas: from, subject, date, size. Include at least one.')
                 value=', '.join(headers)
             if key=='document_font' and (not value or len(value)>100): raise ValueError('Enter a font name.')
-            if key=='file_manager_start' and value!=self.original.get('file_manager_start','drive list'):
-                from file_manager import start_setting
-                value=start_setting(value)
+            if key=='file_manager_start':
+                # A place from the list (a drive, Dropbox, OneDrive...) is kept as its folder path,
+                # also when it was not changed (Options shows the saved path by its name).
+                places=self.context.get('file_places',{})
+                chosen=next((path for name,path in places.items() if name.casefold()==value.casefold()),None)
+                if chosen:value=chosen
+                elif value!=self.original.get('file_manager_start','drive list'):
+                    from file_manager import start_setting
+                    value=start_setting(value)
             if key=='download_folder' and value!=self.original.get('download_folder',''):
                 # Checked when it changes: the folder must exist and accept new files.
                 from downloads import folder_setting

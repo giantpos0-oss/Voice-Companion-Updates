@@ -311,7 +311,7 @@ class WindowKeyboardTests(unittest.TestCase):
 
     def test_file_tab_stays_in_the_list_and_new_file_keys_reach_the_app(self):
         # Will, November 4, 2026: no Tab stops; Control+1 to Control+5 sort, Alt+Z zips,
-        # Alt+U unzips, Alt+Enter shows properties.
+        # Alt+Shift+Z zips with a password, Alt+U unzips, Alt+Enter shows properties.
         self.window.set_context(dict(mode='files',source=None,text='',file_items=['Alpha, folder','Beta, file'],file_index=0,ack=0,focus=True))
         self.wait(lambda:self.window.context.get('mode')=='files')
         self.call(lambda:self.window.file_list.focus_force())
@@ -328,6 +328,7 @@ class WindowKeyboardTests(unittest.TestCase):
             widget.event_generate('<KeyPress>',keysym='5',state=4)
             widget.event_generate('<KeyPress>',keysym='3',state=5)
             widget.event_generate('<KeyPress>',keysym='z',state=ALT_STATE)
+            widget.event_generate('<KeyPress>',keysym='Z',state=ALT_STATE|1)
             widget.event_generate('<KeyPress>',keysym='u',state=ALT_STATE)
             widget.event_generate('<KeyPress>',keysym='t',state=5)
             widget.event_generate('<KeyPress>',keysym='Return',state=ALT_STATE)
@@ -335,7 +336,7 @@ class WindowKeyboardTests(unittest.TestCase):
         self.call(keys)
         self.wait(lambda:('keyboard','Alt+S') in self.window.commands.queue)
         for command in (('keyboard','Letter:a'),('keyboard','Letter:l'),('keyboard','Ctrl+1'),('keyboard','Ctrl+5'),('keyboard','Ctrl+Shift+3'),
-                        ('keyboard','Alt+Z'),('keyboard','Alt+U'),('keyboard','Ctrl+Shift+T'),('keyboard','Alt+Enter')):
+                        ('keyboard','Alt+Z'),('keyboard','Alt+Shift+Z'),('keyboard','Alt+U'),('keyboard','Ctrl+Shift+T'),('keyboard','Alt+Enter')):
             self.assertIn(command,self.window.commands.queue)
         self.assertNotIn('search files',self.window.commands.queue)
     def tearDown(self):

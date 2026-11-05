@@ -54,7 +54,11 @@ SCREEN_KEYS = {
     # Letters move to the next name that starts with them, as in Contacts, so actions use Control.
     'attachments': {'F1': 'help with attachments', 'Ctrl+S': 'save attachment', 'Ctrl+Shift+S': 'save all attachments',
                     'Ctrl+D': 'save attachment to folder', 'Ctrl+I': 'read attachment details',
-                    'Delete': 'remove attachment', 'Ctrl+O': 'attach a file'},
+                    'Delete': 'remove attachment', 'Ctrl+O': 'attach a file',
+                    # Companion tags, as in File manager (Will, November 4, 2026): Space tags several files,
+                    # Control+A tags them all, and Control+S or Control+D saves every tagged file.
+                    'Space': 'tag attachment', 'Ctrl+A': 'tag all attachments', 'Ctrl+Shift+A': 'clear attachment tags',
+                    'Ctrl+Shift+T': 'what attachments are tagged'},
     # File manager: email the chosen files, or add them to the email draft that is open.
     'files': {'Ctrl+N': 'email this file', 'Ctrl+O': 'attach to draft'},
     'media': {'F1': 'help with radio'},  # 'help with podcasts' when Podcasts is open
@@ -143,6 +147,8 @@ def screen_key(mode, keysym, state, context, email_field=None, typed_text=''):
         return None  # in the YouTube menu and the filter lists, letters move to the next name
     if mode == 'awake' and typed_text and key.startswith('Ctrl+'):
         return None  # Control+V pastes into a typed command; the main menu keys wait.
+    if mode == 'attachments' and key == 'Space' and typed_text:
+        return None  # a space inside a typed command
     if mode == 'downloads' and key == 'Space' and typed_text:
         return None  # a space inside a typed command
     if mode in ('contacts', 'calendar') and typed_text and not key.startswith(('Ctrl+', 'F')):

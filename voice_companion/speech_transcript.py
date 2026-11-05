@@ -163,7 +163,7 @@ def key_label(command):
     value = command[1] if len(command) > 1 else None
     if kind == 'keyboard':
         return str(value)
-    if kind in ('account_secret', 'web_private_value'):
+    if kind in ('account_secret', 'web_private_value', 'file_secret'):
         return 'private entry ' + HIDDEN
     if kind == 'text_edit':
         return None     # typing is heard as its echo, which is written as speech

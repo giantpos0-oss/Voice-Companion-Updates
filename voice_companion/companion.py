@@ -50,7 +50,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.205-test'
+APP_VERSION = '0.2.206-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -475,11 +475,14 @@ def app_context(mode):
     context['menu_letters']=logical!='document_name' and menu_state(logical) is not None
     if SCREEN_MENU is not None and SCREEN_MENU.is_open(logical):context['screen_menu']=True
     if logical=='files' and FILE_MANAGER:
-        context['file_name_input']=bool(FILE_MANAGER.pending and FILE_MANAGER.pending[0] in ('rename','search','search all','zip'))
+        context['file_name_input']=bool(FILE_MANAGER.pending and FILE_MANAGER.pending[0] in FILE_TEXT_STEPS)
+        context['file_private']=FILE_MANAGER.private_step()
         if context['file_name_input']:
             action=FILE_MANAGER.pending[0]
-            context['file_rename_value']=Path(FILE_MANAGER.pending[1][0]).name if action=='rename' else FILE_MANAGER.zip_suggestion if action=='zip' else ''
-            context['file_input_label']='New file name, including extension' if action=='rename' else 'Name for the zip file' if action=='zip' else 'Search folder and subfolders' if action=='search all' else 'Search names in this list'
+            context['file_rename_value']=Path(FILE_MANAGER.pending[1][0]).name if action=='rename' else FILE_MANAGER.zip_suggestion if action in ('zip','zip with password') else ''
+            context['file_input_label']=('New file name, including extension' if action=='rename' else 'Name for the zip file' if action in ('zip','zip with password') else
+                                      'Password for the zip (private)' if action=='zip password' else 'The same password again (private)' if action=='zip password again' else
+                                      'Password for '+Path(FILE_MANAGER.pending[1][0]).name+' (private)' if action=='unzip password' else 'Search folder and subfolders' if action=='search all' else 'Search names in this list')
         context['menu_letters']=not context['file_name_input'] and not FILE_MANAGER.busy
         if FILE_MANAGER.pending and FILE_MANAGER.pending[0]=='delete':context['confirmation']=CONFIRM_CHOICE
         context['file_revision']=FILE_MANAGER.revision
@@ -684,10 +687,10 @@ def process_keyboard_batch(mode):
         for _ in range(100):
             try:command=APP_WINDOW.commands.get_nowait()
             except queue.Empty:break
-            if isinstance(command,tuple) and command and command[0] in ('account_secret','web_private_value'):
+            if isinstance(command,tuple) and command and command[0] in ('account_secret','web_private_value','file_secret'):
                 MAIL_LOG.remember_private(command[1].get('value') if isinstance(command[1],dict) else command[1])
             if TRANSCRIPT.enabled:
-                if isinstance(command,tuple) and command and command[0] in ('account_secret','web_private_value'):
+                if isinstance(command,tuple) and command and command[0] in ('account_secret','web_private_value','file_secret'):
                     TRANSCRIPT.remember_private(command[1].get('value') if isinstance(command[1],dict) else command[1])
                 label=__import__('speech_transcript').key_label(command)
                 if label:TRANSCRIPT.mode=SLEEP_RETURN_MODE+', asleep' if mode=='sleep' else mode;TRANSCRIPT.key(label)
@@ -719,6 +722,10 @@ def process_keyboard_batch(mode):
                     except Exception:command=None;speak('The private field could not be saved. Try again without saying its contents.')
                 elif command[0]=='account_secret':
                     mode=finish_account_secret(command[1],mode);continue
+                elif command[0]=='file_secret':
+                    # A zip password from File manager's private box: never spoken or kept.
+                    if FILE_MANAGER is not None:speak(FILE_MANAGER.secret(command[1]))
+                    sync_app_context(mode,True);continue
                 elif command[0]=='open_link':
                     # Enter on a link in an email or document: the guided browser opens it.
                     mode=open_email_link(command[1]);sync_app_context(mode,True);continue
@@ -975,7 +982,7 @@ def clock_text_entry(mode, typed=False):
     if mode in ('search','document_name','task_input','podcast'):return True
     if mode=='youtube' and __import__('youtube_screen').typing(sys.modules[__name__]):return True  # the YouTube search box
     manager=globals().get('FILE_MANAGER')
-    if mode=='files' and manager and manager.pending and manager.pending[0] in ('rename','search','search all','zip'):return True
+    if mode=='files' and manager and manager.pending and manager.pending[0] in FILE_TEXT_STEPS:return True
     if mode=='media' and MEDIA_NAV is not None and getattr(MEDIA_NAV,'form',None):return True
     return mode=='web' and web_session is not None and bool(getattr(web_session,'keyboard_field',None))
 
@@ -1198,7 +1205,7 @@ def _navigation_key(key,mode):
         # the same key again flips the order. The older Alt and Control+Shift sort keys still work,
         # except Alt+Z, which now zips (Alt+U unzips).
         return {'Up':'previous','Down':'next','Left':'previous','Right':'next','Home':'home','End':'end','Enter':'enter','Space':'toggle tag','Escape':'escape','Alt':'file manager menu','F1':'file manager help','F2':'rename','Delete':'delete','Ctrl+C':'copy','Ctrl+X':'cut','Ctrl+V':'paste','Ctrl+A':'tag all','Ctrl+Shift+A':'clear tags','Ctrl+Shift+T':'what is tagged','F5':'refresh','Ctrl+D':'drive list','Ctrl+E':'search files','Ctrl+F':'search files',
-                'Alt+Z':'zip','Alt+U':'unzip','Alt+Enter':'properties',
+                'Alt+Z':'zip','Alt+Shift+Z':'zip with password','Alt+U':'unzip','Alt+Enter':'properties',
                 'Ctrl+1':'sort key name','Ctrl+2':'sort key date modified','Ctrl+3':'sort key type','Ctrl+4':'sort key size','Ctrl+5':'sort key date created',
                 'Alt+N':'sort by name','Alt+C':'sort by date created','Alt+M':'sort by date modified','Alt+D':'sort by date added','Alt+A':'sort ascending','Ctrl+Shift+F':'search subfolders','Ctrl+Shift+X':'clear search','Alt+S':'sort files','Alt+Home':'main menu','Ctrl+Shift+1':'sort by name','Ctrl+Shift+2':'sort by date created','Ctrl+Shift+3':'sort by date modified','Ctrl+Shift+4':'sort by date added','Ctrl+Shift+Up':'sort ascending','Ctrl+Shift+Down':'sort descending','BackSpace':'file backspace'}.get(key) if not key.startswith('Letter:') else ('file letter '+key[7:])
     if mode=='file_reader' and key=='Escape':return 'back to files'
@@ -1317,6 +1324,8 @@ def apply_settings(values):
     return apply(sys.modules[__name__],values)
 
 FILE_MANAGER=None
+# File manager steps that take typed text in the box: names, searches, and private zip passwords.
+FILE_TEXT_STEPS=('rename','search','search all','zip','zip with password','zip password','zip password again','unzip password')
 FILE_READER=None
 TASK_NAV=None
 SCREEN_MENU=None
@@ -4177,7 +4186,7 @@ def _handle(text, mode, typed=False):
         if handled is not None:
             return handled
     manager=globals().get('FILE_MANAGER')
-    if mode=='files' and manager and manager.pending and manager.pending[0] in ('rename','search','search all','zip'):
+    if mode=='files' and manager and manager.pending and manager.pending[0] in FILE_TEXT_STEPS:
         if manager.pending[0]=='rename' and not typed and command not in ('cancel','escape','go back','no'):
             # A spoken name without a type keeps the old type (Will, October 31, 2026); typed names are used as typed.
             text=__import__('file_manager').keep_type(manager.pending[1][0],__import__('file_manager').spoken_name(text))
