@@ -152,7 +152,7 @@ class MainMenuWhereAmITests(CompanionTestCase):
         companion.handle('next', 'awake')
         companion.MICROPHONE_OFF = True
         companion.handle('where am i', 'awake')
-        self.assertEqual(self.said[-1], 'Main menu. File manager (F), 1 of 15. The microphone is off, as you left it. Press F9 to turn it on.')
+        self.assertEqual(self.said[-1], 'Main menu. Office tools (O), 1 of 8. The microphone is off, as you left it. Press F9 to turn it on.')
 
 
 class UnknownWordsOnLaunchMenusTests(CompanionTestCase):

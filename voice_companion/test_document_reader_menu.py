@@ -22,7 +22,7 @@ class DocumentReaderMenuTests(CompanionTestCase):
         return mode if request is None else companion.handle(request, mode)
 
     def test_main_menu_has_document_reader_and_it_opens_its_menu(self):
-        self.assertEqual(dict(companion.MAIN_MENU_CHOICES)['Document reader'], 'document reader')
+        self.assertEqual({n: c for n, _, c in companion.task_navigation().items('office_menu')}['Document reader'], 'document reader')
         self.assertEqual(companion.handle('document reader', 'awake'), 'reader_menu')
         self.assertTrue(self.said[-1].startswith('Document reader menu. Open a document'), self.said[-1])
         names = [name for name, _, _ in companion.task_navigation().items('reader_menu')]

@@ -120,6 +120,17 @@ def gone_words(gone):
     return str(gone) + ' files are gone, so they were removed from the list. '
 
 
+# The main menu groups the apps (Will, November 5, 2026). Office tools holds the apps for
+# writing, reading, email and planning. Each item runs the same command as before.
+OFFICE_TOOLS = (('Email', '', 'email'), ('Word processor', '', 'word processor'), ('Notepad', '', 'notepad'),
+                ('Document reader', '', 'document reader'), ('Calendar', '', 'calendar'), ('Contacts', '', 'contacts'),
+                ('File manager', '', 'file manager'))
+OFFICE_OPEN = ('office tools', 'open office tools', 'office tools menu', 'go to office tools')
+POWER_CHOICES = (('Shut down the computer', '', 'shut down computer'), ('Restart the computer', '', 'restart computer'))
+POWER_OPEN = ('shut down or restart', 'power menu', 'power options', 'open power menu')
+# Simple list menus: arrows, first letters, Enter and Escape.
+LIST_MENUS = ('word_processor', 'notepad_menu', 'reader_menu', 'media_menu', 'office_menu', 'power_menu')
+
 READER_BACK_WORDS = {'reader_recent': 'your recent documents', 'reader_picker': 'the file list',
                      'recent_documents': 'your recent documents', 'files': 'the file list',
                      'downloads': 'your downloads', 'attachments': 'the attachment list'}
@@ -174,6 +185,11 @@ class TaskNavigation:
             # Opening Notepad lands here first (Will, October 2026).
             return [('Create a note', 'Ctrl+N', 'write a note'), ('Open a note', 'Ctrl+O', 'list notes'),
                     ('Options', 'Alt+O', '@options:Notepad'), ('Main menu', 'Ctrl+F1', 'main menu')]
+        if mode == 'office_menu':
+            # Office tools on the main menu (Will, November 5, 2026).
+            return list(OFFICE_TOOLS)
+        if mode == 'power_menu':
+            return list(POWER_CHOICES)
         if mode == 'media_menu':
             return [('Radio', '', 'radio'), ('Podcasts', '', 'podcasts'), ('Media player', '', 'media player'), ('YouTube', '', 'youtube')]
         if mode == 'recent_documents':
@@ -430,7 +446,7 @@ class TaskNavigation:
                 m.list_saved_notes(); return mode
             if command.startswith('@options:'):return m.screen_menu().run(command, mode)
             if command == 'main menu':return 'awake'
-        return m.handle(command, 'document' if mode == 'document_menu' else 'awake' if mode in ('media_menu','word_processor','notepad_menu') else mode, typed=True)
+        return m.handle(command, 'document' if mode == 'document_menu' else 'awake' if mode in ('media_menu','word_processor','notepad_menu','office_menu','power_menu') else mode, typed=True)
 
     def keyboard(self, key, mode):
         if mode=='document_menu' and key.startswith('MenuPick:'):
@@ -507,7 +523,7 @@ class TaskNavigation:
             return self.action('@options',mode)
         if mode=='document_menu' and command in ('main menu','back to main menu','exit companion'):
             return m.handle(text,'document',typed=True)
-        if mode in ('word_processor','media_menu','recent_documents','document_menu','local_media','notepad_menu','reader_menu','reader_recent') and (m.spoken_control(command) or command in ('help','exit companion','go to sleep','wake up','main menu','back to main menu')):
+        if mode in ('word_processor','media_menu','office_menu','power_menu','recent_documents','document_menu','local_media','notepad_menu','reader_menu','reader_recent') and (m.spoken_control(command) or command in ('help','exit companion','go to sleep','wake up','main menu','back to main menu')):
             return None
         editor = m.document if mode == 'document' else m.email_draft if mode == 'email_draft' else None
         if editor is not None and command in ('toggle bold','toggle italic','toggle underline') and (mode == 'document' or (editor.compose_step or 'body') == 'body'):
@@ -534,6 +550,10 @@ class TaskNavigation:
             return self.enter('notepad_menu', 'Notepad menu')
         if mode == 'notepad_menu' and command in ('create a note','new note','open a note','open notes','options','open options','notepad options'):
             return self.action({'create a note':'write a note','new note':'write a note','open a note':'list notes','open notes':'list notes'}.get(command,'@options:Notepad'), mode)
+        if command in OFFICE_OPEN and mode not in ('document','email_draft','note'):
+            return self.enter('office_menu', 'Office tools')
+        if command in POWER_OPEN and mode not in ('document','email_draft','note'):
+            return self.enter('power_menu', 'Shut down or restart')
         if command in ('media','media menu','open media') and mode not in ('document','email_draft'):
             # Back from Radio or Podcasts, you are on the one you left, not on Radio.
             return self.enter('media_menu', 'Media menu', (1 if getattr(m, 'MEDIA_SECTION', 'radio') == 'podcast' else 0) if mode == 'media' else 0)

@@ -277,7 +277,7 @@ class ScreenTests(unittest.TestCase):
     def test_main_menu_shows_every_item_and_the_selected_one(self):
         context = self.shown('awake')
         self.assertEqual(context['display_title'], 'Main menu')
-        self.assertEqual(context['display_items'][:3], ['File manager', 'Word processor', 'Document reader'])
+        self.assertEqual(context['display_items'][:3], ['Office tools', 'Web browser', 'Media'])
         self.assertIsNone(context['display_index'])
         app.MAIN_MENU_INDEX = 4
         context = self.shown('awake')
