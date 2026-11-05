@@ -45,6 +45,13 @@ class AttachmentTagTests(test_attachment_voice.PlacesTestCase):
         self.press('Ctrl+S', mode)
         self.assertEqual(self.last(), 'Saved report.pdf in your Downloads folder.')
 
+    def test_tag_by_voice(self):
+        mode = self.list_mode()
+        app.handle('Tag.', mode)
+        self.assertEqual(self.last(), 'Tagged. 1 attachment tagged.')
+        app.handle('Untag.', mode)
+        self.assertEqual(self.last(), 'Untagged. No files tagged.')
+
     def test_tags_end_with_the_list(self):
         mode = self.list_mode()
         self.press('Ctrl+A', mode)

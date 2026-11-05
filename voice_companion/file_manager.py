@@ -523,7 +523,8 @@ class FileManager:
             return count_items(len(names))+' tagged: '+', '.join(names)+'.'
         if cmd=='clear tags':
             self.clear_tags();return 'Tags cleared.'
-        match=re.fullmatch(r'(select|unselect|deselect|mark|unmark|check|uncheck|tag|untag)(?:\s+(.+))?',text,re.I)
+        # Speech ends "Tag." with a period, and says "tag it" or "tag this" for the item you are on.
+        match=re.fullmatch(r'(select|unselect|deselect|mark|unmark|check|uncheck|tag|untag)(?:\s+(?!it$|this$|this one$|this file$|this folder$)(.+?))?(?:\s+(?:it|this|this one|this file|this folder))?',text.strip().rstrip('.!?'),re.I)
         if cmd=='toggle tag' or match:
             if match and match[2]:self.choose(match[2])
             item=self.current()

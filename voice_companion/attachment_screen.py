@@ -696,7 +696,7 @@ def command_here(m, raw, command):
         return MODE
     if command in OPEN_ONE:
         return open_item(m, item, MODE)
-    if command in ('tag attachment', 'tag it', 'tag this', 'tag file', 'tag this file', 'untag it', 'untag attachment', 'mark it', 'select it'):
+    if command in ('tag', 'untag', 'tag attachment', 'tag it', 'tag this', 'tag file', 'tag this file', 'untag it', 'untag attachment', 'untag this', 'mark it', 'select it'):
         untag = command.startswith('untag') or (INDEX in TAGGED and not command.startswith(('mark', 'select')))
         (TAGGED.discard if untag else TAGGED.add)(INDEX)
         m.speak(('Untagged. ' if untag else 'Tagged. ') + tag_count())
