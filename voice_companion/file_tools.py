@@ -13,6 +13,7 @@ import shutil
 import stat
 import time
 import zipfile
+import zlib
 from pathlib import Path, PurePosixPath
 
 ZIP_TYPE = '.zip'
@@ -20,6 +21,10 @@ MAX_UNZIPPED = 20 * 1024 ** 3          # a zip that would unpack to more than th
 MAX_RATIO = 1000                       # nor one that grows over 1000 times (a zip bomb)
 MAX_MEMBERS = 100000
 FOLDER_COUNT_LIMIT = 50000             # Properties stops counting a folder's contents here
+
+
+class NeedsPassword(ValueError):
+    """The zip is locked with a password; ask for it, then try again."""
 
 
 # Names ------------------------------------------------------------------------------------
@@ -76,8 +81,9 @@ def _entries(path):
         yield None, top + '/'
 
 
-def make_zip(paths, target):
-    """Zip paths into target, a new file. Returns how many files went in."""
+def make_zip(paths, target, password=None):
+    """Zip paths into target, a new file. Returns how many files went in. With a password, the zip
+    is locked with WinZip AES-256 (zip_crypto.py), the strong kind Will chose."""
     target = Path(target)
     if target.exists():
         raise ValueError('A file named ' + target.name + ' is already there. Nothing was replaced. Choose another name.')
@@ -94,6 +100,19 @@ def make_zip(paths, target):
     partial = target.with_name('.' + target.name + '.partial')
     count = 0
     try:
+        if password:
+            from zip_crypto import write_aes_zip
+            skip = {target.resolve(), partial.resolve()}
+            entries = [(file, name) for path in paths for file, name in _entries(path) if file is None or file.resolve() not in skip]
+            try:
+                partial.unlink()
+            except OSError:
+                pass
+            count = write_aes_zip(entries, partial, password)
+            if target.exists():
+                raise ValueError('A file named ' + target.name + ' appeared while zipping. Nothing was replaced.')
+            os.replace(partial, target)
+            return count
         with zipfile.ZipFile(partial, 'w', zipfile.ZIP_DEFLATED, allowZip64=True) as archive:
             for path in paths:
                 for file, name in _entries(path):
@@ -130,8 +149,9 @@ def _safe_member(name):
     return parts
 
 
-def unzip_file(path):
-    """Unzip path into a new folder beside it, named after it. Returns (folder, item count)."""
+def unzip_file(path, password=None):
+    """Unzip path into a new folder beside it, named after it. Returns (folder, item count).
+    A zip locked with a password raises NeedsPassword until the right password is given."""
     path = Path(path)
     if path.suffix.lower() != ZIP_TYPE:
         raise ValueError(path.name + ' is not a zip file.')
@@ -146,8 +166,11 @@ def unzip_file(path):
         members = archive.infolist()
         if len(members) > MAX_MEMBERS:
             raise ValueError(path.name + ' holds too many items to unzip safely.')
-        if any(m.flag_bits & 0x1 for m in members):
-            raise ValueError(path.name + ' needs a password. Voice Companion cannot unzip it.')
+        locked = [m for m in members if m.flag_bits & 0x1]
+        if locked and not password:
+            raise NeedsPassword(path.name + ' is locked with a password. Type the password, then press Enter. Escape cancels.')
+        if locked:
+            check_password(path, archive, locked[0], password)
         total = sum(m.file_size for m in members)
         packed = max(1, sum(m.compress_size for m in members))
         if total > MAX_UNZIPPED or total > packed * MAX_RATIO and total > 100 * 1024 ** 2:
@@ -170,14 +193,14 @@ def unzip_file(path):
                     target.mkdir(parents=True, exist_ok=True)
                     continue
                 target.parent.mkdir(parents=True, exist_ok=True)
-                with archive.open(member) as source, open(target, 'xb') as output:
-                    shutil.copyfileobj(source, output, 1024 * 1024)
+                with open(target, 'xb') as output:
+                    _copy_member(path, archive, member, password, output)
                 count += 1
             if folder.exists():
                 folder = path.parent / free_name(path.parent, folder.name)
             os.replace(work, folder)
-        except (zipfile.BadZipFile, EOFError, RuntimeError):
-            raise ValueError(path.name + ' is damaged. It was not unzipped.')
+        except (zipfile.BadZipFile, EOFError, RuntimeError, zlib.error):
+            raise ValueError(path.name + ' is damaged, or the password is wrong for some files. It was not unzipped.')
         except FileExistsError:
             raise ValueError(path.name + ' lists the same file twice. It was not unzipped.')
         except PermissionError:
@@ -185,6 +208,36 @@ def unzip_file(path):
         finally:
             shutil.rmtree(work, ignore_errors=True)
     return folder, count
+
+
+def _copy_member(path, archive, member, password, output):
+    from zip_crypto import is_aes, read_aes
+    if member.flag_bits & 0x1 and is_aes(member):
+        read_aes(path, member, password, output)
+        return
+    with archive.open(member, pwd=password.encode('utf-8') if member.flag_bits & 0x1 else None) as source:
+        shutil.copyfileobj(source, output, 1024 * 1024)
+
+
+def check_password(path, archive, member, password):
+    """Raise WrongPassword before anything is written, when the password does not open the zip."""
+    import io
+    from zip_crypto import WrongPassword, is_aes
+    try:
+        if is_aes(member):
+            from zip_crypto import aes_details, keys, SALTS, _data_start
+            import hmac
+            strength, _ = aes_details(member)
+            with open(path, 'rb') as handle:
+                handle.seek(_data_start(handle, member))
+                salt = handle.read(SALTS[strength]); check = handle.read(2)
+            if not hmac.compare_digest(keys(password, salt, strength)[2], check):
+                raise WrongPassword('wrong')
+        else:
+            with archive.open(member, pwd=password.encode('utf-8')) as source:
+                source.read(1)
+    except (WrongPassword, RuntimeError):
+        raise WrongPassword('That password does not open ' + Path(path).name + '. Type it again, or press Escape.')
 
 
 # Properties -------------------------------------------------------------------------------

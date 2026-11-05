@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.205-test.
+Guide version: 0.2.206-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -646,7 +646,17 @@ To unzip:
 1. Move to a zip file, or tag several zip files.
 2. Press Alt+U, or say "Unzip".
 Each zip file unzips into a new folder beside it, with the same name. Photos.zip unzips into a Photos folder. Nothing already there is changed.
-A zip file that needs a password cannot be unzipped here.
+To unzip a zip file that has a password:
+1. Press Alt+U, as for any zip file. Companion says the zip is locked.
+2. Type the password, then press Enter. The box is private: you hear "hidden character" as you type.
+If the password is wrong, Companion says so. Type it again, or press Escape to stop.
+To make a zip file with a password:
+1. Tag the items, or move to one item.
+2. Press Alt+Shift+Z, or say "Zip with password".
+3. Press Enter to use the suggested name, or type another name.
+4. Type the password, then press Enter. Type it again, then press Enter.
+Passwords are typed, not spoken, so no one nearby hears them. Companion never saves or says a password.
+These zip files use strong AES protection. File Explorer cannot open them. Voice Companion, 7-Zip, and WinRAR can. Keep the password safe. Without it, no one can open the zip.
 
 6.14 Hear properties
 1. Move to a file or folder.
@@ -1047,9 +1057,9 @@ To attach a file by its name, say "Attach", the name, "from", and the folder. Fo
 - To attach the file you downloaded last, say "Attach the last download".
 To choose the file in File manager:
 1. In the draft, say "Attach a file", or press Control+O. File manager opens.
-2. Move to the file. To attach several files from one folder, press Space on each one.
-3. Press Enter. Companion attaches the files and takes you back to the same place in the draft.
-Folders cannot be attached. Escape in the File manager drive list goes back to the draft without attaching anything.
+2. Move to the file. To attach several files, press Space on each one to tag it. Tags stay when you open another folder, so the files can come from different folders. Control+A tags every file in the folder.
+3. Move to one of the files and press Enter, or press Control+O from anywhere in the list. Companion attaches every tagged file and takes you back to the same place in the draft.
+Folders cannot be attached. If you tag a folder, Companion attaches the files and tells you the folder was left out. Escape in the File manager drive list goes back to the draft without attaching anything.
 To check what is attached:
 - To hear what is attached, say "Attachments", "What's attached", or "List attachments", or press Control+L. The Attachments list opens. Part 12.7 tells how to use it.
 - To hear how big the files are, say "How big are the attachments".
@@ -1188,11 +1198,16 @@ Keys and voice commands in the Attachments list:
 - Control+S: to save the file in your Downloads folder, say "Save attachment", or press Control+S.
 - Control+D: to save it in another folder, say "Save attachment to folder", or press Control+D. Then say or type the folder.
 - Control+Shift+S: to save every file, say "Save all attachments", or press Control+Shift+S.
+- Space: to tag or untag the file you are on, say "Tag attachment", or press Space.
+- Control+A: to tag every file, say "Tag all attachments", or press Control+A.
+- Control+Shift+T: to hear which files are tagged, say "What attachments are tagged", or press Control+Shift+T.
+- Control+Shift+A: to clear the tags, say "Clear attachment tags", or press Control+Shift+A.
 - Control+I: to hear what kind of file it is, its size, and where it is, say "Read attachment details", or press Control+I.
 - Delete: in an email you are writing, to take the file off, say "Remove attachment", or press Delete.
 - Control+O: in an email you are writing, to attach another file, say "Attach a file", or press Control+O.
 - F1: for help in the list, say "Help with attachments", or press F1.
 Press Alt to open the attachments menu. It has the same choices.
+To save several files at once, tag them first. Then Control+S saves every tagged file in Downloads. Control+D saves them all in one folder you name. With nothing tagged, these keys save the file you are on. The tags clear once the files are saved.
 You can say a file's name the way you would say it:
 - To open a file, say "Open" and its name, such as "Open report" or "Open the PDF".
 - To save it in a folder, say "Save it to" and the folder, such as "Save it to Documents". You can name the file too, such as "Save report to Desktop".
@@ -2063,7 +2078,7 @@ In Word processor options, you can set the font, size, line spacing, and alignme
 - Font size choices run from 6 to 72 points.
 In Notepad options, choose Open Notepad to go back to your note or start a new one.
 In Document reader options, turn off Read a document aloud when it opens if you want to start reading yourself. Then press Control+R to read.
-In File manager options, choose where File manager starts. Pick drive list, C drive, Documents, Desktop, Downloads, or Music. Or type a full folder path, such as C:\Users\Will\Music. If that folder is missing, such as an unplugged drive, File manager starts at the drive list.
+In File manager options, choose where File manager starts. The list has the drive list, then the places Windows shows on this computer. These are your drives, such as C drive or a USB drive. They also include cloud folders, such as Dropbox, OneDrive, or Google Drive, and your Documents, Desktop, Downloads, Music, Pictures, and Videos folders. A place that is not on this computer is not listed. You can also type a full folder path, such as C:\Users\Will\Music. If that place is missing later, such as an unplugged drive, File manager starts at the drive list.
 
 25.7 Web browser options
 - Default search engine: choose Google, Bing, Brave Search, or DuckDuckGo.

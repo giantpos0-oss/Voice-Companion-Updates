@@ -251,6 +251,9 @@ class CompanionWindow:
         if not self.closed.is_set(): self.ui_actions.put(('clear_email', None))
 
     def submit_entry(self, value):
+        if self.context.get('file_private'):
+            # A zip password: sent straight to File manager, never shown or spoken.
+            self.commands.put(('file_secret',value));return True
         if self.context.get('account_private'):
             # Yahoo app password: sent straight to setup, never shown or spoken.
             self.commands.put(('account_secret',value));return True
@@ -267,7 +270,7 @@ class CompanionWindow:
         return False
 
     def report_entry_key(self, before, after, old_caret, caret, key, character=""):
-        if self.context.get('account_private'):
+        if self.context.get('account_private') or self.context.get('file_private'):
             added=len(after)-len(before)
             if added>1:self.feedback(str(added)+' hidden characters pasted.')
             elif added==1:self.feedback('Hidden character.')
@@ -523,13 +526,13 @@ class CompanionWindow:
                     file_key=('Ctrl+Shift+' if shift else 'Ctrl+')+key.upper() if control else 'Alt' if key in ('Alt_L','Alt_R') else 'Enter' if key=='Return' else 'Space' if key=='space' else key
                     if control and shift:
                         file_key='Ctrl+Shift+'+(chr(event.keycode) if 48<=event.keycode<=57 else key if key in ('Up','Down') else key.upper())
-                    if alt_held(event.state) and key.lower() in ('s','n','c','m','d','a','z','u'):file_key='Alt+'+key.upper()
+                    if alt_held(event.state) and key.lower() in ('s','n','c','m','d','a','z','u'):file_key=('Alt+Shift+' if shift else 'Alt+')+key.upper()
                     if alt_held(event.state) and key=='Home':file_key='Alt+Home'
                     if alt_held(event.state) and key in ('Return','KP_Enter'):file_key='Alt+Enter'
                     if control and key=='Home':file_key='Ctrl+Home'
                     if event.widget==file_list and not control and not alt_held(event.state) and event.char and event.char.isprintable() and key!='space':
                         self.commands.put(('keyboard','Letter:'+event.char));return 'break'
-                    if file_key in ('Up','Down','Left','Right','Home','End','Enter','Space','Escape','Alt','F1','F2','Delete','Ctrl+C','Ctrl+X','Ctrl+V','Ctrl+A','Ctrl+Shift+A','F5','Ctrl+D','Ctrl+F','Ctrl+Shift+F','Ctrl+Shift+X','Ctrl+Shift+T','Alt+S','Alt+N','Alt+C','Alt+M','Alt+D','Alt+A','Alt+Z','Alt+U','Alt+Enter','Alt+Home','Ctrl+1','Ctrl+2','Ctrl+3','Ctrl+4','Ctrl+5','Ctrl+Shift+1','Ctrl+Shift+2','Ctrl+Shift+3','Ctrl+Shift+4','Ctrl+Shift+Up','Ctrl+Shift+Down','BackSpace'):
+                    if file_key in ('Up','Down','Left','Right','Home','End','Enter','Space','Escape','Alt','F1','F2','Delete','Ctrl+C','Ctrl+X','Ctrl+V','Ctrl+A','Ctrl+Shift+A','F5','Ctrl+D','Ctrl+F','Ctrl+Shift+F','Ctrl+Shift+X','Ctrl+Shift+T','Alt+S','Alt+N','Alt+C','Alt+M','Alt+D','Alt+A','Alt+Z','Alt+Shift+Z','Alt+U','Alt+Enter','Alt+Home','Ctrl+1','Ctrl+2','Ctrl+3','Ctrl+4','Ctrl+5','Ctrl+Shift+1','Ctrl+Shift+2','Ctrl+Shift+3','Ctrl+Shift+4','Ctrl+Shift+Up','Ctrl+Shift+Down','BackSpace'):
                         self.commands.put(('keyboard',file_key));return 'break'
                 if mode=='web' and not self.command_entry_active and not self.context.get('web_private'):
                     from web_modes import toggle_chord
@@ -758,7 +761,7 @@ class CompanionWindow:
             def enter(event):
                 if shortcut(event)=='break':return 'break'
                 if self.context.get('file_name_input') and not typed.get().strip():
-                    self.feedback('Enter a new file name, including the extension.');return 'break'
+                    self.feedback('Type the password.' if self.context.get('file_private') else 'Enter a new file name, including the extension.');return 'break'
                 if self.context.get('mode')=='document_name':
                     if not typed.get().strip():self.feedback('Enter a folder, or a full folder path.' if self.context.get('naming_label') else 'Enter a document name.');return 'break'
                     return submit_typed(event)
@@ -1220,7 +1223,7 @@ class CompanionWindow:
                             if form:
                                 entry_label.configure(text=form['label']+':');typed.delete(0,'end');typed.insert(0,form['value'] if field.get('media_input') else '');typed.icursor('end');typed.focus_force()
                             else:typed.delete(0,'end')
-                        typed.configure(show='*' if field.get('web_private') or field.get('account_private') else '')
+                        typed.configure(show='*' if field.get('web_private') or field.get('account_private') or field.get('file_private') else '')
                         if field.get('account_entry')!=old.get('account_entry'):
                             typed.delete(0,'end')
                             if field.get('account_entry'):
@@ -1306,7 +1309,7 @@ class CompanionWindow:
                                     try:foreground_window(root,typed)
                                     except (AttributeError,OSError):pass
                                     typed.focus_force()
-                            if field.get('file_name_input') and old.get('mode')!='settings' and field.get('file_rename_value')!=old.get('file_rename_value'):
+                            if field.get('file_name_input') and old.get('mode')!='settings' and (field.get('file_rename_value')!=old.get('file_rename_value') or field.get('file_input_label')!=old.get('file_input_label')):
                                 typed.delete(0,'end');typed.insert(0,field['file_rename_value']);typed.selection_range(0,'end')
                             if mode!='email_draft' and not field.get('web_private') and not field.get('account_entry') and not field.get('media_form'):entry_label.configure(text='Web address or search; type, then press Enter. Escape cancels:' if mode=='search' else field.get('naming_label') or 'Document name; press Enter to save:' if mode=='document_name' else 'Favorite name; press Enter. Escape cancels:' if field.get('browser_name_input') else field.get('file_input_label','New file name, including extension')+'; press Enter. Escape cancels:' if field.get('file_name_input') else 'Type a command, then press Enter:')
                             if transition:

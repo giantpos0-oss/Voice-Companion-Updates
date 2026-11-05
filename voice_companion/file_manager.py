@@ -68,6 +68,33 @@ def start_location(setting):
     return path if Path(path).is_dir() else None
 
 
+KNOWN_PLACES=(('Documents','{FDD39AD0-238F-46AF-ADB4-6C85480369C7}'),('Desktop','{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}'),
+              ('Downloads','{374DE290-123F-4565-9164-39C4925E467B}'),('Music','{4BD8D571-6D19-48D3-BE97-422220080E43}'),
+              ('Pictures','{33E28130-4E1E-4676-835A-98395C3BC3BB}'),('Videos','{18989B1D-99B5-455E-841C-AB7C74E4DDFC}'))
+
+
+def start_places(backend=None):
+    """Where File manager can open, as (name, path): only places Windows shows now (Will,
+    November 4, 2026). Drives as File Explorer names them, such as "Local Disk (C:)" or a USB drive,
+    cloud folders such as Dropbox, OneDrive and Google Drive, then your own folders. Never raises."""
+    places=[];seen=set()
+    def add(name,path):
+        key=str(path).rstrip('\\/').casefold()
+        if name and path and key not in seen:seen.add(key);places.append((str(name),str(path)))
+    try:
+        for item in (backend or ShellFiles()).roots():add(item.name,item.path)
+    except Exception:
+        pass
+    from downloads import known_folder
+    for name,guid in KNOWN_PLACES:
+        try:
+            folder=known_folder(guid,name)
+            if Path(folder).is_dir():add(name,folder)
+        except Exception:
+            continue
+    return places
+
+
 def location_name(path):
     if path is None:return 'Drive list'
     clean=str(path).rstrip('\\/')
@@ -252,7 +279,7 @@ class ShellFiles:
 # goes back to the groups, then to the files. No Tab stops: Search and Sort live here.
 ACTIONS=(('Open','Enter','open'),('Tag or untag','Space','toggle tag'),('Tag all','Ctrl+A','tag all'),('Clear tags','Ctrl+Shift+A','clear tags'),
          ('What is tagged','Ctrl+Shift+T','what is tagged'),('Rename','F2','rename'),('Delete','Delete','delete'),('Copy','Ctrl+C','copy'),
-         ('Cut','Ctrl+X','cut'),('Paste','Ctrl+V','paste'),('Zip','Alt+Z','zip'),('Unzip','Alt+U','unzip'),('Properties','Alt+Enter','properties'),
+         ('Cut','Ctrl+X','cut'),('Paste','Ctrl+V','paste'),('Zip','Alt+Z','zip'),('Zip with a password','Alt+Shift+Z','zip with password'),('Unzip','Alt+U','unzip'),('Properties','Alt+Enter','properties'),
          ('Email this file','Ctrl+N','email this file'),('Attach to open email draft','Ctrl+O','attach to draft'))
 SEARCH_MENU=(('Search current list','Ctrl+F','search files'),('Search subfolders','Ctrl+Shift+F','search subfolders'),('Clear search','Ctrl+Shift+X','clear search'))
 SORT_MENU=(('Name','Ctrl+1','sort key name'),('Date modified','Ctrl+2','sort key date modified'),('Type','Ctrl+3','sort key type'),('Size','Ctrl+4','sort key size'),
@@ -266,11 +293,11 @@ ATTACH_COMMANDS=('email this file','attach to draft')
 # Control+1 to Control+5 (sort key ...): the same key again flips ascending and descending.
 SORT_KEYS=('name','date modified','type','size','date created')
 
-HELP='File manager. Up Arrow and Down Arrow move through items. Home and End reach the list boundaries. Enter opens. Escape goes up one folder, then back to the drive list. Say an item name, or open followed by its name. Space tags or untags an item: Companion tags. Tags stay when you open another folder, so you can tag items in several folders. Copy, cut, delete, zip, and email act on every tagged item, or on the current item when nothing is tagged. Control+A tags all; Control+Shift+A clears tags; Control+Shift+T says what is tagged. F2 renames. Delete asks you to confirm removal. Control+C copies; Control+X cuts; Control+V pastes in the current folder. Alt+Z zips. Alt+U unzips into a new folder. Alt+Enter shows properties; use the arrows to read them. Control+1 sorts by name, Control+2 by date modified, Control+3 by type, Control+4 by size, and Control+5 by date created. Press the same key again to switch between ascending and descending. Control+F searches names in this list; Control+Shift+F searches subfolders. Control+Shift+X clears search. F5 refreshes. Control+D returns to drives. Type the first few letters of an item to jump to it. Alt opens the File manager menu, in groups: Actions, Search, Sort, and Go to. Alt+Home returns to the main menu.'
+HELP='File manager. Up Arrow and Down Arrow move through items. Home and End reach the list boundaries. Enter opens. Escape goes up one folder, then back to the drive list. Say an item name, or open followed by its name. Space tags or untags an item: Companion tags. Tags stay when you open another folder, so you can tag items in several folders. Copy, cut, delete, zip, and email act on every tagged item, or on the current item when nothing is tagged. Control+A tags all; Control+Shift+A clears tags; Control+Shift+T says what is tagged. F2 renames. Delete asks you to confirm removal. Control+C copies; Control+X cuts; Control+V pastes in the current folder. Alt+Z zips. Alt+Shift+Z zips with a password. Alt+U unzips into a new folder, and asks for the password of a locked zip. Alt+Enter shows properties; use the arrows to read them. Control+1 sorts by name, Control+2 by date modified, Control+3 by type, Control+4 by size, and Control+5 by date created. Press the same key again to switch between ascending and descending. Control+F searches names in this list; Control+Shift+F searches subfolders. Control+Shift+X clears search. F5 refreshes. Control+D returns to drives. Type the first few letters of an item to jump to it. Alt opens the File manager menu, in groups: Actions, Search, Sort, and Go to. Alt+Home returns to the main menu.'
 
 class FileManager:
     def __init__(self,backend=None):
-        self.backend=backend or ShellFiles();self.items=[];self.index=0;self.location=None;self.history=[];self.selected=set();self.tag_items={};self.properties=[];self.zip_suggestion='';self.menu=False;self.menu_index=0;self.pending=None;self.busy=False;self.events=queue.Queue();self.opened=None;self.revision=0;self.job_id=0;self.mutating=False
+        self.backend=backend or ShellFiles();self.items=[];self.index=0;self.location=None;self.history=[];self.selected=set();self.tag_items={};self.properties=[];self.zip_suggestion='';self.zip_secret=None;self.menu=False;self.menu_index=0;self.pending=None;self.busy=False;self.events=queue.Queue();self.opened=None;self.revision=0;self.job_id=0;self.mutating=False
         from file_explorer import FileView
         from regular_browser import data_folder
         self.view=FileView(data_folder()/'file-dates' if backend is None else None)
@@ -302,6 +329,53 @@ class FileManager:
         if self.menu:return [name+'. '+(spoken_key(key)+'. ' if key else '')+'Say '+voice.replace('sort key ','sort by ')+'.' for name,key,voice in self.menu_items()]
         return [i.label()+(', tagged' if i.path in self.selected else '') for i in self.items]
     # Companion tags -------------------------------------------------------------------------
+    # Passwords for zips: typed in a private box, never spoken or written down -------------
+    PRIVATE_STEPS=('zip password','zip password again','unzip password')
+    def private_step(self):return bool(self.pending) and self.pending[0] in self.PRIVATE_STEPS
+    def secret(self,value):
+        """A password typed in the private box. Words to say."""
+        if not self.private_step():return 'There is no password to type now.'
+        action=self.pending[0]
+        if not value:return 'Type the password, then press Enter. Escape cancels.'
+        if action=='zip password':
+            self.zip_secret=value;self.pending=('zip password again',)+tuple(self.pending[1:])
+            return 'Type the same password again, then press Enter.'
+        if action=='zip password again':
+            _,paths,target=self.pending;first,self.zip_secret=self.zip_secret,None
+            if value!=first:
+                self.pending=('zip password',paths,target)
+                return 'The two passwords were not the same. Type the password again, then press Enter.'
+            self.pending=None
+            from file_tools import make_zip
+            name=Path(target).name
+            return self.start_job(lambda:make_zip(paths,target,value),lambda count:self.after_change('Zipped '+count_items(len(paths))+' into '+name+', locked with a password.',str(target)),'Zipping '+count_items(len(paths))+' with a password.',mutating=True)
+        paths=list(self.pending[1]);self.pending=None
+        return self.unzip_paths(paths,value)
+    def unzip_paths(self,paths,password=None,skipped=0):
+        """Unzip each zip in turn. A locked one stops and asks for its password; the rest follow."""
+        from file_tools import NeedsPassword,unzip_file
+        from zip_crypto import WrongPassword
+        def work():
+            done=[];problems=[];waiting=None
+            for number,path in enumerate(paths):
+                try:done.append((Path(path).name,*unzip_file(path,password if number==0 else None)))
+                except NeedsPassword as exc:waiting=(paths[number:],str(exc));break
+                except WrongPassword as exc:waiting=(paths[number:],str(exc));break
+                except (ValueError,OSError) as exc:problems.append(str(exc))
+            return done,problems,waiting
+        def finished(result):
+            done,problems,waiting=result
+            words=' '.join('Unzipped '+name+' into the '+folder.name+' folder, '+count_items(count)+'.' for name,folder,count in done)
+            if skipped:words+=' '+count_items(skipped)+' that are not zip files were left alone.'
+            words=(words+' '+' '.join(problems)).strip()
+            if waiting:
+                self.pending=('unzip password',waiting[0])
+                if done:self.refresh_here()
+                return (words+' '+waiting[1]).strip()
+            if not done:
+                self.clear_tags();return words
+            return self.after_change(words,str(done[-1][1]) if len(done)==1 and Path(done[-1][1]).parent==Path(self.location or '') else None)
+        return self.start_job(work,finished,'Unzipping '+(Path(paths[0]).name if len(paths)==1 else count_items(len(paths)))+'.',mutating=True)
     def tag(self,item):self.selected.add(item.path);self.tag_items[item.path]=item
     def untag(self,path):self.selected.discard(path);self.tag_items.pop(path,None)
     def clear_tags(self):self.selected.clear();self.tag_items.clear()
@@ -363,17 +437,23 @@ class FileManager:
                 return 'Opening canceled. '+self.say_current()
             return 'File manager is working. Please wait.'
         if self.pending:
-            action,paths=self.pending
+            action,paths=self.pending[0],self.pending[1]
             if cmd in ('cancel','escape','go back','no'):
-                self.pending=None;return 'File action canceled. '+self.say_current()
+                self.pending=None;self.zip_secret=None;return 'File action canceled. '+self.say_current()
             if action=='delete' and cmd in ('yes','okay','ok','confirm','enter'):
                 self.pending=None
                 return self.mutate('delete',paths)
-            if action=='zip':
+            if action in self.PRIVATE_STEPS:
+                if action=='zip password again':self.zip_secret=None
+                return 'Type the password in the box, then press Enter. Passwords are typed, not spoken. Escape cancels.'
+            if action in ('zip','zip with password'):
                 from file_tools import make_zip,with_zip_type
                 name=with_zip_type(valid_name(re.sub(r'^(?:name it|call it)\s+','',text,flags=re.I).rstrip('.!?') or self.zip_suggestion))
                 target=Path(self.location)/name
                 if target.exists():raise ValueError('A file named '+name+' is already here. Nothing was replaced. Type another name.')
+                if action=='zip with password':
+                    self.pending=('zip password',paths,target)
+                    return 'Type a password for '+name+', then press Enter. Passwords are typed, not spoken.'
                 self.pending=None
                 return self.start_job(lambda:make_zip(paths,target),lambda count:self.after_change('Zipped '+count_items(len(paths))+' into '+name+'.',str(target)),'Zipping '+count_items(len(paths))+'.',mutating=True)
             if action=='rename':
@@ -443,7 +523,8 @@ class FileManager:
             return count_items(len(names))+' tagged: '+', '.join(names)+'.'
         if cmd=='clear tags':
             self.clear_tags();return 'Tags cleared.'
-        match=re.fullmatch(r'(select|unselect|deselect|mark|unmark|check|uncheck|tag|untag)(?:\s+(.+))?',text,re.I)
+        # Speech ends "Tag." with a period, and says "tag it" or "tag this" for the item you are on.
+        match=re.fullmatch(r'(select|unselect|deselect|mark|unmark|check|uncheck|tag|untag)(?:\s+(?!it$|this$|this one$|this file$|this folder$)(.+?))?(?:\s+(?:it|this|this one|this file|this folder))?',text.strip().rstrip('.!?'),re.I)
         if cmd=='toggle tag' or match:
             if match and match[2]:self.choose(match[2])
             item=self.current()
@@ -453,34 +534,20 @@ class FileManager:
             if tagged:self.tag(item)
             else:self.untag(item.path)
             return ('Tagged. ' if tagged else 'Untagged. ')+self.tag_count()
-        if cmd=='zip':
+        if cmd in ('zip','zip with password','zip with a password','password zip','lock zip'):
+            locked=cmd!='zip'
             if self.location is None:raise ValueError('Open a folder before zipping. The zip file is saved in the folder you are in.')
             from file_tools import zip_name
             targets=self.targets();paths=[i.path for i in targets]
             self.zip_suggestion=zip_name(paths,self.location)
-            self.pending=('zip',paths)
-            return 'Zip '+(targets[0].name if len(targets)==1 else count_items(len(targets)))+'. Name for the zip file: '+self.zip_suggestion+'. Press Enter to use it, or type another name. Escape cancels.'
+            self.pending=('zip with password' if locked else 'zip',paths)
+            return ('Zip with a password: ' if locked else 'Zip ')+(targets[0].name if len(targets)==1 else count_items(len(targets)))+'. Name for the zip file: '+self.zip_suggestion+'. Press Enter to use it, or type another name. Escape cancels.'
         if cmd=='unzip':
             targets=self.targets()
             zips=[i for i in targets if not i.folder and Path(i.path).suffix.lower()=='.zip']
             if not zips:raise ValueError((targets[0].name+' is not a zip file.' if len(targets)==1 else 'None of the tagged items is a zip file.')+' Choose a zip file, then press Alt+U.')
             skipped=len(targets)-len(zips)
-            from file_tools import unzip_file
-            def work():
-                done=[];problems=[]
-                for item in zips:
-                    try:done.append((item,*unzip_file(item.path)))
-                    except (ValueError,OSError) as exc:problems.append(str(exc))
-                return done,problems
-            def finished(result):
-                done,problems=result
-                words=' '.join('Unzipped '+item.name+' into the '+folder.name+' folder, '+count_items(count)+'.' for item,folder,count in done)
-                if skipped:words+=' '+count_items(skipped)+' that are not zip files were left alone.'
-                words=(words+' '+' '.join(problems)).strip()
-                if not done:
-                    self.clear_tags();return words
-                return self.after_change(words,str(done[-1][1]) if len(done)==1 and Path(done[-1][1]).parent==Path(self.location or '') else None)
-            return self.start_job(work,finished,'Unzipping '+(zips[0].name if len(zips)==1 else count_items(len(zips)))+'.',mutating=True)
+            return self.unzip_paths([i.path for i in zips],skipped=skipped)
         if cmd=='properties':
             item=self.current()
             if self.location is None or not item:raise ValueError('Choose a file or folder to hear its properties.')

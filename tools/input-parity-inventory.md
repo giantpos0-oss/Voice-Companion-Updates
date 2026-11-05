@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 753
-- Already had both ways: 589
+- Actions inventoried: 754
+- Already had both ways: 590
 - Gaps found: 164
 - Gaps fixed (Added): 156
 - Not applicable (N/A, with reason): 8
@@ -171,6 +171,12 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 - Voice: "Zip"
 - Keyboard: Alt+Z
+- Status: Both
+
+### Zip with a password
+
+- Voice: "Zip with password"
+- Keyboard: Alt+Shift+Z
 - Status: Both
 
 ### Unzip

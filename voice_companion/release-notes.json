@@ -1,33 +1,33 @@
 {
-  "version": "0.2.205-test",
+  "version": "0.2.206-test",
   "status": "Testing build",
   "date": "November 4, 2026",
-  "baseline": "0.2.204-test",
-  "scope": "File manager: Companion tags, zip and unzip, new sort keys, and Properties.",
+  "baseline": "0.2.205-test",
+  "scope": "Password zips, several attachments at once, and more places for File manager to start.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "Companion tags",
+          "title": "Zip files with a password",
           "details": [
-            "Press Space to tag or untag a file or folder. You hear how many items are tagged.",
-            "Tags stay when you open another folder. Tag items in several folders, then copy or delete them all at once.",
-            "Control+Shift+T says what is tagged. Control+Shift+A clears the tags."
+            "Alt+U now opens a zip file that has a password. Companion asks you to type it.",
+            "Alt+Shift+Z makes a zip file with a password. You type the password twice.",
+            "Passwords are typed in a private box. Companion never says or saves them."
           ]
         },
         {
-          "title": "Zip and unzip",
+          "title": "Save several attachments at once",
           "details": [
-            "Alt+Z zips the tagged items, or the current one. Companion suggests a name. Press Enter to use it.",
-            "Alt+U unzips a zip file into a new folder with the same name. Nothing already there is changed."
+            "In the Attachments list, press Space to tag a file. Control+A tags them all.",
+            "Control+S saves every tagged file in Downloads. Control+D saves them in a folder you name."
           ]
         },
         {
-          "title": "Properties",
+          "title": "More places for File manager to start",
           "details": [
-            "Alt+Enter shows the properties of a file or folder. Use Up Arrow and Down Arrow to hear each one.",
-            "Music files also give the title, artist, album, genre, year, track, and length."
+            "In File manager options, you can start in any drive or cloud folder on this computer.",
+            "That includes a USB drive, Dropbox, OneDrive, and Google Drive. Only places that are on this computer are listed."
           ]
         }
       ]
@@ -36,18 +36,10 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "New sort keys",
+          "title": "Attach several files",
           "details": [
-            "Control+1 sorts by name. Control+2 sorts by date modified. Control+3 sorts by type.",
-            "Control+4 sorts by size. Control+5 sorts by date created.",
-            "Press the same key again to switch between ascending and descending."
-          ]
-        },
-        {
-          "title": "A simpler File manager screen",
-          "details": [
-            "Tab no longer moves to buttons. Search and Sort are on the Alt menu now.",
-            "The Alt menu has four groups: Actions, Search, Sort, and Go to."
+            "Tag files with Space or Control+A, even in different folders, then attach them all at once.",
+            "If you tag a folder too, the files are attached and Companion tells you the folder was left out."
           ]
         }
       ]

@@ -47,6 +47,16 @@ class CompanionTagTests(Folders):
         self.assertEqual(self.fm.command('clear tags'), 'Tags cleared.')
         self.assertEqual(self.fm.command('what is tagged'), 'Nothing is tagged. ' + self.fm.say_current())
 
+    def test_spoken_tag_words_with_the_period_speech_adds(self):
+        # Will, November 4, 2026: "Tag." alone was taken as an item name.
+        self.go('a.txt')
+        self.assertEqual(self.fm.command('Tag.'), 'Tagged. 1 item tagged.')
+        self.assertEqual(self.fm.command('Untag.'), 'Untagged. No items tagged.')
+        self.assertEqual(self.fm.command('Tag it.'), 'Tagged. 1 item tagged.')
+        self.assertEqual(self.fm.command('Untag this one.'), 'Untagged. No items tagged.')
+        self.assertEqual(self.fm.command('Tag b.txt.'), 'Tagged. 1 item tagged.')
+        self.assertEqual(self.fm.current().name, 'b.txt')
+
     def test_tags_stay_when_you_open_another_folder_and_all_are_copied(self):
         self.go('a.txt'); self.fm.command('toggle tag')
         self.go('Photos'); self.fm.command('open'); settle(self.fm)

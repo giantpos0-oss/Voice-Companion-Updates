@@ -52,10 +52,26 @@ def snapshot(m):
     engine='ai' if m.AI_SPEECH and m.AI_SPEECH.enabled else 'espeak' if m.ESPEAK_SPEECH and m.ESPEAK_SPEECH.enabled else 'windows'
     context={'engines':('SAPI',)+(('espeak',) if m.ESPEAK_SPEECH else ())+('ai',),'windows_voices':tuple(v[1] for v in voices if v[0]=='windows'),'espeak_voices':tuple(v[1] for v in voices if v[0]=='espeak'),'ai_voices':VOICES,'accounts':tuple(p+' '+a for p,a in accounts),'podcasts':tuple(podcast_names),'podcast_limits':podcast_limits,'podcast_feeds':podcast_names,'actions':ACTIONS,
              # Fonts installed on this computer, found by the window; None lists every screen font.
-             'display_fonts':getattr(m.APP_WINDOW,'font_families',None)}
+             'display_fonts':getattr(m.APP_WINDOW,'font_families',None),
+             # File manager start places: only what Windows shows now (drives, cloud folders, your folders).
+             'file_places':file_places(m)}
     from windows_actions import startup_enabled
     values=DEFAULTS|m.PREFERENCES|{'start_with_windows':startup_enabled()}|{'verbosity':m.VERBOSITY,'pitch':str(m.SPEECH_PITCH),'rate':str(m.SPEECH_RATE),'volume':str(m.SPEECH_VOLUME),'punctuation':m.PUNCTUATION_LEVEL,'input_mode':__import__('settings_model').input_mode_label(m.INPUT_MODE),'engine':engine,'windows_voice':m.voice.Voice.GetDescription() if not m.TEXT_MODE else '', 'espeak_voice':next((v[1] for v in voices if v[0]=='espeak' and v[2]==m.ESPEAK_VOICE_NAME),''),'ai_voice':m.AI_VOICE_NAME,'api_key':'','ai_consent':m.PREFERENCES.get('ai_consent',ai_account(m.APP).get('consent',False)),'remove_ai':False,'email_account':(' '.join(selected) if selected else ''),'email_list_size':read_text(m.APP/'email-list-size.txt','10'),'browser':__import__('web_assistant').browser_setting(m.APP),'radio_source':{'radio-browser':'radio browser','radiosure':'radio sure'}.get(read_as(m.APP/'radio-preferences.json',{}).get('source','all'),read_as(m.APP/'radio-preferences.json',{}).get('source','all')),'podcast_feed':next(iter(podcast_names),''),'podcast_limit':str(next(iter(podcast_limits.values()),'manual'))}
+    values['file_manager_start']=start_label(values.get('file_manager_start'),context['file_places'])
     return values,context
+
+def file_places(m):
+    if getattr(m,'TEXT_MODE',False):return {}
+    try:
+        from file_manager import start_places
+        return dict(start_places())
+    except Exception:
+        return {}
+
+def start_label(saved,places):
+    """The saved start place as the list names it: a drive or cloud folder path shows its name."""
+    key=str(saved or '').rstrip('\\/').casefold()
+    return next((name for name,path in places.items() if path.rstrip('\\/').casefold()==key),saved)
 
 def open_settings(m,mode):
     if m.APP_WINDOW is None:

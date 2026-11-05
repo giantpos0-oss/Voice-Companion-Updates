@@ -48,6 +48,7 @@ SOURCE = None        # 'message' or 'draft'
 RETURN_MODE = 'mailbox'
 ITEMS = []
 INDEX = 0
+TAGGED = set()       # Companion tags: the places in ITEMS of the files tagged with Space
 MESSAGE = None       # (message id, folder id) of the message the list belongs to
 PENDING = None       # ('run', item): a Yes or No question; ('folder', items): a folder is being typed
 CHOICE = 'no'
@@ -205,6 +206,7 @@ def split_folder(text):
 def _set(items, index=0):
     global ITEMS, INDEX
     ITEMS = list(items)
+    TAGGED.clear()
     INDEX = max(0, min(index, len(ITEMS) - 1)) if ITEMS else 0
 
 
@@ -212,7 +214,17 @@ def describe(index=None):
     if not ITEMS:
         return 'No attachments.'
     index = INDEX if index is None else index
-    return files_words.label(ITEMS[index], index, len(ITEMS))
+    words = files_words.label(ITEMS[index], index, len(ITEMS))
+    return words.rstrip('.') + ', tagged.' if index in TAGGED else words
+
+
+def tagged():
+    """The tagged files in list order."""
+    return [item for number, item in enumerate(ITEMS) if number in TAGGED]
+
+
+def tag_count():
+    return (files_words.count_words(len(TAGGED)) if TAGGED else 'No files') + ' tagged.'
 
 
 def header():
@@ -684,6 +696,29 @@ def command_here(m, raw, command):
         return MODE
     if command in OPEN_ONE:
         return open_item(m, item, MODE)
+    if command in ('tag', 'untag', 'tag attachment', 'tag it', 'tag this', 'tag file', 'tag this file', 'untag it', 'untag attachment', 'untag this', 'mark it', 'select it'):
+        untag = command.startswith('untag') or (INDEX in TAGGED and not command.startswith(('mark', 'select')))
+        (TAGGED.discard if untag else TAGGED.add)(INDEX)
+        m.speak(('Untagged. ' if untag else 'Tagged. ') + tag_count())
+        return MODE
+    if command in ('tag all attachments', 'tag all', 'tag all files', 'tag them all', 'select all', 'select all attachments'):
+        TAGGED.update(range(len(ITEMS)))
+        m.speak('Tagged all. ' + tag_count() + ' Control+S saves them in Downloads. Control+D saves them in a folder you name.')
+        return MODE
+    if command in ('clear attachment tags', 'clear tags', 'untag all', 'clear selection'):
+        TAGGED.clear()
+        m.speak('Tags cleared. ' + describe())
+        return MODE
+    if command in ('what attachments are tagged', 'what is tagged', "what's tagged", 'list tags'):
+        names = [chosen['name'] for chosen in tagged()]
+        m.speak(files_words.count_words(len(names)) + ' tagged: ' + ', '.join(names) + '.' if names else 'Nothing is tagged. ' + describe())
+        return MODE
+    chosen = tagged()
+    if command in FOLDER_ASK and chosen:
+        PENDING = ('folder', chosen)
+        m.speak('Save ' + files_words.count_words(len(chosen)) + ' to a folder. Type or say a folder, such as Documents '
+                'or Desktop, or type its full path. Then press Enter. Escape cancels.')
+        return MODE
     if command in FOLDER_ASK:
         PENDING = ('folder', [item])
         m.speak('Save ' + item['name'] + ' to a folder. Type or say a folder, such as Documents or Desktop, '
@@ -694,8 +729,9 @@ def command_here(m, raw, command):
         m.speak('Save ' + files_words.count_words(len(ITEMS)) + ' to a folder. Type or say a folder, such as Documents '
                 'or Desktop, or type its full path. Then press Enter. Escape cancels.')
         return MODE
-    if command in SAVE_ONE + ('save', 'download', 'download it'):
-        save(m, [item], default_folder(m))
+    if command in SAVE_ONE + ('save', 'download', 'download it', 'save tagged', 'save tagged files', 'save tagged attachments'):
+        # Every tagged file, or the one you are on when nothing is tagged.
+        save(m, chosen or [item], default_folder(m))
         return MODE
     if command in SAVE_ALL:
         save(m, ITEMS, default_folder(m))
@@ -865,6 +901,7 @@ def save(m, items, folder, named=False):
         m.speak(item['name'] + ' could not be saved. ' + where(folder)[0].upper() + where(folder)[1:] + ' may be full or locked. '
                 'Try another folder, such as Desktop.' + done_words(saved, folder, ' Already saved: '))
         return
+    TAGGED.clear()   # the tagged files are saved: tags clear, as in File manager
     m.speak(done_words(saved, folder, 'Saved '))
 
 
@@ -1127,12 +1164,18 @@ def attach_choice(m, raw, mode):
 
 
 def chosen_files(manager):
-    """The marked files, or the file you are on. Folders are refused."""
+    """(paths, note): the tagged files, or the file you are on. Tagged folders are left out and
+    the note says so (Will, November 4, 2026: Control+A then attach). Only folders: refused."""
     targets = manager.targets()
     folders = [item for item in targets if item.folder]
-    if folders:
+    files_only = [item.path for item in targets if not item.folder]
+    if not files_only:
         raise AttachmentError(folders[0].name + ' is a folder. Choose files, not folders.')
-    return [item.path for item in targets]
+    note = ''
+    if folders:
+        note = (' ' + (folders[0].name + ' is a folder, so it was' if len(folders) == 1 else
+                       files_words.count_words(len(folders)).replace('attachment', 'folder') + ' were') + ' left out.')
+    return files_only, note
 
 
 def picked(m):
@@ -1143,13 +1186,16 @@ def picked(m):
         m.speak('The email draft is closed, so nothing was attached.')
         return 'files'
     try:
-        said = m.email_draft.attach(chosen_files(manager))
+        paths, note = chosen_files(manager)
+        said = m.email_draft.attach(paths) + note
     except (AttachmentError, ValueError) as exc:
         m.speak(str(exc))
         return 'files'
     except OSError:
         m.speak('The draft could not be saved. Nothing was attached. Try again.')
         return 'files'
+    if hasattr(manager, 'clear_tags'):
+        manager.clear_tags()
     m.task_navigation().picker = None
     manager.pick_label = None
     m.speak(said + ' Back to email draft. ' + field_words(m))
@@ -1172,7 +1218,7 @@ def email_files(m, mode):
     """File manager: a new email with the chosen files attached, asking for the recipient."""
     from email_draft import VoiceEmail
     from mail_accounts import ProtectedStore
-    paths = chosen_files(m.FILE_MANAGER)
+    paths, note = chosen_files(m.FILE_MANAGER)
     if m.email_draft is not None:
         m.email_draft.save()
     draft = VoiceEmail(m.APP / 'Email Drafts')
@@ -1190,7 +1236,9 @@ def email_files(m, mode):
     m.email_draft = draft
     m.pending_send = None
     m.task_navigation().picker = None
-    m.speak('New email. ' + said + ' To field. Who do you want to send it to? Type an address, or say a saved contact name.')
+    if hasattr(m.FILE_MANAGER, 'clear_tags'):
+        m.FILE_MANAGER.clear_tags()
+    m.speak('New email. ' + said + note + ' To field. Who do you want to send it to? Type an address, or say a saved contact name.')
     m.focus_email_entry()
     return 'email_draft'
 
@@ -1201,9 +1249,12 @@ def attach_to_draft(m, mode):
         return mode
     notice = old_key_notice()
     try:
-        said = m.email_draft.attach(chosen_files(m.FILE_MANAGER))
+        paths, note = chosen_files(m.FILE_MANAGER)
+        said = m.email_draft.attach(paths) + note
     except AttachmentError as error:
         raise AttachmentError(notice + str(error)) from error
+    if hasattr(m.FILE_MANAGER, 'clear_tags'):
+        m.FILE_MANAGER.clear_tags()
     m.task_navigation().picker = None
     m.speak(notice + said + ' Back to email draft.')
     m.focus_email_entry()
