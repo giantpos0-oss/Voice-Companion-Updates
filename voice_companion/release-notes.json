@@ -1,25 +1,33 @@
 {
-  "version": "0.2.204-test",
+  "version": "0.2.205-test",
   "status": "Testing build",
   "date": "November 4, 2026",
-  "baseline": "0.2.203-test",
-  "scope": "Smoother first-time Chrome and email setup, and easier voice options.",
+  "baseline": "0.2.204-test",
+  "scope": "File manager: Companion tags, zip and unzip, new sort keys, and Properties.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "Email helps you add your first account",
+          "title": "Companion tags",
           "details": [
-            "If no email account is set up, opening Email now starts adding one.",
-            "Choose Thunderbird or Yahoo by voice, by letter, or with the arrows and Enter."
+            "Press Space to tag or untag a file or folder. You hear how many items are tagged.",
+            "Tags stay when you open another folder. Tag items in several folders, then copy or delete them all at once.",
+            "Control+Shift+T says what is tagged. Control+Shift+A clears the tags."
           ]
         },
         {
-          "title": "Choose your voice in Voice options",
+          "title": "Zip and unzip",
           "details": [
-            "The voice list is now first in Voice options. It shows the voices of the synthesizer in use.",
-            "Synthesizer options is where you pick SAPI, eSpeak, or an AI voice."
+            "Alt+Z zips the tagged items, or the current one. Companion suggests a name. Press Enter to use it.",
+            "Alt+U unzips a zip file into a new folder with the same name. Nothing already there is changed."
+          ]
+        },
+        {
+          "title": "Properties",
+          "details": [
+            "Alt+Enter shows the properties of a file or folder. Use Up Arrow and Down Arrow to hear each one.",
+            "Music files also give the title, artist, album, genre, year, track, and length."
           ]
         }
       ]
@@ -28,23 +36,18 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Back to Companion after Chrome setup",
+          "title": "New sort keys",
           "details": [
-            "Once you turn on the extension in Chrome, Companion comes back to the front by itself.",
-            "The Web browser menu is ready for your keys. You do not need Alt+Tab."
+            "Control+1 sorts by name. Control+2 sorts by date modified. Control+3 sorts by type.",
+            "Control+4 sorts by size. Control+5 sorts by date created.",
+            "Press the same key again to switch between ascending and descending."
           ]
         },
         {
-          "title": "No surprise web pages",
+          "title": "A simpler File manager screen",
           "details": [
-            "Chrome setup now opens Chrome on a blank page.",
-            "Pages you set to open when Chrome starts no longer open during setup."
-          ]
-        },
-        {
-          "title": "Up Arrow raises the value",
-          "details": [
-            "In Voice options, Up Arrow now raises speech rate, voice pitch, and volume. Down Arrow lowers them."
+            "Tab no longer moves to buttons. Search and Sort are on the Alt menu now.",
+            "The Alt menu has four groups: Actions, Search, Sort, and Go to."
           ]
         }
       ]

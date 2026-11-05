@@ -340,13 +340,9 @@ class CompanionWindow:
             content.pack_propagate(False)
             file_list=tk.Listbox(root,font=fonts['body'],exportselection=False,selectmode='multiple')
             self.file_list=file_list
-            file_toolbar=tk.Frame(root)
-            self.file_toolbar=file_toolbar;self.file_buttons=[]
-            for label,request in (('Search','search files'),('Search subfolders','search subfolders'),('Sort','sort files'),('Clear search','clear search'),('Drives','drive list'),('Main menu','main menu')):
-                button=tk.Button(file_toolbar,text=label,command=lambda command=request:self.commands.put(command),takefocus=True)
-                self.file_buttons.append(button)
-                button.bind('<FocusIn>',lambda event,name=label:self.feedback(name+' button. Enter activates. Tab moves to the next control.'))
-                button.bind('<Return>',lambda event,command=request:(self.commands.put(command),'break')[1])
+            # No File manager buttons to Tab to (Will, November 4, 2026): Search and Sort are on its
+            # Alt menu, grouped, and Tab stays in the list.
+            self.file_toolbar=None;self.file_buttons=[]
             def flow(frame,buttons):
                 # Large text makes a row of buttons wider than the window: wrap them onto more lines.
                 def arrange(event=None):
@@ -362,7 +358,6 @@ class CompanionWindow:
                 # appears: Tab to a button that is not placed yet would leave focus where it was.
                 arrange()
             arrangers=[]
-            flow(file_toolbar,self.file_buttons)
             update_toolbar=tk.Frame(root)
             self.update_buttons=[]
             for label,request,hint in (('Status','update status','Alt+S or F5'),('Cancel update','cancel update','Alt+C or Escape')):
@@ -377,21 +372,10 @@ class CompanionWindow:
                 return 'break'
             for button in self.update_buttons:
                 for sequence in ('<Tab>','<Shift-Tab>','<ISO_Left_Tab>'):button.bind(sequence,update_tab)
-            def file_tab(event):
+            def file_list_tab(event):
                 if self.context.get('file_name_input'):return
-                controls=[file_list,*self.file_buttons]
-                index=controls.index(event.widget) if event.widget in controls else 0
-                backward=bool(event.state&1) or event.keysym=='ISO_Left_Tab'
-                target=controls[(index+(-1 if backward else 1))%len(controls)]
-                if not target.winfo_ismapped():
-                    # The toolbar was just shown: finish laying it out before moving focus.
-                    for arrange in arrangers:arrange()
-                    root.update_idletasks()
-                target.focus_set()
-                if target==file_list:self.feedback('File list. Use arrows or type the first letters of an item.')
-                return 'break'
-            for widget in [file_list,*self.file_buttons]:
-                widget.bind('<Tab>',file_tab);widget.bind('<Shift-Tab>',file_tab);widget.bind('<ISO_Left_Tab>',file_tab)
+                return 'break'   # the list is the only stop on the File manager screen
+            for sequence in ('<Tab>','<Shift-Tab>','<ISO_Left_Tab>'):file_list.bind(sequence,file_list_tab)
             activation_keys=set()
             document_modifiers=set()
             caps_modifier={'before':False,'used':False,'synthetic':0}
@@ -539,13 +523,13 @@ class CompanionWindow:
                     file_key=('Ctrl+Shift+' if shift else 'Ctrl+')+key.upper() if control else 'Alt' if key in ('Alt_L','Alt_R') else 'Enter' if key=='Return' else 'Space' if key=='space' else key
                     if control and shift:
                         file_key='Ctrl+Shift+'+(chr(event.keycode) if 48<=event.keycode<=57 else key if key in ('Up','Down') else key.upper())
-                    if alt_held(event.state) and key.lower() in ('s','n','c','m','d','a','z'):file_key='Alt+'+key.upper()
+                    if alt_held(event.state) and key.lower() in ('s','n','c','m','d','a','z','u'):file_key='Alt+'+key.upper()
                     if alt_held(event.state) and key=='Home':file_key='Alt+Home'
+                    if alt_held(event.state) and key in ('Return','KP_Enter'):file_key='Alt+Enter'
                     if control and key=='Home':file_key='Ctrl+Home'
-                    if event.widget in self.file_buttons and not control and file_key not in ('Alt+S','Alt+N','Alt+C','Alt+M','Alt+D','Alt+A','Alt+Z','Alt+Home','Escape'):return
                     if event.widget==file_list and not control and not alt_held(event.state) and event.char and event.char.isprintable() and key!='space':
                         self.commands.put(('keyboard','Letter:'+event.char));return 'break'
-                    if file_key in ('Up','Down','Left','Right','Home','End','Enter','Space','Escape','Alt','F1','F2','Delete','Ctrl+C','Ctrl+X','Ctrl+V','Ctrl+A','Ctrl+Shift+A','F5','Ctrl+D','Ctrl+F','Ctrl+Shift+F','Ctrl+Shift+X','Alt+S','Alt+N','Alt+C','Alt+M','Alt+D','Alt+A','Alt+Z','Alt+Home','Ctrl+Shift+1','Ctrl+Shift+2','Ctrl+Shift+3','Ctrl+Shift+4','Ctrl+Shift+Up','Ctrl+Shift+Down','BackSpace'):
+                    if file_key in ('Up','Down','Left','Right','Home','End','Enter','Space','Escape','Alt','F1','F2','Delete','Ctrl+C','Ctrl+X','Ctrl+V','Ctrl+A','Ctrl+Shift+A','F5','Ctrl+D','Ctrl+F','Ctrl+Shift+F','Ctrl+Shift+X','Ctrl+Shift+T','Alt+S','Alt+N','Alt+C','Alt+M','Alt+D','Alt+A','Alt+Z','Alt+U','Alt+Enter','Alt+Home','Ctrl+1','Ctrl+2','Ctrl+3','Ctrl+4','Ctrl+5','Ctrl+Shift+1','Ctrl+Shift+2','Ctrl+Shift+3','Ctrl+Shift+4','Ctrl+Shift+Up','Ctrl+Shift+Down','BackSpace'):
                         self.commands.put(('keyboard',file_key));return 'break'
                 if mode=='web' and not self.command_entry_active and not self.context.get('web_private'):
                     from web_modes import toggle_chord
@@ -836,7 +820,7 @@ class CompanionWindow:
                 height=root.winfo_height()
                 if height<=1:return
                 line=fonts['body'].metrics('linespace')
-                toolbar=file_toolbar.winfo_reqheight()+8 if self.context.get('mode')=='files' else 0
+                toolbar=0
                 # A long screen name at the largest text could take the whole window and leave the
                 # command box no room. Then it gives way: the message font, then one line.
                 width=max(1,root.winfo_width()-36)
@@ -1244,10 +1228,10 @@ class CompanionWindow:
                                 typed.focus_force()
                         if field.get('web_private') and field.get('web_field')!=old.get('web_field'):
                             typed.delete(0,'end');typed.insert(0,field['web_field'].get('value',''));entry_label.configure(text=field['web_field']['label']+' (private); Enter saves, Tab moves, Escape cancels:')
-                        if mode!='files':file_list.pack_forget();file_toolbar.pack_forget();fit_layout()
+                        if mode!='files':file_list.pack_forget();fit_layout()
                         if mode=='files':
                             history.pack_forget();editor.pack_forget();display_view.pack_forget()
-                            file_toolbar.pack(in_=content,side='bottom',fill='x',padx=18,pady=(0,8));file_list.pack(in_=content,fill='both',expand=True,padx=18)
+                            file_list.pack(in_=content,fill='both',expand=True,padx=18)
                             fit_layout()
                             values=field.get('file_items',[])
                             if tuple(file_list.get(0,'end'))!=tuple(values):

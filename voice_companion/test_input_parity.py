@@ -26,10 +26,12 @@ class InputParityTests(unittest.TestCase):
         for row in rows:
             with self.subTest(area=row['area'],action=row['action']):
                 self.assertTrue(row['action']);self.assertTrue(row['voice']);self.assertTrue(row['keyboard'])
-        for name,key,voice in MENU:
-            with self.subTest(file_action=name):
-                request=app.navigation_key(key,'files')
-                self.assertEqual({'enter':'open','escape':'go back'}.get(request,request),voice)
+        from file_manager import GROUPS
+        for _,items in GROUPS.values():
+            for name,key,voice in items:
+                with self.subTest(file_action=name):
+                    request=app.navigation_key(key,'files')
+                    self.assertEqual({'enter':'open','escape':'go back'}.get(request,request),voice)
 
     def test_file_search_and_sort_voice_and_keyboard_have_the_same_effect(self):
         with tempfile.TemporaryDirectory() as folder:

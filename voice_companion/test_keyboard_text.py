@@ -287,13 +287,15 @@ class WindowKeyboardTests(unittest.TestCase):
             self.assertIn(('keyboard',chord),self.window.commands.queue)
         self.call(lambda:self.assertEqual(self.window.editor.get('1.0','end-1c'),'abc def'))
 
-    def test_file_search_shortcut_from_each_toolbar_control_and_input(self):
+    def test_file_search_shortcut_from_the_list_and_the_input(self):
+        # No File manager buttons since 0.2.205 (Will, November 4, 2026): Search is on the Alt menu.
         self.window.set_context(dict(mode='files',source=None,file_items=['Music.mp3, file'],file_index=0,focus=True))
         self.wait(lambda:self.window.context.get('mode')=='files')
-        for widget in [self.window.file_list,*self.window.file_buttons,self.window.typed]:
+        self.assertEqual(self.window.file_buttons,[])
+        for widget in [self.window.file_list,self.window.typed]:
             self.call(lambda w=widget:w.event_generate('<KeyPress>',keysym='e',state=4))
-        self.wait(lambda:self.window.commands.qsize()>=8)
-        self.assertEqual(list(self.window.commands.queue).count(('keyboard','Ctrl+E')),8)
+        self.wait(lambda:self.window.commands.qsize()>=2)
+        self.assertEqual(list(self.window.commands.queue).count(('keyboard','Ctrl+E')),2)
 
     def test_update_buttons_announce_focus_activate_and_have_shortcuts(self):
         self.window.set_context(dict(mode='update_download',source=None,focus=True))
@@ -307,7 +309,9 @@ class WindowKeyboardTests(unittest.TestCase):
         self.assertTrue(any('Status button' in text for text in self.window.key_feedback.queue))
         self.assertTrue(any('Cancel update button' in text for text in self.window.key_feedback.queue))
 
-    def test_file_toolbar_tab_order_and_typeahead_search_sort_keys(self):
+    def test_file_tab_stays_in_the_list_and_new_file_keys_reach_the_app(self):
+        # Will, November 4, 2026: no Tab stops; Control+1 to Control+5 sort, Alt+Z zips,
+        # Alt+U unzips, Alt+Enter shows properties.
         self.window.set_context(dict(mode='files',source=None,text='',file_items=['Alpha, folder','Beta, file'],file_index=0,ack=0,focus=True))
         self.wait(lambda:self.window.context.get('mode')=='files')
         self.call(lambda:self.window.file_list.focus_force())
@@ -317,19 +321,23 @@ class WindowKeyboardTests(unittest.TestCase):
             widget.event_generate('<KeyPress>',keysym='l')
             widget.event_generate('<Tab>')
         self.call(exercise)
-        def activate():
-            self.assertIs(self.window.root.focus_get(),self.window.file_buttons[0])
-            self.window.file_buttons[0].event_generate('<Return>')
-            self.window.file_buttons[0].event_generate('<Shift-Tab>')
-        self.call(activate)
-        def sort_keys():
+        def keys():
             self.assertIs(self.window.root.focus_get(),self.window.file_list)
-            self.window.file_list.event_generate('<KeyPress>',keysym='3',state=5)
-            self.window.file_list.event_generate('<KeyPress>',keysym='s',state=ALT_STATE)
-        self.call(sort_keys)
+            widget=self.window.file_list
+            widget.event_generate('<KeyPress>',keysym='1',state=4)
+            widget.event_generate('<KeyPress>',keysym='5',state=4)
+            widget.event_generate('<KeyPress>',keysym='3',state=5)
+            widget.event_generate('<KeyPress>',keysym='z',state=ALT_STATE)
+            widget.event_generate('<KeyPress>',keysym='u',state=ALT_STATE)
+            widget.event_generate('<KeyPress>',keysym='t',state=5)
+            widget.event_generate('<KeyPress>',keysym='Return',state=ALT_STATE)
+            widget.event_generate('<KeyPress>',keysym='s',state=ALT_STATE)
+        self.call(keys)
         self.wait(lambda:('keyboard','Alt+S') in self.window.commands.queue)
-        for command in (('keyboard','Letter:a'),('keyboard','Letter:l'),'search files',('keyboard','Ctrl+Shift+3')):
+        for command in (('keyboard','Letter:a'),('keyboard','Letter:l'),('keyboard','Ctrl+1'),('keyboard','Ctrl+5'),('keyboard','Ctrl+Shift+3'),
+                        ('keyboard','Alt+Z'),('keyboard','Alt+U'),('keyboard','Ctrl+Shift+T'),('keyboard','Alt+Enter')):
             self.assertIn(command,self.window.commands.queue)
+        self.assertNotIn('search files',self.window.commands.queue)
     def tearDown(self):
         if self.window.thread.is_alive():self.call(lambda:self.window.root.destroy())
         self.window.thread.join(5);self.assertFalse(self.window.thread.is_alive())

@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.204-test.
+Guide version: 0.2.205-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -43,7 +43,7 @@ Contents
   6.2 Move through a list
   6.3 Open a drive, folder, or file
   6.4 Go to the parent folder
-  6.5 Select several items
+  6.5 Tag several items
   6.6 Copy and paste
   6.7 Cut and move
   6.8 Rename one item
@@ -51,6 +51,8 @@ Contents
   6.10 Find commands and keys
   6.11 Find and sort items
   6.12 Email a file
+  6.13 Zip and unzip
+  6.14 Hear properties
 7 Document Reader
   7.1 Open the Document reader menu
   7.2 Open supported files
@@ -554,16 +556,20 @@ Programs and unknown file types are never run from here.
 - To leave File manager, say "Main menu", or press Control+F1.
 For example, from Documents, then Voice Companion, Escape goes back to Documents.
 
-6.5 Select several items
-- To mark or unmark the current item, press Space.
-- To mark more items, move to each one and press Space. Moving does not clear the marks.
-- By voice, say "Select", "Unselect", "Mark", "Unmark", "Check", or "Uncheck". Add an item name to act on it directly, such as "Select notes.txt".
-- To mark every file and folder in the list, say "Select all", or press Control+A.
-- To clear the marks, say "Clear selection", or press Control+Shift+A.
-Drives cannot be marked for file actions.
+6.5 Tag several items
+Companion tags mark the files and folders you want to work on together.
+- To tag or untag the current item, press Space. You hear "Tagged" or "Untagged", and how many items are tagged.
+- To tag more items, move to each one and press Space.
+- Tags stay when you open another folder. You can tag items in several folders, then copy or delete them all at once.
+- By voice, say "Tag" or "Untag". Add an item name to act on it directly, such as "Tag notes.txt". "Select" and "Mark" also still work.
+- To tag every file and folder in the list, say "Tag all", or press Control+A.
+- To hear what is tagged, say "What is tagged", or press Control+Shift+T.
+- To clear the tags, say "Clear tags", or press Control+Shift+A.
+Copy, cut, delete, zip, and email use every tagged item. With nothing tagged, they use the current item. Tags clear after the action is done.
+Drives cannot be tagged.
 
 6.6 Copy and paste
-1. Mark the items. With no marks, Companion uses the current item.
+1. Tag the items. With no tags, Companion uses the current item.
 2. Say "Copy", or press Control+C.
 3. Open the folder where you want the copies.
 4. Say "Paste", or press Control+V.
@@ -571,21 +577,21 @@ The clipboard is shared with File Explorer. You can copy in one and paste in the
 If a file with the same name is already there, nothing is replaced. Companion tells you.
 
 6.7 Cut and move
-1. Mark the items.
+1. Tag the items.
 2. Say "Cut", or press Control+X.
 3. Open the folder where they should go.
 4. Say "Paste", or press Control+V.
 Cut does not remove the files until the paste works. A folder cannot go inside itself. Windows checks that you may use both folders.
 
 6.8 Rename one item
-1. Mark just one item, or clear the marks and move to it.
+1. Tag just one item, or clear the tags and move to it.
 2. Say "Rename", or press F2.
 3. Type or say the new name. When you say a name without a file type, the file keeps its old type. A typed name is used as you type it, so type the file type too, such as letter.txt.
 4. Press Enter.
 You can also say "Rename to" followed by the new name. To keep the old name, say "Cancel", or press Escape. A name that is already used is not replaced.
 
 6.9 Delete files and folders
-1. Mark the items, or move to one item.
+1. Tag the items, or move to one item.
 2. Say "Delete", or press Delete. Companion names the items and asks you to confirm.
 3. No is chosen first. To delete, press Up Arrow to choose Yes, then press Enter. Or say "Yes".
 To keep the items, say "No", or press Escape.
@@ -593,7 +599,9 @@ Windows puts deleted items in the Recycle Bin when it can. File manager has no p
 If Windows cannot finish, check the folder before you try again.
 
 6.10 Find commands and keys
-- To open the File manager menu, say "File manager menu", or press Alt. Each item says its key and its voice command. Escape closes the menu.
+- To open the File manager menu, say "File manager menu", or press Alt. It has four groups: Actions, Search, Sort, and Go to.
+- Press Enter to open a group. Each item says its key and its voice command. Escape goes back to the groups, then to your files.
+- Tab does not move anywhere on the File manager screen. Everything is in the list or on the Alt menu.
 - To hear the main commands, say "File manager help", or press F1.
 - To type a command, press Alt+T.
 - If a slow location is loading, Escape stops that request.
@@ -611,21 +619,42 @@ To search by name:
 - To clear the search, say "Clear search", or press Control+Shift+X.
 - Escape stops a search.
 - A subfolder search stops at 5,000 matches or 100,000 items. Narrow the search if you reach the limit. Links and junctions are not followed.
-To sort, press Alt+S for the Sort menu, or use these keys:
-- To sort by name, say "Sort by name", or press Alt+N.
-- To sort by date created, say "Sort by date created", or press Alt+C.
-- To sort by date modified, say "Sort by date modified", or press Alt+M.
+To sort, use these keys. Press the same key again to switch between ascending and descending.
+- To sort by name, press Control+1, or say "Sort by name".
+- To sort by date modified, press Control+2, or say "Sort by date modified".
+- To sort by type, press Control+3, or say "Sort by type". Type is the part of the name after the dot, such as docx or mp3.
+- To sort by size, press Control+4, or say "Sort by size".
+- To sort by date created, press Control+5, or say "Sort by date created".
 - To sort by date added, say "Sort by date added", or press Alt+D. Date added means the date this app first saw the item here.
-- To sort from first to last, say "Sort ascending", or press Alt+A.
-- To sort from last to first, say "Sort descending", or press Alt+Z.
-The older Control+Shift number keys and Control+Shift arrow keys also still work. Folders stay before files. Items with no date go last.
-Tab and Shift+Tab move between the list and these buttons: Search, Search subfolders, Sort, Clear search, Drives, and Main menu. Enter uses a button. Alt+Home goes to the main menu.
+- You can also say "Sort ascending" or "Sort descending".
+Sort and Search are also on the File manager menu. Press Alt+S to go straight to Sort. Folders stay before files. Items with no date or size go last.
+The older sort keys, such as Alt+N and Control+Shift+1, still work. Alt+Z now zips.
 
 6.12 Email a file
 Choose a file in File manager. To send more than one, press Space on each file first. Folders cannot be sent.
 - To start a new email with the files attached, say "Email this file", or press Control+N. Then give the address, as in part 11.1.
 - To add the files to the email you are writing, say "Attach to draft", or press Control+O. You go back to the draft.
 Both are also on the File manager menu. Press Alt to open it.
+
+6.13 Zip and unzip
+To zip files and folders into one zip file:
+1. Tag the items, or move to one item.
+2. Press Alt+Z, or say "Zip".
+3. Companion suggests a name. Press Enter to use it, or type another name, then press Enter.
+The zip file is saved in the folder you are in. A file with the same name is never replaced.
+To unzip:
+1. Move to a zip file, or tag several zip files.
+2. Press Alt+U, or say "Unzip".
+Each zip file unzips into a new folder beside it, with the same name. Photos.zip unzips into a Photos folder. Nothing already there is changed.
+A zip file that needs a password cannot be unzipped here.
+
+6.14 Hear properties
+1. Move to a file or folder.
+2. Press Alt+Enter, or say "Properties".
+3. Use Up Arrow and Down Arrow to hear each property, one at a time.
+4. Press Escape to go back to your files.
+Properties include the name, type, size, place, and dates. A folder also says how many files and folders it holds.
+Music files also give the title, artist, album, genre, year, track, and length, when the file has them.
 
 7. DOCUMENT READER
 

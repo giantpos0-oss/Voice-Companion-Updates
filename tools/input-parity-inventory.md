@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 748
-- Already had both ways: 584
+- Actions inventoried: 753
+- Already had both ways: 589
 - Gaps found: 164
 - Gaps fixed (Added): 156
 - Not applicable (N/A, with reason): 8
@@ -113,22 +113,28 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Enter
 - Status: Both
 
-### Select or unselect current item
+### Tag or untag
 
-- Voice: "Toggle selection"
+- Voice: "Toggle tag"
 - Keyboard: Space
 - Status: Both
 
-### Select all
+### Tag all
 
-- Voice: "Select all"
+- Voice: "Tag all"
 - Keyboard: Ctrl+A
 - Status: Both
 
-### Clear selection
+### Clear tags
 
-- Voice: "Clear selection"
+- Voice: "Clear tags"
 - Keyboard: Ctrl+Shift+A
+- Status: Both
+
+### What is tagged
+
+- Voice: "What is tagged"
+- Keyboard: Ctrl+Shift+T
 - Status: Both
 
 ### Rename
@@ -161,6 +167,102 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+V
 - Status: Both
 
+### Zip
+
+- Voice: "Zip"
+- Keyboard: Alt+Z
+- Status: Both
+
+### Unzip
+
+- Voice: "Unzip"
+- Keyboard: Alt+U
+- Status: Both
+
+### Properties
+
+- Voice: "Properties"
+- Keyboard: Alt+Enter
+- Status: Both
+
+### Email this file
+
+- Voice: "Email this file"
+- Keyboard: Ctrl+N
+- Status: Both
+
+### Attach to open email draft
+
+- Voice: "Attach to draft"
+- Keyboard: Ctrl+O
+- Status: Both
+
+### Search current list
+
+- Voice: "Search files"
+- Keyboard: Ctrl+F
+- Status: Both
+
+### Search subfolders
+
+- Voice: "Search subfolders"
+- Keyboard: Ctrl+Shift+F
+- Status: Both
+
+### Clear search
+
+- Voice: "Clear search"
+- Keyboard: Ctrl+Shift+X
+- Status: Both
+
+### Name
+
+- Voice: "Sort by name"
+- Keyboard: Ctrl+1
+- Status: Both
+
+### Date modified
+
+- Voice: "Sort by date modified"
+- Keyboard: Ctrl+2
+- Status: Both
+
+### Type
+
+- Voice: "Sort by type"
+- Keyboard: Ctrl+3
+- Status: Both
+
+### Size
+
+- Voice: "Sort by size"
+- Keyboard: Ctrl+4
+- Status: Both
+
+### Date created
+
+- Voice: "Sort by date created"
+- Keyboard: Ctrl+5
+- Status: Both
+
+### Date added (first seen here)
+
+- Voice: "Sort by date added"
+- Keyboard: Alt+D
+- Status: Both
+
+### Ascending
+
+- Voice: "Sort ascending"
+- Keyboard: Ctrl+Shift+Up
+- Status: Both
+
+### Descending
+
+- Voice: "Sort descending"
+- Keyboard: Ctrl+Shift+Down
+- Status: Both
+
 ### Refresh
 
 - Voice: "Refresh"
@@ -179,82 +281,10 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+D
 - Status: Both
 
-### Read file manager help
+### File manager help
 
 - Voice: "File manager help"
 - Keyboard: F1
-- Status: Both
-
-### Search current list
-
-- Voice: "Search files"
-- Keyboard: Ctrl+E
-- Status: Both
-
-### Search subfolders
-
-- Voice: "Search subfolders"
-- Keyboard: Ctrl+Shift+F
-- Status: Both
-
-### Clear search
-
-- Voice: "Clear search"
-- Keyboard: Ctrl+Shift+X
-- Status: Both
-
-### Sort files
-
-- Voice: "Sort files"
-- Keyboard: Alt+S
-- Status: Both
-
-### Name
-
-- Voice: "Sort by name"
-- Keyboard: Alt+N
-- Status: Both
-
-### Date created
-
-- Voice: "Sort by date created"
-- Keyboard: Alt+C
-- Status: Both
-
-### Date modified
-
-- Voice: "Sort by date modified"
-- Keyboard: Alt+M
-- Status: Both
-
-### Date added (first seen here)
-
-- Voice: "Sort by date added"
-- Keyboard: Alt+D
-- Status: Both
-
-### Ascending
-
-- Voice: "Sort ascending"
-- Keyboard: Alt+A
-- Status: Both
-
-### Descending
-
-- Voice: "Sort descending"
-- Keyboard: Alt+Z
-- Status: Both
-
-### Email this file
-
-- Voice: "Email this file"
-- Keyboard: Ctrl+N
-- Status: Both
-
-### Attach to open email draft
-
-- Voice: "Attach to draft"
-- Keyboard: Ctrl+O
 - Status: Both
 
 ### Main menu

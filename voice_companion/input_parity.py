@@ -186,13 +186,15 @@ def settings_phrase(field):
 
 def catalog():
     import companion as app
-    from file_manager import MENU
+    from file_manager import GROUPS
     from task_navigation import DOCUMENT_ACTIONS
     from settings_model import CATEGORIES,fields
     rows=[]
     def add(area,name,voice,key):rows.append({'area':area,'action':name,'voice':voice,'keyboard':key})
     for name,voice in app.MAIN_MENU_CHOICES:add('Main menu',name,voice,'First letter, arrows, Enter')
-    for name,key,voice in MENU:add('File manager',name,voice,key)
+    # The File manager Alt menu is grouped (Actions, Search, Sort, Go to); every item has a key.
+    for _,items in GROUPS.values():
+        for name,key,voice in items:add('File manager',name,voice.replace('sort key ','sort by '),key)
     for group,items in DOCUMENT_ACTIONS.items():
         for name,key,voice in items:add('Document: '+group,name,voice,key or 'Alt, group number, item key')
     nav=app.task_navigation()

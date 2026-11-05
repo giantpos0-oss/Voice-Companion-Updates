@@ -45,7 +45,7 @@ class FileManagerTests(unittest.TestCase):
         self.fm.command('enter');settle(self.fm)
         for command in ('select a.txt','mark b.txt','uncheck a.txt','check a.txt','unmark b.txt','select b.txt'):self.fm.command(command)
         self.assertEqual(len(self.fm.selected),2)
-        self.assertIn('Unselected',self.fm.command('unselect a.txt'));self.fm.command('select a.txt')
+        self.assertIn('Untagged',self.fm.command('unselect a.txt'));self.fm.command('select a.txt')
         self.fm.command('copy');settle(self.fm)
         self.assertEqual(set(self.backend.clip[0]),self.fm.selected)
         self.fm.command('delete');self.fm.command('no');self.assertEqual(self.backend.actions,[])
@@ -55,10 +55,11 @@ class FileManagerTests(unittest.TestCase):
         self.fm.command('rename');self.fm.command('renamed.txt');settle(self.fm)
         self.assertEqual(self.backend.actions[-1][0],'rename');self.assertEqual(self.backend.actions[-1][3],'renamed.txt')
     def test_menu_exposes_keys_and_voice_and_does_not_execute_on_arrows(self):
-        self.fm.command('file manager menu');self.assertIn('Control+C',str(self.fm.labels()))
+        # The menu is grouped (Will, November 4, 2026): Actions holds the file keys.
+        self.fm.command('file manager menu');self.fm.command('enter');self.assertIn('Control+C',str(self.fm.labels()))
         self.fm.command('next');self.fm.command('end');self.assertEqual(self.backend.actions,[])
         self.assertIn('End of list',self.fm.command('next'))
-        self.fm.command('escape');self.assertFalse(self.fm.menu)
+        self.fm.command('escape');self.fm.command('escape');self.assertFalse(self.fm.menu)
     def test_internal_reader_opens_file_without_external_launch(self):
         self.fm.command('enter');settle(self.fm)
         self.fm.command('a.txt');notice=settle(self.fm)

@@ -6,7 +6,7 @@ import os
 import time
 import threading
 
-SORTS=('name','date created','date modified','date added')
+SORTS=('name','date modified','type','size','date created','date added')
 
 
 class FileView:
@@ -43,7 +43,11 @@ class FileView:
         if self.sort=='name':
             result=sorted(items,key=lambda item:(item.name.casefold(),item.path.casefold()),reverse=self.descending)
             return sorted(result,key=lambda item:not item.folder)
-        attr={'date created':'created','date modified':'modified','date added':'added'}[self.sort]
+        if self.sort=='type':
+            # By file type (the part after the dot), then name; folders stay first.
+            result=sorted(items,key=lambda item:('' if item.folder else Path(item.name).suffix.casefold(),item.name.casefold()),reverse=self.descending)
+            return sorted(result,key=lambda item:not item.folder)
+        attr={'date created':'created','date modified':'modified','date added':'added','size':'size'}[self.sort]
         known=[item for item in items if getattr(item,attr) is not None]
         unknown=[item for item in items if getattr(item,attr) is None]
         result=sorted(known,key=lambda item:(getattr(item,attr),item.name.casefold()),reverse=self.descending)+sorted(unknown,key=lambda item:item.name.casefold())
@@ -121,23 +125,29 @@ def command(manager,text):
             view.cancel=threading.Event();cancel=view.cancel;view.searching=True
             def done(result):
                 items,skipped,limited=result
-                view.all_items=view.dated(items,manager.location);view.filter='';manager.items=view.shown();manager.index=0;manager.selected.clear();manager.revision+=1
+                view.all_items=view.dated(items,manager.location);view.filter='';manager.items=view.shown();manager.index=0;manager.revision+=1
                 return str(len(manager.items))+' search results. '+('Search limit reached. Narrow the search. ' if limited else '')+(str(skipped)+' locations were unavailable. ' if skipped else '')+manager.say_current()
             root=manager.location
             return manager.start_job(lambda:view.recursive(root,query,Item,getattr(manager,'pick_extensions',None),cancel),done,'Searching this folder and subfolders. Escape cancels.')
-        view.filter=query;manager.items=view.shown();manager.index=0;manager.selected.intersection_update(i.path for i in manager.items);manager.revision+=1
+        view.filter=query;manager.items=view.shown();manager.index=0;manager.revision+=1
         return str(len(manager.items))+' matches. '+manager.say_current()
     if cmd in ('clear search','clear filter','show all files'):
         view.filter='';view.prefix=''
         if view.searching:return manager.refresh_here()
         manager.items=view.shown();manager.index=0;manager.revision+=1;return 'All items. '+manager.say_current()
     if cmd in ('sort files','sort','sort menu'):
-        manager.menu='sort';manager.menu_index=0;return 'Sort menu. '+manager.say_current()
-    match=re.fullmatch(r'(?:sort(?: files)?(?: by)? )?(name|date created|date modified|date added|ascending|descending)(?: (ascending|descending))?',cmd)
+        manager.menu='sort';manager.menu_index=0;return 'Sort. '+manager.say_current()
+    key=re.fullmatch(r'sort key (name|date modified|type|size|date created)',cmd)
+    if key:
+        # Control+1 to Control+5: a new order starts ascending; the same key again flips it.
+        if view.sort==key[1]:view.descending=not view.descending
+        else:view.sort=key[1];view.descending=False
+        cmd='sort by '+view.sort+(' descending' if view.descending else ' ascending')
+    match=re.fullmatch(r'(?:sort(?: files)?(?: by)? )?(name|date created|date modified|date added|type|file type|size|ascending|descending)(?: (ascending|descending))?',cmd)
     if match:
         current=manager.current().path if manager.current() else None
         if match[1] in ('ascending','descending'):view.descending=match[1]=='descending'
-        else:view.sort=match[1]
+        else:view.sort='type' if match[1]=='file type' else match[1]
         if match[2]:view.descending=match[2]=='descending'
         manager.items=view.shown();manager.index=next((i for i,item in enumerate(manager.items) if item.path==current),0);manager.revision+=1
         return 'Sorted by '+view.sort+', '+('descending' if view.descending else 'ascending')+'. '+('Date added means first seen in this folder. ' if view.sort=='date added' else '')+manager.say_current()
