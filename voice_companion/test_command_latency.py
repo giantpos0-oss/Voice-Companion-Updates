@@ -35,11 +35,11 @@ class ConciseMenusTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder,patch.object(companion,'APP',Path(folder)),patch.object(companion,'speak') as speak,patch.object(companion,'SLEEP_RETURN_MODE','awake'),patch.object(companion,'MAIN_MENU_INDEX',None),patch.object(companion,'SYNTH_PICK_INDEX',None),patch.object(companion,'VOICE_PICK_INDEX',None):
             self.assertEqual(companion.resume_from_sleep(),'awake')
             speak.assert_called_with(companion.MAIN_MENU_PROMPT)
-            companion.handle('next','awake');speak.assert_called_with('File manager (F), 1 of 15.')
+            companion.handle('next','awake');speak.assert_called_with('Office tools (O), 1 of 8.')
             companion.handle('previous','awake');speak.assert_called_with('Start of list.')
             for confirm in ('that one','confirm that','ok','okay'):
-                companion.MAIN_MENU_INDEX=1
-                self.assertEqual(companion.handle(confirm,'awake'),'word_processor')
+                companion.MAIN_MENU_INDEX=0
+                self.assertEqual(companion.handle(confirm,'awake'),'office_menu')
             self.assertEqual(companion.handle('write a document','awake'),'document_name')
 
     def test_synthesizer_browsing_only_says_position_and_name(self):

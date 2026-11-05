@@ -163,9 +163,9 @@ class ScreenMenuTests(unittest.TestCase):
         # The main menu is a menu already: Alt says so and where you are.
         self.said.clear()
         self.assertEqual(self.press('Alt', 'awake'), 'awake')
-        self.assertEqual(self.said[-1], 'Main menu. File manager (F), 1 of 15.')
+        self.assertEqual(self.said[-1], 'Main menu. Office tools (O), 1 of 8.')
         self.assertEqual(self.press('Down', 'awake'), 'awake')
-        self.assertIn('Word processor', self.said[-1])
+        self.assertIn('Web browser', self.said[-1])
 
     def test_alt_with_no_menu_always_says_why(self):
         from screen_menus import alt_unavailable

@@ -50,7 +50,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.206-test'
+APP_VERSION = '0.2.207-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -782,7 +782,10 @@ def startup_prompt():
     return startup_speech.announcement(APP_VERSION, microphone_state())
 
 MAIN_MENU_INDEX = None
-MAIN_MENU_CHOICES = (('File manager', 'file manager'), ('Word processor', 'word processor'), ('Document reader', 'document reader'), ('Notepad', 'notepad'), ('Email', 'email'), ('Contacts', 'contacts'), ('Calendar', 'calendar'), ('Web browser', 'web browser'), ('Media', 'media menu'), ('Options', 'options'), ('Check for updates', 'check for updates'), ('Help', 'help'), ('Shut down the computer', 'shut down computer'), ('Restart the computer', 'restart computer'), ('Exit Voice Companion', 'exit companion'))
+# Grouped (Will, November 5, 2026): Office tools holds Email, Word processor, Notepad, Document
+# reader, Calendar, Contacts and File manager; Shut down or restart holds the two power choices.
+# Every app's own command still works from here ("email", "file manager").
+MAIN_MENU_CHOICES = (('Office tools', 'office tools'), ('Web browser', 'web browser'), ('Media', 'media menu'), ('Options', 'options'), ('Check for updates', 'check for updates'), ('Help', 'help'), ('Shut down or restart', 'shut down or restart'), ('Exit Voice Companion', 'exit companion'))
 
 
 def resume_from_sleep():
@@ -1348,7 +1351,7 @@ def task_navigation():
 
 def options_return_notice(mode):
     logical=SLEEP_RETURN_MODE if mode=='sleep' else mode
-    return {'awake':'Main menu.','document':'Back to document.','email_draft':'Back to email draft.','mailbox':'Back to email.','web':'Back to web page.','browser_menu':'Back to web browser menu.','note':'Back to your note.','notepad_menu':'Back to Notepad menu.','reader_menu':'Back to Document reader menu.','files':'Back to file manager.','word_processor':'Back to Word processor menu.','document_menu':'Back to document menu.','media_menu':'Back to Media menu.','local_media':'Back to Media player.','recent_documents':'Back to recent documents list.','reader_recent':'Back to recent documents list.','file_reader':'Back to document reader.','help':'Back to help.','media':'Back to media.','attachments':'Back to attachments.','draft_leave':'Back to the question about your email.','youtube':'Back to YouTube.'}.get(logical,'Back to '+logical.replace('_',' ')+'.')
+    return {'awake':'Main menu.','document':'Back to document.','email_draft':'Back to email draft.','mailbox':'Back to email.','web':'Back to web page.','browser_menu':'Back to web browser menu.','note':'Back to your note.','notepad_menu':'Back to Notepad menu.','reader_menu':'Back to Document reader menu.','files':'Back to file manager.','word_processor':'Back to Word processor menu.','document_menu':'Back to document menu.','media_menu':'Back to Media menu.','office_menu':'Back to Office tools.','power_menu':'Back to Shut down or restart.','local_media':'Back to Media player.','recent_documents':'Back to recent documents list.','reader_recent':'Back to recent documents list.','file_reader':'Back to document reader.','help':'Back to help.','media':'Back to media.','attachments':'Back to attachments.','draft_leave':'Back to the question about your email.','youtube':'Back to YouTube.'}.get(logical,'Back to '+logical.replace('_',' ')+'.')
 
 def poll_file_manager(mode):
     global FILE_READER,SLEEP_RETURN_MODE
@@ -5105,7 +5108,9 @@ def _handle(text, mode, typed=False):
     if account_setup:
         if command in ('cancel', 'cancel account setup', 'escape', 'never mind', 'nevermind', 'go back', 'stop'):
             account_setup = False
-            speak('Account setup canceled.')
+            # From Office tools, the next words are Office tools, in the same message.
+            if OFFICE_RETURN and mode == 'awake':MAIN_MENU_LEAD = 'Account setup canceled.'
+            else:speak('Account setup canceled.')
             return mode
         if command in ('next', 'previous'):
             # By voice as with the arrows: a list with a start and an end.
@@ -5826,7 +5831,7 @@ def _handle(text, mode, typed=False):
         SEARCH_RETURN_MODE='awake'
         speak('Web address or search. Say or type an address or a search, then press Enter. Addresses do not need www or https. Escape cancels.')
         return 'search'
-    if mode in ('word_processor','notepad_menu','reader_menu','media_menu','local_media','recent_documents','reader_recent'):
+    if mode in ('word_processor','notepad_menu','reader_menu','media_menu','office_menu','power_menu','local_media','recent_documents','reader_recent'):
         # Nothing above understood the words. A misheard word must not throw you out of
         # this menu (or stop the file playing): stay, and say where you are.
         if command in ('main menu','back to main menu','go to main menu'):return 'awake'   # handle() says Main menu
@@ -6010,6 +6015,52 @@ def command_failed(exc, mode):
     return mode if mode != 'exit' else 'awake'
 
 
+# True while you are in an app opened from Office tools. Leaving the app (Escape, Go back,
+# Close) then goes back to Office tools, one level up, not to the main menu. Saying Main menu,
+# or Control+F1, still goes to the main menu (Will, November 5, 2026).
+OFFICE_RETURN = False
+OFFICE_LEAVE_TO_MAIN = ('main menu', 'back to main menu', 'go to main menu', 'go back to main menu', 'return to main menu')
+# Places that are not part of Office tools: going there ends the way back.
+OFFICE_ELSEWHERE = ('web', 'browser_menu', 'search', 'media', 'media_menu', 'local_media', 'podcast', 'youtube', 'power_menu')
+
+
+def office_return(text, mode, result):
+    global OFFICE_RETURN, MAIN_MENU_LEAD
+    setting_up = bool(account_setup or ACCOUNT_ENTRY is not None or THUNDERBIRD_SETUP is not None)
+    if mode == 'office_menu' and (result not in ('office_menu', 'awake', 'sleep', 'exit', 'exit_confirm') or result == 'awake' and setting_up):
+        # Email with no account yet starts adding one on the main menu screen.
+        OFFICE_RETURN = True
+        return result
+    leaving_to_main = text == '@main_menu' or normalized_command(text) in OFFICE_LEAVE_TO_MAIN
+    if mode == 'office_menu' and result == 'awake' and not leaving_to_main and normalized_command(text) not in (
+            'escape', 'go back', 'back', 'exit', 'leave', 'close'):
+        # The app could not open (Calendar before Thunderbird is set up) and said why: stay here.
+        lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD.strip(), ''
+        if lead:speak(lead)
+        return 'office_menu'
+    if result in OFFICE_ELSEWHERE:
+        OFFICE_RETURN = False
+        return result
+    if mode == 'awake' and result == 'awake' and OFFICE_RETURN:
+        # Adding an email account opened from Office tools: canceling goes back there.
+        if setting_up:
+            return result
+    elif result != 'awake' or mode in ('awake', 'sleep', 'office_menu'):
+        return result
+    back = OFFICE_RETURN and not leaving_to_main
+    OFFICE_RETURN = False
+    if not back:
+        return result
+    lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD.strip(), ''
+    navigation = task_navigation()
+    items = navigation.items('office_menu')
+    index = navigation.indices.get('office_menu', 0)
+    index = index if 0 <= index < len(items) else 0
+    navigation.indices['office_menu'] = index
+    speak((lead + ' ' if lead else '') + 'Office tools. ' + navigation.describe(items[index], index, len(items)))
+    return 'office_menu'
+
+
 def handle(text, mode, typed=False):
     global _HANDLE_DEPTH, CONFIRM_CHOICE, KEYBOARD_NAVIGATION
     if _HANDLE_DEPTH==0:TRANSCRIPT.mode=SLEEP_RETURN_MODE+', asleep' if mode=='sleep' else mode
@@ -6055,6 +6106,7 @@ def handle(text, mode, typed=False):
         # A link or button chosen in an email (any key or voice path) opens here.
         mail_session.link_request=None
         result=open_email_link(url)
+    if _HANDLE_DEPTH == 0:result=office_return(text,mode,result)
     if result == 'awake' and mode not in ('awake', 'sleep') and _HANDLE_DEPTH == 0:
         if MEDIA_HUB and not PREFERENCES.get('keep_audio_playing',False):MEDIA_HUB.audio_command('stop audio')
         __import__('youtube_screen').main_menu(sys.modules[__name__])

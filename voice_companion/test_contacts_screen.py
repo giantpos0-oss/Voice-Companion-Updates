@@ -120,9 +120,10 @@ class ContactsScreenTests(CompanionHarness):
         return mode
 
     def test_main_menu_has_contacts_and_calendar_after_email(self):
-        names = [name for name, _ in app.MAIN_MENU_CHOICES]
-        self.assertEqual(names[names.index('Email') + 1:names.index('Email') + 3], ['Contacts', 'Calendar'])
-        self.assertEqual(len(names), 15)
+        # In Office tools since November 2026, after Email's other office apps.
+        names = [name for name, _, _ in app.task_navigation().items('office_menu')]
+        self.assertEqual(names[names.index('Calendar'):names.index('Calendar') + 2], ['Calendar', 'Contacts'])
+        self.assertEqual(len(app.MAIN_MENU_CHOICES), 8)
 
     def test_opens_on_a_sorted_merged_list(self):
         # A contact saved here and in Thunderbird is said once; one only here is added.

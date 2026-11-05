@@ -1,33 +1,29 @@
 {
-  "version": "0.2.206-test",
+  "version": "0.2.207-test",
   "status": "Testing build",
-  "date": "November 4, 2026",
-  "baseline": "0.2.205-test",
-  "scope": "Password zips, several attachments at once, and more places for File manager to start.",
+  "date": "November 5, 2026",
+  "baseline": "0.2.206-test",
+  "scope": "The main menu puts its apps in groups.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "Zip files with a password",
+          "title": "Office tools",
           "details": [
-            "Alt+U now opens a zip file that has a password. Companion asks you to type it.",
-            "Alt+Shift+Z makes a zip file with a password. You type the password twice.",
-            "Passwords are typed in a private box. Companion never says or saves them."
+            "The main menu is shorter. Its apps are now in groups.",
+            "Office tools has your apps for mail, notes, and files.",
+            "It has Email and Notepad.",
+            "It has Word processor and Document reader.",
+            "You will find Calendar and Contacts there, and File manager too.",
+            "Say \"Office tools\", or press Enter on it."
           ]
         },
         {
-          "title": "Save several attachments at once",
+          "title": "Shut down or restart",
           "details": [
-            "In the Attachments list, press Space to tag a file. Control+A tags them all.",
-            "Control+S saves every tagged file in Downloads. Control+D saves them in a folder you name."
-          ]
-        },
-        {
-          "title": "More places for File manager to start",
-          "details": [
-            "In File manager options, you can start in any drive or cloud folder on this computer.",
-            "That includes a USB drive, Dropbox, OneDrive, and Google Drive. Only places that are on this computer are listed."
+            "Shut down the computer and Restart the computer are now in Shut down or restart.",
+            "Each one still asks you first."
           ]
         }
       ]
@@ -36,10 +32,11 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Attach several files",
+          "title": "Going back",
           "details": [
-            "Tag files with Space or Control+A, even in different folders, then attach them all at once.",
-            "If you tag a folder too, the files are attached and Companion tells you the folder was left out."
+            "When you leave an app you opened from Office tools, you go back to Office tools. You land on the app you left.",
+            "Escape on Office tools goes to the main menu. \"Main menu\" and Control+F1 always go straight there.",
+            "You can still open any app by name. For example, say \"Email\" or \"File manager\" on the main menu."
           ]
         }
       ]

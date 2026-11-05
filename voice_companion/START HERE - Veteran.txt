@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.206-test.
+Guide version: 0.2.207-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -235,22 +235,27 @@ The keyboard works even while voice commands are asleep. Press Down Arrow to hea
 If a key press stops the ready message, say "What version?", or press Control+V. You hear the version and whether the microphone is on.
 
 1.3 Use the main menu
-The main menu is where every task starts. It has these choices, in this order:
-- File manager
-- Word processor
-- Document reader
-- Notepad
-- Email
-- Contacts
-- Calendar
+The main menu is where every task starts. Its apps are in groups. It has these choices, in this order:
+- Office tools
 - Web browser
 - Media
 - Options
 - Check for updates
 - Help
-- Shut down the computer
-- Restart the computer
+- Shut down or restart
 - Exit Voice Companion
+Office tools has these apps:
+- Email
+- Word processor
+- Notepad
+- Document reader
+- Calendar
+- Contacts
+- File manager
+Media has Radio, Podcasts, Media player, and YouTube. Shut down or restart has Shut down the computer and Restart the computer. Each one still asks first.
+To open Office tools, say "Office tools", or press Enter on it. Move and choose the same way as on the main menu.
+When you leave an app you opened from Office tools, you go back to Office tools. Escape on Office tools goes to the main menu. "Main menu" and Control+F1 always go straight to the main menu.
+You can still open any app by name from the main menu. For example, say "Email" or "File manager".
 To move, say "Next" or "Previous", or press Down Arrow or Up Arrow.
 To open the item you hear, say "That one", "Okay", or "Confirm", or press Enter.
 To reach the first or last item, say "Start of list" or "End of list", or press Home or End.
@@ -529,7 +534,7 @@ Choose a matching place if asked. Then speak the words to add. In Commands only,
 6. FILE MANAGER
 
 6.1 Open File manager
-File manager is the first choice on the main menu. Say "File manager", or press Enter on it. You start at the drive list. To start somewhere else, such as C drive or Documents, see File manager options in chapter 25.
+File manager is in Office tools on the main menu. Say "File manager", or choose it in Office tools. You start at the drive list. To start somewhere else, such as C drive or Documents, see File manager options in chapter 25.
 The drive list comes from Windows, the same as in File Explorer. It has your local drives, network drives, and cloud folders such as OneDrive.
 Desktop and Documents are folders inside a drive. They are not drives.
 A cloud file may need an internet connection to download before you can read it.
@@ -551,7 +556,7 @@ Programs and unknown file types are never run from here.
 6.4 Go to the parent folder
 - To go up one folder, say "Go back" or "Parent folder", or press Escape.
 - At the top of a drive, Escape goes to the drive list.
-- At the drive list, Escape goes to the main menu.
+- At the drive list, Escape goes back to where you came from: Office tools or the main menu.
 - To go straight to the drive list, say "Drive list", or press Control+D.
 - To leave File manager, say "Main menu", or press Control+F1.
 For example, from Documents, then Voice Companion, Escape goes back to Documents.
@@ -669,13 +674,13 @@ Music files also give the title, artist, album, genre, year, track, and length, 
 7. DOCUMENT READER
 
 7.1 Open the Document reader menu
-Document reader is on the main menu. Say "Document reader", or press Enter on it. Its menu has:
+Document reader is in Office tools on the main menu. Say "Document reader", or choose it in Office tools. Its menu has:
 - Open a document, Control+O. Browse to a file, then press Enter to read it.
 - Recent documents, Control+R. The files you read last, newest first. A file that is gone is taken off the list.
 - Options, Alt+O. Choose whether a file is read aloud as soon as it opens.
 - Help, F1.
 - Main menu, Control+F1.
-Escape in a document goes back to this menu. Escape on the menu goes to the main menu.
+Escape in a document goes back to this menu. Escape on the menu goes back to Office tools, or to the main menu if you started there.
 
 7.2 Open supported files
 You can also press Enter on a file in File manager. It opens in the Document reader inside Voice Companion. You do not need Microsoft Word.
@@ -717,7 +722,7 @@ You can open Options while you read. When you save Options, you return to the re
 
 8.1 Create and name a document
 The Word processor makes files that Microsoft Word can open. You do not need Word installed.
-Choose Word processor on the main menu to open its menu. It has these choices:
+Choose Word processor in Office tools to open its menu. You can also say "Word processor". It has these choices:
 - Create a document, or press Control+N. Companion asks for a name, then starts a blank file.
 - Open a document, or press Control+O. This starts at the File manager start place. That is the drive list unless you changed it.
 - Recent documents, or press Control+R. This lists files you used in the app. A file that is gone is taken off the list, and you hear how many were removed.
@@ -857,7 +862,7 @@ Document keys:
 
 9.1 Start and save a note
 Notepad is for a short plain text note. Use the Word processor when you need headings, fonts, or tables.
-Choose Notepad on the main menu, or say "Notepad". The Notepad menu opens. It has these choices:
+Choose Notepad in Office tools, or say "Notepad". The Notepad menu opens. It has these choices:
 - Create a note, or press Control+N.
 - Open a note, or press Control+O.
 - Options, or press Alt+O.
@@ -867,7 +872,7 @@ To write a note:
 2. Speak or type your note. Press Enter after typed words.
 3. To listen to it, say "Read from top", or press Control+R.
 4. To save it, say "Save note", or press Control+S.
-To save the note and go back to the Notepad menu, say "Go back", or press Escape. Escape on the Notepad menu goes to the main menu.
+To save the note and go back to the Notepad menu, say "Go back", or press Escape. Escape on the Notepad menu goes back to Office tools, or to the main menu if you started there.
 To save the note and go straight to the main menu, say "Main menu", or press Control+F1. Going to sleep also saves your text.
 For Notepad help, say "Help with notepad", or press F1.
 Press Alt to open the note menu. Its Notepad group has Save and close note, Read note, Saved notes, Notepad options, Notepad help, and Main menu. Its Edit group has New line, Undo, Redo, and Remove last words. Words you typed are added to the note first.
@@ -904,7 +909,7 @@ Connect an account before you rely on Companion to send or sort email. Companion
 2. Choose Thunderbird or Yahoo. Say its name, or press T or Y, then Enter. You can also use Up and Down Arrow, then Enter.
 3. Follow the steps Companion gives. Ask your helper if you need help with a sign-in page.
 4. Open the inbox and send a test message to someone you know.
-If no account is set up yet, opening Email starts these steps for you. Choose Email on the main menu, or say "Email".
+If no account is set up yet, opening Email starts these steps for you. Choose Email in Office tools, or say "Email".
 You can also say "Add Gmail account" or "Add Outlook account". Companion adds it to Thunderbird. See part 10.4.
 Older versions of Companion could connect Gmail and Outlook by themselves. They now work only through Thunderbird. If you had one of those accounts, Companion removes it the first time it starts and tells you. Your drafts and contacts are kept. To use that address again, say "Add account" and choose Thunderbird.
 Yahoo uses an app password, not your normal password. To make one, sign in to Yahoo, open Account security, and choose Generate app password. Copy it. Then follow these steps.
@@ -949,7 +954,7 @@ To connect the account again later, say "Add account".
 Accounts are also in the email menu. In email, press Alt, then 6. Choose Add account, Switch account, Which account, Remove account, or Add Thunderbird account.
 
 10.3 Add and find contacts
-A contact is a saved name with an email address or a phone number. Contacts has its own screen on the main menu. See chapter 13.
+A contact is a saved name with an email address or a phone number. Contacts has its own screen in Office tools. See chapter 13.
 - To save a contact, say "Add contact", the person's name, "as", and their email address. For example, say "Add contact Bob as bob@example.com". Or in the inbox, press Alt, 5, then 3. Type the name, the word as, and the address, then press Enter.
 - To hear saved names, say "List contacts", or press P in the inbox. While you write an email, press Control+K. Use the arrows to hear each name. Press Enter to hear the address.
 - To find a contact, say "Find contact", followed by the saved name, such as "Find contact Bob".
@@ -1071,7 +1076,7 @@ A saved draft keeps its attached files. When you open it again, they are still t
 12. READ AND ORGANIZE EMAIL
 
 12.1 Read messages
-1. Say "Email" or "Check email", or choose Email on the main menu.
+1. Say "Email" or "Check email", or choose Email in Office tools.
 2. Listen to the sender, subject, and date of the selected message.
 3. To hear another message, say "Next message" or "Previous message", or press Down Arrow or Up Arrow.
 4. To read it, say "That one", "Open email", or "Open current message", or press Enter. Companion says "Message opened." Then it reads the message.
@@ -1226,7 +1231,7 @@ If a file is damaged, Companion says it could not be saved.
 13. CONTACTS
 
 13.1 Open your contacts
-Choose Contacts on the main menu, or say "Open contacts".
+Choose Contacts in Office tools, or say "Open contacts".
 Contacts is one list of the people you saved. It joins two places:
 - Thunderbird's address books. Thunderbird keeps your Google, Outlook, and other contacts up to date by itself.
 - Contacts saved only on this computer.
@@ -1235,7 +1240,7 @@ A person saved in both places is in the list once. The list is in order by name.
 - Home and End reach the first and last contact. At either end you hear Start of list or End of list.
 - To jump to a name, type its first letter.
 - To hear the next or previous contact by voice, say "Next contact" or "Previous contact".
-- To go back to the main menu, say "Close contacts", or press Escape.
+- To leave Contacts, say "Close contacts", or press Escape. You go back to Office tools, or to the main menu if you started there.
 Press Alt to open the contacts menu. It lists every action with its key.
 For help on this screen, say "Help with contacts", or press F1.
 
@@ -1309,14 +1314,14 @@ Each address book is named with its account, such as Contacts, Outlook, vet@outl
 14. CALENDAR
 
 14.1 Open your calendar
-Choose Calendar on the main menu, or say "Open calendar". It opens on today. You hear the date, how many events there are, and the first event. For example: Today, Monday, October 26. 3 events.
+Choose Calendar in Office tools, or say "Open calendar". It opens on today. You hear the date, how many events there are, and the first event. For example: Today, Monday, October 26. 3 events.
 The calendar comes from Thunderbird. Thunderbird keeps Google and other online calendars up to date by itself. Companion starts Thunderbird in the background when it needs it.
 Each event says its time, its name, and its calendar. For example: ten thirty AM to eleven AM, Doctor appointment, Google.
 - To hear the next event, say "Next event", or press Down Arrow.
 - To hear the previous event, say "Previous event", or press Up Arrow.
 - To hear the time, place, and notes, say "Read event", or press Enter.
 - To change the event, say "Edit event", or press F2. See part 14.4.
-- To go back to the main menu, say "Close calendar", or press Escape.
+- To leave Calendar, say "Close calendar", or press Escape. You go back to Office tools, or to the main menu if you started there.
 A day with no events says No events. An event that goes past midnight is on both days. If the day could not be read, you hear only why, not No events.
 Press Alt to open the calendar menu. It lists every action with its key.
 For help on this screen, say "Help with calendar", or press F1.

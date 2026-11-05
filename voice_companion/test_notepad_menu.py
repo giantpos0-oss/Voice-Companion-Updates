@@ -30,7 +30,7 @@ class NotepadMenuTests(CompanionTestCase):
         self.assertTrue(self.said[-1].startswith('Notepad menu. Create a note'), self.said[-1])
         names = [name for name, _, _ in companion.task_navigation().items('notepad_menu')]
         self.assertEqual(names, ['Create a note', 'Open a note', 'Options', 'Main menu'])
-        self.assertEqual(dict(companion.MAIN_MENU_CHOICES)['Notepad'], 'notepad')
+        self.assertEqual({n: c for n, _, c in companion.task_navigation().items('office_menu')}['Notepad'], 'notepad')
 
     def test_arrows_stop_at_the_ends(self):
         mode = self.open_menu()

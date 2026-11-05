@@ -7,53 +7,17 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 754
-- Already had both ways: 590
+- Actions inventoried: 756
+- Already had both ways: 592
 - Gaps found: 164
 - Gaps fixed (Added): 156
 - Not applicable (N/A, with reason): 8
 
 ## Main menu
 
-### File manager
+### Office tools
 
-- Voice: "File manager"
-- Keyboard: First letter, arrows, Enter
-- Status: Both
-
-### Word processor
-
-- Voice: "Word processor"
-- Keyboard: First letter, arrows, Enter
-- Status: Both
-
-### Document reader
-
-- Voice: "Document reader"
-- Keyboard: First letter, arrows, Enter
-- Status: Both
-
-### Notepad
-
-- Voice: "Notepad"
-- Keyboard: First letter, arrows, Enter
-- Status: Both
-
-### Email
-
-- Voice: "Email"
-- Keyboard: First letter, arrows, Enter
-- Status: Both
-
-### Contacts
-
-- Voice: "Contacts"
-- Keyboard: First letter, arrows, Enter
-- Status: Both
-
-### Calendar
-
-- Voice: "Calendar"
+- Voice: "Office tools"
 - Keyboard: First letter, arrows, Enter
 - Status: Both
 
@@ -87,15 +51,9 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: First letter, arrows, Enter
 - Status: Both
 
-### Shut down the computer
+### Shut down or restart
 
-- Voice: "Shut down computer"
-- Keyboard: First letter, arrows, Enter
-- Status: Both
-
-### Restart the computer
-
-- Voice: "Restart computer"
+- Voice: "Shut down or restart"
 - Keyboard: First letter, arrows, Enter
 - Status: Both
 
@@ -955,6 +913,64 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 - Voice: "Leave table"
 - Keyboard: Alt, 8, O
+- Status: Both
+
+## Office Menu
+
+### Email
+
+- Voice: "Email"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Word processor
+
+- Voice: "Word processor"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Notepad
+
+- Voice: "Notepad"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Document reader
+
+- Voice: "Document reader"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Calendar
+
+- Voice: "Calendar"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Contacts
+
+- Voice: "Contacts"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### File manager
+
+- Voice: "File manager"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+## Power Menu
+
+### Shut down the computer
+
+- Voice: "Shut down computer"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Restart the computer
+
+- Voice: "Restart computer"
+- Keyboard: First letter, arrows, Enter
 - Status: Both
 
 ## Word Processor
