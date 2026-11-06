@@ -229,7 +229,10 @@ Problems found in the October 2026 review. All fixed in 0.2.153-test, with tests
 - The sweep log said `LiveDialogTests.test_unsaved_changes_keep_the_page_and_a_second_try_leaves` failed on main sometimes.
 - It passed 45 times out of 45 here: 12 runs alone, 8 runs of its module, and 25 dirty-page tries in one process. Leaving took about 0.2 seconds, far below the 4-second limit.
 - No failure output was kept, so the cause is not known yet.
-- [ ] If it fails again, keep the full failure text (the message it got and the time it took) and add it here before rerunning.
+- [x] If it fails again, keep the full failure text (the message it got and the time it took) and add it here before rerunning.
+- Found November 6, 2026 (nightly sweep). Twelve copies at once failed about 1 run in 12. The step record said: "open an address with changes" stayed open as it should, then "open it again" took 0.00 seconds and said "The page did not open. Check the address and internet connection."
+- Cause: right after the browser stops a page change because of unsaved changes, Chromium can stop the next page change at once with net::ERR_ABORTED, without asking the page again. The first stop reaches it late. It happened most after Back, when the page came from the browser's page cache. Plain Playwright showed it too, with no Companion code.
+- Fix: `BrowserBackend.goto` tries once more when that stop comes within a minute of a page staying open, and the page did not just ask again. 56 runs of LiveDialogTests at once then all passed. Unit tests: `test_web_keyboard_only.SecondTryToLeaveTests`.
 
 ## 0.2.190: a note was not saved when a command left it (October 31, 2026)
 - Found while checking routing: "Media menu" said in a note opened the Media menu, and the note was not saved. Starting a new note then lost its words.

@@ -8,9 +8,9 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ## Counts
 
 - Actions inventoried: 760
-- Already had both ways: 596
-- Gaps found: 164
-- Gaps fixed (Added): 156
+- Already had both ways: 598
+- Gaps found: 162
+- Gaps fixed (Added): 154
 - Not applicable (N/A, with reason): 8
 
 ## Main menu
@@ -2560,14 +2560,14 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Top of page
 
 - Voice: "Top of page"
-- Keyboard: Alt, 1, 6
-- Status: Added: Alt menu path
+- Keyboard: Ctrl+Home
+- Status: Both
 
 ### Bottom of page
 
 - Voice: "Bottom of page"
-- Keyboard: Alt, 1, 7
-- Status: Added: Alt menu path
+- Keyboard: Ctrl+End
+- Status: Both
 
 ## Alt menu, Web page: Lists
 
