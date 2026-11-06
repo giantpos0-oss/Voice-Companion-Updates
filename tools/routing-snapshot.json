@@ -2531,10 +2531,15 @@
 "screen_after": "awake"
 },
 "awake | my favorites": {
-"said": [
-"Favorite apps. Change favorite apps (C), 1 of 1."
+"calls": [
+"call.snapshot.__bool__()",
+"call.command('my favorites')",
+"call.snapshot.__bool__()"
 ],
-"screen_after": "favorites_menu"
+"said": [
+"session handled: my favorites"
+],
+"screen_after": "web"
 },
 "awake | my inbox": {
 "said": [
@@ -22981,9 +22986,9 @@
 },
 "help | my favorites": {
 "said": [
-"Favorite apps. Change favorite apps (C), 1 of 1."
+"I did not understand that. Say next to hear a topic, or press Escape to leave Help."
 ],
-"screen_after": "favorites_menu"
+"screen_after": "help"
 },
 "help | my inbox": {
 "said": [
@@ -28934,10 +28939,13 @@
 "screen_after": "mailbox"
 },
 "mailbox | my favorites": {
-"said": [
-"Favorite apps. Change favorite apps (C), 1 of 1."
+"calls": [
+"call.process('my favorites')"
 ],
-"screen_after": "favorites_menu"
+"said": [
+"session handled: my favorites"
+],
+"screen_after": "mailbox"
 },
 "mailbox | my inbox": {
 "calls": [
@@ -41153,10 +41161,14 @@
 "screen_after": "web"
 },
 "web | my favorites": {
-"said": [
-"Favorite apps. Change favorite apps (C), 1 of 1."
+"calls": [
+"call.command('my favorites')",
+"call.page_revision.__ne__(<mock>)"
 ],
-"screen_after": "favorites_menu"
+"said": [
+"session handled: my favorites"
+],
+"screen_after": "web"
 },
 "web | my inbox": {
 "calls": [
