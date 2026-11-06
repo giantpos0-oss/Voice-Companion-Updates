@@ -169,3 +169,24 @@ class YouTubePlayerKeysAreNeverSilentTests(unittest.TestCase):
                 self.assertEqual(self.press(name), 'youtube')
                 self.assertEqual(self.said, ['In the player, the arrows change the volume and skip. '
                                              'Space plays or pauses. Escape goes back to the list.'])
+
+
+class OpenMediaFileEscapeTests(unittest.TestCase):
+    """Control+O in the Media player, then Escape at the drive list, went to the Media menu
+    on Radio, 1 of 4. Leaving the player any other way lands on Media player, where you were."""
+    setUp = test_media_player_menu.MediaPlayerMenuTests.setUp
+    key = test_media_player_menu.MediaPlayerMenuTests.key
+
+    def test_escape_at_the_drive_list_lands_on_media_player(self):
+        from unittest.mock import patch
+        from file_manager import FileManager
+        from test_file_manager import FakeFiles, settle
+        mode = companion.handle('media player', 'media_menu')
+        with patch('file_manager.FileManager', side_effect=lambda: FileManager(FakeFiles(self.root))):
+            mode = companion.handle(companion.navigation_key('Ctrl+O', mode), mode)
+        settle(companion.FILE_MANAGER)
+        self.assertEqual(mode, 'files')
+        self.said.clear()
+        mode = self.key('Escape', mode)
+        self.assertEqual(mode, 'media_menu')
+        self.assertEqual(self.said, ['Media menu. Media player (M), 3 of 4.'])

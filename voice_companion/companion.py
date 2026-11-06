@@ -4767,7 +4767,9 @@ def _handle(text, mode, typed=False):
             if picker=='reader':return task_navigation().enter('reader_menu','Document reader menu')
             if picker=='document' and getattr(task_navigation(),'pick_return',None)=='document' and document is not None:
                 speak('Canceled. Back to document.');return 'document'
-            if picker:return task_navigation().enter('media_menu' if picker=='media' else 'word_processor','Media menu' if picker=='media' else 'Word processor menu')
+            # On Media player, where you were, as leaving the player says (task_navigation.py).
+            if picker=='media':return task_navigation().enter('media_menu','Media menu',2)
+            if picker:return task_navigation().enter('word_processor','Word processor menu')
             return 'awake'
         if FILE_MANAGER.pending and FILE_MANAGER.pending[0]=='delete':CONFIRM_CHOICE='no'
         speak(result)
