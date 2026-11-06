@@ -624,7 +624,8 @@ class CompanionWindow:
                 if self.context.get('confirmation') is not None and key=='Return' and event.widget==typed and typed.get().strip().lower() in ('yes','no'):
                     self.commands.put(typed.get().strip().lower());typed.delete(0,'end');return 'break'
                 if request:pass
-                elif self.context.get('confirmation') is not None and key in ('Up','Down','Left','Right','Home','End','Tab','Return','Escape','space','y','Y','n','N'):
+                # F1 says the question again (guide part 2.5); before, the window dropped it during a question.
+                elif self.context.get('confirmation') is not None and key in ('Up','Down','Left','Right','Home','End','Tab','Return','Escape','space','y','Y','n','N','F1'):
                     request='Enter' if key in ('Return','space') else 'ShiftTab' if key=='Tab' and shift else key
                 elif key=='F4' and alt_held(event.state):request='Alt+F4'
                 elif mode=='web' and self.context.get('web_name_list') and not self.command_entry_active and not control and not alt_held(event.state) and (event.char and event.char.isprintable() or key=='BackSpace'):

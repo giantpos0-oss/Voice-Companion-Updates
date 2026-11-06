@@ -1031,13 +1031,24 @@ def station_asked(text,mode,typed=False):
     return __import__('media_hub').station_request(text)
 
 
+def still_open(mode):
+    """' ' and the list or question left open on Calendar or Contacts, said when Help closes over it, so
+    the next Escape is not a surprise; '' elsewhere."""
+    module={'calendar':'calendar_screen','contacts':'contacts_screen'}.get(mode)
+    words=__import__(module).open_question(sys.modules[__name__]) if module else ''
+    return ' '+words if words else ''
+
+
 def screen_question(mode):
     """True while Contacts, Calendar, Attachments or Downloads asks a question or for a
     name; the answer there may start with "Play"."""
     module={'calendar':'calendar_screen','contacts':'contacts_screen','attachments':'attachment_screen','downloads':'download_screen'}.get(mode)
     if module is None:return False
     screen=__import__(module)
-    return getattr(screen,'PENDING',None) is not None or bool(getattr(screen,'ADDING',None))
+    # A new contact counts only while its prompt is open: Escape leaves ADDING behind.
+    prompt=task_navigation().prompt
+    asking=bool(prompt) and str(prompt[0]).startswith('@'+mode+':add-')
+    return getattr(screen,'PENDING',None) is not None or bool(getattr(screen,'ADDING',None)) and asking
 
 
 # Background notices wait for a quiet moment: Companion silent, no key pressed for this
@@ -1193,6 +1204,9 @@ def _navigation_key(key,mode):
     if mode=='calendar' and __import__('calendar_screen').PENDING is not None:
         # A question on the Calendar owns the arrows and Enter (this one, all, or no).
         return __import__('calendar_screen').navigation_key(sys.modules[__name__],key)
+    if mode=='contacts' and key=='F1' and __import__('contacts_screen').PENDING is not None:
+        # F1 in a Contacts question says it again; in a list there it is Help.
+        return __import__('contacts_screen').navigation_key(sys.modules[__name__],key)
     from input_parity import screen_command,MAIL_HEADER_KEYS
     if mode=='mailbox' and key in MAIL_HEADER_KEYS:return MAIL_HEADER_KEYS[key]
     if mode=='youtube':return __import__('youtube_screen').navigation_key(sys.modules[__name__],key)  # youtube_screen.py
@@ -4669,7 +4683,7 @@ def _handle(text, mode, typed=False):
             # Name the screen you return to. The main menu is said by handle(), so say it with that.
             help_session = None
             if help_return_mode == 'awake':MAIN_MENU_LEAD = 'Help closed.'
-            else:speak('Help closed. ' + options_return_notice(help_return_mode))
+            else:speak('Help closed. ' + options_return_notice(help_return_mode) + still_open(help_return_mode))
             return help_return_mode
         if result is not None:speak(result)
         elif typed or not speech_busy():

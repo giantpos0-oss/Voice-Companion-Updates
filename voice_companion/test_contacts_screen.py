@@ -429,6 +429,64 @@ class ContactsScreenTests(CompanionHarness):
         mode = self.open()
         self.assertEqual(self.press('Escape', mode), 'awake')
 
+    def test_a_new_contact_canceled_with_escape_leaves_nothing_open(self):
+        # Escape after the name kept the half-made contact as if still being asked, so "Play WGN"
+        # on Contacts read the command list instead of playing (sweep, November 6, 2026).
+        mode = self.open()
+        self.assertEqual(app.station_asked('Play WGN', mode), 'WGN')
+        mode = self.press('Ctrl+N', mode)
+        mode = app.handle('Bob Smith', mode, typed=True)
+        self.assertTrue(app.screen_question('contacts'))      # still being asked: "Play" may be the name
+        mode = self.press('Escape', mode)
+        self.assertEqual((mode, self.said()), ('contacts', 'Canceled. Back to contacts.'))
+        self.assertFalse(app.screen_question('contacts'))
+        self.assertEqual(app.station_asked('Play WGN', mode), 'WGN')
+        # While a new contact is asked for, "Play WGN" is still its name.
+        mode = self.press('Ctrl+N', mode)
+        mode = app.handle('Play WGN', mode, typed=True)
+        self.assertEqual((mode, self.said()), ('task_input', 'Email address for Play WGN? Type or say it, then press Enter. '
+                                                             'To leave it out, press Enter or say skip.'))
+        self.press('Escape', mode)
+
+    def test_closing_help_names_the_list_still_open(self):
+        # F1 in the list of what to change opens Help. Escape back said only "Back to contacts.",
+        # though the list was still open (sweep, November 6, 2026).
+        mode = self.open()
+        self.press('F2', mode)
+        mode = self.press('F1', mode)
+        while mode == 'help':
+            mode = self.press('Escape', mode)
+        self.assertEqual(self.said(), 'Help closed. Back to contacts. Name: Ann Brown, 1 of 3. '
+                                      'Use the arrows and Enter, or say what to change. Escape cancels.')
+        self.press('Escape', mode)
+        mode = self.press('F1', mode)
+        while mode == 'help':
+            mode = self.press('Escape', mode)
+        self.assertEqual(self.said(), 'Help closed. Back to contacts.')
+
+    def test_f1_says_the_yes_or_no_question_again_and_keeps_the_choice(self):
+        # Guide part 2.5: "To hear the question again, press F1." On Contacts it opened Help instead,
+        # and the question was left open behind it (sweep, November 6, 2026).
+        mode = self.open()
+        self.press('Delete', mode)
+        question = self.said()
+        self.press('Up', mode)
+        self.assertIsNone(app.navigation_key('F1', mode))
+        self.assertEqual(self.said(), question)
+        self.assertEqual((contacts_screen.PENDING[0], contacts_screen.CHOICE), ('delete', 'yes'))
+        self.press('Escape', mode)
+        self.press('F2', mode)
+        # In the list of what to change, F1 is still Help.
+        self.assertEqual(app.navigation_key('F1', mode), 'help with contacts')
+        self.press('End', mode)
+        mode = self.press('Enter', mode)
+        mode = app.handle('555 0100', mode, typed=True)
+        self.assertEqual(self.said(), 'Change the phone number for Ann Brown to 555 0100? Say Yes to save or No to cancel.')
+        self.press('Down', mode)
+        self.assertIsNone(app.navigation_key('F1', mode))
+        self.assertEqual(self.said(), 'Change the phone number for Ann Brown to 555 0100? Say Yes to save or No to cancel.')
+        self.assertEqual(contacts_screen.CHOICE, 'no')
+
     def test_email_by_name_says_why_when_thunderbird_contacts_cannot_be_read(self):
         # Not "No contact named John": John may be in Thunderbird, which did not answer.
         reason = 'Thunderbird did not let Voice Companion read its address books. Close Thunderbird, then try again.'
@@ -539,6 +597,24 @@ class ContactsScreenTests(CompanionHarness):
     def test_old_google_contacts_command_points_to_thunderbird(self):
         app.handle('connect google contacts', 'awake')
         self.assertIn('Google contacts now come from Thunderbird.', self.said())
+
+
+class GuideContactKeysTests(unittest.TestCase):
+    def test_the_guide_gives_the_inbox_menu_keys_for_add_contact(self):
+        # Part 10.3 said Alt, 5, then 3, which opens Email drafts (sweep, November 6, 2026).
+        import re
+        from screen_menus import MENUS, menu_path
+        groups = MENUS['mailbox'][1]
+        group = next(i for i, (_, entries) in enumerate(groups) if any(c == 'add contact {value}' for _, _, c in entries))
+        index = next(i for i, (_, _, c) in enumerate(groups[group][1]) if c == 'add contact {value}')
+        expected = menu_path('mailbox', group, index)       # 'Alt, 5, 5'
+        for name in ('START HERE - Veteran.txt', 'START HERE - Veteran.html'):
+            text = re.sub(r'</?kbd>', '', (HERE / name).read_text(encoding='utf-8'))
+            line = next(line for line in text.splitlines() if 'To save a contact, say "Add contact"' in line)
+            found = re.search(r'in the inbox, press (Alt, \d+), then (\d+)\.', line)
+            with self.subTest(guide=name):
+                self.assertIsNotNone(found, line)
+                self.assertEqual(found[1] + ', ' + found[2], expected)
 
 
 class NamelessContactTests(unittest.TestCase):

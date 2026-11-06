@@ -223,6 +223,10 @@ def navigation_key(m, key):
         request = '@contacts:' + ('field ' if PENDING[0] == 'edit-field' else 'source ') + CHOICE
         return {'Enter': request, 'Space': request, 'Escape': 'no', 'F1': 'help with contacts'}.get(key)
     if PENDING is not None:
+        if key == 'F1':
+            # F1 says a Yes or No question again (guide part 2.5); the choice stays.
+            m.speak(open_question(m))
+            return None
         if key.lower() in ('y', 'alt+y'):
             return 'yes'
         if key.lower() in ('n', 'alt+n'):
@@ -537,6 +541,17 @@ CHOOSE_HINT = 'To choose another, press Control+L.'
 
 def source_choice():
     return announce_item(SOURCES.words(CHOICE), CHOICES.index(CHOICE), len(CHOICES), hotkey=False)
+
+
+def open_question(m):
+    """The question or list still open, said again when Help closes over it; '' when none is."""
+    if PENDING is None:
+        return ''
+    if PENDING[0] == 'edit-field':
+        return field_choice() + ' Use the arrows and Enter, or say what to change. Escape cancels.'
+    if PENDING[0] == 'source':
+        return source_choice() + ' Use the arrows and Enter, or say a name. Escape cancels.'
+    return question(PENDING[1]) if PENDING[0] == 'delete' else edit_question()
 
 
 def choice_names():
@@ -1052,15 +1067,22 @@ def confirm_edit(m):
         PENDING = None
         m.speak('That is the same as before, so nothing was changed. ' + describe())
         return MODE
+    PENDING, CHOICES, CHOICE = ('edit', contact), ('yes', 'no'), 'yes'
+    m.speak(edit_question())
+    return MODE
+
+
+def edit_question():
+    """'Rename Ann Brown to Ann Smith? Say Yes to save or No to cancel.'"""
+    contact, field, new = EDIT['contact'], EDIT['field'], EDIT['value']
+    old = contact.name if field == 'name' else ((contact.emails if field == 'email' else contact.phones) or [''])[0]
     if field == 'name':
         question = 'Rename ' + contact.name + ' to ' + new + '?'
     else:
         what = 'email address' if field == 'email' else 'phone number'
         question = ('Change the ' + what + ' for ' + contact.name + ' to ' + new + '?') if new else \
             ('Remove the ' + what + ' ' + old + ' from ' + contact.name + '?')
-    PENDING, CHOICES, CHOICE = ('edit', contact), ('yes', 'no'), 'yes'
-    m.speak(question + ' Say Yes to save or No to cancel.')
-    return MODE
+    return question + ' Say Yes to save or No to cancel.'
 
 
 def edit_answer(m, command):

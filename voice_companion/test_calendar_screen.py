@@ -337,6 +337,59 @@ class CalendarScreenTests(CalendarHarness):
         app.handle('all of them', mode)
         self.assertEqual(self.events_on(date(2026, 11, 3)), [])
 
+    def test_f1_says_each_yes_or_no_question_again_and_keeps_the_choice(self):
+        # Guide part 2.5: "To hear the question again, press F1." On Calendar it opened Help instead,
+        # and the question was left open behind it (sweep, November 6, 2026).
+        mode = self.open()
+        self.press('Delete', mode)
+        question = self.said()
+        self.press('Up', mode)
+        self.assertIsNone(app.navigation_key('F1', mode))
+        self.assertEqual(self.said(), question)
+        self.assertEqual((calendar_screen.PENDING[0], calendar_screen.CHOICE), ('delete', 'yes'))
+        self.press('Escape', mode)
+        # Adding: the question names the day, the time and the calendar.
+        mode = self.press('Ctrl+N', mode)
+        mode = app.handle('tomorrow at 3 PM', mode)
+        mode = app.handle('Dentist', mode)
+        question = self.said()
+        self.assertIsNone(app.navigation_key('F1', mode))
+        self.assertEqual(self.said(), question)
+        self.press('Escape', mode)
+        # Changing: the question names the change, and a repeating event says this one or all.
+        self.press('Right', mode)
+        app.handle('change the place to Room 4', mode)
+        question = self.said()
+        self.assertIn('repeats', question)
+        self.press('Down', mode)
+        self.assertIsNone(app.navigation_key('F1', mode))
+        self.assertEqual(self.said(), question)
+        self.assertEqual(calendar_screen.CHOICE, 'all')
+        # In the list of what to change, F1 is still Help.
+        self.press('Escape', mode)
+        self.press('F2', mode)
+        self.assertEqual(app.navigation_key('F1', mode), 'help with calendar')
+
+    def test_closing_help_names_the_list_or_question_still_open(self):
+        # F1 in the list of what to change opens Help. Escape back said only "Back to calendar.",
+        # though the list was still open: the next Escape said "Not changed" (sweep, November 6, 2026).
+        mode = self.open()
+        self.press('F2', mode)
+        self.press('Down', mode)
+        mode = self.press('F1', mode)
+        self.assertEqual(mode, 'help')
+        while mode == 'help':
+            mode = self.press('Escape', mode)
+        self.assertEqual(mode, 'calendar')
+        self.assertEqual(self.said(), 'Help closed. Back to calendar. Day and time: Today, Monday, October 26, ten thirty AM to eleven AM, '
+                                      '2 of 7. Use the arrows and Enter, or say what to change. Escape cancels.')
+        self.press('Escape', mode)
+        # With nothing open, the screen's name is enough, as everywhere else.
+        mode = self.press('F1', mode)
+        while mode == 'help':
+            mode = self.press('Escape', mode)
+        self.assertEqual(self.said(), 'Help closed. Back to calendar.')
+
     def test_read_only_calendars_are_protected(self):
         mode = self.open()
         app.handle('go to November 11', mode)
