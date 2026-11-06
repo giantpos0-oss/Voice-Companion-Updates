@@ -1182,6 +1182,9 @@ def _navigation_key(key,mode):
     if mode=='calendar' and __import__('calendar_screen').PENDING is not None:
         # A question on the Calendar owns the arrows and Enter (this one, all, or no).
         return __import__('calendar_screen').navigation_key(sys.modules[__name__],key)
+    if mode=='contacts' and key=='F1' and __import__('contacts_screen').PENDING is not None:
+        # F1 in a Contacts question says it again; in a list there it is Help.
+        return __import__('contacts_screen').navigation_key(sys.modules[__name__],key)
     from input_parity import screen_command,MAIL_HEADER_KEYS
     if mode=='mailbox' and key in MAIL_HEADER_KEYS:return MAIL_HEADER_KEYS[key]
     if mode=='youtube':return __import__('youtube_screen').navigation_key(sys.modules[__name__],key)  # youtube_screen.py

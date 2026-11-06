@@ -429,6 +429,29 @@ class ContactsScreenTests(CompanionHarness):
         mode = self.open()
         self.assertEqual(self.press('Escape', mode), 'awake')
 
+    def test_f1_says_the_yes_or_no_question_again_and_keeps_the_choice(self):
+        # Guide part 2.5: "To hear the question again, press F1." On Contacts it opened Help instead,
+        # and the question was left open behind it (sweep, November 6, 2026).
+        mode = self.open()
+        self.press('Delete', mode)
+        question = self.said()
+        self.press('Up', mode)
+        self.assertIsNone(app.navigation_key('F1', mode))
+        self.assertEqual(self.said(), question)
+        self.assertEqual((contacts_screen.PENDING[0], contacts_screen.CHOICE), ('delete', 'yes'))
+        self.press('Escape', mode)
+        self.press('F2', mode)
+        # In the list of what to change, F1 is still Help.
+        self.assertEqual(app.navigation_key('F1', mode), 'help with contacts')
+        self.press('End', mode)
+        mode = self.press('Enter', mode)
+        mode = app.handle('555 0100', mode, typed=True)
+        self.assertEqual(self.said(), 'Change the phone number for Ann Brown to 555 0100? Say Yes to save or No to cancel.')
+        self.press('Down', mode)
+        self.assertIsNone(app.navigation_key('F1', mode))
+        self.assertEqual(self.said(), 'Change the phone number for Ann Brown to 555 0100? Say Yes to save or No to cancel.')
+        self.assertEqual(contacts_screen.CHOICE, 'no')
+
     def test_email_by_name_says_why_when_thunderbird_contacts_cannot_be_read(self):
         # Not "No contact named John": John may be in Thunderbird, which did not answer.
         reason = 'Thunderbird did not let Voice Companion read its address books. Close Thunderbird, then try again.'
