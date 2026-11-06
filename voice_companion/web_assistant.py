@@ -511,8 +511,18 @@ class BrowserBackend:
 
     def goto(self, url):
         self.start()
+        import time
         try:
-            self.page.goto(url, wait_until='domcontentloaded', timeout=30000)
+            try:
+                self.page.goto(url, wait_until='domcontentloaded', timeout=30000)
+            except Exception as exc:
+                # Just after a page with unsaved changes stayed open, the browser can stop the
+                # second try at once ("net::ERR_ABORTED") without asking the page again: the
+                # first try's stop reaches it late. The user heard "try again", so try once more.
+                # (This made test_unsaved_changes_keep_the_page_and_a_second_try_leaves flaky.)
+                if ('err_aborted' not in str(exc).casefold() or getattr(self,'dialog_notice','')==LEAVE_NOTICE
+                        or time.monotonic()-getattr(self,'leave_asked',float('-inf'))>=self.LEAVE_AGAIN):raise
+                self.page.goto(url, wait_until='domcontentloaded', timeout=30000)
         except Exception as exc:
             # The address is a file, not a page: the browser downloads it instead
             # (downloads.py announces it). The current page stays as it was.

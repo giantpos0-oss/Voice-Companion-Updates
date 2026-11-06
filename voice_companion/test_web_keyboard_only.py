@@ -43,5 +43,40 @@ class ShiftNumberQuickKeyTests(unittest.TestCase):
         self.assertEqual(cursor.move(page_quick_key('!', 'exclam', 0, True), True), 'Top, heading level 1.')
 
 
+class SecondTryToLeaveTests(unittest.TestCase):
+    """A page with unsaved changes stays open once; the next try leaves it. Just after the first
+    try, Chromium can stop the second at once with net::ERR_ABORTED and never ask the page.
+    The user then heard "The page did not open. Check the address and internet connection."
+    (seen in about 1 run in 10 of the live test, with Back and the browser's page cache)."""
+
+    def backend(self, *results):
+        import tempfile, time
+        from unittest.mock import Mock
+        from web_assistant import BrowserBackend
+        backend = BrowserBackend(tempfile.gettempdir()); backend.start = lambda: None
+        backend.page = Mock(); backend.page.goto.side_effect = list(results)
+        backend.leave_asked = time.monotonic()   # the page stayed open a moment ago
+        return backend
+
+    def test_a_stale_stop_after_the_page_stayed_open_is_tried_again(self):
+        backend = self.backend(Exception('Page.goto: net::ERR_ABORTED at https://fixture.test/next'), None)
+        backend.goto('https://fixture.test/next')
+        self.assertEqual(backend.page.goto.call_count, 2)
+
+    def test_other_failures_and_a_new_refusal_are_not_tried_again(self):
+        from web_assistant import LEAVE_NOTICE
+        backend = self.backend(Exception('net::ERR_NAME_NOT_RESOLVED'), None)
+        with self.assertRaises(Exception): backend.goto('https://fixture.test/next')
+        self.assertEqual(backend.page.goto.call_count, 1)
+        # The page asked again and stayed open: that is said, not overridden.
+        backend = self.backend(Exception('net::ERR_ABORTED'), None); backend.dialog_notice = LEAVE_NOTICE
+        with self.assertRaises(Exception): backend.goto('https://fixture.test/next')
+        self.assertEqual(backend.page.goto.call_count, 1)
+        # No page stayed open lately: an ordinary stop is reported as before.
+        backend = self.backend(Exception('net::ERR_ABORTED'), None); backend.leave_asked = float('-inf')
+        with self.assertRaises(Exception): backend.goto('https://fixture.test/next')
+        self.assertEqual(backend.page.goto.call_count, 1)
+
+
 if __name__ == '__main__':
     unittest.main()
