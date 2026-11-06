@@ -761,7 +761,7 @@ class CompanionWindow:
             def enter(event):
                 if shortcut(event)=='break':return 'break'
                 if self.context.get('file_name_input') and not typed.get().strip():
-                    self.feedback('Type the password.' if self.context.get('file_private') else 'Enter a new file name, including the extension.');return 'break'
+                    self.feedback(self.context.get('file_empty_hint') or ('Type the password.' if self.context.get('file_private') else 'Enter a new file name, including the extension.'));return 'break'
                 if self.context.get('mode')=='document_name':
                     if not typed.get().strip():self.feedback('Enter a folder, or a full folder path.' if self.context.get('naming_label') else 'Enter a document name.');return 'break'
                     return submit_typed(event)

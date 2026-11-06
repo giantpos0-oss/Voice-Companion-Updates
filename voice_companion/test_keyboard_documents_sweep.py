@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import companion as app
+from real_window_tests import real_window
 from file_manager import FileManager
 from test_file_manager import FakeFiles, settle
 
@@ -229,6 +230,74 @@ class DoneMessages(FileManagerKeys):
         self.key('Ctrl+A')
         self.key('Delete')
         self.assertIn('Deleted 2 items.', self.key('Letter:y'))
+
+
+class EmptyBoxHints(FileManagerKeys):
+    def test_enter_in_an_empty_box_says_what_that_box_wants(self):
+        # Enter in an empty search box said "Enter a new file name, including the extension."
+        for key, words in (('Ctrl+F', 'part of a name'), ('Ctrl+Shift+F', 'part of a name'), ('Alt+Z', 'name for the zip'),
+                           ('F2', 'new name'), ('Alt+Shift+Z', 'name for the zip')):
+            self.fm.pending = None
+            self.key(key)
+            hint = app.app_context('files').get('file_empty_hint', '')
+            self.assertIn(words, hint, key)
+            self.assertIn('Escape cancels', hint, key)
+        self.typed('photos')
+        self.assertIn('password', app.app_context('files')['file_empty_hint'])
+
+
+@real_window
+class FileBoxWindowTests(unittest.TestCase):
+    """The real window: Enter in an empty File manager box says what that box wants.
+    Not yet in the build's window list: try it on a claude/try- branch first (CLAUDE.md)."""
+    def setUp(self):
+        from app_window import CompanionWindow
+        self.window = CompanionWindow('file box test')
+        self.window.start()
+
+    def tearDown(self):
+        if self.window.thread.is_alive():
+            self.call(lambda: self.window.root.destroy())
+        self.window.thread.join(5)
+        self.assertFalse(self.window.thread.is_alive())
+
+    def call(self, function):
+        import threading
+        done = threading.Event()
+        errors = []
+
+        def run():
+            try:
+                self.window.root.update_idletasks()
+                function()
+            except Exception as exc:
+                errors.append(exc)
+            finally:
+                done.set()
+        self.window.ui_actions.put(('ui_call', run))
+        if not done.wait(5):
+            self.fail(self.window.debug_state())
+        if errors:
+            raise errors[0]
+
+    def wait(self, condition):
+        import time
+        end = time.monotonic() + 5
+        while not condition() and time.monotonic() < end:
+            time.sleep(.015)
+        if not condition():
+            self.fail(self.window.debug_state())
+
+    def test_empty_search_box_enter_says_to_type_part_of_a_name(self):
+        hint = 'Type part of a name, then press Enter. Escape cancels.'
+        self.window.set_context(dict(mode='files', source=None, text='', file_items=['a.txt, file'], file_index=0, ack=0,
+                                     focus=True, file_name_input=True, file_rename_value='', menu_letters=False,
+                                     file_input_label='Search names in this list', file_empty_hint=hint))
+        self.wait(lambda: self.window.context.get('file_name_input'))
+        self.call(lambda: (self.window.typed.focus_force(), self.window.typed.delete(0, 'end'),
+                           self.window.typed.event_generate('<KeyPress>', keysym='Return')))
+        self.wait(lambda: hint in list(self.window.key_feedback.queue))
+        self.assertTrue(self.window.commands.empty())
 
 
 if __name__ == '__main__':

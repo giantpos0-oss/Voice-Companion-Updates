@@ -483,6 +483,11 @@ def app_context(mode):
             context['file_input_label']=('New file name, including extension' if action=='rename' else 'Name for the zip file' if action in ('zip','zip with password') else
                                       'Password for the zip (private)' if action=='zip password' else 'The same password again (private)' if action=='zip password again' else
                                       'Password for '+Path(FILE_MANAGER.pending[1][0]).name+' (private)' if action=='unzip password' else 'Search folder and subfolders' if action=='search all' else 'Search names in this list')
+            # Enter in an empty box says what to type; the search box said "Enter a new file name".
+            context['file_empty_hint']=('Type part of a name, then press Enter. Escape cancels.' if action in ('search','search all') else
+                                        'Type a name for the zip file, then press Enter. Escape cancels.' if action in ('zip','zip with password') else
+                                        'Type the password, then press Enter. Escape cancels.' if FILE_MANAGER.private_step() else
+                                        'Type the new name, including the file type, then press Enter. Escape cancels.')
         context['menu_letters']=not context['file_name_input'] and not FILE_MANAGER.busy
         if FILE_MANAGER.pending and FILE_MANAGER.pending[0]=='delete':context['confirmation']=CONFIRM_CHOICE
         context['file_revision']=FILE_MANAGER.revision
