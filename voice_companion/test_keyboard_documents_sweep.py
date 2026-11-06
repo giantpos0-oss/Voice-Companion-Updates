@@ -281,6 +281,25 @@ class SearchKeys(FileManagerKeys):
         self.assertIsNone(self.fm.pending)
 
 
+class DocumentValuePrompts(unittest.TestCase):
+    def test_every_document_value_item_asks_in_plain_words(self):
+        # Control+Shift+F said "set font. Type or say the value, then Enter." Other document menu
+        # items said "heading.", "line spacing.", "selection end at." and so on.
+        import re
+        from task_navigation import DOCUMENT_ACTIONS, TaskNavigation
+        commands = sorted({command for items in DOCUMENT_ACTIONS.values() for _, _, command in items if '{value}' in command})
+        self.assertIn('set font {value}', commands)
+        said = []
+        nav = TaskNavigation(app)
+        with patch.object(app, 'speak', said.append):
+            for command in commands:
+                said.clear()
+                self.assertEqual(nav.action(command, 'document'), 'task_input')
+                self.assertNotIn('the value', said[-1], command)
+                self.assertTrue(re.match(r'[A-Z]', said[-1]), said[-1])
+                self.assertIn('Escape cancels.', said[-1], command)
+
+
 @real_window
 class FileBoxWindowTests(unittest.TestCase):
     """The real window: Enter in an empty File manager box says what that box wants.
