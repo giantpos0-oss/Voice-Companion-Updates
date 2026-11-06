@@ -5256,7 +5256,10 @@ def _handle(text, mode, typed=False):
     if mode=='mailbox' and command in ('copy sender address','copy sender email address','copy the sender address','email sender','email the sender','new email to sender','write an email to sender','compose email to sender'):
         from mail_voice import sender_address
         address=sender_address(mail_session.rows[mail_session.current-1]) if mail_session and mail_session.rows and mail_session.current else ''
-        if not address:speak('No sender address is available for the current message.');return mode
+        if not address:
+            # An empty folder says what every other key says there (sweep, November 6, 2026).
+            speak(mail_session._empty_list() if mail_session and not mail_session.rows and mail_session.view=='folder'
+                  else 'No sender address is available for the current message.');return mode
         if command.startswith('copy'):
             from document_editor import copy_to_clipboard
             copy_to_clipboard(address)

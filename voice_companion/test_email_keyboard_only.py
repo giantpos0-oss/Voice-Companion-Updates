@@ -89,5 +89,57 @@ class DraftFieldKeyTests(test_attachment_voice.PlacesTestCase):
         self.assertIn('CC recorded as ann@example.com', draft.process('ann@example.com'))
 
 
+class AttachmentListKeyTests(test_attachment_voice.PlacesTestCase):
+    def draft_list(self):
+        for name in ('a.txt', 'b.txt'):
+            (self.files / name).write_text(name, encoding='utf-8')
+        draft = self.draft()
+        draft.attach([self.files / 'a.txt', self.files / 'b.txt', self.files / 'letter.txt'])
+        return self.press('Ctrl+L', 'email_draft')
+
+    def test_delete_keeps_the_tags_on_the_other_files(self):
+        # Before: Delete took the file off and silently cleared every tag.
+        mode = self.draft_list()
+        self.press('Space', mode)                      # a.txt
+        self.press('End', mode); self.press('Space', mode)   # letter.txt
+        self.press('Up', mode); self.press('Delete', mode)   # b.txt off
+        self.assertIn('Removed b.txt.', self.last())
+        self.press('Ctrl+Shift+T', mode)
+        self.assertEqual(self.last(), '2 attachments tagged: a.txt, letter.txt.')
+
+    def test_deleting_a_tagged_file_drops_only_its_tag(self):
+        mode = self.draft_list()
+        self.press('Space', mode); self.press('Down', mode); self.press('Space', mode)
+        self.press('Delete', mode)                     # b.txt, tagged
+        self.press('Ctrl+Shift+T', mode)
+        self.assertEqual(self.last(), '1 attachment tagged: a.txt.')
+
+    def test_the_alt_menu_has_every_tag_key_as_the_guide_says(self):
+        # The guide: "Press Alt to open the attachments menu. It has the same choices."
+        commands = {command for _, entries in screen_menus.MENUS['attachments'][1] for _, _, command in entries}
+        for key in ('Space', 'Ctrl+A', 'Ctrl+Shift+T', 'Ctrl+Shift+A'):
+            with self.subTest(key=key):
+                self.assertIn(SCREEN_KEYS['attachments'][key], commands)
+        mode = self.draft_list()
+        self.assertEqual(self.press('Alt', mode), mode)
+        self.assertIn('Attachments menu', ' '.join(self.said[-2:]))
+
+
+class EmptyFolderWordsTests(test_attachment_voice.PlacesTestCase):
+    def test_c_e_and_h_in_an_empty_folder_say_what_every_other_key_says(self):
+        from mail_voice import MailSession
+        import test_attachment_flows
+        class Empty(test_attachment_flows.AttachmentMailbox):
+            def list_messages(self, folder, cursor=None, limit=10): return [], None
+        app.mail_session = MailSession('thunderbird', str(self.root / 'data'), Empty)
+        app.mail_session.process('open inbox')
+        empty = app.mail_session._empty_list()
+        for key in ('C', 'E', 'H'):
+            with self.subTest(key=key):
+                self.said.clear()
+                self.assertEqual(self.press(key, 'mailbox'), 'mailbox')
+                self.assertEqual(self.said, [empty])
+
+
 if __name__ == '__main__':
     unittest.main()

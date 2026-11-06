@@ -575,7 +575,7 @@ class MailSession:
     def change_important(self, value):
         """Gmail's Important marker on the message you are on: on, off, or turned over (None)."""
         if not self.rows or not self.current:
-            return 'Open a message first.' if self.rows else 'Empty list. No messages on this page.'
+            return 'Open a message first.' if self.rows else self._empty_list()
         changer = getattr(self.client(), 'important', None)
         if changer is None:
             return IMPORTANT_NEEDS_GMAIL

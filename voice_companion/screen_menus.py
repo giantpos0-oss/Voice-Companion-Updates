@@ -258,6 +258,12 @@ MENUS = {
             ('Attach another file', 'Ctrl+O', 'attach a file'),
             ('Attachments help', 'F1', 'help with attachments'),
             ('Close the list', 'Escape', 'close attachments')]),
+        # Tags, as in File manager (Will, November 4, 2026); the guide says this menu has every choice.
+        ('Tags', [
+            ('Tag or untag', 'Space', 'tag attachment'),
+            ('Tag all', 'Ctrl+A', 'tag all attachments'),
+            ('What is tagged', 'Ctrl+Shift+T', 'what attachments are tagged'),
+            ('Clear tags', 'Ctrl+Shift+A', 'clear attachment tags')]),
     ]),
     # Named after what is open, so it is not confused with the Document reader menu you start from.
     'file_reader': ('Document menu', [

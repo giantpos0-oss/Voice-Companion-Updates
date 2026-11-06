@@ -835,7 +835,10 @@ def remove(m, items, index):
         draft.remove_attachment(index - originals)
     left = draft.all_attachments()
     if items is ITEMS:
+        # The other files keep their tags (sweep, November 6, 2026: Delete cleared them all, unsaid).
+        kept = {number - (number > index) for number in TAGGED if number != index}
         _set(left, index)
+        TAGGED.update(number for number in kept if number < len(ITEMS))
     count = files_words.count_words(len(left)) + ' left.' if left else 'No attachments left.'
     return 'Removed ' + item['name'] + '. ' + count
 
