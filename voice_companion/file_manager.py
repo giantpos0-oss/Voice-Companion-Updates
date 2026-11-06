@@ -617,7 +617,10 @@ class FileManager:
         return self.command('open')
     def mutate(self,action,paths,**kwargs):
         focus=str(Path(paths[0]).with_name(kwargs['name'])) if action=='rename' and kwargs.get('name') else None
-        return self.start_job(lambda:self.backend.operate(action,paths,**kwargs),lambda _:self.after_change('File action complete.',focus),'Working on '+str(len(paths))+(' item.' if len(paths)==1 else ' items.'),mutating=True)
+        # Say what was done; it said only "File action complete." (November 6, 2026).
+        names=Path(paths[0]).name if len(paths)==1 else count_items(len(paths))
+        done={'delete':'Deleted '+names+'.','rename':'Renamed '+names+' to '+str(kwargs.get('name') or '').strip()+'.'}.get(action,'File action complete.')
+        return self.start_job(lambda:self.backend.operate(action,paths,**kwargs),lambda _:self.after_change(done,focus),'Working on '+str(len(paths))+(' item.' if len(paths)==1 else ' items.'),mutating=True)
     def after_change(self,message,focus=None):
         self.clear_tags();self.refresh_here(focus);return message+' Refreshing folder.'
     def finish_open(self,reader):self.opened=reader;return 'Opened '+reader.title+'. Read-only document. '+''.join(w.rstrip(' .')+'. ' for w in reader.warnings[:3])+reader.reading.read(True)

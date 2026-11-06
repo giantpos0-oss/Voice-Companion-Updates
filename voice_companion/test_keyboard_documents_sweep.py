@@ -218,5 +218,18 @@ class NameClashKeys(FileManagerKeys):
         self.assertEqual(self.backend.actions[-1][3], 'A.txt')
 
 
+class DoneMessages(FileManagerKeys):
+    def test_delete_and_rename_say_what_was_done(self):
+        # Both said only "File action complete."
+        self.key('Home')
+        self.key('F2')
+        self.assertIn('Renamed a.txt to c.txt.', self.typed('c.txt'))
+        self.key('Delete')
+        self.assertIn('Deleted a.txt.', self.key('Up') + self.key('Enter'))
+        self.key('Ctrl+A')
+        self.key('Delete')
+        self.assertIn('Deleted 2 items.', self.key('Letter:y'))
+
+
 if __name__ == '__main__':
     unittest.main()
