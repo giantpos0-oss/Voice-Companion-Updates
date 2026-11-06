@@ -58,7 +58,7 @@ class MediaNavigation:
         elif section=='podcast' and hub.shows:self.focus='items';self.item_index=hub.show_index or 0
     @property
     def actions(self):
-        selected=bool(getattr(self.hub,'current_station',None)) or bool(self.hub.stations and isinstance(self.hub.station_index,int) and 0<=self.hub.station_index<len(self.hub.stations)) or bool(getattr(self.hub,'preset_browsing',False))
+        selected=bool(getattr(self.hub,'current_station',None)) or bool(self.hub.stations and isinstance(self.hub.station_index,int) and 0<=self.hub.station_index<len(self.hub.stations)) or bool(getattr(self.hub,'preset_browsing',False) and self.hub.presets())
         return RADIO_STATION if self.section=='radio' and self.keyboard_mode and selected and not self.full_radio_actions else RADIO if self.section=='radio' else PODCASTS
     def set_keyboard_mode(self,enabled):
         old=self.actions[min(self.index,len(self.actions)-1)]
@@ -141,6 +141,16 @@ class MediaNavigation:
                 return self.submit_form()
             if key=='Space' and self.field_index<len(self.form['fields']) and self.form['fields'][self.field_index]['choices']==('no','yes'):
                 f=self.form['fields'][self.field_index];return self.set_field('yes' if f['value']=='no' else 'no')
+            # Space presses OK or Cancel, as on any button.
+            if key=='Space' and self.field_index>=len(self.form['fields']):return self.keyboard('Enter')
+            # The player keys still work while a form is open; Control+P already does everywhere.
+            player={'Ctrl+S':'stop','Ctrl+R':'resume','Ctrl+Left':'rewind 15 seconds','Ctrl+Right':'forward 15 seconds'}.get(key)
+            if player:
+                result=self.hub.command(player,section=self.section)
+                if player=='stop':self.audio_paused=False
+                return result
+            # Any other screen key must not be silent while a form is open.
+            if key in ('Space','Delete','F5','Ctrl+F','Ctrl+D','Ctrl+Shift+P'):return 'Finish or cancel this form first. Enter continues. Escape cancels.'
         else:
             if key in ('Tab','ShiftTab'):self.focus='items' if self.focus=='actions' else 'actions';return ('Results. ' if self.focus=='items' else 'Actions. ')+self.announce()
             if key=='Escape':

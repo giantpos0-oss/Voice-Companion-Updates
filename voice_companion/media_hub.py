@@ -501,7 +501,7 @@ class MediaHub:
     def refresh_iprd(self, force=False):
         stamp=self._load_as('radio-iprd-status.json',{})
         if not force and time.time()-stamp.get('checked',0)<24*3600:
-            return 'IPRD catalog was checked in the last 24 hours.'
+            return 'The IPRD station list was checked in the last 24 hours.'
         catalog=self.fetch_json(IPRD_CATALOG)
         if not isinstance(catalog,dict) or not isinstance(catalog.get('stations'),list):
             raise ValueError('The IPRD catalog format was not recognized.')
@@ -522,7 +522,7 @@ class MediaHub:
         if not normalized: raise ValueError('The IPRD catalog contained no usable streams.')
         self._save('radio-iprd-stations.json',normalized[:100000])
         self._save('radio-iprd-status.json',{'checked':time.time(),'count':len(normalized)})
-        return f'IPRD station catalog refreshed with {len(normalized)} stations.'
+        return f'The IPRD station list is refreshed. It has {len(normalized)} station'+('' if len(normalized)==1 else 's')+'.'
 
     def _mark_bad(self, station):
         bad=self._load_as('radio-failures.json',{})
@@ -1649,8 +1649,10 @@ class MediaHub:
             i=self.station_index or 0
             return name_first('Station '+str(i+1)+' of '+str(len(self.stations))+': '+self.stations[i]['name']+'. Say that one to play it.')
         if cmd in ('refresh stations','update radio stations','refresh radio directories'):
-            try: return self.refresh_iprd(force=True)+' Radio Browser searches always use current directory results.'
-            except (OSError,ValueError,TimeoutError): return 'IPRD refresh failed. The last saved catalog remains available; Radio Browser still searches live.'
+            try: return self.refresh_iprd(force=True)+' Radio Browser is always searched live.'
+            except (OSError,ValueError,TimeoutError):
+                return ('The IPRD station list could not be refreshed. Check the internet connection, then press F5 to try again. '
+                        'Your saved stations and Radio Browser searches still work.')
         match=re.fullmatch(r'(?:record station (\d+)|record radio)(?: for (\d+) minutes?)?',cmd)
         if match:
             if match[1] and self.station_number_problem(match[1]): return self.station_number_problem(match[1])
