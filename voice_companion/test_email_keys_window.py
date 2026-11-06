@@ -52,6 +52,23 @@ class EmailKeyWindowTests(AltKeyWindowTests):
         self.press('Escape')
         self.assertIn(('keyboard', 'Escape'), list(self.window.commands.queue))
 
+    def test_keys_in_the_send_review_do_not_change_the_message(self):
+        # The review asks "Press Y or N". Another letter, Backspace or Control+V was typed into the
+        # message, and Y then said there was no current send review.
+        self.screen(mode='email_draft', source='email:1', text='See you at noon.', caret=16, confirmation='yes')
+        self.call(lambda: self.window.editor.focus_force())
+        for keysym, state in (('r', 0), ('BackSpace', 0), ('Delete', 0)):
+            with self.subTest(key=keysym):
+                self.press(keysym, state, lambda: self.window.editor)
+                self.assertEqual(self.call(lambda: self.window.editor.get('1.0', 'end-1c')), 'See you at noon.')
+        self.call(lambda: self.window.root.clipboard_clear() or self.window.root.clipboard_append('pasted'))
+        self.call(lambda: self.window.editor.event_generate('<<Paste>>'))
+        self.assertEqual(self.call(lambda: self.window.editor.get('1.0', 'end-1c')), 'See you at noon.')
+        self.assertFalse([c for c in self.window.commands.queue if c[0] == 'text_edit'])
+        self.window.commands.queue.clear()
+        self.press('y', 0, lambda: self.window.editor)
+        self.assertIn(('keyboard', 'y'), list(self.window.commands.queue))
+
     def test_delete_in_an_open_message_reaches_companion(self):
         self.screen(mode='mailbox', source='mail:1:1', text='Hello from Sam.', readonly=True, email_html=False)
         self.window.commands.queue.clear()

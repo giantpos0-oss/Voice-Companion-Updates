@@ -943,6 +943,11 @@ class CompanionWindow:
                 if shortcut(event)=='break':return 'break'
                 cancel_phonetic()
                 if event.keysym=='Escape':return navigation(event)
+                if (self.context.get('confirmation') is not None and not self.context.get('readonly') and not event.state&4
+                        and not alt_held(event.state) and (event.char and event.char.isprintable() or event.keysym in ('BackSpace','Delete'))):
+                    # A question such as the send review owns the keyboard: other letters must not
+                    # change the message under it (sweep, November 6, 2026).
+                    self.feedback('Answer the question first. Use the arrows, then Enter.');return 'break'
                 if event.keysym.lower()=='a' and event.state&4 and not event.state&1:
                     editor.tag_add('sel','1.0','end-1c');editor.mark_set('insert','end-1c')
                     local['selection']=None
@@ -999,8 +1004,8 @@ class CompanionWindow:
                     local['reading_after']=root.after_idle(latest_read)
                 else:root.after_idle(after)
             editor.bind('<KeyPress>',edit_key)
-            editor.bind('<<Paste>>',lambda event:'break' if self.context.get('readonly') else None)
-            editor.bind('<<Cut>>',lambda event:'break' if self.context.get('readonly') else None)
+            editor.bind('<<Paste>>',lambda event:'break' if self.context.get('readonly') or self.context.get('confirmation') is not None else None)
+            editor.bind('<<Cut>>',lambda event:'break' if self.context.get('readonly') or self.context.get('confirmation') is not None else None)
             editor.bind('<FocusOut>',lambda event:cancel_phonetic())
 
             settings_dialog = [None]
