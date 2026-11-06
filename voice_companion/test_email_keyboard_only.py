@@ -168,5 +168,19 @@ class GuideKeyTests(unittest.TestCase):
         self.assertGreaterEqual(found, 4)
 
 
+class LeaveDraftWordsTests(test_attachment_voice.PlacesTestCase):
+    def test_control_f1_from_a_draft_never_sent_says_it_was_not_sent(self):
+        # It said "Check whether it was sent before sending it again." for a draft never sent.
+        draft = self.draft()
+        self.assertEqual(self.press('Ctrl+F1', 'email_draft'), 'awake')
+        said = ' '.join(self.said)
+        self.assertIn('Email draft saved locally as Note. It has not been sent.', said)
+        self.assertNotIn('Check whether it was sent', said)
+        draft.last_attempt_hash = 'tried'
+        self.said.clear()
+        self.press('Ctrl+F1', 'email_draft')
+        self.assertIn('Check whether it was sent before sending it again.', ' '.join(self.said))
+
+
 if __name__ == '__main__':
     unittest.main()

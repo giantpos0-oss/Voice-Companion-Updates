@@ -5536,7 +5536,9 @@ def _handle(text, mode, typed=False):
             if mail_session is not None and command not in ('back to main menu', 'main menu'):
                 speak('Email draft saved. ' + mail_session.process('back to folder'))
                 return 'mailbox'
-            speak('Email draft saved locally. Check whether it was sent before sending it again.')
+            # The check is needed only after a send was tried (sweep, November 6, 2026).
+            speak('Email draft saved locally. Check whether it was sent before sending it again.' if email_draft.last_attempt_hash
+                  else 'Email draft saved locally as ' + email_draft.title + '. It has not been sent.')
             return 'awake'
         try:
             dictation_feedback(email_draft.process(text, typed=typed))
