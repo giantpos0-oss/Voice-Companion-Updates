@@ -342,6 +342,14 @@ class MediaNavigation:
         """Show the short list "Play WGN" offered, so arrows and Enter choose from it."""
         self.form=None;self.pending=None;self.view='station_choices';self.focus='items'
         self.item_index=self.hub.station_choice_index or 0;self.revision+=1
+    def after_removal(self,view):
+        """After an item is removed from the list you are on: where you are now, on the item
+        that took its place (or the one before it at the end), so the arrows go on from there."""
+        if self.view!=view or self.focus!='items':return ''
+        items=self.items()
+        if not items:self.item_index=0;return ' '+self.announce()
+        self.item_index=max(0,min(self.item_index,len(items)-1));self.select_item(self.item_index)
+        return ' '+self.announce()
     def voice_key(self,key):return self.keyboard(key,voice=True)
     def command(self,text):
         self.set_keyboard_mode(False)
@@ -351,7 +359,7 @@ class MediaNavigation:
             if cmd in ('no','cancel','no thanks'):self.pending=None;self.hub.preset_delete_pending=None;return 'Canceled.'
             if cmd in ('yes','yes please','ok','okay','confirm'):
                 self.pending=None
-                if kind=='preset':return self.hub.command('yes',section='radio')
+                if kind=='preset':return self.hub.command('yes',section='radio')+self.after_removal('presets')
                 filename='radio-schedule.json' if kind=='schedule' else 'podcast-subscriptions.json'
                 with self.hub._lock:
                     items=self.hub._load(filename,[])
@@ -364,7 +372,7 @@ class MediaNavigation:
                     else:items=[x for x in items if not (isinstance(x,dict) and x.get('feed')==key)]
                     self.hub._save(filename,items)
                 if kind=='subscription':self.hub.subscriptions();self.view='shows'
-                self.item_index=0;return 'Removed.'
+                return 'Removed.'+self.after_removal('scheduled' if kind=='schedule' else 'shows')
             return 'Yes or no?'
         if self.form:
             if cmd in ('read field','read current field','current field'):return self.field_notice()

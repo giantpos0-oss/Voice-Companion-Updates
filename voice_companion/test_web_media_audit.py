@@ -184,7 +184,7 @@ class MediaTests(unittest.TestCase):
         self.assertEqual(names, ['A damaged schedule entry', 'A damaged schedule entry', 'WGN, Wednesday, October 28 at eight AM'])
         nav.keyboard('Down')
         self.assertIn('Remove A damaged schedule entry?', nav.keyboard('Delete'))
-        self.assertEqual(nav.command('yes'), 'Removed.')
+        self.assertEqual(nav.command('yes'), 'Removed. WGN, Wednesday, October 28 at eight AM (W), 2 of 2.')
         kept = json.loads((self.folder / 'radio-schedule.json').read_text(encoding='utf-8'))
         self.assertEqual(kept, ['broken', good])
         # Only the chosen entry goes; WGN stays.

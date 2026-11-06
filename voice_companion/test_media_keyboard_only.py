@@ -103,6 +103,37 @@ class EscapeSaysWhereYouAreTests(ExpertMediaTestCase):
         self.assertEqual(self.key('Escape'), 'Radio menu. Search stations (S), 1 of 22.')
 
 
+class AfterRemovingAnItemTests(ExpertMediaTestCase):
+    """Deleting the last preset in the list said only "Deleted preset WGN." Down Arrow then
+    said "End of list." with nothing chosen. Say where you are, on the item now chosen."""
+
+    def two_presets(self):
+        self.say('Media')
+        self.key('Enter')
+        self.key('Ctrl+F')
+        companion.media_navigation().field_value('WGN')
+        self.key('Ctrl+D')
+        self.key('Down')
+        self.key('Ctrl+D')
+        self.key('Ctrl+Shift+P')
+
+    def test_deleting_the_last_preset_moves_to_the_one_before(self):
+        self.two_presets()
+        self.assertEqual(self.key('Down'), 'WGN (W), 2 of 2.')
+        self.key('Delete')
+        self.key('Up')
+        self.assertEqual(self.key('Enter'), 'Deleted preset WGN. WGN Radio 720 (W), 1 of 1.')
+        self.assertEqual(self.key('Up'), 'Start of list.')
+
+    def test_deleting_the_only_preset_says_the_list_is_empty(self):
+        self.two_presets()
+        for _ in range(2):
+            self.key('Delete')
+            self.key('Up')
+            said = self.key('Enter')
+        self.assertEqual(said, 'Deleted preset WGN. No items in this list. Tab returns to the actions menu.')
+
+
 class StationListRefreshWordsTests(ExpertMediaTestCase):
     """F5 in Radio said "IPRD refresh failed. The last saved catalog remains available;
     Radio Browser still searches live." and, after a good refresh, "1 stations"."""
