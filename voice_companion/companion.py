@@ -1026,7 +1026,10 @@ def screen_question(mode):
     module={'calendar':'calendar_screen','contacts':'contacts_screen','attachments':'attachment_screen','downloads':'download_screen'}.get(mode)
     if module is None:return False
     screen=__import__(module)
-    return getattr(screen,'PENDING',None) is not None or bool(getattr(screen,'ADDING',None))
+    # A new contact counts only while its prompt is open: Escape leaves ADDING behind.
+    prompt=task_navigation().prompt
+    asking=bool(prompt) and str(prompt[0]).startswith('@'+mode+':add-')
+    return getattr(screen,'PENDING',None) is not None or bool(getattr(screen,'ADDING',None)) and asking
 
 
 # Background notices wait for a quiet moment: Companion silent, no key pressed for this

@@ -429,6 +429,19 @@ class ContactsScreenTests(CompanionHarness):
         mode = self.open()
         self.assertEqual(self.press('Escape', mode), 'awake')
 
+    def test_a_new_contact_canceled_with_escape_leaves_nothing_open(self):
+        # Escape after the name kept the half-made contact as if still being asked, so "Play WGN"
+        # on Contacts read the command list instead of playing (sweep, November 6, 2026).
+        mode = self.open()
+        self.assertEqual(app.station_asked('Play WGN', mode), 'WGN')
+        mode = self.press('Ctrl+N', mode)
+        mode = app.handle('Bob Smith', mode, typed=True)
+        self.assertTrue(app.screen_question('contacts'))      # still being asked: "Play" may be the name
+        mode = self.press('Escape', mode)
+        self.assertEqual((mode, self.said()), ('contacts', 'Canceled. Back to contacts.'))
+        self.assertFalse(app.screen_question('contacts'))
+        self.assertEqual(app.station_asked('Play WGN', mode), 'WGN')
+
     def test_closing_help_names_the_list_still_open(self):
         # F1 in the list of what to change opens Help. Escape back said only "Back to contacts.",
         # though the list was still open (sweep, November 6, 2026).
