@@ -441,6 +441,12 @@ class ContactsScreenTests(CompanionHarness):
         self.assertEqual((mode, self.said()), ('contacts', 'Canceled. Back to contacts.'))
         self.assertFalse(app.screen_question('contacts'))
         self.assertEqual(app.station_asked('Play WGN', mode), 'WGN')
+        # While a new contact is asked for, "Play WGN" is still its name.
+        mode = self.press('Ctrl+N', mode)
+        mode = app.handle('Play WGN', mode, typed=True)
+        self.assertEqual((mode, self.said()), ('task_input', 'Email address for Play WGN? Type or say it, then press Enter. '
+                                                             'To leave it out, press Enter or say skip.'))
+        self.press('Escape', mode)
 
     def test_closing_help_names_the_list_still_open(self):
         # F1 in the list of what to change opens Help. Escape back said only "Back to contacts.",
