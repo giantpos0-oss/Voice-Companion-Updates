@@ -151,8 +151,8 @@ MENUS = {
             ('Refresh', 'F5', 'web key Refresh'),
             ('Search or enter address', 'Ctrl+L', 'web key Search'),
             ('Find on page', 'Ctrl+F', 'find {value}'),
-            ('Top of page', '', 'top of page'),
-            ('Bottom of page', '', 'bottom of page')]),
+            ('Top of page', 'Ctrl+Home', 'top of page'),
+            ('Bottom of page', 'Ctrl+End', 'bottom of page')]),
         ('Lists', [
             ('Headings', 'F6', 'list headings'),
             ('Links', 'F7', 'list links'),

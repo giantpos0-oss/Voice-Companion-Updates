@@ -43,6 +43,18 @@ class ShiftNumberQuickKeyTests(unittest.TestCase):
         self.assertEqual(cursor.move(page_quick_key('!', 'exclam', 0, True), True), 'Top, heading level 1.')
 
 
+class WebPageMenuKeyTests(unittest.TestCase):
+    def test_top_and_bottom_of_page_show_their_keys(self):
+        # The guide: "To reach the top or bottom, ... press Control+Home or Control+End."
+        # The Web page menu named no key for them, so a keyboard user never learned it there.
+        from screen_menus import items
+        keys = {label: key for group, label, key, command in items('web')}
+        self.assertEqual(keys['Top of page'], 'Ctrl+Home')
+        self.assertEqual(keys['Bottom of page'], 'Ctrl+End')
+        guide = open('START HERE - Veteran.txt', encoding='utf-8').read()
+        self.assertIn('press Control+Home or Control+End', guide)
+
+
 class SecondTryToLeaveTests(unittest.TestCase):
     """A page with unsaved changes stays open once; the next try leaves it. Just after the first
     try, Chromium can stop the second at once with net::ERR_ABORTED and never ask the page.
