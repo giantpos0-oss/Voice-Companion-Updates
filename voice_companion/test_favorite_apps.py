@@ -195,6 +195,16 @@ class MenuTests(CompanionTestCase):
         self.assertEqual(names, ['File manager', 'Notepad', 'YouTube', 'Change favorite apps'])
         self.assertTrue(self.said[-1].startswith('Favorite apps. File manager'), self.said[-1])
 
+    def test_web_favorites_keep_their_words(self):
+        # "Favorites" and "My favorites" are the web browser's saved pages, not Favorite apps.
+        for said in ('favorites', 'my favorites', 'Favourites.'):
+            with self.subTest(said=said):
+                self.assertNotIn(companion.normalized_command(said), task_navigation.FAVORITES_OPEN)
+
+    def test_saying_favorite_apps_when_empty_says_how_to_add_apps(self):
+        self.assertEqual(companion.handle('Favorite apps.', 'awake'), 'favorites_menu')
+        self.assertIn('No apps are in it yet.', self.said[-1])
+
     def test_an_app_from_favorite_apps_comes_back_there(self):
         self.choose('Notepad', 'Address manager')
         mode = self.key('Ctrl+F1', 'awake')

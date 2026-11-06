@@ -50,6 +50,16 @@ def settings_bottom(fields,step):
     return bottom
 
 
+def settings_step(fields):
+    """Pixels between settings on one page. A long page packs them closer, so the last one
+    never lands on the OK and Cancel row at 530. A page of only check boxes and buttons has no
+    labels above them, so it can pack closer still (My menu has 12 check boxes)."""
+    step=62
+    smallest=34 if fields and all(field.kind in ('check','action') for field in fields) else 48
+    while step>smallest and settings_bottom(fields,step)>510:step-=2
+    return step
+
+
 class NativeSettings:
     def __init__(self,session,announce,save,action,interrupt=None,preview=None,keyboard=None):
         self.last_notice=""
@@ -153,8 +163,7 @@ class NativeSettings:
             # setting in 0.2.174) packs them closer, so the last one never lands on the
             # OK and Cancel row at 530 and stays reachable.
             fields=self.session.current_fields()
-            step=62
-            while step>48 and settings_bottom(fields,step)>510:step-=2
+            step=settings_step(fields)
             y=-17
             for index,field in enumerate(fields):
                 y+=step

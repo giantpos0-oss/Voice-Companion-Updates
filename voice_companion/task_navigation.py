@@ -139,9 +139,9 @@ FAVORITE_APPS = (('File manager', 'file manager'), ('Word processor', 'word proc
                  ('Email', 'email'), ('Document reader', 'document reader'), ('Address manager', 'contacts'),
                  ('Schedule manager', 'calendar'), ('Web browser', 'web browser'), ('Radio', 'radio'),
                  ('Podcasts', 'podcasts'), ('Media player', 'media player'), ('YouTube', 'youtube'))
-FAVORITES_OPEN = ('favorite apps', 'favourite apps', 'open favorite apps', 'open favourite apps', 'favorites',
-                  'favourites', 'my favorites', 'my favourites', 'favorite apps menu', 'go to favorite apps',
-                  'my favorite apps', 'my favourite apps')
+# Not "favorites" or "my favorites": those are the web browser's saved pages.
+FAVORITES_OPEN = ('favorite apps', 'favourite apps', 'open favorite apps', 'open favourite apps',
+                  'favorite apps menu', 'go to favorite apps', 'my favorite apps', 'my favourite apps')
 FAVORITES_CHANGE = ('change favorite apps', 'change favourite apps', 'edit favorite apps', 'edit favourite apps',
                     'my menu', 'open my menu', 'my menu options')
 
@@ -617,7 +617,7 @@ class TaskNavigation:
         if command in ORGANIZER_OPEN and mode not in ('document','email_draft','note'):
             return self.enter('organizer_menu', 'Organizer')
         if command in FAVORITES_OPEN and mode not in ('document','email_draft','note'):
-            return self.enter('favorites_menu', 'Favorite apps')
+            return m.open_favorites()
         if command in FAVORITES_CHANGE and mode not in ('document','email_draft','note'):
             return m.screen_menu().run('@options:My menu', mode)
         if command in POWER_OPEN and mode not in ('document','email_draft','note'):
