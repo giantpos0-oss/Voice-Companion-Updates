@@ -132,5 +132,26 @@ class PropertiesKeys(FileManagerKeys):
         self.assertFalse(self.fm.menu)
 
 
+class FirstLetterKeys(FileManagerKeys):
+    files = ('apple.txt', 'banana.txt', 'berry.txt')
+
+    def test_escape_after_one_letter_goes_up_a_folder(self):
+        # One letter only jumps; nothing is filtered. Escape said "Name filter cleared" and stayed.
+        self.assertIn('banana.txt', self.key('Letter:b'))
+        self.key('Down')
+        said = self.key('Escape')
+        self.assertNotIn('filter', said)
+        self.assertIsNone(self.fm.location)
+
+    def test_escape_after_several_letters_clears_the_filter_first(self):
+        self.fm.view.last_key = 0
+        self.key('Letter:b')
+        self.key('Letter:e')
+        self.assertEqual([item.name for item in self.fm.items], ['berry.txt'])
+        self.assertIn('Name filter cleared', self.key('Escape'))
+        self.assertEqual(len(self.fm.items), 3)
+        self.assertEqual(self.fm.location, str(self.root))
+
+
 if __name__ == '__main__':
     unittest.main()

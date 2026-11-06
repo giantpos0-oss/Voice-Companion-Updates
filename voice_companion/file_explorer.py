@@ -106,6 +106,9 @@ def command(manager,text):
             manager.items=[item for item in items if item.name.casefold().startswith(view.prefix)] if len(view.prefix)>1 else items
             manager.index=next((i for i,item in enumerate(manager.items) if item.path==chosen),0);manager.revision+=1
         return notice or manager.say_current()
+    if cmd in ('escape','cancel') and view.prefix and len(manager.items)==len(view.shown()) and not manager.menu:
+        # One letter only jumped; nothing was filtered, so Escape goes up as usual (November 6, 2026).
+        view.prefix=''
     if cmd in ('escape','cancel') and view.prefix:
         path=manager.current().path if manager.current() else None
         view.prefix='';manager.items=view.shown();manager.index=next((i for i,item in enumerate(manager.items) if item.path==path),0);manager.revision+=1
