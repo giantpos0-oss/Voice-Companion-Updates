@@ -429,6 +429,22 @@ class ContactsScreenTests(CompanionHarness):
         mode = self.open()
         self.assertEqual(self.press('Escape', mode), 'awake')
 
+    def test_closing_help_names_the_list_still_open(self):
+        # F1 in the list of what to change opens Help. Escape back said only "Back to contacts.",
+        # though the list was still open (sweep, November 6, 2026).
+        mode = self.open()
+        self.press('F2', mode)
+        mode = self.press('F1', mode)
+        while mode == 'help':
+            mode = self.press('Escape', mode)
+        self.assertEqual(self.said(), 'Help closed. Back to contacts. Name: Ann Brown, 1 of 3. '
+                                      'Use the arrows and Enter, or say what to change. Escape cancels.')
+        self.press('Escape', mode)
+        mode = self.press('F1', mode)
+        while mode == 'help':
+            mode = self.press('Escape', mode)
+        self.assertEqual(self.said(), 'Help closed. Back to contacts.')
+
     def test_f1_says_the_yes_or_no_question_again_and_keeps_the_choice(self):
         # Guide part 2.5: "To hear the question again, press F1." On Contacts it opened Help instead,
         # and the question was left open behind it (sweep, November 6, 2026).

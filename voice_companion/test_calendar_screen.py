@@ -370,6 +370,26 @@ class CalendarScreenTests(CalendarHarness):
         self.press('F2', mode)
         self.assertEqual(app.navigation_key('F1', mode), 'help with calendar')
 
+    def test_closing_help_names_the_list_or_question_still_open(self):
+        # F1 in the list of what to change opens Help. Escape back said only "Back to calendar.",
+        # though the list was still open: the next Escape said "Not changed" (sweep, November 6, 2026).
+        mode = self.open()
+        self.press('F2', mode)
+        self.press('Down', mode)
+        mode = self.press('F1', mode)
+        self.assertEqual(mode, 'help')
+        while mode == 'help':
+            mode = self.press('Escape', mode)
+        self.assertEqual(mode, 'calendar')
+        self.assertEqual(self.said(), 'Help closed. Back to calendar. Day and time: Today, Monday, October 26, ten thirty AM to eleven AM, '
+                                      '2 of 7. Use the arrows and Enter, or say what to change. Escape cancels.')
+        self.press('Escape', mode)
+        # With nothing open, the screen's name is enough, as everywhere else.
+        mode = self.press('F1', mode)
+        while mode == 'help':
+            mode = self.press('Escape', mode)
+        self.assertEqual(self.said(), 'Help closed. Back to calendar.')
+
     def test_read_only_calendars_are_protected(self):
         mode = self.open()
         app.handle('go to November 11', mode)

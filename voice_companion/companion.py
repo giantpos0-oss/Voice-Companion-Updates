@@ -4646,7 +4646,11 @@ def _handle(text, mode, typed=False):
             # Name the screen you return to. The main menu is said by handle(), so say it with that.
             help_session = None
             if help_return_mode == 'awake':MAIN_MENU_LEAD = 'Help closed.'
-            else:speak('Help closed. ' + options_return_notice(help_return_mode))
+            else:
+                # A list or question left open on Calendar or Contacts is said again, so Escape is not a surprise.
+                screen={'calendar':'calendar_screen','contacts':'contacts_screen'}.get(help_return_mode)
+                still=__import__(screen).open_question(sys.modules[__name__]) if screen else ''
+                speak('Help closed. ' + options_return_notice(help_return_mode) + (' ' + still if still else ''))
             return help_return_mode
         if result is not None:speak(result)
         elif typed or not speech_busy():

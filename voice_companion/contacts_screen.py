@@ -225,7 +225,7 @@ def navigation_key(m, key):
     if PENDING is not None:
         if key == 'F1':
             # F1 says a Yes or No question again (guide part 2.5); the choice stays.
-            m.speak(question(PENDING[1]) if PENDING[0] == 'delete' else edit_question())
+            m.speak(open_question(m))
             return None
         if key.lower() in ('y', 'alt+y'):
             return 'yes'
@@ -541,6 +541,17 @@ CHOOSE_HINT = 'To choose another, press Control+L.'
 
 def source_choice():
     return announce_item(SOURCES.words(CHOICE), CHOICES.index(CHOICE), len(CHOICES), hotkey=False)
+
+
+def open_question(m):
+    """The question or list still open, said again when Help closes over it; '' when none is."""
+    if PENDING is None:
+        return ''
+    if PENDING[0] == 'edit-field':
+        return field_choice() + ' Use the arrows and Enter, or say what to change. Escape cancels.'
+    if PENDING[0] == 'source':
+        return source_choice() + ' Use the arrows and Enter, or say a name. Escape cancels.'
+    return question(PENDING[1]) if PENDING[0] == 'delete' else edit_question()
 
 
 def choice_names():

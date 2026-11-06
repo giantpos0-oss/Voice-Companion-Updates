@@ -286,6 +286,17 @@ def question_words(m):
     return EDIT.get('question') or edit_question(m)
 
 
+def open_question(m):
+    """The question or list still open, said again when Help closes over it; '' when none is."""
+    if PENDING is None:
+        return ''
+    if PENDING[0] == 'edit-field':
+        return choice_words() + ' Use the arrows and Enter, or say what to change. Escape cancels.'
+    if PENDING[0] == 'source':
+        return choice_words() + ' Use the arrows and Enter, or say a name. Escape cancels.'
+    return question_words(m)
+
+
 def choice_names():
     """The lines the window shows while choosing a calendar, else None."""
     if PENDING and PENDING[0] == 'source':
