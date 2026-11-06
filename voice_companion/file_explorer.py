@@ -114,6 +114,9 @@ def command(manager,text):
         view.prefix='';manager.items=view.shown();manager.index=next((i for i,item in enumerate(manager.items) if item.path==path),0);manager.revision+=1
         return 'Name filter cleared. '+manager.say_current()
     if cmd in ('search files','find files','search subfolders'):
+        if cmd=='search subfolders' and manager.location is None:
+            # Say it before asking for a name, not after.
+            raise ValueError('Open a drive or folder before searching subfolders.')
         view.prefix='';view.last_key=0
         manager.pending=('search all' if cmd=='search subfolders' else 'search',[])
         return 'Search '+('this folder and subfolders' if cmd=='search subfolders' else 'the current list')+'. Type or say part of a name, then Enter. Escape cancels.'
@@ -129,11 +132,16 @@ def command(manager,text):
             def done(result):
                 items,skipped,limited=result
                 view.all_items=view.dated(items,manager.location);view.filter='';manager.items=view.shown();manager.index=0;manager.revision+=1
-                return str(len(manager.items))+' search results. '+('Search limit reached. Narrow the search. ' if limited else '')+(str(skipped)+' locations were unavailable. ' if skipped else '')+manager.say_current()
+                found=len(manager.items)
+                return (('No search results. ' if not found else '1 search result. ' if found==1 else str(found)+' search results. ')+('Search limit reached. Narrow the search. ' if limited else '')
+                        +(str(skipped)+' locations were unavailable. ' if skipped else '')+(manager.say_current() if found else 'Press Control+Shift+X to see the folder again.'))
             root=manager.location
             return manager.start_job(lambda:view.recursive(root,query,Item,getattr(manager,'pick_extensions',None),cancel),done,'Searching this folder and subfolders. Escape cancels.')
         view.filter=query;manager.items=view.shown();manager.index=0;manager.revision+=1
-        return str(len(manager.items))+' matches. '+manager.say_current()
+        # "1 match", and no "This folder is empty" when only the search found nothing (November 6, 2026).
+        found=len(manager.items)
+        if not found:return 'No matches. Press Control+Shift+X to see all items again.'
+        return ('1 match. ' if found==1 else str(found)+' matches. ')+manager.say_current()
     if cmd in ('clear search','clear filter','show all files'):
         view.filter='';view.prefix=''
         if view.searching:return manager.refresh_here()

@@ -84,7 +84,7 @@ class NameAndSearchBoxes(FileManagerKeys):
     def test_help_typed_as_a_search_is_searched(self):
         # Typing "help" in the Control+F box read the whole File manager help, and the box stayed open.
         self.key('Ctrl+F')
-        self.assertIn('1 matches', self.typed('help'))
+        self.assertIn('1 match.', self.typed('help'))
         self.assertIsNone(self.fm.pending)
         self.assertEqual(self.fm.current().name, 'help.txt')
 
@@ -254,6 +254,31 @@ class CancelWords(FileManagerKeys):
             self.key(key)
             self.assertIn(words, self.key('Escape'), key)
             self.assertIsNone(self.fm.pending)
+
+
+class SearchKeys(FileManagerKeys):
+    files = ('apple.txt', 'banana.txt', 'cherry.txt')
+
+    def test_match_counts_use_the_right_word(self):
+        # "1 matches."
+        self.key('Ctrl+F')
+        self.assertTrue(self.typed('ban').startswith('1 match. banana.txt'))
+        self.key('Ctrl+Shift+X')
+        self.key('Ctrl+F')
+        self.assertTrue(self.typed('a').startswith('2 matches.'))
+        self.key('Ctrl+F')
+        self.assertTrue(self.typed('zzz').startswith('No matches.'))
+
+    def test_subfolder_search_results_count_one_result(self):
+        self.key('Ctrl+Shift+F')
+        self.assertIn('1 search result. cherry.txt', self.typed('cherry'))
+
+    def test_subfolder_search_in_the_drive_list_says_so_before_asking(self):
+        # It asked for a name first, then said "Open a drive or folder before searching subfolders."
+        self.key('Ctrl+D')
+        said = self.key('Ctrl+Shift+F')
+        self.assertIn('Open a drive or folder', said)
+        self.assertIsNone(self.fm.pending)
 
 
 @real_window
