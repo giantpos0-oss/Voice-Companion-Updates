@@ -483,6 +483,11 @@ def app_context(mode):
             context['file_input_label']=('New file name, including extension' if action=='rename' else 'Name for the zip file' if action in ('zip','zip with password') else
                                       'Password for the zip (private)' if action=='zip password' else 'The same password again (private)' if action=='zip password again' else
                                       'Password for '+Path(FILE_MANAGER.pending[1][0]).name+' (private)' if action=='unzip password' else 'Search folder and subfolders' if action=='search all' else 'Search names in this list')
+            # Enter in an empty box says what to type; the search box said "Enter a new file name".
+            context['file_empty_hint']=('Type part of a name, then press Enter. Escape cancels.' if action in ('search','search all') else
+                                        'Type a name for the zip file, then press Enter. Escape cancels.' if action in ('zip','zip with password') else
+                                        'Type the password, then press Enter. Escape cancels.' if FILE_MANAGER.private_step() else
+                                        'Type the new name, including the file type, then press Enter. Escape cancels.')
         context['menu_letters']=not context['file_name_input'] and not FILE_MANAGER.busy
         if FILE_MANAGER.pending and FILE_MANAGER.pending[0]=='delete':context['confirmation']=CONFIRM_CHOICE
         context['file_revision']=FILE_MANAGER.revision
@@ -1128,7 +1133,7 @@ def navigation_key(key,mode):
 
 def yes_no_open(mode):
     """True while a yes or no question waits for its answer on this screen."""
-    return bool(THUNDERBIRD_SETUP is not None or ACCOUNT_PICKER is not None and ACCOUNT_PICKER.get('confirm') or mode=='browser_menu' and web_session is not None and web_session.menu.level=='confirm' or pending_website is not None or chrome_confirming(mode) or mode in ('document_save','document_replace','power_confirm','exit_confirm','update_offer') or mode=='email_draft' and pending_send is not None or (mode=='mailbox' and mail_session and mail_session.pending) or (mode=='web' and web_session and (web_session.pending or web_session.submit_pending)))
+    return bool(THUNDERBIRD_SETUP is not None or ACCOUNT_PICKER is not None and ACCOUNT_PICKER.get('confirm') or mode=='browser_menu' and web_session is not None and web_session.menu.level=='confirm' or pending_website is not None or chrome_confirming(mode) or mode in ('document_save','document_replace','power_confirm','exit_confirm','update_offer') or mode=='files' and FILE_MANAGER is not None and bool(FILE_MANAGER.pending) and FILE_MANAGER.pending[0]=='delete' or mode=='email_draft' and pending_send is not None or (mode=='mailbox' and mail_session and mail_session.pending) or (mode=='web' and web_session and (web_session.pending or web_session.submit_pending)))
 
 
 def review_place(mode):
@@ -1228,7 +1233,8 @@ def _navigation_key(key,mode):
         if FILE_MANAGER and FILE_MANAGER.pending and FILE_MANAGER.pending[0]=='delete':
             if key in ('Up','Left','Home','ShiftTab'):CONFIRM_CHOICE='yes';sync_app_context(mode);speak('Yes.');return None
             if key in ('Down','Right','End','Tab'):CONFIRM_CHOICE='no';sync_app_context(mode);speak('No.');return None
-            return {'Enter':CONFIRM_CHOICE,'Space':CONFIRM_CHOICE,'Escape':'no','y':'yes','Y':'yes','n':'no','N':'no'}.get(key)
+            # The window sends a letter as "Letter:y" (or "Letter:Y" with Shift); Y and N were silent here.
+            return {'Enter':CONFIRM_CHOICE,'Space':CONFIRM_CHOICE,'Escape':'no','y':'yes','Y':'yes','n':'no','N':'no','Alt+Y':'yes','Alt+N':'no'}.get(key[7:] if key.startswith('Letter:') else key)
         # Companion tags and Leasey-style keys (Will, November 4, 2026). Control+1 to Control+5 sort;
         # the same key again flips the order. The older Alt and Control+Shift sort keys still work,
         # except Alt+Z, which now zips (Alt+U unzips).
@@ -4226,10 +4232,11 @@ def _handle(text, mode, typed=False):
             return handled
     manager=globals().get('FILE_MANAGER')
     if mode=='files' and manager and manager.pending and manager.pending[0] in FILE_TEXT_STEPS:
-        if manager.pending[0]=='rename' and not typed and command not in ('cancel','escape','go back','no'):
+        if manager.pending[0]=='rename' and not typed and command not in ('cancel','escape','go back','no','help','commands')+__import__('file_manager').HELP_WORDS:
             # A spoken name without a type keeps the old type (Will, October 31, 2026); typed names are used as typed.
+            # Spoken "Help." gives help: it renamed the file to help.txt.
             text=__import__('file_manager').keep_type(manager.pending[1][0],__import__('file_manager').spoken_name(text))
-        try:speak(manager.command(text))
+        try:speak(manager.command(text,typed=typed))
         except (OSError,ValueError) as error:speak(str(error))
         sync_app_context(mode,True);return mode
     if mode=='chrome_setup':
@@ -4799,6 +4806,9 @@ def _handle(text, mode, typed=False):
                 return screen.files_command(sys.modules[__name__],result[len('__attach__:'):],mode) or mode
             except (screen.AttachmentError,ValueError,OSError) as exc:
                 speak(str(exc));return mode
+        if result=='__home__':
+            # Main menu chosen on the File manager menu, the same as saying "Main menu".
+            return handle('main menu',mode,typed=True)
         if result=='__main__':
             picker=task_navigation().picker
             task_navigation().picker=None
