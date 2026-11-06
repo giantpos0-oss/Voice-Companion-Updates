@@ -74,7 +74,7 @@ class EmptyPresetsKeepTheRadioMenuTests(ExpertMediaTestCase):
         self.key('Enter')
         self.key('Ctrl+Shift+P')
         self.key('Delete')
-        self.assertEqual(self.key('Escape'), 'Search stations (S), 1 of 22.')
+        self.assertEqual(self.key('Escape'), 'Radio menu. Search stations (S), 1 of 22.')
         self.assertEqual(self.key('Escape'), 'Media menu. Radio (R), 1 of 4.')
 
     def test_saved_presets_still_get_the_station_actions(self):
@@ -83,6 +83,19 @@ class EmptyPresetsKeepTheRadioMenuTests(ExpertMediaTestCase):
         self.hub.current_station = None
         self.key('Ctrl+Shift+P')
         self.assertEqual(self.key('Tab'), 'Actions. Add to favorites (A), 1 of 7.')
+
+
+class EscapeSaysWhereYouAreTests(ExpertMediaTestCase):
+    """Escape from the results to the actions list said only the action, such as "Search
+    stations (S), 1 of 22.", so you could not tell you had left the results."""
+
+    def test_escape_from_podcast_results_says_podcasts_menu(self):
+        self.say('Media', 'Podcasts', 'Search podcasts for history')
+        self.assertEqual(self.key('Escape'), 'Podcasts menu. Browse podcasts (B), 1 of 25.')
+
+    def test_escape_from_empty_recordings_says_radio_menu(self):
+        self.say('Media', 'Radio', 'List recordings')
+        self.assertEqual(self.key('Escape'), 'Radio menu. Search stations (S), 1 of 22.')
 
 
 class StationListRefreshWordsTests(ExpertMediaTestCase):

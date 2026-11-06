@@ -197,6 +197,15 @@ def station_request(spoken):
     return name
 
 
+def volume_edge(player, step):
+    """What Up or Down says when the volume is already at that end, else None."""
+    before=getattr(player,'volume',None)
+    if not isinstance(before,(int,float)) or isinstance(before,bool): return None
+    if step>0 and before>=1: return 'Loudest. Volume 100 percent.'
+    if step<0 and before<=0: return 'Volume 0 percent. The audio is silent.'
+    return None
+
+
 # Spoken changes to the audio itself. "Louder", "faster" and "volume up" alone change
 # Companion's voice, so these always name the audio (as YouTube's say "video").
 MEDIA_LEVEL_WORDS = {}
@@ -1321,9 +1330,8 @@ class MediaHub:
         player=self.player
         try:
             if setting=='volume':
-                before=getattr(player,'volume',None)
-                if step>0 and isinstance(before,(int,float)) and before>=1: return 'Loudest. Volume 100 percent.'
-                if step<0 and isinstance(before,(int,float)) and before<=0: return 'Volume 0 percent. The audio is silent.'
+                edge=volume_edge(player,step)
+                if edge: return edge
                 value=player.adjust('volume',step)
                 return 'Volume '+str(int(round(float(value)*100)))+' percent.'
             if player.kind=='radio' and self.player.streaming():

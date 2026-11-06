@@ -158,7 +158,8 @@ class MediaNavigation:
                 if self.focus=='items' and self.view=='episodes':return self.run('back to podcasts')
                 # A category's podcasts: Escape goes back up to the categories.
                 if self.focus=='items' and self.view=='shows' and getattr(self.hub,'shows_category',None):return self.run('back to categories')
-                if self.focus=='items':self.focus='actions';return ('Station actions. ' if self.section=='radio' and self.actions is RADIO_STATION else '')+self.announce()
+                # Say where Escape went, as Alt does: "Radio menu." or "Podcasts menu."
+                if self.focus=='items':self.focus='actions';return ('Station actions. ' if self.section=='radio' and self.actions is RADIO_STATION else 'Radio menu. ' if self.section=='radio' else 'Podcasts menu. ')+self.announce()
                 if self.section=='radio' and self.actions is RADIO_STATION:
                     self.full_radio_actions=True;self.index=0;return 'Radio menu. '+self.announce()
                 return '__main__'

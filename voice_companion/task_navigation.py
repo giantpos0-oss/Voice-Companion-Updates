@@ -594,7 +594,11 @@ class TaskNavigation:
                 if player.kind!='local': m.speak('Open a media file first.'); return mode
                 if command.startswith('volume'):
                     # As in Radio and Podcasts: at either end it says so ("Loudest.").
-                    m.speak(m.media().change_level('volume', .1 if command=='volume up' else -.1)); return mode
+                    from media_hub import volume_edge
+                    step = .1 if command=='volume up' else -.1
+                    edge = volume_edge(player, step)
+                    if edge: m.speak(edge); return mode
+                    m.speak('Volume '+str(round(player.adjust('volume', step)*100))+' percent.'); return mode
                 value = player.adjust('speed', spoken_speed(text.strip()[6:]))
                 m.speak('Playback speed '+str(value)+'.'); return mode
             if command in ('status','media status'):
