@@ -1523,7 +1523,7 @@ Say "Fill out this form". Companion asks for one answer at a time. With the keyb
 - For a choice, say the option name.
 - For a checkbox, say Yes or No.
 - To leave an answer alone, say "Skip".
-- To stop the questions, say "Cancel form".
+- To stop the questions, say "Cancel form", or press Escape. You stay on the page.
 Some forms show more questions after an answer. Companion checks for them as you go.
 To check your answers before you send:
 1. Say "Review and submit form". Or say "Review form" to hear the answers only.

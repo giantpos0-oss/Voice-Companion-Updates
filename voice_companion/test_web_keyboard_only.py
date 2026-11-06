@@ -43,6 +43,44 @@ class ShiftNumberQuickKeyTests(unittest.TestCase):
         self.assertEqual(cursor.move(page_quick_key('!', 'exclam', 0, True), True), 'Top, heading level 1.')
 
 
+class FormQuestionEscapeTests(unittest.TestCase):
+    """F8 lists the fields; Enter on one asks for its answer ("Field 1: First. What should
+    I enter?"). Escape there left the page for the web browser menu, and the form questions
+    were dropped without a word. Escape now stops the questions and stays on the page;
+    the next Escape opens the web browser menu, one level at a time."""
+
+    def session(self):
+        import tempfile
+        from unittest.mock import Mock
+        from web_assistant import WebSession
+        folder = tempfile.TemporaryDirectory(); self.addCleanup(folder.cleanup)
+        session = WebSession(folder.name, Mock()); session.injected_backend = True
+        session._sync_browser_tab = lambda: None
+        first = dict(key='a', role='field', tag='input', type='text', label='First', start=0, end=5)
+        session.snapshot = {'url': 'https://example.com/', 'text': 'First, edit', 'elements': [first], 'controls': [first]}
+        session.browse = BrowseCursor(session.snapshot)
+        session._form_controls = lambda snapshot: [first]
+        return session
+
+    def test_escape_in_a_form_question_stops_the_questions_and_stays_on_the_page(self):
+        from unittest.mock import patch
+        import companion as app
+        session = self.session()
+        said = []
+        with patch.object(app, 'web_session', session), patch.object(app, 'speak', said.append), \
+                patch.object(app, 'interrupt_speech', lambda *a: None), patch.object(app, 'NAMED_LIST', None):
+            self.assertIn('Found 1 field', session.fields())
+            self.assertIn('What should I enter?', app.handle_keyboard(app.navigation_key('Enter', 'web'), 'web') and said[-1])
+            self.assertEqual(session.form_index, 0)
+            command = app.navigation_key('Escape', 'web')
+            self.assertEqual(command, 'cancel form')
+            self.assertEqual(app.handle_keyboard(command, 'web'), 'web')
+            self.assertEqual(said[-1], 'Stopped filling the form. Entries already made remain on the page; nothing was submitted.')
+            self.assertIsNone(session.form_index)
+            # Nothing else is open now: Escape opens the web browser menu.
+            self.assertEqual(app.navigation_key('Escape', 'web'), 'web browser menu')
+
+
 class WebPageMenuKeyTests(unittest.TestCase):
     def test_top_and_bottom_of_page_show_their_keys(self):
         # The guide: "To reach the top or bottom, ... press Control+Home or Control+End."
