@@ -141,5 +141,23 @@ class EmptyFolderWordsTests(test_attachment_voice.PlacesTestCase):
                 self.assertEqual(self.said, [empty])
 
 
+class GuideKeyTests(unittest.TestCase):
+    def test_every_email_menu_path_in_the_guide_reaches_what_it_names(self):
+        # The guide said Alt, 5, then 3 adds a contact. That opens Email drafts; Add contact is Alt, 5, then 5.
+        import re
+        from pathlib import Path
+        guide = Path(__file__).with_name('START HERE - Veteran.txt').read_text(encoding='utf-8')
+        groups = screen_menus.MENUS['mailbox'][1]
+        found = 0
+        for line in guide.splitlines():
+            for path in re.finditer(r'(?:in the inbox|in email), press Alt, (\d), then (\d)', line):
+                said = re.findall(r'"([^"]+)"', line[:path.start()])[0].lower()
+                command = groups[int(path[1]) - 1][1][int(path[2]) - 1][2].replace(' {value}', '')
+                with self.subTest(line=line[:60]):
+                    self.assertTrue(said.startswith(command), (said, command))
+                found += 1
+        self.assertGreaterEqual(found, 4)
+
+
 if __name__ == '__main__':
     unittest.main()

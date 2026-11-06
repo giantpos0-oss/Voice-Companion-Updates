@@ -955,7 +955,7 @@ Accounts are also in the email menu. In email, press Alt, then 6. Choose Add acc
 
 10.3 Add and find contacts
 A contact is a saved name with an email address or a phone number. Contacts has its own screen in Office tools. See chapter 13.
-- To save a contact, say "Add contact", the person's name, "as", and their email address. For example, say "Add contact Bob as bob@example.com". Or in the inbox, press Alt, 5, then 3. Type the name, the word as, and the address, then press Enter.
+- To save a contact, say "Add contact", the person's name, "as", and their email address. For example, say "Add contact Bob as bob@example.com". Or in the inbox, press Alt, 5, then 5. Type the name, the word as, and the address, then press Enter.
 - To hear saved names, say "List contacts", or press P in the inbox. While you write an email, press Control+K. Use the arrows to hear each name. Press Enter to hear the address.
 - To find a contact, say "Find contact", followed by the saved name, such as "Find contact Bob".
 - When Companion asks who to email, you can say a saved contact's name.
