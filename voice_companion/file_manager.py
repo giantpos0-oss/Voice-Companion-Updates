@@ -445,7 +445,10 @@ class FileManager:
         if self.pending:
             action,paths=self.pending[0],self.pending[1]
             if cmd in ('cancel','escape','go back','no'):
-                self.pending=None;self.zip_secret=None;return 'File action canceled. '+self.say_current()
+                # Say what was canceled; every box said "File action canceled" (November 6, 2026).
+                words={'search':'Search canceled.','search all':'Search canceled.','rename':'Rename canceled.','delete':'Delete canceled. Nothing was deleted.',
+                       'unzip password':'Unzip canceled.'}.get(action,'Zip canceled.' if action.startswith('zip') else 'File action canceled.')
+                self.pending=None;self.zip_secret=None;return words+' '+self.say_current()
             if action=='delete' and cmd in ('yes','okay','ok','confirm','enter'):
                 self.pending=None
                 return self.mutate('delete',paths)

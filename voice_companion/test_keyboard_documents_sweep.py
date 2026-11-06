@@ -246,6 +246,16 @@ class EmptyBoxHints(FileManagerKeys):
         self.assertIn('password', app.app_context('files')['file_empty_hint'])
 
 
+class CancelWords(FileManagerKeys):
+    def test_escape_names_what_was_canceled(self):
+        # Every box said "File action canceled", even a search.
+        for key, words in (('Ctrl+F', 'Search canceled.'), ('F2', 'Rename canceled.'), ('Alt+Z', 'Zip canceled.'),
+                           ('Delete', 'Nothing was deleted.')):
+            self.key(key)
+            self.assertIn(words, self.key('Escape'), key)
+            self.assertIsNone(self.fm.pending)
+
+
 @real_window
 class FileBoxWindowTests(unittest.TestCase):
     """The real window: Enter in an empty File manager box says what that box wants.
