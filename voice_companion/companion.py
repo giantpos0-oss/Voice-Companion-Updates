@@ -4161,7 +4161,7 @@ def _handle(text, mode, typed=False):
         MAIN_MENU_LEAD='Account setup canceled.'
         announce_main_menu()
         return 'awake'
-    if account_setup and command in ('help','help me','what can i say','what do i do','repeat','what now','say that again'):
+    if account_setup and command in ('help', 'what do i do', 'repeat', 'what now', 'say that again'):
         # F1 or Help says the question again, as in every other setup step.
         speak_prompt(ACCOUNT_TYPE_PROMPT)
         return mode

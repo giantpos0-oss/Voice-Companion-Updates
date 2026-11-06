@@ -2164,9 +2164,10 @@ Closing Companion does not shut down Windows.
 
 26.3 Restart or shut down the computer
 These choices affect the whole computer. Save your work in other apps first.
-1. Choose Restart the computer or Shut down the computer on the main menu. Or say "Restart computer" or "Shut down computer".
+1. Choose Shut down or restart on the main menu. Then choose Restart the computer or Shut down the computer. Or say "Restart computer" or "Shut down computer".
 2. Listen to the question. It names the action.
-3. Say "Yes" to go ahead, or "No" to cancel.
+3. Say "Yes" to go ahead, or "No" to cancel. You can also press Alt+Y, or Alt+N or Escape.
+If you say No in Shut down or restart, you go back there.
 If a document is open, Companion asks whether to save it first. Press Escape at that question to cancel.
 Windows may ask about unsaved work in other apps. Companion does not force them to close.
 The startup choice and the computer power choices are separate settings.
