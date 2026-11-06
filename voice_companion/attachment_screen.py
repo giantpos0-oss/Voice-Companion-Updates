@@ -291,14 +291,17 @@ def field_words(m):
     return {'recipient': 'To field.', 'subject': 'Subject field.', 'cc': 'CC field.', 'bcc': 'BCC field.'}.get(field, 'Message body.')
 
 
-def back(m):
-    """Escape: back to the message or the draft, where you were."""
+def back(m, quiet=False):
+    """Escape: back to the message or the draft, where you were. quiet: on the way somewhere else."""
     global PENDING
     PENDING = None
     if RETURN_MODE == 'email_draft' and m.email_draft is not None:
-        m.speak('Back to email draft. ' + field_words(m))
-        m.focus_email_entry()
+        if not quiet:
+            m.speak('Back to email draft. ' + field_words(m))
+            m.focus_email_entry()
         return 'email_draft'
+    if RETURN_MODE == 'mailbox' and m.mail_session is not None and quiet:
+        return 'mailbox'
     if RETURN_MODE == 'mailbox' and m.mail_session is not None:
         mail = m.mail_session
         # In the list, the message you are on, as Escape from a message says it.
@@ -645,7 +648,7 @@ def command_here(m, raw, command):
     if command in ('help', 'help with attachments', 'attachments help', 'help with email attachments'):
         return None   # the guide opens on its Attachments topic
     if command in ('main menu', 'back to main menu'):
-        target = back(m)
+        target = back(m, quiet=True)   # only the main menu is said, not "Back to email draft" first
         return m.handle('main menu', target, typed=True) if target != 'awake' else 'awake'
     if command in CLOSE:
         return back(m)

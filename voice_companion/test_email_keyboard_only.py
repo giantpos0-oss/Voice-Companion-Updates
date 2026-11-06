@@ -123,6 +123,17 @@ class AttachmentListKeyTests(test_attachment_voice.PlacesTestCase):
         self.press('Ctrl+Shift+T', mode)
         self.assertEqual(self.last(), '1 attachment tagged: a.txt.')
 
+    def test_control_f1_from_the_list_goes_to_the_main_menu_without_saying_back_to_draft(self):
+        mode = self.draft_list()
+        self.said.clear()
+        self.assertEqual(self.press('Ctrl+F1', mode), 'awake')
+        self.assertNotIn('Back to email draft', ' '.join(self.said))
+        self.assertIn('Main menu.', ' '.join(self.said))
+        mode = self.press('L', self.opened_message())
+        self.said.clear()
+        self.assertEqual(self.press('Ctrl+F1', mode), 'awake')
+        self.assertNotIn('Back to message', ' '.join(self.said))
+
     def test_the_alt_menu_has_every_tag_key_as_the_guide_says(self):
         # The guide: "Press Alt to open the attachments menu. It has the same choices."
         commands = {command for _, entries in screen_menus.MENUS['attachments'][1] for _, _, command in entries}
