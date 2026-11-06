@@ -493,6 +493,8 @@ class FileManager:
                 if self.menu is True:return self.command(command)
                 self.menu=False
                 if command in ATTACH_COMMANDS:return '__attach__:'+command
+                # Go to, Main menu: the app leaves File manager (it said "No item is named main menu").
+                if command=='main menu':return '__home__'
                 return self.command(command)
             if cmd not in ('next','previous','up','down','home','end','first','last','file backspace') and not cmd.startswith('file letters '):
                 self.menu=False;return self.command(text)

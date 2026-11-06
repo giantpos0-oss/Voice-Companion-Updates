@@ -153,5 +153,43 @@ class FirstLetterKeys(FileManagerKeys):
         self.assertEqual(self.fm.location, str(self.root))
 
 
+class AltMenuKeys(FileManagerKeys):
+    def press(self, *keys):
+        mode = 'files'
+        for key in keys:
+            self.spoken.clear()
+            request = app.navigation_key(key, mode)
+            if request:
+                mode = app.handle(request, mode) or mode
+            settle(self.fm)
+        return mode
+
+    def test_go_to_main_menu_in_the_alt_menu_goes_to_the_main_menu(self):
+        # Alt, Go to, Main menu, Enter said "No item is named main menu".
+        self.assertEqual(self.press('Alt', 'End', 'Enter', 'End', 'Enter'), 'awake')
+        self.assertNotIn('No item', ' '.join(self.spoken))
+
+    def test_every_alt_menu_item_does_something_with_enter(self):
+        from file_manager import GROUPS
+        for number, (key, (name, items)) in enumerate(GROUPS.items()):
+            for index, (label, _, voice) in enumerate(items):
+                if voice in ('email this file', 'attach to draft'):
+                    continue  # they open other screens (attachment_screen.py)
+                self.fm.pending = None
+                self.fm.menu = True
+                self.fm.menu_index = number
+                self.fm.command('enter')
+                self.fm.menu_index = index
+                self.spoken.clear()
+                mode = app.handle('enter', 'files')
+                said = ' '.join(self.spoken) + settle(self.fm)
+                self.assertNotIn('No item is named', said, label)
+                self.fm.command('escape') if self.fm.pending else None
+                settle(self.fm)
+                if self.fm.location is None:
+                    self.fm.command('enter')
+                    settle(self.fm)
+
+
 if __name__ == '__main__':
     unittest.main()
