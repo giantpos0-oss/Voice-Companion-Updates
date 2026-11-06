@@ -5143,6 +5143,10 @@ def _handle(text, mode, typed=False):
             return mode
         if command in PICK_CONFIRM and ACCOUNT_MENU_INDEX is not None:
             command = ACCOUNT_TYPES[ACCOUNT_MENU_INDEX][1]
+        elif command in PICK_CONFIRM and typed:
+            # Enter before choosing a type: name the keys, not only the words to say.
+            speak('Press T for Thunderbird or Y for Yahoo, or use the arrows. Then press Enter. Escape cancels.')
+            return mode
         if command in THROUGH_THUNDERBIRD:
             account_setup = False
             return start_thunderbird_add(mode, THROUGH_THUNDERBIRD[command] + ' works through Thunderbird.')
@@ -6089,7 +6093,8 @@ def group_menu(menu, words):
 
 
 def handle(text, mode, typed=False):
-    global _HANDLE_DEPTH, CONFIRM_CHOICE, KEYBOARD_NAVIGATION, POWER_RETURN_MODE
+    global _HANDLE_DEPTH, CONFIRM_CHOICE, KEYBOARD_NAVIGATION, POWER_RETURN_MODE, account_setup
+    asking_account_type = account_setup
     if _HANDLE_DEPTH==0:TRANSCRIPT.mode=SLEEP_RETURN_MODE+', asleep' if mode=='sleep' else mode
     if _HANDLE_DEPTH==0 and not typed:user_stop.begin_command()
     if not typed and _HANDLE_DEPTH==0 and APP_WINDOW is not None and not APP_WINDOW.commands.empty():
@@ -6134,6 +6139,10 @@ def handle(text, mode, typed=False):
         mail_session.link_request=None
         result=open_email_link(url)
     if _HANDLE_DEPTH == 0:result=office_return(text,mode,result)
+    if _HANDLE_DEPTH == 0 and asking_account_type and account_setup and result not in (mode, 'sleep'):
+        # A key or command that opened another screen (Control+T, Options) ends the account type
+        # question; left on, its arrows would move through account types on that screen.
+        account_setup = False
     if _HANDLE_DEPTH == 0 and mode == 'power_menu' and result == 'power_confirm':
         # No at the question goes back to Shut down or restart, one level up.
         POWER_RETURN_MODE = 'power_menu'

@@ -541,6 +541,10 @@ class ScreenMenu:
     def other_alt(self, mode):
         """Alt on screens that already are, or already have, a menu."""
         m = self.app
+        if mode == 'awake' and m.account_setup:
+            # The account type question is open: Alt must not say a main menu item.
+            m.speak('Answer the question first. ' + m.ACCOUNT_TYPE_PROMPT)
+            return mode
         if mode == 'awake':
             if m.MAIN_MENU_INDEX is None:
                 m.MAIN_MENU_INDEX = 0

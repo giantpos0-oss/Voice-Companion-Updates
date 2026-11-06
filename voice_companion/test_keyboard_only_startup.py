@@ -114,6 +114,38 @@ class KeyboardOnlyStartupTests(CompanionTestCase):
         self.assertEqual(mode, 'awake')
         self.assertTrue(self.said[-1].startswith('I am listening. Which email account type?'), self.said[-1])
 
+    # A key that opens another screen (Control+T, the tutorial) ends the account question there.
+    def test_another_screen_ends_the_account_question(self):
+        with self.no_account():
+            mode = companion.handle('email', 'awake')
+        mode = self.key('Ctrl+T', mode)
+        self.assertEqual(mode, 'tutorial')
+        self.assertFalse(companion.account_setup)
+        self.key('Down', mode)
+        self.assertNotIn('Thunderbird', self.said[-1])
+        self.assertTrue(self.said[-1].startswith('Getting started'), self.said[-1])
+
+    def test_sleep_keeps_the_account_question(self):
+        with self.no_account():
+            mode = companion.handle('email', 'awake')
+        self.assertEqual(self.key('Ctrl+F12', mode), 'sleep')
+        self.assertTrue(companion.account_setup)
+
+    def test_alt_at_the_account_question_says_the_question(self):
+        with self.no_account():
+            mode = companion.handle('email', 'awake')
+        self.key('Alt', mode)
+        self.assertTrue(self.said[-1].startswith('Answer the question first. Which email account type?'), self.said[-1])
+        self.assertIsNone(companion.MAIN_MENU_INDEX)
+
+    def test_enter_with_no_account_type_chosen_names_the_keys(self):
+        with self.no_account():
+            mode = companion.handle('email', 'awake')
+        self.key('Enter', mode)
+        self.assertEqual(self.said[-1], 'Press T for Thunderbird or Y for Yahoo, or use the arrows. Then press Enter. '
+                                        'Escape cancels.')
+        self.assertTrue(companion.account_setup)
+
     # Options or Help opened from Office tools, then the main menu: Down moves on the main menu.
     def test_main_menu_keys_stay_on_the_main_menu_after_options_or_help_from_office_tools(self):
         for detour in ('options', 'help'):
