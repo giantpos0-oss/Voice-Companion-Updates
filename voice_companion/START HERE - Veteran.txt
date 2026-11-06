@@ -598,7 +598,7 @@ You can also say "Rename to" followed by the new name. To keep the old name, say
 6.9 Delete files and folders
 1. Tag the items, or move to one item.
 2. Say "Delete", or press Delete. Companion names the items and asks you to confirm.
-3. No is chosen first. To delete, press Up Arrow to choose Yes, then press Enter. Or say "Yes".
+3. No is chosen first. To delete, press Up Arrow to choose Yes, then press Enter. Or say "Yes". You can also press Y or N.
 To keep the items, say "No", or press Escape.
 Windows puts deleted items in the Recycle Bin when it can. File manager has no permanent delete. Drives cannot be deleted.
 If Windows cannot finish, check the folder before you try again.

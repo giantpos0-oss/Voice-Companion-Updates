@@ -1106,7 +1106,7 @@ def navigation_key(key,mode):
 
 def yes_no_open(mode):
     """True while a yes or no question waits for its answer on this screen."""
-    return bool(THUNDERBIRD_SETUP is not None or ACCOUNT_PICKER is not None and ACCOUNT_PICKER.get('confirm') or mode=='browser_menu' and web_session is not None and web_session.menu.level=='confirm' or pending_website is not None or chrome_confirming(mode) or mode in ('document_save','document_replace','power_confirm','exit_confirm','update_offer') or mode=='email_draft' and pending_send is not None or (mode=='mailbox' and mail_session and mail_session.pending) or (mode=='web' and web_session and (web_session.pending or web_session.submit_pending)))
+    return bool(THUNDERBIRD_SETUP is not None or ACCOUNT_PICKER is not None and ACCOUNT_PICKER.get('confirm') or mode=='browser_menu' and web_session is not None and web_session.menu.level=='confirm' or pending_website is not None or chrome_confirming(mode) or mode in ('document_save','document_replace','power_confirm','exit_confirm','update_offer') or mode=='files' and FILE_MANAGER is not None and bool(FILE_MANAGER.pending) and FILE_MANAGER.pending[0]=='delete' or mode=='email_draft' and pending_send is not None or (mode=='mailbox' and mail_session and mail_session.pending) or (mode=='web' and web_session and (web_session.pending or web_session.submit_pending)))
 
 
 def review_place(mode):
@@ -1203,7 +1203,8 @@ def _navigation_key(key,mode):
         if FILE_MANAGER and FILE_MANAGER.pending and FILE_MANAGER.pending[0]=='delete':
             if key in ('Up','Left','Home','ShiftTab'):CONFIRM_CHOICE='yes';sync_app_context(mode);speak('Yes.');return None
             if key in ('Down','Right','End','Tab'):CONFIRM_CHOICE='no';sync_app_context(mode);speak('No.');return None
-            return {'Enter':CONFIRM_CHOICE,'Space':CONFIRM_CHOICE,'Escape':'no','y':'yes','Y':'yes','n':'no','N':'no'}.get(key)
+            # The window sends a letter as "Letter:y" (or "Letter:Y" with Shift); Y and N were silent here.
+            return {'Enter':CONFIRM_CHOICE,'Space':CONFIRM_CHOICE,'Escape':'no','y':'yes','Y':'yes','n':'no','N':'no','Alt+Y':'yes','Alt+N':'no'}.get(key[7:] if key.startswith('Letter:') else key)
         # Companion tags and Leasey-style keys (Will, November 4, 2026). Control+1 to Control+5 sort;
         # the same key again flips the order. The older Alt and Control+Shift sort keys still work,
         # except Alt+Z, which now zips (Alt+U unzips).
