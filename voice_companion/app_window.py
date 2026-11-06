@@ -670,7 +670,9 @@ class CompanionWindow:
                     # and Control+End: the newest and oldest message in the folder.
                     elif key in ('Next','Prior') and not control and not shift and not self.context.get('source') and not self.typed.get():request=key
                     elif control and not shift and key in ('Home','End') and not self.context.get('source') and not self.typed.get():request='Ctrl+'+key
-                    elif key=='Delete' and not self.context.get('source') and not self.typed.get():request='Delete'
+                    # Delete in an open message deletes it too, as "Delete" said there does; the guide
+                    # lists Delete with the keys of the list and the open message (sweep, November 6, 2026).
+                    elif key=='Delete' and (not self.context.get('source') or self.context.get('readonly')) and not self.typed.get():request='Delete'
                     elif key=='space' and not self.context.get('source') and not self.typed.get():request='Space'
                     elif control:
                         code=('Ctrl+Shift+' if shift else 'Ctrl+')+key.upper()
@@ -751,6 +753,10 @@ class CompanionWindow:
                 if event.widget.winfo_toplevel() != root: return
                 if event.keysym == 'Escape':
                     flush_pending_edit()
+                    if self.context.get('mode')=='email_draft' and self.email_field and typed.get().strip():
+                        # Keep what was typed in the address or subject box: Escape asks before
+                        # leaving, and Keep writing shows it again (sweep, November 6, 2026).
+                        self.commands.put(('email_field_tab',{'field':self.email_field,'value':typed.get(),'backward':False,'key':'Escape'}));return 'break'
                     self.commands.put(('keyboard','Escape')); return 'break'
                 if event.keysym=='Return' and isinstance(event.widget,tk.Button):
                     event.widget.invoke(); return 'break'

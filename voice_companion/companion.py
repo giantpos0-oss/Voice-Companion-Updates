@@ -695,7 +695,8 @@ def process_keyboard_batch(mode):
                 label=__import__('speech_transcript').key_label(command)
                 if label:TRANSCRIPT.mode=SLEEP_RETURN_MODE+', asleep' if mode=='sleep' else mode;TRANSCRIPT.key(label)
             # The Escape that stopped a wait (user_stop) is not also used to go back.
-            if user_stop.begin_command() and command in (('keyboard','Escape'),'Escape'):continue
+            if user_stop.begin_command() and (command in (('keyboard','Escape'),'Escape') or isinstance(command,tuple)
+                                              and command[0]=='email_field_tab' and command[1].get('key')=='Escape'):continue
             if not (isinstance(command,tuple) and command[0]=='keyboard' and str(command[1]).startswith('Web:Pass:')):page_keys_only=False
             if isinstance(command,tuple) and command[0]=='text_edit':
                 # UI-thread caret speech is already current; acknowledge without canceling it.
@@ -938,7 +939,10 @@ def commit_email_field_tab(payload,mode):
     """Commit an editable header before moving, without losing unsent text."""
     if mode!='email_draft' or email_draft is None:return None
     field=payload['field'];value=payload['value'].strip()
-    if field!=(email_draft.compose_step or 'body'):return None
+    # Escape always goes back (sweep, November 6, 2026): a box that cannot be kept, such as a
+    # half typed address, must not hold the user in the draft.
+    leaving=payload.get('key')=='Escape'
+    if field!=(email_draft.compose_step or 'body'):return navigation_key('Escape',mode) if leaving else None
     try:
         if field=='recipient':
             recipient=normalize_recipient(value) if value else ''
@@ -953,7 +957,9 @@ def commit_email_field_tab(payload,mode):
                 raise ValueError('This response keeps the original subject.')
             email_draft.subject=value
         email_draft.save()
-    except (ValueError,OSError) as exc:speak(str(exc));return None
+    except (ValueError,OSError) as exc:
+        if leaving:return navigation_key('Escape',mode)
+        speak(str(exc));return None
     if payload.get('key'):return navigation_key(payload['key'],mode)
     return 'send email' if payload.get('send') else navigation_key('ShiftTab' if payload['backward'] else 'Tab',mode)
 
@@ -4832,8 +4838,10 @@ def _handle(text, mode, typed=False):
                   'document help': 'documents', 'web help': 'web',
                   'radio help': 'radio', 'podcast help': 'podcasts',
                   'commands help': 'commands'}
-    if help_topic and writing_dictation(mode, typed):
+    subject_box = mode == 'email_draft' and email_draft is not None and email_draft.compose_step == 'subject'
+    if help_topic and (writing_dictation(mode, typed) or subject_box):
         # "Help with the dishes tonight" while writing is text unless it names a guide topic.
+        # The Subject box is writing too, typed or said ("Help with the move" is a subject).
         try:
             probe = HelpSession(GUIDE, release_notes_path=GUIDE.parent/'Voice Companion Release Notes.txt')
             if probe.topic(help_topic[1]).startswith(__import__('onboard_help').NOT_FOUND): help_topic = None
