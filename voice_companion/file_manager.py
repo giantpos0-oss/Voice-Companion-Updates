@@ -478,6 +478,10 @@ class FileManager:
         if self.menu=='properties':
             if cmd in ('escape','go back','cancel','close','close properties','properties'):self.menu=False;self.properties=[];return self.say_current()
             if cmd in ('enter','okay','ok','open','activate','confirm','repeat'):return self.say_current()
+            # A file key (F2, Delete, Space...) closes Properties and acts on the file, as in the Alt menu.
+            # It acted while the old properties stayed on the screen (November 6, 2026).
+            if cmd not in ('next','previous','up','down','home','end','first','last','file backspace') and not cmd.startswith('file letters '):
+                self.menu=False;self.properties=[]
         elif self.menu:
             if cmd in ('escape','go back','cancel'):
                 if self.menu in GROUPS:

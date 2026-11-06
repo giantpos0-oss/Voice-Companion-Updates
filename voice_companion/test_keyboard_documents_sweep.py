@@ -109,5 +109,28 @@ class NameAndSearchBoxes(FileManagerKeys):
             self.assertEqual(self.fm.pending[0], 'rename')
         self.assertEqual(self.backend.actions, [])
 
+class PropertiesKeys(FileManagerKeys):
+    def test_a_file_key_in_properties_closes_them_first(self):
+        # F2 in Properties renamed the file, and the screen kept the old properties: the arrows
+        # still said "Name: a.txt". As in the Alt menu, a file key closes Properties and acts on the file.
+        self.key('Alt+Enter')
+        self.assertEqual(self.fm.menu, 'properties')
+        self.key('Down')
+        self.assertIn('Rename a.txt', self.key('F2'))
+        self.assertFalse(self.fm.menu)
+        self.typed('c.txt')
+        self.assertEqual(self.backend.actions[-1][3], 'c.txt')
+        self.assertNotIn('Name:', self.key('Down'))
+
+    def test_arrows_letters_and_escape_still_read_properties(self):
+        self.key('Alt+Enter')
+        self.assertIn('Type:', self.key('Down'))
+        self.assertIn('Name:', self.key('Home'))
+        self.key('Letter:s')
+        self.assertEqual(self.fm.menu, 'properties')
+        self.assertIn('a.txt, file', self.key('Escape'))
+        self.assertFalse(self.fm.menu)
+
+
 if __name__ == '__main__':
     unittest.main()
