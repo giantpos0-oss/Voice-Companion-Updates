@@ -61,6 +61,8 @@ class NativeSettings:
         # F12 says the time and, pressed twice quickly, the date, as on every other screen.
         from time_date import PressCounter
         self.keyboard=keyboard;self.clock_presses=PressCounter()
+        from f1_key import F1Presses
+        self.f1_presses=F1Presses()
     def start(self):
         threading.Thread(target=self.run,name='Settings dialog',daemon=True).start()
         return self
@@ -299,6 +301,7 @@ class NativeSettings:
                         return 0
                 if msg==0x113:
                     u.SetWindowTextW(status_handle,self.last_notice)
+                    if self.keyboard and self.f1_presses.due():self.keyboard('F1')
                     while not self.actions.empty():
                         action,payload=self.actions.get_nowait()
                         if action=='accepted':self.session.original=copy.deepcopy(self.session.values);close(saved=True);return 0
@@ -335,10 +338,15 @@ class NativeSettings:
                 self.action_callback('exit_app');close();continue
             if message.message==0x100 and message.wParam==0x11:self.interrupt();continue
             # Keys that work on every screen: F9 turns the microphone off or on; F3 says what
-            # is playing; Control+F1 goes to the main menu (the app closes Options first).
+            # is playing; F1 goes to the main menu and F1 twice opens help; Control+F1 opens
+            # Favorite apps (the app closes Options first).
             if message.message==0x100 and message.wParam==0x78 and self.keyboard:self.keyboard('F9');continue
             if message.message==0x100 and message.wParam==0x72 and self.keyboard and not (u.GetKeyState(0x11)&0x8000 or u.GetKeyState(0x10)&0x8000):self.keyboard('F3');continue
             if message.message==0x100 and message.wParam==0x70 and u.GetKeyState(0x11)&0x8000 and self.keyboard:self.keyboard('Ctrl+F1');continue
+            if message.message==0x100 and message.wParam==0x70 and self.keyboard and not u.GetKeyState(0x10)&0x8000:
+                # One press waits for a second one; the 100 ms timer below sends it (f1_key.py).
+                if self.f1_presses.press():self.keyboard('Double:F1')
+                continue
             if message.message==0x100 and message.wParam==0x7B and self.keyboard and not (u.GetKeyState(0x11)&0x8000 or u.GetKeyState(0x10)&0x8000):
                 from time_date import key_request
                 self.keyboard(key_request(self.clock_presses.press()));continue
