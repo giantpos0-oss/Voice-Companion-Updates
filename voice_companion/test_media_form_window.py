@@ -12,8 +12,8 @@ import unittest
 CONTROL, SHIFT = 4, 1
 
 
-@real_window
-class MediaFormWindowTests(unittest.TestCase):
+class _Window(unittest.TestCase):
+    """The real window and its helpers; no tests of its own."""
     def setUp(self):
         from app_window import CompanionWindow
         self.window = CompanionWindow('media form test')
@@ -77,6 +77,30 @@ class MediaFormWindowTests(unittest.TestCase):
     def typed(self):
         return self.call(lambda: self.window.typed.get())
 
+    def menu(self, mode, title, items):
+        from display_options import settings
+        while not self.window.commands.empty():
+            self.window.commands.get_nowait()
+        self.window.set_context(dict(mode=mode, source=None, text='', caret=0, ack=0, focus=True, menu_letters=True,
+                                     display=settings({'display_text_size': '400 percent'}), display_title=title,
+                                     display_items=items, display_index=0))
+        if not self.wait(lambda: self.window.context.get('display_title') == title):
+            self.fail('The window did not show ' + title + '.')
+        time.sleep(.3)
+
+    def feedback(self):
+        import queue
+        said = []
+        while True:
+            try:
+                said.append(self.window.key_feedback.get_nowait())
+            except queue.Empty:
+                return said
+
+
+
+@real_window
+class MediaFormWindowTests(_Window):
     def test_typed_name_with_a_space_is_sent_by_enter(self):
         self.form(1)
         if not self.call(lambda: self.window.typed.winfo_ismapped()):
@@ -116,3 +140,65 @@ class MediaFormWindowTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+@real_window
+class MenuSpaceWindowTests(_Window):
+    """Space in the Media menu (or any list menu) was typed into the command box and said
+    "space". Down Arrow and Enter then did nothing at all, until Backspace."""
+
+    def test_space_is_not_typed_and_the_arrows_still_work(self):
+        for mode, title, items in (('media_menu', 'Media menu', ['Radio', 'Podcasts', 'Media player', 'YouTube']),
+                                   ('awake', 'Main menu', ['File manager', 'Office tools', 'Media'])):
+            with self.subTest(screen=title):
+                self.menu(mode, title, items)
+                self.feedback()
+                self.press('space')
+                if not self.wait(lambda: self.window.key_feedback.qsize() > 0):
+                    self.fail('Space said nothing. ' + str(self.window.debug_state()))
+                self.assertEqual(self.feedback(), ['Space does nothing in this list. Press Enter to choose.'])
+                self.assertEqual(self.typed(), '')
+                self.press('Down')
+                if not self.wait(lambda: ('keyboard', 'Down') in self.queued()):
+                    self.fail('Down Arrow did not arrive after Space. ' + str(self.window.debug_state()))
+
+
+
+@real_window
+class MenuCommandBoxWindowTests(_Window):
+    """After Alt+T in the Media menu, the main menu or the radio results, each letter of a
+    typed command jumped to a menu item ("p" went to Podcasts) instead of being typed."""
+
+    def test_alt_t_types_letters_and_spaces(self):
+        from key_state import ALT_STATE
+        for mode, title, items in (('media_menu', 'Media menu', ['Radio', 'Podcasts', 'Media player', 'YouTube']),
+                                   ('awake', 'Main menu', ['File manager', 'Office tools', 'Media']),
+                                   ('media', 'Radio', ['WGN Radio 720', 'WBEZ Chicago'])):
+            with self.subTest(screen=title):
+                self.menu(mode, title, items)
+                if mode == 'media':
+                    self.window.set_context(dict(self.window.context, media_navigation=True))
+                self.press('t', ALT_STATE)   # Alt+T opens the command box
+                for char in 'play wgn':
+                    self.press('space' if char == ' ' else char)
+                if not self.wait(lambda: self.typed() == 'play wgn'):
+                    self.fail('Typed: ' + repr(self.typed()) + ' ' + str(self.window.debug_state()))
+                self.assertEqual([c for c in self.queued() if isinstance(c, tuple) and c[0] == 'keyboard'], [])
+                self.press('Return')
+                if not self.wait(lambda: 'play wgn' in self.queued()):
+                    self.fail('Enter did not run the command. ' + str(self.queued()))
+
+    def test_escape_clears_a_typed_command_and_the_letters_jump_again(self):
+        from key_state import ALT_STATE
+        self.menu('media_menu', 'Media menu', ['Radio', 'Podcasts', 'Media player', 'YouTube'])
+        self.press('t', ALT_STATE)
+        self.press('x')
+        if not self.wait(lambda: self.typed() == 'x'):
+            self.fail('Typed: ' + repr(self.typed()))
+        self.press('Escape')
+        if not self.wait(lambda: self.typed() == ''):
+            self.fail('Escape kept: ' + repr(self.typed()))
+        self.assertNotIn(('keyboard', 'Escape'), self.queued())   # it closed the box; it did not leave the menu
+        self.press('p')
+        if not self.wait(lambda: ('keyboard', 'Letter:p') in self.queued()):
+            self.fail('P did not jump to Podcasts after Escape. ' + str(self.window.debug_state()))
