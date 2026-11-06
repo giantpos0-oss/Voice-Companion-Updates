@@ -1725,7 +1725,7 @@ Search, favorites, web history, Go back, and Go forward stay in the web browser 
 19.1 Open and play a file
 1. Choose Media on the main menu, then Media player. Radio, Podcasts, and YouTube are also in the Media menu.
 2. Press Control+O to open the drive list.
-3. Use the arrows and Enter to open a drive, then a folder, then a sound or video file. Escape goes up one folder. Escape at the drive list goes back to the player.
+3. Use the arrows and Enter to open a drive, then a folder, then a sound or video file. Escape goes up one folder. Escape at the drive list goes back to the Media menu.
 4. Companion says the file name and starts to play it.
 You can also press Enter on a sound or video file in File manager.
 

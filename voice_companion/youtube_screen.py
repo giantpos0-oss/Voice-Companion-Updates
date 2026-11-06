@@ -96,6 +96,7 @@ MENU = (('Search', 'Ctrl+F', 'search prompt'), ('Home', '', 'home'), ('Subscript
         ('New from subscriptions', '', 'subscriptions'), ('History', '', 'history'), ('Watch later', '', 'watch_later'), ('Liked videos', '', 'liked'),
         ('My playlists', '', 'playlists'), ('@account', '', '@account'))
 MENU_TITLE = 'YouTube menu'
+PLAYER_KEYS_HINT = 'In the player, the arrows change the volume and skip. Space plays or pauses. Escape goes back to the list.'
 MENU_KINDS = ('menu', 'filters', 'choices')   # lists where letters move to the next name
 SEARCH_PROMPT = 'Search YouTube. Say or type what to search for, then press Enter or say confirm. Escape cancels.'
 SEARCH_LABEL = 'YouTube search; type, then press Enter. Escape cancels:'
@@ -1919,8 +1920,12 @@ def navigation_key(m, key):
         # The player: arrows control the video (Will, October 30, 2026). Letters work as on a list.
         mapped = {'Up': 'video volume up', 'Down': 'video volume down', 'Left': 'skip back', 'Right': 'skip forward',
                   'Enter': 'play or pause video', 'Home': 'restart video', 'Escape': 'go back'}.get(key)
-        if mapped or key in ('End', 'Next', 'Prior', 'Tab', 'ShiftTab'):
+        if mapped:
             return mapped
+        if key in ('End', 'Next', 'Prior', 'Tab', 'ShiftTab'):
+            # The player has no list to move through; these keys are never silent.
+            m.speak(PLAYER_KEYS_HINT)
+            return None
     from input_parity import screen_command
     direct = screen_command(key, MODE)
     if direct:

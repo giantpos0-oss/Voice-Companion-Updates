@@ -580,6 +580,10 @@ class CompanionWindow:
                     flush_pending_edit();self.command_entry_active=True;typed.focus_set();return 'break'
                 if mode in ('web','files') and self.command_entry_active and event.widget==typed and key=='Escape':
                     self.command_entry_active=False;typed.delete(0,'end');(file_list if mode=='files' else editor).focus_set();return 'break'
+                if self.command_entry_active and event.widget==typed and key=='Escape':
+                    # Escape after Alt+T clears a typed command first; with nothing typed it goes back as usual.
+                    self.command_entry_active=False
+                    if typed.get():typed.delete(0,'end');self.feedback('Command cleared.');return 'break'
                 request=None
                 if self.context.get('confirmation') is not None and key.lower() in ('y','n') and alt_held(event.state):
                     self.commands.put(('keyboard','Alt+'+key.upper()));return 'break'
@@ -604,7 +608,7 @@ class CompanionWindow:
                         self.commands.put(('media_field',{'value':typed.get(),'next':'Enter' if key=='Return' else 'ShiftTab' if shift or key=='ISO_Left_Tab' else 'Tab'}));typed.delete(0,'end');return 'break'
                     if key=='Escape':request='Escape'
                     elif key in ('Tab','ISO_Left_Tab'):request='ShiftTab' if shift or key=='ISO_Left_Tab' else 'Tab'
-                    elif not control and not self.context.get('media_input') and key in ('Up','Down','Left','Right','Home','End','Return','space','Delete','F5') and not typed.get():request='Enter' if key=='Return' else 'Space' if key=='space' else key
+                    elif not control and not self.context.get('media_input') and key in ('Up','Down','Left','Right','Home','End','Return','space','Delete','F5') and not typed.get() and not self.command_entry_active:request='Enter' if key=='Return' else 'Space' if key=='space' else key
                     elif control and shift and key.lower()=='p':request='Ctrl+Shift+P'
                     elif control and key.lower() in ('f','p','r','s','d'):request='Ctrl+'+key.upper()
                     elif control and key in ('Left','Right') and not self.context.get('media_input'):request='Ctrl+'+key
@@ -689,8 +693,11 @@ class CompanionWindow:
                     if self.email_field:
                         self.commands.put(('email_field_tab',{'field':self.email_field,'value':typed.get(),'backward':False,'send':True}));return 'break'
                     request='Ctrl+Enter' if control else 'Alt+S'
-                elif self.context.get('menu_letters') and not (mode in ('browser_menu','files') and self.command_entry_active) and not self.context.get('file_name_input') and not self.context.get('media_input') and not control and not alt_held(event.state) and len(event.char)==1 and event.char.isalpha() and not typed.get():
+                elif self.context.get('menu_letters') and not self.command_entry_active and not self.context.get('file_name_input') and not self.context.get('media_input') and not control and not alt_held(event.state) and len(event.char)==1 and event.char.isalpha() and not typed.get():
                     request='Letter:'+event.char.lower()
+                elif self.context.get('menu_letters') and key=='space' and event.widget==typed and not typed.get() and not self.command_entry_active and not control and not alt_held(event.state):
+                    # A space typed into the command box made the arrows and Enter do nothing.
+                    self.feedback('Space does nothing in this list. Press Enter to choose.');return 'break'
                 if mode=='web' and not request and (self.context.get('web_browse') or local.get('web_escape_pending')) and not self.command_entry_active and event.char and event.char.isprintable() and not control and not alt_held(event.state):return 'break'
                 if request:
                     # A held key repeats. Activating, or going back or forward,
@@ -1225,7 +1232,8 @@ class CompanionWindow:
                         if field.get('display'):apply_display(field['display'])
                         mode=field['mode'];source=field.get('source')
                         transition=old.get('mode')!=mode or old.get('source')!=source or old.get('browser_name_input')!=field.get('browser_name_input') or field.get('focus',False)
-                        if transition and mode=='web':self.command_entry_active=False
+                        # A new screen closes the command box (Alt+T), so its letters work again.
+                        if transition and mode=='web' or old.get('mode')!=mode:self.command_entry_active=False
                         try:root.attributes('-disabled',mode=='settings')
                         except tk.TclError:pass
                         if mode=='settings':continue
