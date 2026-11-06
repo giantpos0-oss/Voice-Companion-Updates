@@ -3021,7 +3021,7 @@ class WebSession:
         self.field_list_index=0
         self.pending=None
         return ('Found '+str(len(self.choices))+(' field. ' if len(self.choices)==1 else ' fields. ')+announce_item(_label(self.choices[0]),0,len(self.choices),hotkey=False)+
-                ' Say next or previous, then that one to answer it.')
+                ' Use the arrows or say next, then press Enter or say that one to answer it. Escape returns to the page.')
 
     def _ask_field(self):
         while self.form_index is not None and self.form_index < len(self.form_fields):
@@ -3482,7 +3482,8 @@ class WebSession:
                 index=self.field_list_index+step
                 if not 0<=index<len(self.choices): return ('Start of list. ' if step<0 else 'End of list. ')+'That is the '+('first' if step<0 else 'last')+' field.'
                 self.field_list_index=index
-                return announce_item(_label(self.choices[index]),index,len(self.choices),hotkey=False)+' Say that one to answer it.'
+                # How to choose is said once, when the list opens (as in Help); each move says only the field.
+                return announce_item(_label(self.choices[index]),index,len(self.choices),hotkey=False)
             return self.move_link(step)
         if command in ('that one','okay','ok','confirm','confirm that') and self.list_focus=='favorites' and self.favorite_items:
             return self.open(self.favorite_items[self.favorite_index][1]['url'])

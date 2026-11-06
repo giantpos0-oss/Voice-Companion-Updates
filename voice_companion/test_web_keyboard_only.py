@@ -81,6 +81,24 @@ class FormQuestionEscapeTests(unittest.TestCase):
             self.assertEqual(app.navigation_key('Escape', 'web'), 'web browser menu')
 
 
+class FieldListWordsTests(unittest.TestCase):
+    """F8 opened the fields list with "Say next or previous, then that one to answer it.",
+    and each arrow said "Say that one to answer it." again. A keyboard user never heard
+    which key answers. As in Help (Will, October 2026), the list says how to choose
+    once, when it opens, keys and voice both; each move says only the field."""
+
+    def test_the_list_names_the_keys_once_and_moves_say_only_the_field(self):
+        session = FormQuestionEscapeTests.session(self)
+        second = dict(key='b', role='field', tag='input', type='text', label='Last', start=6, end=10)
+        fields = [session.snapshot['elements'][0], second]
+        session._form_controls = lambda snapshot: fields
+        opened = session.fields()
+        self.assertEqual(opened, 'Found 2 fields. First, 1 of 2. Use the arrows or say next, then press Enter or say '
+                                 'that one to answer it. Escape returns to the page.')
+        self.assertEqual(session.command('next'), 'Last, 2 of 2.')
+        self.assertEqual(session.command('previous'), 'First, 1 of 2.')
+
+
 class WebPageMenuKeyTests(unittest.TestCase):
     def test_top_and_bottom_of_page_show_their_keys(self):
         # The guide: "To reach the top or bottom, ... press Control+Home or Control+End."
