@@ -198,5 +198,25 @@ class AltMenuKeys(FileManagerKeys):
         self.assertNotIn('..', self.fm.command('next'))
 
 
+class NameClashKeys(FileManagerKeys):
+    def test_a_used_name_keeps_the_rename_box_open(self):
+        # F2, then a name already in the folder: the box closed, and only then did Windows say
+        # "That name already exists. Choose another name." The user had to press F2 again.
+        self.key('Home')
+        self.key('F2')
+        said = self.typed('b.txt')
+        self.assertIn('already', said)
+        self.assertEqual(self.fm.pending[0], 'rename')
+        self.assertEqual(self.backend.actions, [])
+        self.typed('c.txt')
+        self.assertEqual(self.backend.actions[-1][3], 'c.txt')
+
+    def test_the_same_name_in_new_capitals_is_allowed(self):
+        self.key('Home')
+        self.key('F2')
+        self.typed('A.txt')
+        self.assertEqual(self.backend.actions[-1][3], 'A.txt')
+
+
 if __name__ == '__main__':
     unittest.main()

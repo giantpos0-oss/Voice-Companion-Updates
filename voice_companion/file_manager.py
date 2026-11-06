@@ -465,7 +465,12 @@ class FileManager:
             if action=='rename':
                 # "Rename to budget" or "Call it budget"; a typed name such as "Name tags.txt" is kept whole.
                 name=re.sub(r'^(?:rename (?:it )?to|call it|name it)\s+','',text,flags=re.I)
-                valid_name(name);self.pending=None;return self.mutate('rename',paths,name=name)
+                valid_name(name)
+                # A used name keeps the box open to type another (it closed, then Windows refused).
+                target=Path(paths[0]).with_name(name.strip())
+                if target.exists() and str(target).casefold()!=str(Path(paths[0])).casefold():
+                    raise ValueError('An item named '+target.name+' is already here. Nothing was replaced. Type another name, or press Escape to cancel.')
+                self.pending=None;return self.mutate('rename',paths,name=name)
             if action in ('search','search all'):
                 if not text.strip():raise ValueError('Enter part of a name, or press Escape to cancel.')
                 self.pending=None
