@@ -77,5 +77,37 @@ class DeleteQuestionKeys(FileManagerKeys):
         self.assertEqual(self.backend.actions, [])
 
 
+class NameAndSearchBoxes(FileManagerKeys):
+    files = ('a.txt', 'help.txt', 'commands.docx')
+
+    def test_help_typed_as_a_search_is_searched(self):
+        # Typing "help" in the Control+F box read the whole File manager help, and the box stayed open.
+        self.key('Ctrl+F')
+        self.assertIn('1 matches', self.typed('help'))
+        self.assertIsNone(self.fm.pending)
+        self.assertEqual(self.fm.current().name, 'help.txt')
+
+    def test_commands_typed_as_a_new_name_renames(self):
+        self.key('Home')
+        self.key('F2')
+        self.typed('commands.txt')
+        self.assertEqual(self.backend.actions[-1][0], 'rename')
+        self.assertEqual(self.backend.actions[-1][3], 'commands.txt')
+        self.key('F2')
+        self.typed('Help')
+        self.assertEqual(self.backend.actions[-1][3], 'Help')
+
+    def test_help_said_in_the_rename_box_gives_help_and_keeps_the_box(self):
+        # Spoken "File manager help" or "Help." renamed the file to "file manager help.txt" or "help.txt".
+        self.key('Home')
+        self.key('F2')
+        for words in ('File manager help.', 'Help.'):
+            self.spoken.clear()
+            app.handle(words, 'files')
+            settle(self.fm)
+            self.assertIn('F2 renames', ' '.join(self.spoken))
+            self.assertEqual(self.fm.pending[0], 'rename')
+        self.assertEqual(self.backend.actions, [])
+
 if __name__ == '__main__':
     unittest.main()

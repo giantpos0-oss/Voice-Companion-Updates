@@ -4191,10 +4191,11 @@ def _handle(text, mode, typed=False):
             return handled
     manager=globals().get('FILE_MANAGER')
     if mode=='files' and manager and manager.pending and manager.pending[0] in FILE_TEXT_STEPS:
-        if manager.pending[0]=='rename' and not typed and command not in ('cancel','escape','go back','no'):
+        if manager.pending[0]=='rename' and not typed and command not in ('cancel','escape','go back','no','help','commands')+__import__('file_manager').HELP_WORDS:
             # A spoken name without a type keeps the old type (Will, October 31, 2026); typed names are used as typed.
+            # Spoken "Help." gives help: it renamed the file to help.txt.
             text=__import__('file_manager').keep_type(manager.pending[1][0],__import__('file_manager').spoken_name(text))
-        try:speak(manager.command(text))
+        try:speak(manager.command(text,typed=typed))
         except (OSError,ValueError) as error:speak(str(error))
         sync_app_context(mode,True);return mode
     if mode=='chrome_setup':
