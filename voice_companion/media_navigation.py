@@ -150,6 +150,8 @@ class MediaNavigation:
                 if player=='stop':self.audio_paused=False
                 return result
             # Any other screen key must not be silent while a form is open.
+            if key=='Space' and self.field_index<len(self.form['fields']) and self.form['fields'][self.field_index]['choices']:
+                return 'Use the arrows to choose. Enter continues. Escape cancels.'
             if key in ('Space','Delete','F5','Ctrl+F','Ctrl+D','Ctrl+Shift+P'):return 'Finish or cancel this form first. Enter continues. Escape cancels.'
         else:
             if key in ('Tab','ShiftTab'):self.focus='items' if self.focus=='actions' else 'actions';return ('Results. ' if self.focus=='items' else 'Actions. ')+self.announce()

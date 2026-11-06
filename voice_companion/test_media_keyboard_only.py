@@ -40,10 +40,15 @@ class FormKeysAreNeverSilentTests(ExpertMediaTestCase):
 
     def test_list_keys_in_a_form_say_the_form_is_open(self):
         self.open_station_database()
-        for name in ('Ctrl+D', 'Ctrl+F', 'Ctrl+Shift+P', 'F5', 'Delete', 'Space'):
+        for name in ('Ctrl+D', 'Ctrl+F', 'Ctrl+Shift+P', 'F5', 'Delete'):
             with self.subTest(key=name):
                 self.assertEqual(self.key(name), FORM_OPEN)
                 self.assertIsNotNone(companion.MEDIA_NAV.form)
+
+    def test_space_on_a_list_of_choices_says_to_use_the_arrows(self):
+        self.open_station_database()
+        self.assertEqual(self.key('Space'), 'Use the arrows to choose. Enter continues. Escape cancels.')
+        self.assertEqual(companion.MEDIA_NAV.form['fields'][0]['value'], 'radio browser')
 
     def test_player_keys_still_control_the_audio_in_a_form(self):
         self.say('Media', 'Radio', 'Play WGN')
