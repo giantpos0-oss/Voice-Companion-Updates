@@ -191,5 +191,12 @@ class AltMenuKeys(FileManagerKeys):
                     settle(self.fm)
 
 
+    def test_menu_items_are_said_without_a_double_period(self):
+        # "Actions, group.. 1 of 4." and "Say refresh.. 1 of 5." on the screen and in braille.
+        self.assertEqual(self.fm.command('file manager menu'), 'File manager menu. Actions, group. 1 of 4.')
+        self.assertNotIn('..', self.fm.command('enter'))
+        self.assertNotIn('..', self.fm.command('next'))
+
+
 if __name__ == '__main__':
     unittest.main()

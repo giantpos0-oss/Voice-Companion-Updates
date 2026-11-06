@@ -392,7 +392,8 @@ class FileManager:
     def current(self):return self.items[self.index] if self.items and 0<=self.index<len(self.items) else None
     def say_current(self):
         labels=self.labels();i=self.menu_index if self.menu else self.index
-        return labels[i]+'. '+str(i+1)+' of '+str(len(labels))+'.' if labels else 'This folder is empty.'
+        # Menu items already end with a period ("Actions, group."); never say "group.. 1 of 4".
+        return labels[i].removesuffix('.')+'. '+str(i+1)+' of '+str(len(labels))+'.' if labels else 'This folder is empty.'
     def refresh(self,path=None,push=False,preserve=None,restore_index=None):
         def done(items):
             extensions=getattr(self,'pick_extensions',None)
