@@ -35,7 +35,8 @@ class CompanionCase(unittest.TestCase):
         for name, value in dict(TEXT_MODE=True, APP=self.folder, APP_WINDOW=None, MEDIA_HUB=None, INPUT_MODE='mixed',
                                 document=None, email_draft=None, mail_session=None, pending_send=None,
                                 help_session=None, SLEEP_RETURN_MODE='awake', THUNDERBIRD_WINDOWS=None,
-                                THUNDERBIRD_SETUP=None).items():
+                                THUNDERBIRD_SETUP=None, NAMED_LIST=None).items():
+            # NAMED_LIST too: a drafts list left open by one test took Enter in the next one.
             p = patch.object(companion, name, value, create=True); p.start(); self.addCleanup(p.stop)
         for name in ('speak', 'speak_prompt', 'dictation_feedback', 'speak_status'):
             p = patch.object(companion, name, lambda text, *a, **k: self.said.append(str(text))); p.start(); self.addCleanup(p.stop)

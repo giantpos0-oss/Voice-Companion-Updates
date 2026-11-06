@@ -695,7 +695,8 @@ def process_keyboard_batch(mode):
                 label=__import__('speech_transcript').key_label(command)
                 if label:TRANSCRIPT.mode=SLEEP_RETURN_MODE+', asleep' if mode=='sleep' else mode;TRANSCRIPT.key(label)
             # The Escape that stopped a wait (user_stop) is not also used to go back.
-            if user_stop.begin_command() and command in (('keyboard','Escape'),'Escape'):continue
+            if user_stop.begin_command() and (command in (('keyboard','Escape'),'Escape') or isinstance(command,tuple)
+                                              and command[0]=='email_field_tab' and command[1].get('key')=='Escape'):continue
             if not (isinstance(command,tuple) and command[0]=='keyboard' and str(command[1]).startswith('Web:Pass:')):page_keys_only=False
             if isinstance(command,tuple) and command[0]=='text_edit':
                 # UI-thread caret speech is already current; acknowledge without canceling it.
@@ -943,7 +944,10 @@ def commit_email_field_tab(payload,mode):
     """Commit an editable header before moving, without losing unsent text."""
     if mode!='email_draft' or email_draft is None:return None
     field=payload['field'];value=payload['value'].strip()
-    if field!=(email_draft.compose_step or 'body'):return None
+    # Escape always goes back (sweep, November 6, 2026): a box that cannot be kept, such as a
+    # half typed address, must not hold the user in the draft.
+    leaving=payload.get('key')=='Escape'
+    if field!=(email_draft.compose_step or 'body'):return navigation_key('Escape',mode) if leaving else None
     try:
         if field=='recipient':
             recipient=normalize_recipient(value) if value else ''
@@ -958,7 +962,9 @@ def commit_email_field_tab(payload,mode):
                 raise ValueError('This response keeps the original subject.')
             email_draft.subject=value
         email_draft.save()
-    except (ValueError,OSError) as exc:speak(str(exc));return None
+    except (ValueError,OSError) as exc:
+        if leaving:return navigation_key('Escape',mode)
+        speak(str(exc));return None
     if payload.get('key'):return navigation_key(payload['key'],mode)
     return 'send email' if payload.get('send') else navigation_key('ShiftTab' if payload['backward'] else 'Tab',mode)
 
@@ -4852,8 +4858,10 @@ def _handle(text, mode, typed=False):
                   'document help': 'documents', 'web help': 'web',
                   'radio help': 'radio', 'podcast help': 'podcasts',
                   'commands help': 'commands'}
-    if help_topic and writing_dictation(mode, typed):
+    subject_box = mode == 'email_draft' and email_draft is not None and email_draft.compose_step == 'subject'
+    if help_topic and (writing_dictation(mode, typed) or subject_box):
         # "Help with the dishes tonight" while writing is text unless it names a guide topic.
+        # The Subject box is writing too, typed or said ("Help with the move" is a subject).
         try:
             probe = HelpSession(GUIDE, release_notes_path=GUIDE.parent/'Voice Companion Release Notes.txt')
             if probe.topic(help_topic[1]).startswith(__import__('onboard_help').NOT_FOUND): help_topic = None
@@ -5272,7 +5280,10 @@ def _handle(text, mode, typed=False):
     if mode=='mailbox' and command in ('copy sender address','copy sender email address','copy the sender address','email sender','email the sender','new email to sender','write an email to sender','compose email to sender'):
         from mail_voice import sender_address
         address=sender_address(mail_session.rows[mail_session.current-1]) if mail_session and mail_session.rows and mail_session.current else ''
-        if not address:speak('No sender address is available for the current message.');return mode
+        if not address:
+            # An empty folder says what every other key says there (sweep, November 6, 2026).
+            speak(mail_session._empty_list() if mail_session and not mail_session.rows and mail_session.view=='folder'
+                  else 'No sender address is available for the current message.');return mode
         if command.startswith('copy'):
             from document_editor import copy_to_clipboard
             copy_to_clipboard(address)
@@ -5549,7 +5560,9 @@ def _handle(text, mode, typed=False):
             if mail_session is not None and command not in ('back to main menu', 'main menu'):
                 speak('Email draft saved. ' + mail_session.process('back to folder'))
                 return 'mailbox'
-            speak('Email draft saved locally. Check whether it was sent before sending it again.')
+            # The check is needed only after a send was tried (sweep, November 6, 2026).
+            speak('Email draft saved locally. Check whether it was sent before sending it again.' if email_draft.last_attempt_hash
+                  else 'Email draft saved locally as ' + email_draft.title + '. It has not been sent.')
             return 'awake'
         try:
             dictation_feedback(email_draft.process(text, typed=typed))

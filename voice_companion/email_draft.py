@@ -9,6 +9,20 @@ from email.message import EmailMessage, MIMEPart
 from pathlib import Path
 
 from document_editor import UNDO_REQUESTS, Paragraph, TextRun, VoiceDocument
+
+# Whole commands that keep their meaning in the To, CC, BCC and Subject boxes. Anything else typed or
+# said there is the box's text: a subject such as "Read this first" or "Save the date" is the subject
+# (writing comes first; sweep, November 6, 2026). Reading commands come from reading_request.
+BOX_COMMANDS = ('read recipient', 'who is this to', 'read subject', 'what is the subject', 'read cc', 'read bcc',
+                'read email provider', 'which email provider', 'where am i', 'help', 'help with email',
+                'help with emails', 'help with writing email', 'start dictation', 'pause dictation', 'dictate')
+
+
+def box_command(command):
+    """True when words in a header box are a whole command, not the address or subject."""
+    from reading_navigation import reading_request
+    return (command in UNDO_REQUESTS or command in BOX_COMMANDS or reading_request(command) is not None
+            or bool(re.fullmatch(r'use yahoo(?: mail)?|name document .+', command)))
 from field_selection import FieldSelection, selection_command
 from storage import keep_previous
 from address_book import AddressBook
@@ -541,7 +555,10 @@ class VoiceEmail(VoiceDocument):
         copy_match = re.fullmatch(r'(?:add |set )?(cc|bcc)(?: to| is)? (.+)', text, re.I)
         if copy_match and in_body and not parses(copy_match.group(2)):
             copy_match = None
-        if copy_match or self.compose_step in ('cc','bcc'):
+        # In the CC and BCC boxes, as in the To box, Control+R, Control+Z and other commands are not
+        # an address (sweep, November 6, 2026: they said "I could not understand one complete email address").
+        is_command = box_command(command)
+        if copy_match or self.compose_step in ('cc','bcc') and not is_command:
             field = copy_match.group(1).lower() if copy_match else self.compose_step
             try: address = normalize_recipient(contact_address(copy_match.group(2) if copy_match else text))
             except ValueError as exc: return str(exc) + ' Say skip to leave this field blank.'
@@ -600,9 +617,9 @@ class VoiceEmail(VoiceDocument):
             self.save()
             self.compose_step = 'body'
             return 'Subject recorded as ' + self.subject + '. What would you like the message to say?'
-        if self.compose_step == 'recipient' and text and command not in UNDO_REQUESTS and not command.startswith(('read ', 'help ', 'save ', 'name ', 'use ', 'start dictation', 'pause dictation', 'undo')):
+        if self.compose_step == 'recipient' and text and not is_command:
             return self.process('email to ' + text, typed)
-        if self.compose_step == 'subject' and text and command not in UNDO_REQUESTS and not command.startswith(('read ', 'help ', 'save ', 'name ', 'use ', 'start dictation', 'pause dictation', 'undo')):
+        if self.compose_step == 'subject' and text and not is_command:
             return self.process('subject is ' + text)
         if command in ('read recipient', 'who is this to'):
             return 'Recipient: ' + (self.recipient or 'not entered.')

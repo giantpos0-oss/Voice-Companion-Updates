@@ -13809,7 +13809,7 @@
 },
 "email_draft | back to main menu": {
 "said": [
-"Email draft saved locally. Check whether it was sent before sending it again.",
+"Email draft saved locally as Routing check 91. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",
@@ -14497,7 +14497,7 @@
 },
 "email_draft | close email": {
 "said": [
-"Email draft saved locally. Check whether it was sent before sending it again.",
+"Email draft saved locally as Routing check 137. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",
@@ -15307,7 +15307,7 @@
 },
 "email_draft | exit": {
 "said": [
-"Email draft saved locally. Check whether it was sent before sending it again.",
+"Email draft saved locally as Routing check 186. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",
@@ -15353,7 +15353,7 @@
 },
 "email_draft | exit email": {
 "said": [
-"Email draft saved locally. Check whether it was sent before sending it again.",
+"Email draft saved locally as Routing check 190. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",
@@ -16126,7 +16126,7 @@
 },
 "email_draft | leave email": {
 "said": [
-"Email draft saved locally. Check whether it was sent before sending it again.",
+"Email draft saved locally as Routing check 257. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",
@@ -16451,7 +16451,7 @@
 },
 "email_draft | main menu": {
 "said": [
-"Email draft saved locally. Check whether it was sent before sending it again.",
+"Email draft saved locally as Routing check 283. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",

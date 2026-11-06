@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 756
-- Already had both ways: 592
+- Actions inventoried: 760
+- Already had both ways: 596
 - Gaps found: 164
 - Gaps fixed (Added): 156
 - Not applicable (N/A, with reason): 8
@@ -3057,6 +3057,32 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 - Voice: "Close attachments"
 - Keyboard: Escape
+- Status: Both
+
+## Alt menu, Attachments: Tags
+
+### Tag or untag
+
+- Voice: "Tag attachment"
+- Keyboard: Space
+- Status: Both
+
+### Tag all
+
+- Voice: "Tag all attachments"
+- Keyboard: Ctrl+A
+- Status: Both
+
+### What is tagged
+
+- Voice: "What attachments are tagged"
+- Keyboard: Ctrl+Shift+T
+- Status: Both
+
+### Clear tags
+
+- Voice: "Clear attachment tags"
+- Keyboard: Ctrl+Shift+A
 - Status: Both
 
 ## Alt menu, Document: Read
