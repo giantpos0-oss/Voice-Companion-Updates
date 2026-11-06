@@ -586,6 +586,16 @@ class WindowScreenKeyTests(unittest.TestCase):
         for keysym,state,expected in (('F1',0,'F1'),('Next',0,'Next'),('Prior',0,'Prior'),('i',4,'Ctrl+I')):
             self.call(lambda k=keysym,s=state:self.window.typed.event_generate('<KeyPress>',keysym=k,state=s))
             self.wait(lambda e=expected:('keyboard',e) in self.window.commands.queue)
+    def test_f1_reaches_the_app_during_a_yes_or_no_question(self):
+        # Guide part 2.5: F1 says the question again. The window dropped F1 while any question
+        # was open, so it was silent there (sweep, November 6, 2026).
+        for mode in ('calendar','contacts','update_offer'):
+            with self.subTest(mode=mode):
+                self.window.set_context(dict(mode=mode,source=None,text='',caret=0,ack=0,focus=True,confirmation='no'))
+                self.wait(lambda m=mode:self.window.context.get('mode')==m)
+                while not self.window.commands.empty():self.window.commands.get_nowait()
+                self.call(lambda:self.window.typed.event_generate('<KeyPress>',keysym='F1',state=0))
+                self.wait(lambda:('keyboard','F1') in self.window.commands.queue)
 
 
 if __name__=='__main__':unittest.main()

@@ -427,6 +427,24 @@ class TaskNavigation:
                     'replace {value}':'Replace text. Type or say the old text, with, then the new text. Press Enter.',
                     'create table with {value}':'Table size. Type or say the rows and columns, such as two rows and two columns. Press Enter.',
                     'find {value}':'Find. Type or say the words to find, then press Enter.',
+                    # Every document menu item that asks for words, in plain words (November 6, 2026). They said
+                    # "set font. Type or say the value", "heading.", "selection end at." and so on.
+                    'set font {value}':'Font. Type or say a font name, such as Arial, then press Enter.',
+                    'set font size {value}':'Font size. Type or say a size from 6 to 72 points, then press Enter.',
+                    'set word font {value}':'Font for this word. Type or say a font name, such as Arial, then press Enter.',
+                    'set word size {value}':'Size for this word. Type or say a size from 6 to 72 points, then press Enter.',
+                    'line spacing {value}':'Line spacing for this paragraph. Type or say a number, such as 1.5, then press Enter.',
+                    'document line spacing {value}':'Line spacing for the whole document. Type or say a number, such as 1.5, then press Enter.',
+                    'heading {value}':'Heading level. Type or say a number from 1 to 6, then press Enter.',
+                    'highlight {value}':'Highlight. Type or say the words to highlight, then press Enter.',
+                    'select {value}':'Select. Type or say the words to select, then press Enter.',
+                    'selection start at {value}':'Selection start. Type or say the words where the selection starts, then press Enter.',
+                    'selection end at {value}':'Selection end. Type or say the words where the selection ends, then press Enter.',
+                    'insert before {value}':'Insert before. Type or say words already in the text, then press Enter.',
+                    'insert after {value}':'Insert after. Type or say words already in the text, then press Enter.',
+                    'replace word with {value}':'Replace the current word. Type or say the new text, then press Enter.',
+                    'replace sentence with {value}':'Replace the current sentence. Type or say the new text, then press Enter.',
+                    'replace paragraph with {value}':'Replace the current paragraph. Type or say the new text, then press Enter.',
                     'add contact {value}':'Add contact. Type or say the name, the word as, then the email address. Press Enter.',
                     'find contact {value}':'Find contact. Type or say a name, then press Enter.',
                     'go to {value}':'Go to a day. Type or say a day, such as Friday or October 30, then press Enter.',
@@ -475,6 +493,9 @@ class TaskNavigation:
                 return {'Ctrl+N':'create a document','Ctrl+O':'@open','Ctrl+R':'@recent','Alt+O':'@options'}[key]
             if mode == 'reader_menu' and key in ('Ctrl+O','Ctrl+R','Alt+O'):
                 return {'Ctrl+O':'@reader_open','Ctrl+R':'@reader_recent','Alt+O':'@options:Document reader'}[key]
+            if mode in ('office_menu','power_menu','media_menu') and key == 'Alt+O':
+                # These menus have no options of their own: Alt+O opens Options, as on every screen.
+                return 'open options'
             if mode == 'notepad_menu' and key in ('Ctrl+N','Ctrl+O','Alt+O'):
                 return {'Ctrl+N':'write a note','Ctrl+O':'list notes','Alt+O':'@options:Notepad'}[key]
             return {'Up':'previous','Left':'previous','Down':'next','Right':'next','Enter':'enter','Escape':'escape','Home':'home','End':'end'}.get(key)
@@ -592,8 +613,15 @@ class TaskNavigation:
                 m.speak(('Paused.' if result else 'Playing.') if action == 'toggle' else {'play':'Playing.','pause':'Paused.','stop':'Stopped.'}[action]); return mode
             if command in ('volume up','volume down') or command.startswith('speed '):
                 if player.kind!='local': m.speak('Open a media file first.'); return mode
-                value = player.adjust('volume', .1 if command=='volume up' else -.1) if command.startswith('volume') else player.adjust('speed', spoken_speed(text.strip()[6:]))
-                m.speak(('Volume '+str(round(value*100))+' percent.') if command.startswith('volume') else 'Playback speed '+str(value)+'.'); return mode
+                if command.startswith('volume'):
+                    # As in Radio and Podcasts: at either end it says so ("Loudest.").
+                    from media_hub import volume_edge
+                    step = .1 if command=='volume up' else -.1
+                    edge = volume_edge(player, step)
+                    if edge: m.speak(edge); return mode
+                    m.speak('Volume '+str(round(player.adjust('volume', step)*100))+' percent.'); return mode
+                value = player.adjust('speed', spoken_speed(text.strip()[6:]))
+                m.speak('Playback speed '+str(value)+'.'); return mode
             if command in ('status','media status'):
                 if player.kind!='local':m.speak('No media file open. Choose Open a media file.');return mode
                 from media_player import spoken_time

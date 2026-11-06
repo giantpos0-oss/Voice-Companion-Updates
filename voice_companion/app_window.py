@@ -580,6 +580,10 @@ class CompanionWindow:
                     flush_pending_edit();self.command_entry_active=True;typed.focus_set();return 'break'
                 if mode in ('web','files') and self.command_entry_active and event.widget==typed and key=='Escape':
                     self.command_entry_active=False;typed.delete(0,'end');(file_list if mode=='files' else editor).focus_set();return 'break'
+                if self.command_entry_active and event.widget==typed and key=='Escape':
+                    # Escape after Alt+T clears a typed command first; with nothing typed it goes back as usual.
+                    self.command_entry_active=False
+                    if typed.get():typed.delete(0,'end');self.feedback('Command cleared.');return 'break'
                 request=None
                 if self.context.get('confirmation') is not None and key.lower() in ('y','n') and alt_held(event.state):
                     self.commands.put(('keyboard','Alt+'+key.upper()));return 'break'
@@ -604,7 +608,7 @@ class CompanionWindow:
                         self.commands.put(('media_field',{'value':typed.get(),'next':'Enter' if key=='Return' else 'ShiftTab' if shift or key=='ISO_Left_Tab' else 'Tab'}));typed.delete(0,'end');return 'break'
                     if key=='Escape':request='Escape'
                     elif key in ('Tab','ISO_Left_Tab'):request='ShiftTab' if shift or key=='ISO_Left_Tab' else 'Tab'
-                    elif not control and not self.context.get('media_input') and key in ('Up','Down','Left','Right','Home','End','Return','space','Delete','F5') and not typed.get():request='Enter' if key=='Return' else 'Space' if key=='space' else key
+                    elif not control and not self.context.get('media_input') and key in ('Up','Down','Left','Right','Home','End','Return','space','Delete','F5') and not typed.get() and not self.command_entry_active:request='Enter' if key=='Return' else 'Space' if key=='space' else key
                     elif control and shift and key.lower()=='p':request='Ctrl+Shift+P'
                     elif control and key.lower() in ('f','p','r','s','d'):request='Ctrl+'+key.upper()
                     elif control and key in ('Left','Right') and not self.context.get('media_input'):request='Ctrl+'+key
@@ -624,7 +628,8 @@ class CompanionWindow:
                 if self.context.get('confirmation') is not None and key=='Return' and event.widget==typed and typed.get().strip().lower() in ('yes','no'):
                     self.commands.put(typed.get().strip().lower());typed.delete(0,'end');return 'break'
                 if request:pass
-                elif self.context.get('confirmation') is not None and key in ('Up','Down','Left','Right','Home','End','Tab','Return','Escape','space','y','Y','n','N'):
+                # F1 says the question again (guide part 2.5); before, the window dropped it during a question.
+                elif self.context.get('confirmation') is not None and key in ('Up','Down','Left','Right','Home','End','Tab','Return','Escape','space','y','Y','n','N','F1'):
                     request='Enter' if key in ('Return','space') else 'ShiftTab' if key=='Tab' and shift else key
                 elif key=='F4' and alt_held(event.state):request='Alt+F4'
                 elif mode=='web' and self.context.get('web_name_list') and not self.command_entry_active and not control and not alt_held(event.state) and (event.char and event.char.isprintable() or key=='BackSpace'):
@@ -647,7 +652,7 @@ class CompanionWindow:
                         if key=='Up' and (not multiline or '\n' not in value[:caret]) or key=='Down' and (not multiline or '\n' not in value[caret:]) or key=='Left' and caret==0 or key=='Right' and caret==len(value):request='Web:Leave:'+key
                     elif key=='F5':request='Web:Refresh'
                     elif key in ('Tab','ISO_Left_Tab'):request='Web:ShiftTab' if shift or key=='ISO_Left_Tab' else 'Web:Tab'
-                    elif not field and not control and not alt_held(event.state) and event.char.lower() in 'khfbxcetr alidgmps123456'.replace(' ','') and len(event.char)==1:request='Web:Quick:'+('Previous:' if shift else '')+event.char.lower()
+                    elif not field and not control and not alt_held(event.state) and (quick:=__import__('web_browse').page_quick_key(event.char,key,event.keycode,shift)):request='Web:Quick:'+('Previous:' if shift else '')+quick
                     elif key=='Return' and (not field or field.get('tag')!='textarea' and not field.get('editable') or control or self.context.get('web_combo_edit')):request='Web:Done' if field and not self.context.get('web_choice') else 'Web:Activate'
                     elif not field and not shift and key in ('Up','Down','Left','Right','Home','End','Prior','Next'):request='Web:Read:'+('Control:' if control else '')+key
                     elif not field and key=='space':request='Web:Space'
@@ -670,7 +675,9 @@ class CompanionWindow:
                     # and Control+End: the newest and oldest message in the folder.
                     elif key in ('Next','Prior') and not control and not shift and not self.context.get('source') and not self.typed.get():request=key
                     elif control and not shift and key in ('Home','End') and not self.context.get('source') and not self.typed.get():request='Ctrl+'+key
-                    elif key=='Delete' and not self.context.get('source') and not self.typed.get():request='Delete'
+                    # Delete in an open message deletes it too, as "Delete" said there does; the guide
+                    # lists Delete with the keys of the list and the open message (sweep, November 6, 2026).
+                    elif key=='Delete' and (not self.context.get('source') or self.context.get('readonly')) and not self.typed.get():request='Delete'
                     elif key=='space' and not self.context.get('source') and not self.typed.get():request='Space'
                     elif control:
                         code=('Ctrl+Shift+' if shift else 'Ctrl+')+key.upper()
@@ -686,8 +693,11 @@ class CompanionWindow:
                     if self.email_field:
                         self.commands.put(('email_field_tab',{'field':self.email_field,'value':typed.get(),'backward':False,'send':True}));return 'break'
                     request='Ctrl+Enter' if control else 'Alt+S'
-                elif self.context.get('menu_letters') and not (mode in ('browser_menu','files') and self.command_entry_active) and not self.context.get('file_name_input') and not self.context.get('media_input') and not control and not alt_held(event.state) and len(event.char)==1 and event.char.isalpha() and not typed.get():
+                elif self.context.get('menu_letters') and not self.command_entry_active and not self.context.get('file_name_input') and not self.context.get('media_input') and not control and not alt_held(event.state) and len(event.char)==1 and event.char.isalpha() and not typed.get():
                     request='Letter:'+event.char.lower()
+                elif self.context.get('menu_letters') and key=='space' and event.widget==typed and not typed.get() and not self.command_entry_active and not control and not alt_held(event.state):
+                    # A space typed into the command box made the arrows and Enter do nothing.
+                    self.feedback('Space does nothing in this list. Press Enter to choose.');return 'break'
                 if mode=='web' and not request and (self.context.get('web_browse') or local.get('web_escape_pending')) and not self.command_entry_active and event.char and event.char.isprintable() and not control and not alt_held(event.state):return 'break'
                 if request:
                     # A held key repeats. Activating, or going back or forward,
@@ -751,6 +761,10 @@ class CompanionWindow:
                 if event.widget.winfo_toplevel() != root: return
                 if event.keysym == 'Escape':
                     flush_pending_edit()
+                    if self.context.get('mode')=='email_draft' and self.email_field and typed.get().strip():
+                        # Keep what was typed in the address or subject box: Escape asks before
+                        # leaving, and Keep writing shows it again (sweep, November 6, 2026).
+                        self.commands.put(('email_field_tab',{'field':self.email_field,'value':typed.get(),'backward':False,'key':'Escape'}));return 'break'
                     self.commands.put(('keyboard','Escape')); return 'break'
                 if event.keysym=='Return' and isinstance(event.widget,tk.Button):
                     event.widget.invoke(); return 'break'
@@ -761,7 +775,7 @@ class CompanionWindow:
             def enter(event):
                 if shortcut(event)=='break':return 'break'
                 if self.context.get('file_name_input') and not typed.get().strip():
-                    self.feedback('Type the password.' if self.context.get('file_private') else 'Enter a new file name, including the extension.');return 'break'
+                    self.feedback(self.context.get('file_empty_hint') or ('Type the password.' if self.context.get('file_private') else 'Enter a new file name, including the extension.'));return 'break'
                 if self.context.get('mode')=='document_name':
                     if not typed.get().strip():self.feedback('Enter a folder, or a full folder path.' if self.context.get('naming_label') else 'Enter a document name.');return 'break'
                     return submit_typed(event)
@@ -937,6 +951,11 @@ class CompanionWindow:
                 if shortcut(event)=='break':return 'break'
                 cancel_phonetic()
                 if event.keysym=='Escape':return navigation(event)
+                if (self.context.get('confirmation') is not None and not self.context.get('readonly') and not event.state&4
+                        and not alt_held(event.state) and (event.char and event.char.isprintable() or event.keysym in ('BackSpace','Delete'))):
+                    # A question such as the send review owns the keyboard: other letters must not
+                    # change the message under it (sweep, November 6, 2026).
+                    self.feedback('Answer the question first. Use the arrows, then Enter.');return 'break'
                 if event.keysym.lower()=='a' and event.state&4 and not event.state&1:
                     editor.tag_add('sel','1.0','end-1c');editor.mark_set('insert','end-1c')
                     local['selection']=None
@@ -993,8 +1012,8 @@ class CompanionWindow:
                     local['reading_after']=root.after_idle(latest_read)
                 else:root.after_idle(after)
             editor.bind('<KeyPress>',edit_key)
-            editor.bind('<<Paste>>',lambda event:'break' if self.context.get('readonly') else None)
-            editor.bind('<<Cut>>',lambda event:'break' if self.context.get('readonly') else None)
+            editor.bind('<<Paste>>',lambda event:'break' if self.context.get('readonly') or self.context.get('confirmation') is not None else None)
+            editor.bind('<<Cut>>',lambda event:'break' if self.context.get('readonly') or self.context.get('confirmation') is not None else None)
             editor.bind('<FocusOut>',lambda event:cancel_phonetic())
 
             settings_dialog = [None]
@@ -1213,7 +1232,8 @@ class CompanionWindow:
                         if field.get('display'):apply_display(field['display'])
                         mode=field['mode'];source=field.get('source')
                         transition=old.get('mode')!=mode or old.get('source')!=source or old.get('browser_name_input')!=field.get('browser_name_input') or field.get('focus',False)
-                        if transition and mode=='web':self.command_entry_active=False
+                        # A new screen closes the command box (Alt+T), so its letters work again.
+                        if transition and mode=='web' or old.get('mode')!=mode:self.command_entry_active=False
                         try:root.attributes('-disabled',mode=='settings')
                         except tk.TclError:pass
                         if mode=='settings':continue

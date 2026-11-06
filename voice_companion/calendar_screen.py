@@ -248,6 +248,9 @@ def navigation_key(m, key):
     if PENDING is not None:
         if key.lower() in ('y', 'alt+y', 'n', 'alt+n') and PENDING[0] in ('edit-field', 'source'):
             return None     # a list, not a Yes or No question: N (Name, Notes) must not cancel it, as on Contacts
+        if key == 'F1' and PENDING[0] in ('add', 'delete', 'edit'):
+            m.speak(question_words(m))      # F1 says a Yes or No question again (guide part 2.5); the choice stays
+            return None
         if key.lower() in ('y', 'alt+y'):
             return 'this one' if CHOICES[0] == 'this one' else 'yes'
         if key.lower() in ('n', 'alt+n'):
@@ -271,6 +274,27 @@ def navigation_key(m, key):
             return '@calendar:source ' + CHOICE
         return {'Enter': CHOICE, 'Space': CHOICE, 'Escape': 'no', 'F1': 'help with calendar'}.get(key)
     return {'Up': 'previous event', 'Down': 'next event', 'Enter': 'read event', 'Escape': 'close calendar'}.get(key)
+
+
+def question_words(m):
+    """The open add, delete or edit question, as it was said."""
+    action, subject = PENDING
+    if action == 'add':
+        return add_question(m)
+    if action == 'delete':
+        return delete_question(m, subject)
+    return EDIT.get('question') or edit_question(m)
+
+
+def open_question(m):
+    """The question or list still open, said again when Help closes over it; '' when none is."""
+    if PENDING is None:
+        return ''
+    if PENDING[0] == 'edit-field':
+        return choice_words() + ' Use the arrows and Enter, or say what to change. Escape cancels.'
+    if PENDING[0] == 'source':
+        return choice_words() + ' Use the arrows and Enter, or say a name. Escape cancels.'
+    return question_words(m)
 
 
 def choice_names():
@@ -1315,7 +1339,8 @@ def confirm_edit(m):
         tail = (' ' + name + ' repeats. Change only this one, ' + on_day(event.start.date(), m) +
                 ', or all of them? Say this one, all, or no. Escape cancels.')
     PENDING, CHOICE = ('edit', EDIT), CHOICES[0]
-    m.speak(edit_question(m) + passed + tail)
+    EDIT['question'] = edit_question(m) + passed + tail
+    m.speak(EDIT['question'])
     return MODE
 
 

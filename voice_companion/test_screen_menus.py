@@ -232,8 +232,10 @@ class ScreenMenuTests(unittest.TestCase):
         internal = {('mailbox', 'Page Down'): 'Next', ('mailbox', 'Page Up'): 'Prior',
                     ('calendar', 'Page Down'): 'Next', ('calendar', 'Page Up'): 'Prior',
                     ('web', 'Alt+Left'): 'Web:Back', ('web', 'Alt+Right'): 'Web:Forward', ('web', 'F5'): 'Web:Refresh',
-                    ('web', 'Ctrl+L'): 'Web:Search'}
-        expected = {('web', 'Escape'): 'web browser menu', ('file_reader', 'Escape'): 'back to files'}
+                    ('web', 'Ctrl+L'): 'Web:Search', ('web', 'Ctrl+Home'): 'Web:PageTop', ('web', 'Ctrl+End'): 'Web:PageBottom'}
+        # The page keys and the spoken "Top of page" both run page_boundary.
+        expected = {('web', 'Escape'): 'web browser menu', ('file_reader', 'Escape'): 'back to files',
+                    ('web', 'Ctrl+Home'): 'web key PageTop', ('web', 'Ctrl+End'): 'web key PageBottom'}
         for mode in MENUS:
             self.screen(mode)
             for group, label, key, command in items(mode):

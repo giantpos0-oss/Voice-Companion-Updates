@@ -151,8 +151,8 @@ MENUS = {
             ('Refresh', 'F5', 'web key Refresh'),
             ('Search or enter address', 'Ctrl+L', 'web key Search'),
             ('Find on page', 'Ctrl+F', 'find {value}'),
-            ('Top of page', '', 'top of page'),
-            ('Bottom of page', '', 'bottom of page')]),
+            ('Top of page', 'Ctrl+Home', 'top of page'),
+            ('Bottom of page', 'Ctrl+End', 'bottom of page')]),
         ('Lists', [
             ('Headings', 'F6', 'list headings'),
             ('Links', 'F7', 'list links'),
@@ -258,6 +258,12 @@ MENUS = {
             ('Attach another file', 'Ctrl+O', 'attach a file'),
             ('Attachments help', 'F1', 'help with attachments'),
             ('Close the list', 'Escape', 'close attachments')]),
+        # Tags, as in File manager (Will, November 4, 2026); the guide says this menu has every choice.
+        ('Tags', [
+            ('Tag or untag', 'Space', 'tag attachment'),
+            ('Tag all', 'Ctrl+A', 'tag all attachments'),
+            ('What is tagged', 'Ctrl+Shift+T', 'what attachments are tagged'),
+            ('Clear tags', 'Ctrl+Shift+A', 'clear attachment tags')]),
     ]),
     # Named after what is open, so it is not confused with the Document reader menu you start from.
     'file_reader': ('Document menu', [
@@ -541,6 +547,10 @@ class ScreenMenu:
     def other_alt(self, mode):
         """Alt on screens that already are, or already have, a menu."""
         m = self.app
+        if mode == 'awake' and m.account_setup:
+            # The account type question is open: Alt must not say a main menu item.
+            m.speak('Answer the question first. ' + m.ACCOUNT_TYPE_PROMPT)
+            return mode
         if mode == 'awake':
             if m.MAIN_MENU_INDEX is None:
                 m.MAIN_MENU_INDEX = 0

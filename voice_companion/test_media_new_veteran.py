@@ -132,7 +132,7 @@ class DamagedMediaFilesTests(NewVeteranMediaTestCase):
     def test_damaged_status_and_download_records_do_not_stop_the_checks(self):
         self.damage(**{'radio-iprd-status.json': ['x'], 'podcast-auto-files.json': [1]})
         self.hub.fetch_json = lambda url: {'stations': [{'name': 'IPRD One', 'streams': [{'url': 'https://radio.test/i'}]}]}
-        self.assertEqual(self.hub.refresh_iprd(), 'IPRD station catalog refreshed with 1 stations.')
+        self.assertEqual(self.hub.refresh_iprd(), 'The IPRD station list is refreshed. It has 1 station.')
         self.hub._prune_auto('https://pod.test/h', set())
         self.assertEqual(json.loads((self.folder / 'podcast-auto-files.json').read_text()), {})
 

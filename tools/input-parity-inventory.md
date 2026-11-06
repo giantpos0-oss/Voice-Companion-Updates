@@ -7,10 +7,10 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 756
-- Already had both ways: 592
-- Gaps found: 164
-- Gaps fixed (Added): 156
+- Actions inventoried: 760
+- Already had both ways: 598
+- Gaps found: 162
+- Gaps fixed (Added): 154
 - Not applicable (N/A, with reason): 8
 
 ## Main menu
@@ -2560,14 +2560,14 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Top of page
 
 - Voice: "Top of page"
-- Keyboard: Alt, 1, 6
-- Status: Added: Alt menu path
+- Keyboard: Ctrl+Home
+- Status: Both
 
 ### Bottom of page
 
 - Voice: "Bottom of page"
-- Keyboard: Alt, 1, 7
-- Status: Added: Alt menu path
+- Keyboard: Ctrl+End
+- Status: Both
 
 ## Alt menu, Web page: Lists
 
@@ -3057,6 +3057,32 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 - Voice: "Close attachments"
 - Keyboard: Escape
+- Status: Both
+
+## Alt menu, Attachments: Tags
+
+### Tag or untag
+
+- Voice: "Tag attachment"
+- Keyboard: Space
+- Status: Both
+
+### Tag all
+
+- Voice: "Tag all attachments"
+- Keyboard: Ctrl+A
+- Status: Both
+
+### What is tagged
+
+- Voice: "What attachments are tagged"
+- Keyboard: Ctrl+Shift+T
+- Status: Both
+
+### Clear tags
+
+- Voice: "Clear attachment tags"
+- Keyboard: Ctrl+Shift+A
 - Status: Both
 
 ## Alt menu, Document: Read

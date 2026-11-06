@@ -58,7 +58,7 @@ class MediaNavigation:
         elif section=='podcast' and hub.shows:self.focus='items';self.item_index=hub.show_index or 0
     @property
     def actions(self):
-        selected=bool(getattr(self.hub,'current_station',None)) or bool(self.hub.stations and isinstance(self.hub.station_index,int) and 0<=self.hub.station_index<len(self.hub.stations)) or bool(getattr(self.hub,'preset_browsing',False))
+        selected=bool(getattr(self.hub,'current_station',None)) or bool(self.hub.stations and isinstance(self.hub.station_index,int) and 0<=self.hub.station_index<len(self.hub.stations)) or bool(getattr(self.hub,'preset_browsing',False) and self.hub.presets())
         return RADIO_STATION if self.section=='radio' and self.keyboard_mode and selected and not self.full_radio_actions else RADIO if self.section=='radio' else PODCASTS
     def set_keyboard_mode(self,enabled):
         old=self.actions[min(self.index,len(self.actions)-1)]
@@ -141,6 +141,18 @@ class MediaNavigation:
                 return self.submit_form()
             if key=='Space' and self.field_index<len(self.form['fields']) and self.form['fields'][self.field_index]['choices']==('no','yes'):
                 f=self.form['fields'][self.field_index];return self.set_field('yes' if f['value']=='no' else 'no')
+            # Space presses OK or Cancel, as on any button.
+            if key=='Space' and self.field_index>=len(self.form['fields']):return self.keyboard('Enter')
+            # The player keys still work while a form is open; Control+P already does everywhere.
+            player={'Ctrl+S':'stop','Ctrl+R':'resume','Ctrl+Left':'rewind 15 seconds','Ctrl+Right':'forward 15 seconds'}.get(key)
+            if player:
+                result=self.hub.command(player,section=self.section)
+                if player=='stop':self.audio_paused=False
+                return result
+            # Any other screen key must not be silent while a form is open.
+            if key=='Space' and self.field_index<len(self.form['fields']) and self.form['fields'][self.field_index]['choices']:
+                return 'Use the arrows to choose. Enter continues. Escape cancels.'
+            if key in ('Space','Delete','F5','Ctrl+F','Ctrl+D','Ctrl+Shift+P'):return 'Finish or cancel this form first. Enter continues. Escape cancels.'
         else:
             if key in ('Tab','ShiftTab'):self.focus='items' if self.focus=='actions' else 'actions';return ('Results. ' if self.focus=='items' else 'Actions. ')+self.announce()
             if key=='Escape':
@@ -148,7 +160,8 @@ class MediaNavigation:
                 if self.focus=='items' and self.view=='episodes':return self.run('back to podcasts')
                 # A category's podcasts: Escape goes back up to the categories.
                 if self.focus=='items' and self.view=='shows' and getattr(self.hub,'shows_category',None):return self.run('back to categories')
-                if self.focus=='items':self.focus='actions';return ('Station actions. ' if self.section=='radio' and self.actions is RADIO_STATION else '')+self.announce()
+                # Say where Escape went, as Alt does: "Radio menu." or "Podcasts menu."
+                if self.focus=='items':self.focus='actions';return ('Station actions. ' if self.section=='radio' and self.actions is RADIO_STATION else 'Radio menu. ' if self.section=='radio' else 'Podcasts menu. ')+self.announce()
                 if self.section=='radio' and self.actions is RADIO_STATION:
                     self.full_radio_actions=True;self.index=0;return 'Radio menu. '+self.announce()
                 return '__main__'
@@ -329,6 +342,14 @@ class MediaNavigation:
         """Show the short list "Play WGN" offered, so arrows and Enter choose from it."""
         self.form=None;self.pending=None;self.view='station_choices';self.focus='items'
         self.item_index=self.hub.station_choice_index or 0;self.revision+=1
+    def after_removal(self,view):
+        """After an item is removed from the list you are on: where you are now, on the item
+        that took its place (or the one before it at the end), so the arrows go on from there."""
+        if self.view!=view or self.focus!='items':return ''
+        items=self.items()
+        if not items:self.item_index=0;return ' '+self.announce()
+        self.item_index=max(0,min(self.item_index,len(items)-1));self.select_item(self.item_index)
+        return ' '+self.announce()
     def voice_key(self,key):return self.keyboard(key,voice=True)
     def command(self,text):
         self.set_keyboard_mode(False)
@@ -338,7 +359,7 @@ class MediaNavigation:
             if cmd in ('no','cancel','no thanks'):self.pending=None;self.hub.preset_delete_pending=None;return 'Canceled.'
             if cmd in ('yes','yes please','ok','okay','confirm'):
                 self.pending=None
-                if kind=='preset':return self.hub.command('yes',section='radio')
+                if kind=='preset':return self.hub.command('yes',section='radio')+self.after_removal('presets')
                 filename='radio-schedule.json' if kind=='schedule' else 'podcast-subscriptions.json'
                 with self.hub._lock:
                     items=self.hub._load(filename,[])
@@ -351,7 +372,7 @@ class MediaNavigation:
                     else:items=[x for x in items if not (isinstance(x,dict) and x.get('feed')==key)]
                     self.hub._save(filename,items)
                 if kind=='subscription':self.hub.subscriptions();self.view='shows'
-                self.item_index=0;return 'Removed.'
+                return 'Removed.'+self.after_removal('scheduled' if kind=='schedule' else 'shows')
             return 'Yes or no?'
         if self.form:
             if cmd in ('read field','read current field','current field'):return self.field_notice()

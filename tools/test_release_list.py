@@ -10,6 +10,8 @@ SOURCE = Path(__file__).resolve().parents[1] / 'voice_companion'
 # Not in the build on purpose. Add a file here only with its reason.
 NOT_IN_BUILD = {
     'test_options_dialog_windows': 'tried on a claude/try- branch when Options change (its docstring says so)',
+    'test_media_form_window': 'new real-window test (November 6, 2026 sweep); passes on Linux at 800x600, '
+                              'joins the window test list in build-windows.ps1 after a claude/try- branch passes on Windows',
 }
 
 

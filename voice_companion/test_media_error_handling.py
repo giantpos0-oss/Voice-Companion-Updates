@@ -129,7 +129,7 @@ class MediaErrorTests(unittest.TestCase):
             {'name': 'Good', 'genres': None, 'streams': [{'url': 'https://radio.example/good', 'format': None}]},
             {'name': 7, 'genres': ['jazz', 3], 'streams': [None, {'url': 'https://radio.example/seven'}]}]}
         answer = self.hub.command('refresh stations', section='radio')
-        self.assertIn('IPRD station catalog refreshed with 2 stations.', answer)
+        self.assertIn('The IPRD station list is refreshed. It has 2 stations.', answer)
         saved = self.hub._stations_file('radio-iprd-stations.json')
         self.assertTrue(all(isinstance(entry['name'], str) and isinstance(entry['tags'], str) for entry in saved), saved)
         self.assertIn('Good', [entry['name'] for entry in saved])

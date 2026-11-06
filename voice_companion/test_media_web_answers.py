@@ -603,7 +603,10 @@ class PlayStationByNameTests(MediaTestCase):
         with patch.object(calendar_screen, 'PENDING', ('add', {})), patch.object(calendar_screen, 'handle', return_value='calendar') as calendar:
             companion.handle('Play WGN radio show', 'calendar')
         calendar.assert_called_once()
-        with patch.object(contacts_screen, 'ADDING', {'step': 'name'}), patch.object(contacts_screen, 'handle', return_value='contacts') as contacts:
+        # Naming a new contact, while its prompt is open (after Escape it is not; see test_contacts_screen).
+        with patch.object(contacts_screen, 'ADDING', {'step': 'name'}), \
+                patch.object(companion.task_navigation(), 'prompt', ('@contacts:add-email {value}', 'contacts', True)), \
+                patch.object(contacts_screen, 'handle', return_value='contacts') as contacts:
             companion.handle('Play WGN', 'contacts')
         contacts.assert_called_once()
         self.assertEqual(self.hub.player.opened, [])

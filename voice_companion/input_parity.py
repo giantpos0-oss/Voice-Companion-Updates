@@ -65,6 +65,9 @@ SCREEN_KEYS = {
     'word_processor': {'F1': 'help with documents'},
     'recent_documents': {'F1': 'help with documents'},
     'media_menu': {'F1': 'help with media player'},
+    # Office tools and Shut down or restart are parts of the main menu: its Help topic.
+    'office_menu': {'F1': 'help with main menu'},
+    'power_menu': {'F1': 'help with main menu'},
     'notepad_menu': {'F1': 'help with notepad'},
     'reader_menu': {'F1': 'help with document reader'},
     'reader_recent': {'F1': 'help with document reader'},

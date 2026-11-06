@@ -50,7 +50,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.207-test'
+APP_VERSION = '0.2.208-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -483,6 +483,11 @@ def app_context(mode):
             context['file_input_label']=('New file name, including extension' if action=='rename' else 'Name for the zip file' if action in ('zip','zip with password') else
                                       'Password for the zip (private)' if action=='zip password' else 'The same password again (private)' if action=='zip password again' else
                                       'Password for '+Path(FILE_MANAGER.pending[1][0]).name+' (private)' if action=='unzip password' else 'Search folder and subfolders' if action=='search all' else 'Search names in this list')
+            # Enter in an empty box says what to type; the search box said "Enter a new file name".
+            context['file_empty_hint']=('Type part of a name, then press Enter. Escape cancels.' if action in ('search','search all') else
+                                        'Type a name for the zip file, then press Enter. Escape cancels.' if action in ('zip','zip with password') else
+                                        'Type the password, then press Enter. Escape cancels.' if FILE_MANAGER.private_step() else
+                                        'Type the new name, including the file type, then press Enter. Escape cancels.')
         context['menu_letters']=not context['file_name_input'] and not FILE_MANAGER.busy
         if FILE_MANAGER.pending and FILE_MANAGER.pending[0]=='delete':context['confirmation']=CONFIRM_CHOICE
         context['file_revision']=FILE_MANAGER.revision
@@ -695,7 +700,8 @@ def process_keyboard_batch(mode):
                 label=__import__('speech_transcript').key_label(command)
                 if label:TRANSCRIPT.mode=SLEEP_RETURN_MODE+', asleep' if mode=='sleep' else mode;TRANSCRIPT.key(label)
             # The Escape that stopped a wait (user_stop) is not also used to go back.
-            if user_stop.begin_command() and command in (('keyboard','Escape'),'Escape'):continue
+            if user_stop.begin_command() and (command in (('keyboard','Escape'),'Escape') or isinstance(command,tuple)
+                                              and command[0]=='email_field_tab' and command[1].get('key')=='Escape'):continue
             if not (isinstance(command,tuple) and command[0]=='keyboard' and str(command[1]).startswith('Web:Pass:')):page_keys_only=False
             if isinstance(command,tuple) and command[0]=='text_edit':
                 # UI-thread caret speech is already current; acknowledge without canceling it.
@@ -792,6 +798,11 @@ def resume_from_sleep():
     global MAIN_MENU_INDEX
     interrupt_speech()
     mode = SLEEP_RETURN_MODE
+    if mode == 'awake' and account_setup:
+        # Asleep at the account type question: ask it again, not the main menu.
+        speak(('I am listening. ' if microphone_state() == 'on' else '') + ACCOUNT_TYPE_PROMPT)
+        sync_app_context(mode,True)
+        return mode
     if mode == 'awake':
         MAIN_MENU_INDEX = None
         announce_main_menu()
@@ -938,7 +949,10 @@ def commit_email_field_tab(payload,mode):
     """Commit an editable header before moving, without losing unsent text."""
     if mode!='email_draft' or email_draft is None:return None
     field=payload['field'];value=payload['value'].strip()
-    if field!=(email_draft.compose_step or 'body'):return None
+    # Escape always goes back (sweep, November 6, 2026): a box that cannot be kept, such as a
+    # half typed address, must not hold the user in the draft.
+    leaving=payload.get('key')=='Escape'
+    if field!=(email_draft.compose_step or 'body'):return navigation_key('Escape',mode) if leaving else None
     try:
         if field=='recipient':
             recipient=normalize_recipient(value) if value else ''
@@ -953,7 +967,9 @@ def commit_email_field_tab(payload,mode):
                 raise ValueError('This response keeps the original subject.')
             email_draft.subject=value
         email_draft.save()
-    except (ValueError,OSError) as exc:speak(str(exc));return None
+    except (ValueError,OSError) as exc:
+        if leaving:return navigation_key('Escape',mode)
+        speak(str(exc));return None
     if payload.get('key'):return navigation_key(payload['key'],mode)
     return 'send email' if payload.get('send') else navigation_key('ShiftTab' if payload['backward'] else 'Tab',mode)
 
@@ -1020,13 +1036,24 @@ def station_asked(text,mode,typed=False):
     return __import__('media_hub').station_request(text)
 
 
+def still_open(mode):
+    """' ' and the list or question left open on Calendar or Contacts, said when Help closes over it, so
+    the next Escape is not a surprise; '' elsewhere."""
+    module={'calendar':'calendar_screen','contacts':'contacts_screen'}.get(mode)
+    words=__import__(module).open_question(sys.modules[__name__]) if module else ''
+    return ' '+words if words else ''
+
+
 def screen_question(mode):
     """True while Contacts, Calendar, Attachments or Downloads asks a question or for a
     name; the answer there may start with "Play"."""
     module={'calendar':'calendar_screen','contacts':'contacts_screen','attachments':'attachment_screen','downloads':'download_screen'}.get(mode)
     if module is None:return False
     screen=__import__(module)
-    return getattr(screen,'PENDING',None) is not None or bool(getattr(screen,'ADDING',None))
+    # A new contact counts only while its prompt is open: Escape leaves ADDING behind.
+    prompt=task_navigation().prompt
+    asking=bool(prompt) and str(prompt[0]).startswith('@'+mode+':add-')
+    return getattr(screen,'PENDING',None) is not None or bool(getattr(screen,'ADDING',None)) and asking
 
 
 # Background notices wait for a quiet moment: Companion silent, no key pressed for this
@@ -1106,7 +1133,7 @@ def navigation_key(key,mode):
 
 def yes_no_open(mode):
     """True while a yes or no question waits for its answer on this screen."""
-    return bool(THUNDERBIRD_SETUP is not None or ACCOUNT_PICKER is not None and ACCOUNT_PICKER.get('confirm') or mode=='browser_menu' and web_session is not None and web_session.menu.level=='confirm' or pending_website is not None or chrome_confirming(mode) or mode in ('document_save','document_replace','power_confirm','exit_confirm','update_offer') or mode=='email_draft' and pending_send is not None or (mode=='mailbox' and mail_session and mail_session.pending) or (mode=='web' and web_session and (web_session.pending or web_session.submit_pending)))
+    return bool(THUNDERBIRD_SETUP is not None or ACCOUNT_PICKER is not None and ACCOUNT_PICKER.get('confirm') or mode=='browser_menu' and web_session is not None and web_session.menu.level=='confirm' or pending_website is not None or chrome_confirming(mode) or mode in ('document_save','document_replace','power_confirm','exit_confirm','update_offer') or mode=='files' and FILE_MANAGER is not None and bool(FILE_MANAGER.pending) and FILE_MANAGER.pending[0]=='delete' or mode=='email_draft' and pending_send is not None or (mode=='mailbox' and mail_session and mail_session.pending) or (mode=='web' and web_session and (web_session.pending or web_session.submit_pending)))
 
 
 def review_place(mode):
@@ -1182,6 +1209,9 @@ def _navigation_key(key,mode):
     if mode=='calendar' and __import__('calendar_screen').PENDING is not None:
         # A question on the Calendar owns the arrows and Enter (this one, all, or no).
         return __import__('calendar_screen').navigation_key(sys.modules[__name__],key)
+    if mode=='contacts' and key=='F1' and __import__('contacts_screen').PENDING is not None:
+        # F1 in a Contacts question says it again; in a list there it is Help.
+        return __import__('contacts_screen').navigation_key(sys.modules[__name__],key)
     from input_parity import screen_command,MAIL_HEADER_KEYS
     if mode=='mailbox' and key in MAIL_HEADER_KEYS:return MAIL_HEADER_KEYS[key]
     if mode=='youtube':return __import__('youtube_screen').navigation_key(sys.modules[__name__],key)  # youtube_screen.py
@@ -1203,7 +1233,8 @@ def _navigation_key(key,mode):
         if FILE_MANAGER and FILE_MANAGER.pending and FILE_MANAGER.pending[0]=='delete':
             if key in ('Up','Left','Home','ShiftTab'):CONFIRM_CHOICE='yes';sync_app_context(mode);speak('Yes.');return None
             if key in ('Down','Right','End','Tab'):CONFIRM_CHOICE='no';sync_app_context(mode);speak('No.');return None
-            return {'Enter':CONFIRM_CHOICE,'Space':CONFIRM_CHOICE,'Escape':'no','y':'yes','Y':'yes','n':'no','N':'no'}.get(key)
+            # The window sends a letter as "Letter:y" (or "Letter:Y" with Shift); Y and N were silent here.
+            return {'Enter':CONFIRM_CHOICE,'Space':CONFIRM_CHOICE,'Escape':'no','y':'yes','Y':'yes','n':'no','N':'no','Alt+Y':'yes','Alt+N':'no'}.get(key[7:] if key.startswith('Letter:') else key)
         # Companion tags and Leasey-style keys (Will, November 4, 2026). Control+1 to Control+5 sort;
         # the same key again flips the order. The older Alt and Control+Shift sort keys still work,
         # except Alt+Z, which now zips (Alt+U unzips).
@@ -1250,6 +1281,8 @@ def _navigation_key(key,mode):
             return {'Up':'previous','Left':'previous','Down':'next','Right':'next','Home':'home','End':'end','Enter':'enter','Escape':'escape'}[key]
         if key.startswith('Letter:'):return key
     if mode=='web' and key in ('Escape','Web:Escape') and web_session and isinstance(web_session.snapshot,dict) and web_session.snapshot.get('modal_key') and not web_session.list_focus and web_session.snapshot.get('modal_key')!=getattr(web_session,'modal_escape',None):return 'web key Escape'
+    # Escape in a form question ("What should I enter?") stops the questions and stays on the page.
+    if mode=='web' and key in ('Escape','Web:Escape') and web_session and isinstance(getattr(web_session,'form_index',None),int) and not web_session.list_focus and web_session.keyboard_field is None:return 'cancel form'
     if mode=='web' and key=='Escape' and web_session and not (web_session.list_focus or web_session.keyboard_field or isinstance(getattr(web_session,'slider_field',None),dict)):return 'web browser menu'
     if mode=='web' and key=='Web:Escape' and web_session and web_session.keyboard_field is None and not web_session.list_focus and not isinstance(getattr(web_session,'slider_field',None),dict):return 'web browser menu'
     if mode=='web' and key in ('F6','F7'):return 'list headings' if key=='F6' else 'list links'
@@ -4136,7 +4169,7 @@ def _handle(text, mode, typed=False):
         return set_microphone(MICROPHONE_OFF, mode)
     if text=='@main_menu':
         # Control+F1: the same as saying Main menu, so each screen saves or asks first.
-        if mode=='awake' and ACCOUNT_ENTRY is None and THUNDERBIRD_SETUP is None:
+        if mode=='awake' and ACCOUNT_ENTRY is None and THUNDERBIRD_SETUP is None and not account_setup:
             announce_main_menu();return 'awake'
         return handle('main menu', mode, typed=True)
     if command in MICROPHONE_OFF_PHRASES+MICROPHONE_ON_PHRASES and not writing_dictation(mode, typed):
@@ -4149,6 +4182,17 @@ def _handle(text, mode, typed=False):
         answered = thunderbird_setup_answer(command, mode)
         if answered is not None:
             return answered
+    if account_setup and command in OFFICE_LEAVE_TO_MAIN:
+        # Main menu or Control+F1 ends the account type question; it must not stay behind
+        # the main menu, where the arrows would still move through the account types.
+        account_setup=False
+        MAIN_MENU_LEAD='Account setup canceled.'
+        announce_main_menu()
+        return 'awake'
+    if account_setup and command in ('help', 'what do i do', 'repeat', 'what now', 'say that again'):
+        # F1 or Help says the question again, as in every other setup step.
+        speak_prompt(ACCOUNT_TYPE_PROMPT)
+        return mode
     if mode=='awake' and not account_setup and ACCOUNT_PICKER is None and pending_website is None:
         # Everyday words on the main menu (Will, October 31, 2026).
         if command in MAIN_MENU_HELP:text=command='help'
@@ -4190,10 +4234,11 @@ def _handle(text, mode, typed=False):
             return handled
     manager=globals().get('FILE_MANAGER')
     if mode=='files' and manager and manager.pending and manager.pending[0] in FILE_TEXT_STEPS:
-        if manager.pending[0]=='rename' and not typed and command not in ('cancel','escape','go back','no'):
+        if manager.pending[0]=='rename' and not typed and command not in ('cancel','escape','go back','no','help','commands')+__import__('file_manager').HELP_WORDS:
             # A spoken name without a type keeps the old type (Will, October 31, 2026); typed names are used as typed.
+            # Spoken "Help." gives help: it renamed the file to help.txt.
             text=__import__('file_manager').keep_type(manager.pending[1][0],__import__('file_manager').spoken_name(text))
-        try:speak(manager.command(text))
+        try:speak(manager.command(text,typed=typed))
         except (OSError,ValueError) as error:speak(str(error))
         sync_app_context(mode,True);return mode
     if mode=='chrome_setup':
@@ -4315,7 +4360,11 @@ def _handle(text, mode, typed=False):
         speak('Exit Voice Companion? Are you sure? Yes or no.');return mode
     if mode=='power_confirm':
         if command in ('no','no thanks','cancel','main menu','back'):
-            POWER_ACTION=None;return canceled_to(POWER_RETURN_MODE)
+            POWER_ACTION=None
+            if POWER_RETURN_MODE=='power_menu' and command!='main menu':
+                # Asked from Shut down or restart: back there, on the same choice.
+                return group_menu('power_menu','Canceled. Shut down or restart.')
+            return canceled_to('awake' if POWER_RETURN_MODE=='power_menu' else POWER_RETURN_MODE)
         if command in ('yes','yes please','okay','ok','confirm','confirm that','that one'):
             # Never lose work: as Exit does, stay open when the draft or the note cannot be saved.
             not_done='The computer was not restarted.' if POWER_ACTION=='restart' else 'The computer was not shut down.'
@@ -4643,7 +4692,7 @@ def _handle(text, mode, typed=False):
             # Name the screen you return to. The main menu is said by handle(), so say it with that.
             help_session = None
             if help_return_mode == 'awake':MAIN_MENU_LEAD = 'Help closed.'
-            else:speak('Help closed. ' + options_return_notice(help_return_mode))
+            else:speak('Help closed. ' + options_return_notice(help_return_mode) + still_open(help_return_mode))
             return help_return_mode
         if result is not None:speak(result)
         elif typed or not speech_busy():
@@ -4759,6 +4808,9 @@ def _handle(text, mode, typed=False):
                 return screen.files_command(sys.modules[__name__],result[len('__attach__:'):],mode) or mode
             except (screen.AttachmentError,ValueError,OSError) as exc:
                 speak(str(exc));return mode
+        if result=='__home__':
+            # Main menu chosen on the File manager menu, the same as saying "Main menu".
+            return handle('main menu',mode,typed=True)
         if result=='__main__':
             picker=task_navigation().picker
             task_navigation().picker=None
@@ -4767,7 +4819,9 @@ def _handle(text, mode, typed=False):
             if picker=='reader':return task_navigation().enter('reader_menu','Document reader menu')
             if picker=='document' and getattr(task_navigation(),'pick_return',None)=='document' and document is not None:
                 speak('Canceled. Back to document.');return 'document'
-            if picker:return task_navigation().enter('media_menu' if picker=='media' else 'word_processor','Media menu' if picker=='media' else 'Word processor menu')
+            # On Media player, where you were, as leaving the player says (task_navigation.py).
+            if picker=='media':return task_navigation().enter('media_menu','Media menu',2)
+            if picker:return task_navigation().enter('word_processor','Word processor menu')
             return 'awake'
         if FILE_MANAGER.pending and FILE_MANAGER.pending[0]=='delete':CONFIRM_CHOICE='no'
         speak(result)
@@ -4832,8 +4886,10 @@ def _handle(text, mode, typed=False):
                   'document help': 'documents', 'web help': 'web',
                   'radio help': 'radio', 'podcast help': 'podcasts',
                   'commands help': 'commands'}
-    if help_topic and writing_dictation(mode, typed):
+    subject_box = mode == 'email_draft' and email_draft is not None and email_draft.compose_step == 'subject'
+    if help_topic and (writing_dictation(mode, typed) or subject_box):
         # "Help with the dishes tonight" while writing is text unless it names a guide topic.
+        # The Subject box is writing too, typed or said ("Help with the move" is a subject).
         try:
             probe = HelpSession(GUIDE, release_notes_path=GUIDE.parent/'Voice Companion Release Notes.txt')
             if probe.topic(help_topic[1]).startswith(__import__('onboard_help').NOT_FOUND): help_topic = None
@@ -5123,6 +5179,10 @@ def _handle(text, mode, typed=False):
             return mode
         if command in PICK_CONFIRM and ACCOUNT_MENU_INDEX is not None:
             command = ACCOUNT_TYPES[ACCOUNT_MENU_INDEX][1]
+        elif command in PICK_CONFIRM and typed:
+            # Enter before choosing a type: name the keys, not only the words to say.
+            speak('Press T for Thunderbird or Y for Yahoo, or use the arrows. Then press Enter. Escape cancels.')
+            return mode
         if command in THROUGH_THUNDERBIRD:
             account_setup = False
             return start_thunderbird_add(mode, THROUGH_THUNDERBIRD[command] + ' works through Thunderbird.')
@@ -5248,7 +5308,10 @@ def _handle(text, mode, typed=False):
     if mode=='mailbox' and command in ('copy sender address','copy sender email address','copy the sender address','email sender','email the sender','new email to sender','write an email to sender','compose email to sender'):
         from mail_voice import sender_address
         address=sender_address(mail_session.rows[mail_session.current-1]) if mail_session and mail_session.rows and mail_session.current else ''
-        if not address:speak('No sender address is available for the current message.');return mode
+        if not address:
+            # An empty folder says what every other key says there (sweep, November 6, 2026).
+            speak(mail_session._empty_list() if mail_session and not mail_session.rows and mail_session.view=='folder'
+                  else 'No sender address is available for the current message.');return mode
         if command.startswith('copy'):
             from document_editor import copy_to_clipboard
             copy_to_clipboard(address)
@@ -5525,7 +5588,9 @@ def _handle(text, mode, typed=False):
             if mail_session is not None and command not in ('back to main menu', 'main menu'):
                 speak('Email draft saved. ' + mail_session.process('back to folder'))
                 return 'mailbox'
-            speak('Email draft saved locally. Check whether it was sent before sending it again.')
+            # The check is needed only after a send was tried (sweep, November 6, 2026).
+            speak('Email draft saved locally. Check whether it was sent before sending it again.' if email_draft.last_attempt_hash
+                  else 'Email draft saved locally as ' + email_draft.title + '. It has not been sent.')
             return 'awake'
         try:
             dictation_feedback(email_draft.process(text, typed=typed))
@@ -6038,7 +6103,9 @@ def office_return(text, mode, result):
         lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD.strip(), ''
         if lead:speak(lead)
         return 'office_menu'
-    if result in OFFICE_ELSEWHERE:
+    if result in OFFICE_ELSEWHERE or result == 'office_menu' or mode == 'office_menu' and result == 'awake' and not setting_up:
+        # Back in Office tools (Help closed there), or left it for the main menu: the way back
+        # is used up. Kept, the next main menu key would jump into Office tools.
         OFFICE_RETURN = False
         return result
     if mode == 'awake' and result == 'awake' and OFFICE_RETURN:
@@ -6052,17 +6119,23 @@ def office_return(text, mode, result):
     if not back:
         return result
     lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD.strip(), ''
+    return group_menu('office_menu', (lead + ' ' if lead else '') + 'Office tools.')
+
+
+def group_menu(menu, words):
+    """Back to Office tools or Shut down or restart, on the item you left, in one message."""
     navigation = task_navigation()
-    items = navigation.items('office_menu')
-    index = navigation.indices.get('office_menu', 0)
+    items = navigation.items(menu)
+    index = navigation.indices.get(menu, 0)
     index = index if 0 <= index < len(items) else 0
-    navigation.indices['office_menu'] = index
-    speak((lead + ' ' if lead else '') + 'Office tools. ' + navigation.describe(items[index], index, len(items)))
-    return 'office_menu'
+    navigation.indices[menu] = index
+    speak(words + ' ' + navigation.describe(items[index], index, len(items)))
+    return menu
 
 
 def handle(text, mode, typed=False):
-    global _HANDLE_DEPTH, CONFIRM_CHOICE, KEYBOARD_NAVIGATION
+    global _HANDLE_DEPTH, CONFIRM_CHOICE, KEYBOARD_NAVIGATION, POWER_RETURN_MODE, account_setup
+    asking_account_type = account_setup
     if _HANDLE_DEPTH==0:TRANSCRIPT.mode=SLEEP_RETURN_MODE+', asleep' if mode=='sleep' else mode
     if _HANDLE_DEPTH==0 and not typed:user_stop.begin_command()
     if not typed and _HANDLE_DEPTH==0 and APP_WINDOW is not None and not APP_WINDOW.commands.empty():
@@ -6107,10 +6180,19 @@ def handle(text, mode, typed=False):
         mail_session.link_request=None
         result=open_email_link(url)
     if _HANDLE_DEPTH == 0:result=office_return(text,mode,result)
+    if _HANDLE_DEPTH == 0 and asking_account_type and account_setup and result not in (mode, 'sleep'):
+        # A key or command that opened another screen (Control+T, Options) ends the account type
+        # question; left on, its arrows would move through account types on that screen.
+        account_setup = False
+    if _HANDLE_DEPTH == 0 and mode == 'power_menu' and result == 'power_confirm':
+        # No at the question goes back to Shut down or restart, one level up.
+        POWER_RETURN_MODE = 'power_menu'
     if result == 'awake' and mode not in ('awake', 'sleep') and _HANDLE_DEPTH == 0:
         if MEDIA_HUB and not PREFERENCES.get('keep_audio_playing',False):MEDIA_HUB.audio_command('stop audio')
         __import__('youtube_screen').main_menu(sys.modules[__name__])
-        if MAIN_MENU_ANNOUNCED==announced:announce_main_menu()
+        # Email with no account asks which account type: the main menu words would cut that off.
+        setting_up=account_setup or ACCOUNT_ENTRY is not None or THUNDERBIRD_SETUP is not None
+        if MAIN_MENU_ANNOUNCED==announced and not setting_up:announce_main_menu()
     if result!=mode:DICTATION_ECHO.clear()
     if _HANDLE_DEPTH==0 and result!='exit':sync_app_context(result,result!=mode)
     return result

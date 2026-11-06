@@ -295,6 +295,10 @@ SORT_KEYS=('name','date modified','type','size','date created')
 
 HELP='File manager. Up Arrow and Down Arrow move through items. Home and End reach the list boundaries. Enter opens. Escape goes up one folder, then back to the drive list. Say an item name, or open followed by its name. Space tags or untags an item: Companion tags. Tags stay when you open another folder, so you can tag items in several folders. Copy, cut, delete, zip, and email act on every tagged item, or on the current item when nothing is tagged. Control+A tags all; Control+Shift+A clears tags; Control+Shift+T says what is tagged. F2 renames. Delete asks you to confirm removal. Control+C copies; Control+X cuts; Control+V pastes in the current folder. Alt+Z zips. Alt+Shift+Z zips with a password. Alt+U unzips into a new folder, and asks for the password of a locked zip. Alt+Enter shows properties; use the arrows to read them. Control+1 sorts by name, Control+2 by date modified, Control+3 by type, Control+4 by size, and Control+5 by date created. Press the same key again to switch between ascending and descending. Control+F searches names in this list; Control+Shift+F searches subfolders. Control+Shift+X clears search. F5 refreshes. Control+D returns to drives. Type the first few letters of an item to jump to it. Alt opens the File manager menu, in groups: Actions, Search, Sort, and Go to. Alt+Home returns to the main menu.'
 
+HELP_WORDS=('file manager help','help with file manager','help for file manager')
+# The steps with a box to type a name or search words in (passwords go to secret()).
+NAME_STEPS=('rename','search','search all','zip','zip with password')
+
 class FileManager:
     def __init__(self,backend=None):
         self.backend=backend or ShellFiles();self.items=[];self.index=0;self.location=None;self.history=[];self.selected=set();self.tag_items={};self.properties=[];self.zip_suggestion='';self.zip_secret=None;self.menu=False;self.menu_index=0;self.pending=None;self.busy=False;self.events=queue.Queue();self.opened=None;self.revision=0;self.job_id=0;self.mutating=False
@@ -388,7 +392,8 @@ class FileManager:
     def current(self):return self.items[self.index] if self.items and 0<=self.index<len(self.items) else None
     def say_current(self):
         labels=self.labels();i=self.menu_index if self.menu else self.index
-        return labels[i]+'. '+str(i+1)+' of '+str(len(labels))+'.' if labels else 'This folder is empty.'
+        # Menu items already end with a period ("Actions, group."); never say "group.. 1 of 4".
+        return labels[i].removesuffix('.')+'. '+str(i+1)+' of '+str(len(labels))+'.' if labels else 'This folder is empty.'
     def refresh(self,path=None,push=False,preserve=None,restore_index=None):
         def done(items):
             extensions=getattr(self,'pick_extensions',None)
@@ -418,7 +423,7 @@ class FileManager:
         matches=[(n,i) for n,i in enumerate(self.items) if i.name.casefold()==name or i.path.casefold()==name or Path(i.name).stem.casefold()==name or (i.drive and name in (ntpath.splitdrive(i.path)[0].rstrip(':').casefold()+' drive','drive '+ntpath.splitdrive(i.path)[0].rstrip(':').casefold()))]
         if len(matches)!=1:raise ValueError('More than one item matches. Use arrows or say its full path.' if matches else 'No item is named '+heard+'. Say an item name, or press F1 for help.')
         self.index=matches[0][0]
-    def command(self,text):
+    def command(self,text,typed=False):
         text=text.strip();cmd=text.casefold().rstrip('.!?')
         cmd={'first item':'home','last item':'end','start of list':'home','end of list':'end','activate current item':'open','open current item':'open','select current item':'select','unselect current item':'unselect',
              # Companion tags: the older selection words still work.
@@ -428,7 +433,8 @@ class FileManager:
              "what's tagged":'what is tagged','list tags':'what is tagged','say tags':'what is tagged','read tags':'what is tagged',
              'zip it':'zip','zip files':'zip','zip these':'zip','compress':'zip','unzip it':'unzip','unzip files':'unzip','extract':'unzip','extract all':'unzip',
              'file properties':'properties','show properties':'properties','item properties':'properties','what are the properties':'properties'}.get(cmd,cmd)
-        if cmd in ('file manager help','help with file manager','help for file manager','help','commands'):return HELP
+        # A word typed in the name or search box is text: "help" searches for help.txt (November 6, 2026).
+        if cmd in HELP_WORDS or cmd in ('help','commands') and not (typed and self.pending and self.pending[0] in NAME_STEPS):return HELP
         if self.busy:
             if cmd in ('escape','go back','cancel') and not self.mutating:
                 self.view.cancel.set();self.job_id+=1;self.busy=False
@@ -439,7 +445,10 @@ class FileManager:
         if self.pending:
             action,paths=self.pending[0],self.pending[1]
             if cmd in ('cancel','escape','go back','no'):
-                self.pending=None;self.zip_secret=None;return 'File action canceled. '+self.say_current()
+                # Say what was canceled; every box said "File action canceled" (November 6, 2026).
+                words={'search':'Search canceled.','search all':'Search canceled.','rename':'Rename canceled.','delete':'Delete canceled. Nothing was deleted.',
+                       'unzip password':'Unzip canceled.'}.get(action,'Zip canceled.' if action.startswith('zip') else 'File action canceled.')
+                self.pending=None;self.zip_secret=None;return words+' '+self.say_current()
             if action=='delete' and cmd in ('yes','okay','ok','confirm','enter'):
                 self.pending=None
                 return self.mutate('delete',paths)
@@ -459,7 +468,12 @@ class FileManager:
             if action=='rename':
                 # "Rename to budget" or "Call it budget"; a typed name such as "Name tags.txt" is kept whole.
                 name=re.sub(r'^(?:rename (?:it )?to|call it|name it)\s+','',text,flags=re.I)
-                valid_name(name);self.pending=None;return self.mutate('rename',paths,name=name)
+                valid_name(name)
+                # A used name keeps the box open to type another (it closed, then Windows refused).
+                target=Path(paths[0]).with_name(name.strip())
+                if target.exists() and str(target).casefold()!=str(Path(paths[0])).casefold():
+                    raise ValueError('An item named '+target.name+' is already here. Nothing was replaced. Type another name, or press Escape to cancel.')
+                self.pending=None;return self.mutate('rename',paths,name=name)
             if action in ('search','search all'):
                 if not text.strip():raise ValueError('Enter part of a name, or press Escape to cancel.')
                 self.pending=None
@@ -473,6 +487,10 @@ class FileManager:
         if self.menu=='properties':
             if cmd in ('escape','go back','cancel','close','close properties','properties'):self.menu=False;self.properties=[];return self.say_current()
             if cmd in ('enter','okay','ok','open','activate','confirm','repeat'):return self.say_current()
+            # A file key (F2, Delete, Space...) closes Properties and acts on the file, as in the Alt menu.
+            # It acted while the old properties stayed on the screen (November 6, 2026).
+            if cmd not in ('next','previous','up','down','home','end','first','last','file backspace') and not cmd.startswith('file letters '):
+                self.menu=False;self.properties=[]
         elif self.menu:
             if cmd in ('escape','go back','cancel'):
                 if self.menu in GROUPS:
@@ -484,6 +502,8 @@ class FileManager:
                 if self.menu is True:return self.command(command)
                 self.menu=False
                 if command in ATTACH_COMMANDS:return '__attach__:'+command
+                # Go to, Main menu: the app leaves File manager (it said "No item is named main menu").
+                if command=='main menu':return '__home__'
                 return self.command(command)
             if cmd not in ('next','previous','up','down','home','end','first','last','file backspace') and not cmd.startswith('file letters '):
                 self.menu=False;return self.command(text)
@@ -600,7 +620,10 @@ class FileManager:
         return self.command('open')
     def mutate(self,action,paths,**kwargs):
         focus=str(Path(paths[0]).with_name(kwargs['name'])) if action=='rename' and kwargs.get('name') else None
-        return self.start_job(lambda:self.backend.operate(action,paths,**kwargs),lambda _:self.after_change('File action complete.',focus),'Working on '+str(len(paths))+(' item.' if len(paths)==1 else ' items.'),mutating=True)
+        # Say what was done; it said only "File action complete." (November 6, 2026).
+        names=Path(paths[0]).name if len(paths)==1 else count_items(len(paths))
+        done={'delete':'Deleted '+names+'.','rename':'Renamed '+names+' to '+str(kwargs.get('name') or '').strip()+'.'}.get(action,'File action complete.')
+        return self.start_job(lambda:self.backend.operate(action,paths,**kwargs),lambda _:self.after_change(done,focus),'Working on '+str(len(paths))+(' item.' if len(paths)==1 else ' items.'),mutating=True)
     def after_change(self,message,focus=None):
         self.clear_tags();self.refresh_here(focus);return message+' Refreshing folder.'
     def finish_open(self,reader):self.opened=reader;return 'Opened '+reader.title+'. Read-only document. '+''.join(w.rstrip(' .')+'. ' for w in reader.warnings[:3])+reader.reading.read(True)

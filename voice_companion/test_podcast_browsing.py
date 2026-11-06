@@ -181,7 +181,7 @@ class BrowseScreenTests(unittest.TestCase):
         # Escape goes back up one level, to the categories, on the one that was chosen.
         self.assertIn('Comedy (C), 3 of 17', self.nav.keyboard('Escape'))
         self.assertEqual(self.nav.view, 'categories')
-        self.assertEqual(self.nav.keyboard('Escape'), 'Browse podcasts (B), 1 of ' + str(len(PODCASTS)) + '.')
+        self.assertEqual(self.nav.keyboard('Escape'), 'Podcasts menu. Browse podcasts (B), 1 of ' + str(len(PODCASTS)) + '.')
         self.assertEqual(self.nav.focus, 'actions')
 
     def test_categories_name_every_one_the_tester_asked_for(self):

@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.207-test.
+Guide version: 0.2.208-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -254,6 +254,7 @@ Office tools has these apps:
 - File manager
 Media has Radio, Podcasts, Media player, and YouTube. Shut down or restart has Shut down the computer and Restart the computer. Each one still asks first.
 To open Office tools, say "Office tools", or press Enter on it. Move and choose the same way as on the main menu.
+In Office tools or Shut down or restart, say "Help with main menu", or press F1, to hear this part of the guide.
 When you leave an app you opened from Office tools, you go back to Office tools. Escape on Office tools goes to the main menu. "Main menu" and Control+F1 always go straight to the main menu.
 You can still open any app by name from the main menu. For example, say "Email" or "File manager".
 To move, say "Next" or "Previous", or press Down Arrow or Up Arrow.
@@ -598,7 +599,7 @@ You can also say "Rename to" followed by the new name. To keep the old name, say
 6.9 Delete files and folders
 1. Tag the items, or move to one item.
 2. Say "Delete", or press Delete. Companion names the items and asks you to confirm.
-3. No is chosen first. To delete, press Up Arrow to choose Yes, then press Enter. Or say "Yes".
+3. No is chosen first. To delete, press Up Arrow to choose Yes, then press Enter. Or say "Yes". You can also press Y or N.
 To keep the items, say "No", or press Escape.
 Windows puts deleted items in the Recycle Bin when it can. File manager has no permanent delete. Drives cannot be deleted.
 If Windows cannot finish, check the folder before you try again.
@@ -955,7 +956,7 @@ Accounts are also in the email menu. In email, press Alt, then 6. Choose Add acc
 
 10.3 Add and find contacts
 A contact is a saved name with an email address or a phone number. Contacts has its own screen in Office tools. See chapter 13.
-- To save a contact, say "Add contact", the person's name, "as", and their email address. For example, say "Add contact Bob as bob@example.com". Or in the inbox, press Alt, 5, then 3. Type the name, the word as, and the address, then press Enter.
+- To save a contact, say "Add contact", the person's name, "as", and their email address. For example, say "Add contact Bob as bob@example.com". Or in the inbox, press Alt, 5, then 5. Type the name, the word as, and the address, then press Enter.
 - To hear saved names, say "List contacts", or press P in the inbox. While you write an email, press Control+K. Use the arrows to hear each name. Press Enter to hear the address.
 - To find a contact, say "Find contact", followed by the saved name, such as "Find contact Bob".
 - When Companion asks who to email, you can say a saved contact's name.
@@ -1523,7 +1524,7 @@ Say "Fill out this form". Companion asks for one answer at a time. With the keyb
 - For a choice, say the option name.
 - For a checkbox, say Yes or No.
 - To leave an answer alone, say "Skip".
-- To stop the questions, say "Cancel form".
+- To stop the questions, say "Cancel form", or press Escape. You stay on the page.
 Some forms show more questions after an answer. Companion checks for them as you go.
 To check your answers before you send:
 1. Say "Review and submit form". Or say "Review form" to hear the answers only.
@@ -1724,7 +1725,7 @@ Search, favorites, web history, Go back, and Go forward stay in the web browser 
 19.1 Open and play a file
 1. Choose Media on the main menu, then Media player. Radio, Podcasts, and YouTube are also in the Media menu.
 2. Press Control+O to open the drive list.
-3. Use the arrows and Enter to open a drive, then a folder, then a sound or video file. Escape goes up one folder. Escape at the drive list goes back to the player.
+3. Use the arrows and Enter to open a drive, then a folder, then a sound or video file. Escape goes up one folder. Escape at the drive list goes back to the Media menu.
 4. Companion says the file name and starts to play it.
 You can also press Enter on a sound or video file in File manager.
 
@@ -2163,9 +2164,10 @@ Closing Companion does not shut down Windows.
 
 26.3 Restart or shut down the computer
 These choices affect the whole computer. Save your work in other apps first.
-1. Choose Restart the computer or Shut down the computer on the main menu. Or say "Restart computer" or "Shut down computer".
+1. Choose Shut down or restart on the main menu. Then choose Restart the computer or Shut down the computer. Or say "Restart computer" or "Shut down computer".
 2. Listen to the question. It names the action.
-3. Say "Yes" to go ahead, or "No" to cancel.
+3. Say "Yes" to go ahead, or "No" to cancel. You can also press Alt+Y, or Alt+N or Escape.
+If you say No in Shut down or restart, you go back there.
 If a document is open, Companion asks whether to save it first. Press Escape at that question to cancel.
 Windows may ask about unsaved work in other apps. Companion does not force them to close.
 The startup choice and the computer power choices are separate settings.
