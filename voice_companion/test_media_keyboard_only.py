@@ -149,3 +149,23 @@ class MediaPlayerVolumeEdgeTests(unittest.TestCase):
         self.said.clear()
         self.key('Up', mode)
         self.assertEqual(self.said, ['Volume 10 percent.'])
+
+
+import test_youtube  # noqa: E402  (its names are not imported, so its tests do not run twice)
+
+
+class YouTubePlayerKeysAreNeverSilentTests(unittest.TestCase):
+    """In the YouTube player, End, Page Down and Page Up said nothing at all. The arrows,
+    Space and Home control the video there, so say that, and how to get back to the list."""
+    setUp = test_youtube.NoBrowser.setUp
+    press = test_youtube.NoBrowser.press
+
+    def test_list_keys_in_the_player_say_what_the_keys_do(self):
+        import youtube_screen
+        youtube_screen.screen(self.app).push_player()
+        for name in ('End', 'Next', 'Prior'):
+            with self.subTest(key=name):
+                self.said.clear()
+                self.assertEqual(self.press(name), 'youtube')
+                self.assertEqual(self.said, ['In the player, the arrows change the volume and skip. '
+                                             'Space plays or pauses. Escape goes back to the list.'])
