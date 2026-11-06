@@ -160,7 +160,7 @@ HINT_KEYS = {
     'email_draft': 'Tab moves between boxes. Alt+S sends.',
     'mailbox': 'Enter opens. R replies. N writes new.',
     'note': 'Control+S saves.',
-    'files': 'Arrows move. Enter opens. Alt opens the menu.',
+    'files': 'Enter opens. Alt opens the menu.',
     'web': 'Escape opens the browser menu.',
     'help': 'Arrows move. Escape goes back.',
     'file_reader': 'Arrows read. Escape goes back.',

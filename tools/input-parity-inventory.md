@@ -260,7 +260,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### File manager help
 
 - Voice: "File manager help"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ### Main menu
@@ -826,7 +826,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Document help
 
 - Voice: "Help with documents"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ### Word processor options
@@ -1038,7 +1038,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Main menu
 
 - Voice: "Main menu"
-- Keyboard: F1
+- Keyboard: F1 twice
 - Status: Both
 
 ## Reader Menu
@@ -1064,13 +1064,13 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Help
 
 - Voice: "Help with document reader"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ### Main menu
 
 - Voice: "Main menu"
-- Keyboard: F1
+- Keyboard: F1 twice
 - Status: Both
 
 ## Media Menu
@@ -2298,7 +2298,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Email help
 
 - Voice: "Help with email"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ### Main menu
@@ -2470,7 +2470,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Writing email help
 
 - Voice: "Help with writing email"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ## Alt menu, Email draft: Attachments
@@ -2580,7 +2580,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Notepad help
 
 - Voice: "Help with notepad"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ### Main menu
@@ -2740,7 +2740,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Web help
 
 - Voice: "Help with web"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ## Alt menu, Downloads: Download
@@ -2806,7 +2806,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Downloads help
 
 - Voice: "Help with downloads"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ### Close downloads
@@ -2876,7 +2876,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Address manager help
 
 - Voice: "Help with contacts"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ### Main menu
@@ -2978,7 +2978,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Schedule manager help
 
 - Voice: "Help with calendar"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ### Main menu
@@ -3084,7 +3084,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### List commands
 
 - Voice: "List commands"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ### Main menu
@@ -3140,7 +3140,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Attachments help
 
 - Voice: "Help with attachments"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ### Close the list
@@ -3286,7 +3286,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Document reader help
 
 - Voice: "Help with document reader"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ## Alt menu, YouTube actions: Play
@@ -3604,7 +3604,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### YouTube help
 
 - Voice: "Help with youtube"
-- Keyboard: Double:F1
+- Keyboard: F1 twice
 - Status: Both
 
 ### Media menu
@@ -3808,7 +3808,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Help for the current screen
 
 - Voice: "Help with documents", "Help with email", ...
-- Keyboard: F1
+- Keyboard: F1 twice
 - Status: Added: F1 on email, notes, web, media, reader and menu screens
 
 ### Choose a topic or part
@@ -4120,7 +4120,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Notepad help
 
 - Voice: "Help with notepad"
-- Keyboard: F1
+- Keyboard: F1 twice
 - Status: Added: F1
 
 ### Start or end of the typing line
@@ -4256,7 +4256,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Help with writing email
 
 - Voice: "Help with writing email"
-- Keyboard: F1
+- Keyboard: F1 twice
 - Status: Added: F1
 
 ## Email: read and organize
@@ -4420,7 +4420,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Email help
 
 - Voice: "Help with email"
-- Keyboard: F1
+- Keyboard: F1 twice
 - Status: Added: F1
 
 ## Web: page reading
@@ -4518,7 +4518,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Web help
 
 - Voice: "Help with web"
-- Keyboard: F1
+- Keyboard: F1 twice
 - Status: Added: F1
 
 ### Close the browser window, even when kept open
@@ -4720,7 +4720,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Radio or podcast help
 
 - Voice: "Help with radio", "Help with podcasts"
-- Keyboard: F1
+- Keyboard: F1 twice
 - Status: Added: F1
 
 ## Media player
@@ -4740,7 +4740,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Media player help
 
 - Voice: "Help with media player"
-- Keyboard: F1
+- Keyboard: F1 twice
 - Status: Added: F1
 
 ## Document reader
@@ -4802,7 +4802,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Help
 
 - Voice: "Help with document reader"
-- Keyboard: F1
+- Keyboard: F1 twice
 - Status: Added: F1 and voice Help
 
 ## Sleep, exit and power

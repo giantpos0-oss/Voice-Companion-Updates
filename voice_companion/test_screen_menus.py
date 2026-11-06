@@ -401,8 +401,8 @@ class ScreenMenuTests(unittest.TestCase):
         import re
         html = re.sub(r'</?kbd>', '', GUIDE_HTML.read_text(encoding='utf-8'))
         for mode, (title, groups) in MENUS.items():
-            # "the email menu", but "the YouTube menu": a name keeps its capital letters.
-            sentence = 'Press Alt to open the ' + (title if title.startswith('YouTube') else title[0].lower() + title[1:]) + '.'
+            # "the email menu", but "the YouTube menu" and "the Address manager menu": an app name keeps its capital letter.
+            sentence = 'Press Alt to open the ' + (title if title.startswith(('YouTube', 'Address manager', 'Schedule manager')) else title[0].lower() + title[1:]) + '.'
             with self.subTest(mode=mode):
                 self.assertIn(sentence, text)
                 self.assertIn(sentence, html)

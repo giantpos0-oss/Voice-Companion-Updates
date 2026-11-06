@@ -74,7 +74,8 @@ class MenuKeyboardTests(unittest.TestCase):
         self.assertIsNone(next_match(['Email','Exit'],0,'z'))
 
     def test_main_escape_confirms_and_second_escape_cancels(self):
-        with patch.object(app,'PREFERENCES',{'ask_before_exit':True}),patch.object(app,'document',None),patch.object(app,'speak'),patch.object(app,'finish_exit') as finish:
+        # _handle alone leaves "Canceled." for handle() to say; patched so no later test hears it.
+        with patch.object(app,'PREFERENCES',{'ask_before_exit':True}),patch.object(app,'document',None),patch.object(app,'speak'),patch.object(app,'finish_exit') as finish,patch.object(app,'MAIN_MENU_LEAD',''):
             self.assertEqual(app.navigation_key('Escape','awake'),'exit companion')
             mode=app._handle('exit companion','awake')
             self.assertEqual(mode,'exit_confirm');self.assertEqual(app.CONFIRM_CHOICE,'no')
