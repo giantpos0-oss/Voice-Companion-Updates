@@ -7,6 +7,115 @@ The format for each night:
 - a heading with the date and the version
 - under it, a "Fixed" list and a "Questions for Will" list
 
+## November 6, 2026 (night 6, keyboard only): version 0.2.208-test
+
+Release pull request 140. Try pull request 139 ran the new real-window tests on Windows.
+
+### Fixed
+
+#### Startup and main menu
+- F1 opens Help in Office tools and in Shut down or restart.
+- Alt+O opens Options from Office tools, Shut down or restart, and the Media menu, and comes back to that menu.
+- No or Escape at "Restart the computer?" goes back to Shut down or restart, not the main menu.
+- The email account question (no account set up) was cut off by "Main menu". Fixed.
+- "Main menu" or Control+F1 at the account question now cancels it. Before, the arrows still moved through account types.
+- Control+T, F1, Help, waking up and Alt at the account question now handle it the right way.
+- Enter before choosing an account type tells keyboard users to press T or Y.
+- The main menu no longer sends you into Office tools after Help or Options.
+- Guide 1.3 and 26.3 updated for Shut down or restart.
+
+#### Questions on every screen
+- F1 now reaches the app during a Yes or No question in the real window. Calendar and Contacts say the question again and keep the choice.
+- Closing Help in Calendar or Contacts says the list or question still open.
+
+#### Email
+- Escape in the To, CC, BCC or Subject box keeps the typed text and asks the leave question.
+- Control+R, Control+Z and Control+Y work in the CC and BCC boxes.
+- Subjects that start like a command ("Save the date", "Help with the move") stay the subject.
+- Delete in an open message asks to delete it, as the guide says.
+- Keys no longer change the message while the send review asks Y or N.
+- Attachments list: Delete and attaching another file keep the other tags. The Alt menu has a Tags group.
+- An empty folder says the same words for C, E and H as for other keys.
+- Leaving a never-sent draft no longer warns about sending twice.
+- Control+F1 in the attachments list says only the main menu.
+- Guide 10.3: Add contact is Alt, 5, then 5. A test checks every email Alt path in the guide.
+- Test isolation: the drafts list no longer leaks between test files.
+
+#### Calendar and Contacts
+- A new contact canceled with Escape leaves nothing open.
+
+#### Files and documents
+- Y and N answer File manager's Delete question. F1 says it again.
+- Typing "help" in a box is text. Saying "Help" while renaming gives help instead of renaming the file.
+- File keys close Properties first.
+- One Escape after one typed letter goes back.
+- Alt, Go to, Main menu works.
+- A used name keeps the rename box open.
+- Delete and rename say what they did.
+- Each box says what to type when Enter is pressed empty. Each Escape says what was canceled.
+- Search says "1 match" and "No matches".
+- Control+Shift+F in the drive list says to open a drive first, at once.
+- Sixteen document menu items say in plain words what to type.
+- No more double periods in menu items.
+
+#### Web
+- Shift with a number 1 to 6 goes back to a heading at that level.
+- The flaky live test is fixed: after a page stayed open for unsaved changes, Chromium could stop the next page change at once. Companion now tries once more in that case.
+- Escape in a form question stays on the page.
+- The fields list (F8) says its keys once, then only each field.
+- The page menu shows Control+Home and Control+End.
+
+#### Media and the window
+- Alt+T keeps letters and spaces on every screen. Escape clears a typed command.
+- Space in a list menu says to press Enter, and no longer blocks the arrows.
+- Radio and Podcasts forms: Space presses OK or Cancel; other keys say what to do.
+- An empty preset list no longer opens Station actions.
+- Escape from results says "Radio menu" or "Podcasts menu" first.
+- After removing an item, the list stays near it and says where you are.
+- F5 in Radio uses plain words, and "1 station".
+- Media player says "Loudest" and "The audio is silent" at the volume ends.
+- End and Page keys in the YouTube player say which keys to use.
+- Escape from the Media player drive list lands on Media player. Guide 19.1 corrected.
+
+### Open items for the next sweep
+- Published as 0.2.208-test. The new window tests passed on Windows (try pull request 139). The email and calendar ones ran in the release. Add test_keyboard_documents_sweep.FileBoxWindowTests and the three test_media_form_window classes to the window test list in the next release, and take test_media_form_window out of NOT_IN_BUILD in tools/test_release_list.py.
+- test_keyboard_text WindowKeyboardTests test_file_tab_stays_in_the_list_and_new_file_keys_reach_the_app fails on Linux at the Control+Shift+3 key code, on main too.
+- Thunderbird add-on delete inside Trash with messages.delete(ids, false) is still open.
+- The scratchpad is shared by all helpers. Give each helper its own subfolder.
+
+### Questions for Will (not answered yet)
+
+#### Startup and menus
+- Should the main menu remember your place after Escape from Office tools, Media or Help?
+- Should Control+F12 at a Yes or No question say "Answer the question first"?
+- Should Escape from the tutorial lesson list go back to the lesson you were on?
+
+#### Email
+- While the inbox asks a question, should F5, Space, Delete and the Page keys be blocked too?
+- In the attachments list, should Delete act on every tagged file, as in File manager?
+- Should Escape from the folder and drafts lists say where you are?
+
+#### Calendar and Contacts
+- Should a key (for example Control+L) change the calendar for a new event?
+- Should Escape at any step keep a half-made event or contact?
+- Should End go to the last event of the day?
+- Should letters jump in the list of what to change?
+
+#### Documents
+- Should Control+S in a note stay in the note, as in a document?
+- Should Escape clear a File manager search before going up a folder?
+- Should Tab, Page Up and Page Down in File manager say they do nothing?
+- Should Escape at the Save As folder step go back to the name step?
+
+#### Web
+- After arrows change a choice box, should Escape put back the old choice?
+- Should Delete in the favorites and history lists ask to delete?
+- Should the form question prompt mention typing and Escape?
+
+#### Media
+- Should Control+O while a file plays stop the audio, as leaving the player does?
+- After Stop, should What's playing say "Stopped" instead of "Paused"?
+
 ## November 4, 2026 (night 5, empty and edge states): version 0.2.203-test
 
 Release pull request 132. Night count: sweeps since November 1 run Monday, Wednesday and Friday, so tonight is sweep night 5 (November 2 was night 4; it left no log entry). No new Windows-only tests, so no try branch.
