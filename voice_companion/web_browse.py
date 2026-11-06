@@ -10,6 +10,23 @@ SPOKEN_NAMES={'edit':'text box','combobox':'choice box','graphic':'picture','for
 ROLE_WORDS={'spinbutton':'spin button','progressbar':'progress bar','scrollbar':'scroll bar','menuitem':'menu item',
             'menuitemcheckbox':'menu item check box','menuitemradio':'menu item radio button','treeitem':'tree item'}
 
+# Shift and a number key types a mark, not a number. On a US keyboard these are the marks.
+SHIFTED_NUMBERS={'exclam':'1','at':'2','numbersign':'3','dollar':'4','percent':'5','asciicircum':'6',
+                 '!':'1','@':'2','#':'3','$':'4','%':'5','^':'6'}
+
+def page_quick_key(char,keysym,keycode,shift,windows=None):
+    """The quick key for a key press in page reading: a letter in QUICK_KEYS or a heading
+    level 1 to 6, or None. Shift and a number goes back to that heading level, as the
+    guide says; Shift+1 types "!", so the number is found from the key itself."""
+    if windows is None:windows=__import__('os').name=='nt'
+    if shift:
+        # Windows names the number key (codes 49 to 54) on every keyboard layout.
+        if windows and 49<=keycode<=54:return chr(keycode)
+        for name in (keysym,char):
+            if name in SHIFTED_NUMBERS:return SHIFTED_NUMBERS[name]
+    char=char.lower() if len(char)==1 else ''
+    return char if char and (char in QUICK_KEYS or char in '123456') else None
+
 def voice_browse_key(command):
     """Translate spoken browsing actions to the same actions used by keys."""
     import re
