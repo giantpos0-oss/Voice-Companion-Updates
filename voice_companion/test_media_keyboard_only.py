@@ -107,3 +107,45 @@ class StationListRefreshWordsTests(ExpertMediaTestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+import test_media_player_menu  # noqa: E402  (its names are not imported, so its tests do not run twice)
+
+
+class LevelPlayer(test_media_player_menu.PlayerLikeMediaPlayer):
+    """Keeps its volume from 0 to 1, as media_player.MediaPlayer does."""
+    volume = .5
+
+    def adjust(self, setting, value):
+        if setting == 'volume':
+            self.volume = max(0.0, min(1.0, round(self.volume + value, 2)))
+            return self.volume
+        return value
+
+
+class MediaPlayerVolumeEdgeTests(unittest.TestCase):
+    """Up Arrow at the loudest said "Volume 100 percent." again, and Down Arrow at silence
+    "Volume 0 percent.", as if they had changed. Radio and Podcasts say that it is the
+    loudest, or that the audio is silent."""
+    # The media player tests' setup, without running their tests again here.
+    setUp = test_media_player_menu.MediaPlayerMenuTests.setUp
+    key = test_media_player_menu.MediaPlayerMenuTests.key
+
+    def test_up_and_down_at_the_ends_say_so(self):
+        self.player = LevelPlayer()
+        companion.MEDIA_HUB.player = self.player
+        mode = companion.handle('media player', 'awake')
+        mode = companion.task_navigation().selected_file(self.song)
+        for _ in range(5):
+            mode = self.key('Up', mode)
+        self.said.clear()
+        self.key('Up', mode)
+        self.assertEqual(self.said, ['Loudest. Volume 100 percent.'])
+        for _ in range(10):
+            mode = self.key('Down', mode)
+        self.said.clear()
+        self.key('Down', mode)
+        self.assertEqual(self.said, ['Volume 0 percent. The audio is silent.'])
+        self.said.clear()
+        self.key('Up', mode)
+        self.assertEqual(self.said, ['Volume 10 percent.'])
