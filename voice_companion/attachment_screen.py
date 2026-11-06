@@ -1049,7 +1049,9 @@ def attached(m, paths, mode):
         found = draft.all_attachments()
         index = next((i for i, item in enumerate(found) if item.get('path') and os.path.normcase(item['path']) in names),
                      len(found) - 1)
+        kept = set(TAGGED)    # new files go at the end, so the tagged files keep their places
         _set(found, index)
+        TAGGED.update(number for number in kept if number < len(ITEMS))
         m.speak(said + ' ' + describe())
         return MODE
     m.focus_email_entry()

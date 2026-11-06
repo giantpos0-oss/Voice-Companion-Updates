@@ -114,6 +114,15 @@ class AttachmentListKeyTests(test_attachment_voice.PlacesTestCase):
         self.press('Ctrl+Shift+T', mode)
         self.assertEqual(self.last(), '1 attachment tagged: a.txt.')
 
+    def test_attaching_another_file_from_the_list_keeps_the_tags(self):
+        mode = self.draft_list()
+        self.press('Space', mode)                      # a.txt
+        (self.places['documents'] / 'notes.txt').write_text('notes', encoding='utf-8')
+        self.assertEqual(app.handle('Attach notes from Documents', mode), mode)
+        self.assertIn('Attached notes.txt', ' '.join(self.said[-2:]))
+        self.press('Ctrl+Shift+T', mode)
+        self.assertEqual(self.last(), '1 attachment tagged: a.txt.')
+
     def test_the_alt_menu_has_every_tag_key_as_the_guide_says(self):
         # The guide: "Press Alt to open the attachments menu. It has the same choices."
         commands = {command for _, entries in screen_menus.MENUS['attachments'][1] for _, _, command in entries}
