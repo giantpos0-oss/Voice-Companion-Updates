@@ -475,6 +475,9 @@ class TaskNavigation:
                 return {'Ctrl+N':'create a document','Ctrl+O':'@open','Ctrl+R':'@recent','Alt+O':'@options'}[key]
             if mode == 'reader_menu' and key in ('Ctrl+O','Ctrl+R','Alt+O'):
                 return {'Ctrl+O':'@reader_open','Ctrl+R':'@reader_recent','Alt+O':'@options:Document reader'}[key]
+            if mode in ('office_menu','power_menu','media_menu') and key == 'Alt+O':
+                # These menus have no options of their own: Alt+O opens Options, as on every screen.
+                return 'open options'
             if mode == 'notepad_menu' and key in ('Ctrl+N','Ctrl+O','Alt+O'):
                 return {'Ctrl+N':'write a note','Ctrl+O':'list notes','Alt+O':'@options:Notepad'}[key]
             return {'Up':'previous','Left':'previous','Down':'next','Right':'next','Enter':'enter','Escape':'escape','Home':'home','End':'end'}.get(key)

@@ -254,6 +254,7 @@ Office tools has these apps:
 - File manager
 Media has Radio, Podcasts, Media player, and YouTube. Shut down or restart has Shut down the computer and Restart the computer. Each one still asks first.
 To open Office tools, say "Office tools", or press Enter on it. Move and choose the same way as on the main menu.
+In Office tools or Shut down or restart, say "Help with main menu", or press F1, to hear this part of the guide.
 When you leave an app you opened from Office tools, you go back to Office tools. Escape on Office tools goes to the main menu. "Main menu" and Control+F1 always go straight to the main menu.
 You can still open any app by name from the main menu. For example, say "Email" or "File manager".
 To move, say "Next" or "Previous", or press Down Arrow or Up Arrow.

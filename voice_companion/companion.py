@@ -792,6 +792,11 @@ def resume_from_sleep():
     global MAIN_MENU_INDEX
     interrupt_speech()
     mode = SLEEP_RETURN_MODE
+    if mode == 'awake' and account_setup:
+        # Asleep at the account type question: ask it again, not the main menu.
+        speak(('I am listening. ' if microphone_state() == 'on' else '') + ACCOUNT_TYPE_PROMPT)
+        sync_app_context(mode,True)
+        return mode
     if mode == 'awake':
         MAIN_MENU_INDEX = None
         announce_main_menu()
@@ -4136,7 +4141,7 @@ def _handle(text, mode, typed=False):
         return set_microphone(MICROPHONE_OFF, mode)
     if text=='@main_menu':
         # Control+F1: the same as saying Main menu, so each screen saves or asks first.
-        if mode=='awake' and ACCOUNT_ENTRY is None and THUNDERBIRD_SETUP is None:
+        if mode=='awake' and ACCOUNT_ENTRY is None and THUNDERBIRD_SETUP is None and not account_setup:
             announce_main_menu();return 'awake'
         return handle('main menu', mode, typed=True)
     if command in MICROPHONE_OFF_PHRASES+MICROPHONE_ON_PHRASES and not writing_dictation(mode, typed):
@@ -4149,6 +4154,17 @@ def _handle(text, mode, typed=False):
         answered = thunderbird_setup_answer(command, mode)
         if answered is not None:
             return answered
+    if account_setup and command in OFFICE_LEAVE_TO_MAIN:
+        # Main menu or Control+F1 ends the account type question; it must not stay behind
+        # the main menu, where the arrows would still move through the account types.
+        account_setup=False
+        MAIN_MENU_LEAD='Account setup canceled.'
+        announce_main_menu()
+        return 'awake'
+    if account_setup and command in ('help','help me','what can i say','what do i do','repeat','what now','say that again'):
+        # F1 or Help says the question again, as in every other setup step.
+        speak_prompt(ACCOUNT_TYPE_PROMPT)
+        return mode
     if mode=='awake' and not account_setup and ACCOUNT_PICKER is None and pending_website is None:
         # Everyday words on the main menu (Will, October 31, 2026).
         if command in MAIN_MENU_HELP:text=command='help'
@@ -4315,7 +4331,11 @@ def _handle(text, mode, typed=False):
         speak('Exit Voice Companion? Are you sure? Yes or no.');return mode
     if mode=='power_confirm':
         if command in ('no','no thanks','cancel','main menu','back'):
-            POWER_ACTION=None;return canceled_to(POWER_RETURN_MODE)
+            POWER_ACTION=None
+            if POWER_RETURN_MODE=='power_menu' and command!='main menu':
+                # Asked from Shut down or restart: back there, on the same choice.
+                return group_menu('power_menu','Canceled. Shut down or restart.')
+            return canceled_to('awake' if POWER_RETURN_MODE=='power_menu' else POWER_RETURN_MODE)
         if command in ('yes','yes please','okay','ok','confirm','confirm that','that one'):
             # Never lose work: as Exit does, stay open when the draft or the note cannot be saved.
             not_done='The computer was not restarted.' if POWER_ACTION=='restart' else 'The computer was not shut down.'
@@ -6038,7 +6058,9 @@ def office_return(text, mode, result):
         lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD.strip(), ''
         if lead:speak(lead)
         return 'office_menu'
-    if result in OFFICE_ELSEWHERE:
+    if result in OFFICE_ELSEWHERE or result == 'office_menu' or mode == 'office_menu' and result == 'awake' and not setting_up:
+        # Back in Office tools (Help closed there), or left it for the main menu: the way back
+        # is used up. Kept, the next main menu key would jump into Office tools.
         OFFICE_RETURN = False
         return result
     if mode == 'awake' and result == 'awake' and OFFICE_RETURN:
@@ -6052,17 +6074,22 @@ def office_return(text, mode, result):
     if not back:
         return result
     lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD.strip(), ''
+    return group_menu('office_menu', (lead + ' ' if lead else '') + 'Office tools.')
+
+
+def group_menu(menu, words):
+    """Back to Office tools or Shut down or restart, on the item you left, in one message."""
     navigation = task_navigation()
-    items = navigation.items('office_menu')
-    index = navigation.indices.get('office_menu', 0)
+    items = navigation.items(menu)
+    index = navigation.indices.get(menu, 0)
     index = index if 0 <= index < len(items) else 0
-    navigation.indices['office_menu'] = index
-    speak((lead + ' ' if lead else '') + 'Office tools. ' + navigation.describe(items[index], index, len(items)))
-    return 'office_menu'
+    navigation.indices[menu] = index
+    speak(words + ' ' + navigation.describe(items[index], index, len(items)))
+    return menu
 
 
 def handle(text, mode, typed=False):
-    global _HANDLE_DEPTH, CONFIRM_CHOICE, KEYBOARD_NAVIGATION
+    global _HANDLE_DEPTH, CONFIRM_CHOICE, KEYBOARD_NAVIGATION, POWER_RETURN_MODE
     if _HANDLE_DEPTH==0:TRANSCRIPT.mode=SLEEP_RETURN_MODE+', asleep' if mode=='sleep' else mode
     if _HANDLE_DEPTH==0 and not typed:user_stop.begin_command()
     if not typed and _HANDLE_DEPTH==0 and APP_WINDOW is not None and not APP_WINDOW.commands.empty():
@@ -6107,10 +6134,15 @@ def handle(text, mode, typed=False):
         mail_session.link_request=None
         result=open_email_link(url)
     if _HANDLE_DEPTH == 0:result=office_return(text,mode,result)
+    if _HANDLE_DEPTH == 0 and mode == 'power_menu' and result == 'power_confirm':
+        # No at the question goes back to Shut down or restart, one level up.
+        POWER_RETURN_MODE = 'power_menu'
     if result == 'awake' and mode not in ('awake', 'sleep') and _HANDLE_DEPTH == 0:
         if MEDIA_HUB and not PREFERENCES.get('keep_audio_playing',False):MEDIA_HUB.audio_command('stop audio')
         __import__('youtube_screen').main_menu(sys.modules[__name__])
-        if MAIN_MENU_ANNOUNCED==announced:announce_main_menu()
+        # Email with no account asks which account type: the main menu words would cut that off.
+        setting_up=account_setup or ACCOUNT_ENTRY is not None or THUNDERBIRD_SETUP is not None
+        if MAIN_MENU_ANNOUNCED==announced and not setting_up:announce_main_menu()
     if result!=mode:DICTATION_ECHO.clear()
     if _HANDLE_DEPTH==0 and result!='exit':sync_app_context(result,result!=mode)
     return result
