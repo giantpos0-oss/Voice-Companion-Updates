@@ -45,6 +45,15 @@
             "Leave an app you opened from Office tools, Organizer, or Favorite apps. You go back to that list.",
             "Escape on that list goes to the main menu."
           ]
+        },
+        {
+          "title": "Updates come from a new place",
+          "details": [
+            "Updates now come from updates.voicecompanionapp.com.",
+            "You install this version yourself, one time.",
+            "After that, new versions come to you on their own.",
+            "Your settings, email accounts and documents stay as they were."
+          ]
         }
       ]
     }
