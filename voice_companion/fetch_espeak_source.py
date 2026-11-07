@@ -23,6 +23,10 @@ OLD_ADDRESSES = (
     'https://github.com/willwalsh14-hub/voice-companion-updates/releases/download/v0.2.77-test/' + NAME,
     'https://github.com/willwalsh14-hub/voice-companion-releases/releases/latest/download/' + NAME,
     'https://github.com/willwalsh14-hub/voice-companion-updates/releases/latest/download/' + NAME,
+    # eSpeak NG's own source downloads for the 1.52.0 tag. Used only if their bytes match.
+    'https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.52.0.tar.gz',
+    'https://codeload.github.com/espeak-ng/espeak-ng/tar.gz/refs/tags/1.52.0',
+    'https://github.com/espeak-ng/espeak-ng/releases/download/1.52.0/espeak-ng-1.52.0.tar.gz',
 )
 
 
@@ -72,7 +76,7 @@ def fetch(target, root=Path(__file__).parent, opener=urllib.request.urlopen, sto
                 problems.append(address + ': ' + str(exc))
                 continue
             if digest != SHA256:
-                problems.append(address + ': the checksum differs from the verified source')
+                problems.append(address + ': the checksum differs from the verified source (it is ' + digest + ')')
                 continue
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(part), str(target))
