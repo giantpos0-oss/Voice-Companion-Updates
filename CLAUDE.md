@@ -1,7 +1,7 @@
 # Voice Companion — rules for every working session
 
 Voice Companion is a Windows voice and keyboard app for blind and low-vision
-veterans. It is in a private beta: Will (GitHub: willwalsh1997-byte) and a few testers. The
+veterans. It is in a private beta: Will (GitHub: giantpos0-oss) and a few testers. The
 people using it cannot see the screen, so a wrong word, a lost sentence or a
 silent failure is a real problem for them. Work to that standard without being
 asked.
@@ -95,7 +95,7 @@ back-and-forth, and failures fixed so they do not come back.
 - **Every failure must name itself.** `build-windows.ps1` writes the reason a
   build stopped, and the failed test names with their output, into GitHub
   annotations (`Write-BuildAnnotation`, `Invoke-UnitTests`). Read them with
-  `gh api repos/willwalsh1997-byte/voice-companion-updates/check-runs/<id>/annotations`.
+  `gh api repos/giantpos0-oss/Voice-Companion-Updates/check-runs/<id>/annotations`.
   Never rerun or guess blind: if a step fails without a readable reason, first
   make that step report its reason. One failed run should be enough to find
   the cause.
@@ -128,8 +128,8 @@ back-and-forth, and failures fixed so they do not come back.
 
 ## Where updates live (Cloudflare R2, from November 7, 2026)
 
-- The project is on the willwalsh1997-byte GitHub account:
-  `willwalsh1997-byte/voice-companion-updates`. The old willwalsh14-hub
+- The project is on the giantpos0-oss GitHub account:
+  `giantpos0-oss/Voice-Companion-Updates`. The old willwalsh14-hub
   account's releases are no longer published to.
 - Installed copies read the feed at
   `https://updates.voicecompanionapp.com/voice-companion-update.json`

@@ -1,6 +1,6 @@
 # Releases-only repository (retired)
 
-Retired on November 7, 2026. The project moved to the willwalsh1997-byte GitHub account, and
+Retired on November 7, 2026. The project moved to the giantpos0-oss GitHub account, and
 updates now come from Cloudflare R2 at updates.voicecompanionapp.com (see
 `voice_companion/GITHUB AUTOMATED BUILDS.txt`). The source repository can be made private at any
 time: publishing no longer needs a public repository. The rest of this page is history.

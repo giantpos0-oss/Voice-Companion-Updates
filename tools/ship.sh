@@ -1,6 +1,6 @@
 #!/bin/bash
 # ship.sh PR SHA VERSION : wait for checks on SHA, merge PR, wait until release VERSION is published.
-R=repos/willwalsh1997-byte/voice-companion-updates
+R=repos/giantpos0-oss/Voice-Companion-Updates
 PR=$1; SHA=$2; VER=$3
 # A version already released cannot publish again (the nightly sweep may have used it): stop at once.
 FEED=https://updates.voicecompanionapp.com

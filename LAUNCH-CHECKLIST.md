@@ -7,7 +7,7 @@ pull requests. Update this file as items are finished.
 ## Must do before launch
 
 ### New GitHub account and Cloudflare R2 updates (November 7, 2026)
-- Done: the project moved to `willwalsh1997-byte/voice-companion-updates`.
+- Done: the project moved to `giantpos0-oss/Voice-Companion-Updates`.
   Updates come from Cloudflare R2 at updates.voicecompanionapp.com, not GitHub
   releases. The source repository can be private whenever Will wants: publishing
   no longer needs a public repository.

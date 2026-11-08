@@ -27,7 +27,7 @@ Follow CLAUDE.md first; it overrides anything here.
 
 ## Steps
 0a. If a release pull request from an earlier sweep is still open, finish it first. On October 29 the sweep's checks were all green at 6:28 AM, but it never merged, because the session ended while tools/ship.sh was still waiting. If its checks are green and it is up to date with main, run tools/ship.sh on it. If not, update it and fix it. Then start tonight's sweep from the new main.
-0. Before starting, check for an open release pull request (`gh api repos/willwalsh1997-byte/voice-companion-updates/pulls --jq '.[]|.title'`). Also check for an unfinished publish build on main. If one is in progress, wait for it to publish, then branch from the new main. Never ship two releases at the same time.
+0. Before starting, check for an open release pull request (`gh api repos/giantpos0-oss/Voice-Companion-Updates/pulls --jq '.[]|.title'`). Also check for an unfinished publish build on main. If one is in progress, wait for it to publish, then branch from the new main. Never ship two releases at the same time.
 1. Make sure the repository is cloned and up to date with main. Read CLAUDE.md
    and LAUNCH-CHECKLIST.md. Read the last few releases' notes and git log to see
    what changed recently. New code is where bugs hide.

@@ -1,6 +1,6 @@
 GITHUB AUTOMATED INSTALLER BUILDS
 
-The source folder voice_companion and the .github folder must both be placed at the root of willwalsh1997-byte/voice-companion-updates. Keep .github/workflows/windows-installer.yml in that exact location. GitHub does not run a workflow stored only inside a ZIP or a release attachment.
+The source folder voice_companion and the .github folder must both be placed at the root of giantpos0-oss/Voice-Companion-Updates. Keep .github/workflows/windows-installer.yml in that exact location. GitHub does not run a workflow stored only inside a ZIP or a release attachment.
 
 On GitHub, open the repository, then Actions, then Build and publish Windows installer, then Run workflow. The Windows build installs its tools, generates every manual, runs the release tests, packages the models and speech engines, creates Setup, and silently installs and checks it on the GitHub computer. Only after those checks pass does it publish the installer and update feed to the update bucket on Cloudflare R2. Installed copies read it from https://updates.voicecompanionapp.com. Publishing uses three repository secrets: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID and R2_SECRET_ACCESS_KEY. The bucket is voice-companion-updates, or the R2_BUCKET repository variable when it is set. No browser sign-in is needed during a build.
 
