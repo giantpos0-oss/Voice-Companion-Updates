@@ -92,6 +92,17 @@ back-and-forth, and failures fixed so they do not come back.
   fix failures if they arise"). With that approval, merge as soon as all three
   checks are green, fix any failure yourself, and message Will only when it is
   live or when something truly needs him. Without it, ask before merging.
+- **How to merge (November 9, 2026).** Merge with git, not the GitHub merge
+  button or API. The API merge of 0.2.209 did not start the publish build, so
+  Will had to start it by hand. Pushes from a session do start builds. So:
+  1. `git fetch origin` and `git checkout main`, then `git merge --ff-only origin/main`.
+  2. `git merge --no-ff origin/claude/release-<version> -m "Merge pull request #<n> from giantpos0-oss/claude/release-<version>"`.
+  3. `git push origin main`. GitHub marks the pull request merged by itself.
+  4. Within 5 minutes, check that "installer" appears in
+     `gh api repos/giantpos0-oss/Voice-Companion-Updates/commits/<merge sha>/check-runs`.
+     If it does not, tell Will at once and give him the
+     [Build and publish Windows installer workflow page](https://github.com/giantpos0-oss/Voice-Companion-Updates/actions/workflows/windows-installer.yml)
+     with the "Run workflow" steps.
 - **Every failure must name itself.** `build-windows.ps1` writes the reason a
   build stopped, and the failed test names with their output, into GitHub
   annotations (`Write-BuildAnnotation`, `Invoke-UnitTests`). Read them with
