@@ -14,7 +14,8 @@ all from Voice Companion's own screen:
      password box.
   4. Google and Microsoft sign in through a web page (Thunderbird 151 and
      newer). The connection hands that page to Voice Companion, which opens it
-     in its own browser, embedded Edge or Chrome. The answer goes back to
+     in the person's own default browser (sign_in_browser.py): Google will not
+     sign in inside Voice Companion's guided Chrome. The answer goes back to
      Thunderbird on this computer. Yahoo and AOL sign in only in Thunderbird's
      own window, which Voice Companion cannot read.
   5. A Watch asks Thunderbird for its accounts every few seconds. When the new
@@ -61,7 +62,8 @@ PASSWORD_COMMANDS = ('enter thunderbird password', 'type thunderbird password', 
                      'enter the thunderbird password', 'enter password for thunderbird')
 NOT_ADDING = 'Voice Companion is not adding a Thunderbird account right now. Say add Thunderbird account to start.'
 NO_SIGN_IN = 'No sign-in page from Thunderbird is waiting.'
-SIGN_IN_READY = 'The sign-in page for your new Thunderbird account is ready. Say open sign-in page when you want it.'
+SIGN_IN_READY = ('The sign-in page for your new Thunderbird account is ready. Say open sign-in page when you want it. '
+                 'It opens in your web browser.')
 ADDRESS_PROMPT = 'Type or say the email address to add to Thunderbird, then press Enter. Say cancel to stop.'
 ADDRESS_LABEL = 'Email address to add to Thunderbird; type, then press Enter. Escape cancels:'
 ADDRESS_AGAIN = 'That is not a complete email address. Type or say it again, such as sam at gmail dot com. Say cancel to stop.'
@@ -74,6 +76,10 @@ NOT_WAITING = 'Voice Companion is not waiting for a Thunderbird account.'
 NEEDS_UPDATE = ('The Voice Companion connection in Thunderbird must be updated first. '
                 'Voice Companion updates it by itself in a moment. Thunderbird restarts once. '
                 'If you are writing a message in Thunderbird, finish it first. Then say add Thunderbird account.')
+NEEDS_UPDATE_COMPOSING = ('The Voice Companion connection in Thunderbird must be updated first, and Thunderbird restarts once for that. '
+                          'A message is being written in Thunderbird. Finish or save it, then say add Thunderbird account.')
+NEEDS_UPDATE_FAILED = ('The Voice Companion connection in Thunderbird could not be updated. Nothing was changed. '
+                       'Close Thunderbird, then say add Thunderbird account to try again.')
 STOP_WAITING_COMMANDS = ('stop waiting for thunderbird', 'cancel thunderbird account', 'cancel adding thunderbird account',
                          'stop adding thunderbird account', 'cancel adding the thunderbird account')
 ADD_COMMANDS = ('add thunderbird account', 'add a thunderbird account', 'add another thunderbird account',
@@ -310,10 +316,20 @@ def page_words(page):
     return ' '.join(words) or 'Thunderbird is working. Say what does Thunderbird say to check again.'
 
 
-def sign_in_opening(address):
+def sign_in_opening(address, browser=None):
+    """The sign-in page is opening: in the person's own browser (browser is its name), or in Voice Companion's."""
     who = company(address) or 'The'
-    return (who + ' sign-in page is opening in Voice Companion\'s browser. Sign in there. '
-            'Thunderbird gets the answer by itself, and Voice Companion tells you when the account is ready.')
+    if browser is None:
+        return (who + ' sign-in page is opening in Voice Companion\'s browser. Sign in there. '
+                'Thunderbird gets the answer by itself, and Voice Companion tells you when the account is ready.')
+    return (who + ' sign-in page is opening in ' + browser + '. Sign in there with your email address and password. '
+            'Thunderbird gets the answer by itself. When the account is ready, Voice Companion says so and comes back '
+            'to the front. To come back sooner, press Alt plus Tab.')
+
+
+SIGN_IN_BROWSER_FAILED = ('Your web browser did not open the sign-in page, so it is opening in Voice Companion\'s browser instead. '
+                          'Google may not allow signing in there. If it stops you, set a default web browser in Windows, '
+                          'then say open sign-in page.')
 
 
 def sign_in_in_thunderbird(address):

@@ -1,37 +1,29 @@
 {
-  "version": "0.2.209-test",
+  "version": "0.2.210-test",
   "status": "Testing build",
-  "date": "November 6, 2026",
-  "baseline": "0.2.208-test",
-  "scope": "The main menu has a new order, and F1 is the main menu key.",
+  "date": "November 9, 2026",
+  "baseline": "0.2.209-test",
+  "scope": "Adding a Thunderbird email account now happens in one go, and Chrome setup is on by default.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "A new main menu",
+          "title": "Chrome setup is on by default",
           "details": [
-            "File manager is first on the main menu.",
-            "Office tools comes next. It holds your writing apps and Email.",
-            "Then comes Organizer. It holds your contacts and your schedule.",
-            "Address manager used to be called Contacts. Schedule manager used to be called Calendar.",
-            "You can still say Contacts or Calendar to open them."
+            "The installer now checks the box to set up Chrome and the Voice Companion extension.",
+            "Updates check it too.",
+            "If Chrome is already set up, nothing happens and you hear nothing.",
+            "If it is not set up yet, Companion asks you when it opens."
           ]
         },
         {
-          "title": "F1 is the main menu key",
+          "title": "Sign in to Gmail in your own browser",
           "details": [
-            "Press F1 on any screen to go to the main menu.",
-            "Press F1 twice quickly to hear help for the screen you are on.",
-            "On the main menu, F1 twice opens the user guide."
-          ]
-        },
-        {
-          "title": "Favorite apps",
-          "details": [
-            "Press Control+F1 on any screen to open Favorite apps.",
-            "To choose your apps, open Options, then My menu. Check the apps you want.",
-            "You can also choose Change favorite apps at the end of the list."
+            "When you add Gmail or Outlook, you sign in with your own web browser, such as Firefox or Chrome.",
+            "Companion tells you which browser it opened.",
+            "Google no longer stops you after you type your email address.",
+            "When the account is ready, Companion comes back to the front by itself."
           ]
         }
       ]
@@ -40,19 +32,21 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Going back",
+          "title": "Adding a Thunderbird account",
           "details": [
-            "Leave an app you opened from Office tools, Organizer, or Favorite apps. You go back to that list.",
-            "Escape on that list goes to the main menu."
+            "Say Add account once. Companion goes through every step with you.",
+            "You no longer have to say Add account again after each step.",
+            "If Thunderbird must close and open again, Companion does it for you.",
+            "If Thunderbird is slow to connect, Companion restarts it once by itself.",
+            "If the link to Thunderbird needs an update, Companion does it and goes on."
           ]
         },
         {
-          "title": "Updates come from a new place",
+          "title": "Yes or no questions",
           "details": [
-            "Updates now come from updates.voicecompanionapp.com.",
-            "You install this version yourself, one time.",
-            "After that, new versions come to you on their own.",
-            "Your settings, email accounts and documents stay as they were."
+            "Every Thunderbird question now tells you all the ways to answer.",
+            "Say yes or no, or press Y or N.",
+            "You can also use the arrows to choose, then press Enter."
           ]
         }
       ]

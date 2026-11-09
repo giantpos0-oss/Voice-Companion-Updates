@@ -121,9 +121,17 @@ class StoreIdentityTests(unittest.TestCase):
         self.assertIn('chrome-extension://' + chrome_setup.STORE_ID + '/', origins)
         self.assertIn('chrome-extension://' + chrome_setup.DEVELOPER_ID + '/', origins)
 
-    def test_installer_offers_unchecked_setup_and_uninstall_removes_the_added_extension(self):
+    def test_installer_checks_setup_by_default_and_uninstall_removes_the_added_extension(self):
+        # Checked by default, by hand and in silent updates (Will, November 9, 2026).
         script = (HERE/'VoiceCompanion.iss').read_text(encoding='utf-8')
-        self.assertIn('Name: "setupchrome"; Description: "Set up Chrome and the Voice Companion extension when Voice Companion opens"; Flags: unchecked', script)
+        task = next(line for line in script.splitlines() if line.startswith('Name: "setupchrome"'))
+        self.assertIn('Description: "Set up Chrome and the Voice Companion extension when Voice Companion opens"', task)
+        self.assertNotIn('unchecked', task)
+        self.assertNotIn('checkedonce', task)
+        # Updates run the installer silently. Nothing may turn the box off for them.
+        helper = (HERE/'apply-update.ps1').read_text(encoding='utf-8')
+        self.assertNotIn('/TASKS', helper.upper().replace('/MERGETASKS', ''))
+        self.assertNotIn('setupchrome', helper)
         self.assertIn('UsePreviousTasks=no', script)
         self.assertIn("{localappdata}\\VoiceCompanion\\setup-chrome.request", script)
         self.assertIn("RegDeleteKeyIncludingSubkeys(HKCU, 'Software\\Google\\Chrome\\Extensions\\" + chrome_setup.STORE_ID + "')", script)

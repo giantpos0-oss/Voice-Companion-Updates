@@ -1,5 +1,5 @@
 #define AppName "Voice Companion"
-#define AppVersion "0.2.209-test"
+#define AppVersion "0.2.210-test"
 [Setup]
 AppId={{9DFB48ED-1D99-4230-A78D-FD727536AC40}
 AppName={#AppName}
@@ -30,11 +30,13 @@ DisableProgramGroupPage=yes
 DisableReadyPage=yes
 DisableFinishedPage=no
 UninstallDisplayIcon={app}\VoiceCompanion.exe
-; Silent updates must not repeat the one-time Chrome setup request.
+; The Chrome box is checked by default on every run, including silent updates (Will,
+; November 9, 2026). Its request is harmless when Chrome is already linked: the app
+; checks quietly and says nothing. It asks only when Chrome or the extension is not set up.
 UsePreviousTasks=no
 
 [Tasks]
-Name: "setupchrome"; Description: "Set up Chrome and the Voice Companion extension when Voice Companion opens"; Flags: unchecked
+Name: "setupchrome"; Description: "Set up Chrome and the Voice Companion extension when Voice Companion opens"
 
 [Files]
 ; The close step, run by PrepareToInstall before any file is changed.

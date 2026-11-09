@@ -269,7 +269,7 @@ class AskingTests(UpgradeCase):
         step = self.flow(self.system()).check()
         self.assertEqual(step.question, 'upgrade')
         self.assertEqual(step.message, 'Thunderbird needs an update to work with Microsoft 365. Update it now? It takes a few '
-                                       'minutes. Your email and settings stay as they are. Say yes or no.')
+                                       'minutes. Your email and settings stay as they are. Say yes or no, press Y or N, or use the arrows to choose, then press Enter.')
 
     def test_up_to_date_release_is_not_asked_about(self):
         self.write_program('155.0.1', 'release')

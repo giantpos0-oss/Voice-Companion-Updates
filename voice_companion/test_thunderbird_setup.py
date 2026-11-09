@@ -19,6 +19,8 @@ import thunderbird_setup
 from mail_accounts import AccountError
 from thunderbird_bridge import ADDON_ID
 from thunderbird_setup import Setup
+from thunderbird_setup import (ADDON_INSTALLED, NO_CONNECTION_AFTER_RESTART, RESTART_FAILED, RESTARTING, RETRYING,
+                               install_addon)
 
 INSTALLED = 'C:/Program Files/Mozilla Thunderbird/thunderbird.exe'
 ACCOUNT_PREFS = ('user_pref("mail.accountmanager.accounts", "account1,account2");\n'
@@ -240,7 +242,7 @@ class AccountAndProfileTests(SetupCase):
         step = self.setup(system).start()
         self.assertEqual(step.question, 'add_first')
         self.assertIn('no email account is set up in it yet', step.message)
-        self.assertIn('Add an email account to Thunderbird? Say yes or no.', step.message)
+        self.assertIn('Add an email account to Thunderbird? Say yes or no, press Y or N, or use the arrows to choose, then press Enter.', step.message)
         self.assertEqual(system.launched, [])
 
     def test_local_folders_alone_is_not_an_email_account(self):
@@ -280,7 +282,7 @@ class AddOnTests(SetupCase):
         flow = self.setup(system, relay)
         step = flow.start()
         self.assertEqual(step.question, 'install')
-        self.assertIn('Install the Voice Companion connection in Thunderbird now? Say yes or no.', step.message)
+        self.assertIn('Install the Voice Companion connection in Thunderbird now? Say yes or no, press Y or N, or use the arrows to choose, then press Enter.', step.message)
         self.assertFalse((folder / 'extensions').exists())     # nothing changes before yes
         step = flow.answer('install', True)
         self.assertEqual((folder / 'extensions' / (ADDON_ID + '.xpi')).read_bytes(), self.package.read_bytes())
@@ -289,11 +291,9 @@ class AddOnTests(SetupCase):
         self.assertIn('user_pref("extensions.autoDisableScopes", 14);', user)
         self.assertIn('user_pref("extensions.startupScanScopes", 1);', user)
         self.assertEqual(sorted(p.name for p in folder.iterdir()), ['extensions', 'prefs.js', 'user.js'])  # no temp files left
-        self.assertEqual(step.question, 'start')
-        self.assertTrue(step.message.startswith('The Voice Companion connection is installed.'))
-        step = flow.answer('start', True)
-        self.assertEqual(system.launched, [INSTALLED])
-        self.assertEqual(self.progress[0], 'Starting Thunderbird.')
+        # The yes was for this: Thunderbird starts with it, in the background, with no second question.
+        self.assertEqual(system.background, [INSTALLED])
+        self.assertEqual(self.progress[0], 'The Voice Companion connection is installed. Starting Thunderbird.')
         self.assertEqual(step.message, 'Thunderbird account me@gmail.com is connected and selected. Say check email to open it.')
 
     def test_existing_scope_settings_are_adjusted_not_duplicated(self):
@@ -306,17 +306,49 @@ class AddOnTests(SetupCase):
         self.assertIn('user_pref("extensions.autoDisableScopes", 10);', user)
         self.assertIn('user_pref("extensions.startupScanScopes", 5);', user)
 
-    def test_install_while_thunderbird_is_open_asks_for_a_restart(self):
+    def test_install_while_thunderbird_is_open_restarts_it_by_itself(self):
+        # Will, November 9, 2026: no "close Thunderbird, then say add account" in the middle of setup.
         folder = self.profile()
         system = FakeSystem(self.home, registered(), {INSTALLED}, running=True)
-        flow = self.setup(system, FakeRelay())
+        flow = self.setup(system, FakeRelay(connect_after=0))
         self.assertEqual(flow.start().question, 'install')
         step = flow.answer('install', True)
-        self.assertIsNone(step.question)
-        self.assertIn('Close Thunderbird, then say add account', step.message)
         self.assertTrue((folder / 'extensions' / (ADDON_ID + '.xpi')).is_file())
-        # Thunderbird has not loaded it yet: the next try asks for the restart again.
-        self.assertIn('must restart', self.setup(system, FakeRelay()).start().message)
+        self.assertEqual(system.closes, 1)
+        self.assertEqual(system.background, [INSTALLED])
+        self.assertEqual(self.progress[0], ADDON_INSTALLED + RESTARTING)
+        self.assertIsNone(step.question)
+        self.assertIn('is connected and selected', step.message)
+
+    def test_a_thunderbird_that_will_not_close_is_explained(self):
+        self.profile()
+        system = FakeSystem(self.home, registered(), {INSTALLED}, running=True)
+        system.close_program = lambda: None    # it stays open, for example asking to save a message
+        flow = self.setup(system, FakeRelay())
+        flow.start()
+        step = flow.answer('install', True)
+        self.assertEqual(step.message, RESTART_FAILED)
+        self.assertNotIn('background', system.__dict__)
+
+    def test_missing_add_on_after_yes_starts_thunderbird_without_a_second_question(self):
+        self.profile()
+        system = FakeSystem(self.home, registered(), {INSTALLED})
+        flow = self.setup(system, FakeRelay(connect_after=0))
+        flow.start()
+        step = flow.answer('install', True)
+        self.assertEqual(system.background, [INSTALLED])
+        self.assertIsNone(step.question)
+        self.assertIn('is connected and selected', step.message)
+
+    def test_an_add_on_waiting_for_a_restart_is_restarted_by_itself(self):
+        folder = self.profile()
+        system = FakeSystem(self.home, registered(), {INSTALLED}, running=True)
+        self.setup(system, FakeRelay()).answer('install', False)
+        install_addon(folder, self.package)            # placed, but this Thunderbird has not loaded it
+        step = self.setup(system, FakeRelay(connect_after=0)).start()
+        self.assertEqual(system.closes, 1)
+        self.assertEqual(self.progress[0], RESTARTING)
+        self.assertIn('is connected and selected', step.message)
 
     def test_no_to_install_changes_nothing(self):
         folder = self.profile()
@@ -367,22 +399,33 @@ class StartingAndConnectingTests(SetupCase):
         system = self.ready()
         flow = self.setup(system, FakeRelay(connect_after=0))
         step = flow.start()
-        self.assertEqual(step.message, 'Thunderbird is not open. Start Thunderbird now? Say yes or no.')
+        self.assertEqual(step.message, 'Thunderbird is not open. Start Thunderbird now? Say yes or no, press Y or N, or use the arrows to choose, then press Enter.')
         self.assertEqual(system.launched, [])
         step = flow.answer('start', False)
         self.assertEqual(system.launched, [])
         self.assertIn('Thunderbird was not started', step.message)
 
-    def test_waits_a_minute_with_progress_every_15_seconds(self):
+    def test_waits_a_minute_then_restarts_once_then_explains(self):
         system = self.ready()
         relay = FakeRelay()
         flow = self.setup(system, relay)
         flow.start()
         step = flow.answer('start', True)
-        self.assertEqual(relay.waits, [15, 15, 15, 15])
-        self.assertEqual(self.progress, ['Starting Thunderbird.'] + ['Still waiting for Thunderbird to connect.'] * 3)
-        self.assertIn('did not connect after one minute', step.message)
+        self.assertEqual(relay.waits, [15] * 8)
+        waiting = ['Still waiting for Thunderbird to connect.'] * 3
+        self.assertEqual(self.progress, ['Starting Thunderbird.'] + waiting + [RETRYING, 'Starting Thunderbird.'] + waiting)
+        self.assertEqual(system.closes, 1)
+        self.assertEqual(step.message, NO_CONNECTION_AFTER_RESTART)
         self.assertEqual(self.connects, [])
+
+    def test_the_restart_after_a_slow_first_start_connects(self):
+        system = self.ready()
+        relay = FakeRelay(connect_after=5)
+        flow = self.setup(system, relay)
+        flow.start()
+        step = flow.answer('start', True)
+        self.assertEqual(system.closes, 1)
+        self.assertIn('is connected and selected', step.message)
 
     def test_open_thunderbird_connects_without_questions(self):
         system = self.ready(running=True)

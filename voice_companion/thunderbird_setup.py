@@ -52,9 +52,11 @@ PROGRESS_SECONDS = 15
 SCOPE_PROFILE = 1               # AddonManager.SCOPE_PROFILE
 DEFAULT_AUTO_DISABLE = 15       # Thunderbird's default: add-ons placed by other programs start turned off
 AGAIN = 'Then say add account and choose Thunderbird.'
+# Every question ends the same way, and every way works (Will, November 9, 2026).
+YES_NO = ' Say yes or no, press Y or N, or use the arrows to choose, then press Enter.'
 
 NOT_INSTALLED = ('Thunderbird is not on this computer. Thunderbird is a free email program. '
-                 'Voice Companion can install it for you now. It takes a few minutes. Install Thunderbird? Say yes or no.')
+                 'Voice Companion can install it for you now. It takes a few minutes. Install Thunderbird?' + YES_NO)
 NOT_INSTALLING = 'Okay. Nothing was installed. When you want Thunderbird, say add Thunderbird account.'
 INSTALLING = ('Installing Thunderbird. This takes a few minutes. If Windows asks whether to allow changes, press Alt plus Y.')
 STILL_INSTALLING = 'Still installing Thunderbird.'
@@ -88,18 +90,25 @@ SITE_FAILED = 'The website did not open. Ask a helper to go to thunderbird dot n
 TOO_OLD = ('Thunderbird on this computer is too old for Voice Companion. It needs version 128 or newer. '
            'To update it, say update Thunderbird. ' + AGAIN)
 NO_ACCOUNT = ('Thunderbird is installed, but no email account is set up in it yet. A helper needs to add your email account '
-              'in Thunderbird. Start Thunderbird now so they can do that? Say yes or no.')
+              'in Thunderbird. Start Thunderbird now so they can do that?' + YES_NO)
 NO_ACCOUNT_OPEN = ('Thunderbird is open, but no email account is set up in it yet. Ask a helper to add your email account '
                    'in Thunderbird. ' + AGAIN)
 NO_ACCOUNT_ADD = ('Thunderbird is installed, but no email account is set up in it yet. '
-                  'Voice Companion can help you add one now. Add an email account to Thunderbird? Say yes or no.')
+                  'Voice Companion can help you add one now. Add an email account to Thunderbird?' + YES_NO)
 STARTING_FOR_ACCOUNT = 'Starting Thunderbird. When your helper has added your email account, say add account and choose Thunderbird.'
 NOT_STARTING_FOR_ACCOUNT = 'Okay. When an email account is set up in Thunderbird, say add account and choose Thunderbird.'
 ADDON_MISSING = ('Thunderbird needs the Voice Companion connection. It is a small add-on that lets Voice Companion '
-                 'use your Thunderbird email. Install the Voice Companion connection in Thunderbird now? Say yes or no.')
+                 'use your Thunderbird email. Install the Voice Companion connection in Thunderbird now?' + YES_NO)
 ADDON_INSTALLED = 'The Voice Companion connection is installed. '
 ADDON_RESTART = ('Thunderbird must restart to use the Voice Companion connection. '
                  'Close Thunderbird, then say add account and choose Thunderbird.')
+# Voice Companion closes and starts Thunderbird itself (Will, November 9, 2026: on 0.2.203 he had to
+# say add account again after each step). Only Thunderbird's own normal close: never forced.
+RESTARTING = ('Thunderbird now closes and opens again by itself to turn on the Voice Companion connection. '
+              'You do not need to do anything. Please wait.')
+RESTART_FAILED = ('Thunderbird did not close. It may be asking a question, such as whether to save a message. '
+                  'Say show Thunderbird to answer it, then close Thunderbird. Then say add account and choose Thunderbird.')
+RETRYING = 'Thunderbird has not connected yet. Voice Companion is restarting it once more. Please wait.'
 ADDON_NOT_INSTALLED = ('Okay. Nothing was installed. A helper can install the connection by hand. '
                        'The steps are in Email Setup Helper, section 3.')
 ADDON_FAILED = ('The Voice Companion connection could not be installed. Your Thunderbird email was not changed. '
@@ -108,7 +117,7 @@ ADDON_OFF = ('The Voice Companion connection is turned off in Thunderbird. Ask a
              'in Thunderbird and turn on Voice Companion Mail Connection. ' + AGAIN)
 ADDON_BLOCKED = ('Thunderbird cannot use the Voice Companion connection. Ask a helper to update Thunderbird '
                  'to version 128 or newer. ' + AGAIN)
-NOT_RUNNING = 'Thunderbird is not open. Start Thunderbird now? Say yes or no.'
+NOT_RUNNING = 'Thunderbird is not open. Start Thunderbird now?' + YES_NO
 NOT_STARTING = 'Okay. Thunderbird was not started. ' + AGAIN
 STARTING = 'Starting Thunderbird.'
 START_FAILED = 'Thunderbird could not start. Try opening it from the Start menu. ' + AGAIN
@@ -116,6 +125,8 @@ WAITING = 'Thunderbird is open. Waiting for it to connect.'
 STILL_WAITING = 'Still waiting for Thunderbird to connect.'
 NO_CONNECTION = ('Thunderbird did not connect after one minute. Close Thunderbird, then say add account and choose '
                  'Thunderbird to try again. If it still does not connect, ask a helper to check Email Setup Helper, section 3.')
+NO_CONNECTION_AFTER_RESTART = ('Thunderbird did not connect, even after Voice Companion restarted it. '
+                               'Ask a helper to check Email Setup Helper, section 3. Everything else in Voice Companion still works.')
 NO_RELAY = 'Voice Companion could not get ready for Thunderbird. Close Voice Companion and open it again. ' + AGAIN
 
 Step = namedtuple('Step', 'message question')
@@ -818,6 +829,7 @@ class Setup:
         self.version = None    # Thunderbird's major version, when Windows records it
         # upgrader() -> thunderbird_upgrade.Upgrade: offers the move to the Release channel (154 or newer).
         self.upgrader, self.upgrade = upgrader, None
+        self.restarted = False   # Voice Companion restarts Thunderbird by itself at most once per setup
 
     def _step(self, message, question):
         """While adding an account, "say add account and choose Thunderbird" becomes "say add Thunderbird account"."""
@@ -865,7 +877,30 @@ class Setup:
             if relay.connected.wait(PROGRESS_SECONDS):
                 return self._finish()
             waited += PROGRESS_SECONDS
-        return self._step(NO_CONNECTION, None)
+        if self.program and not self.restarted:
+            # A first start can come up before the add-on is scanned: one more start fixes it.
+            return self._restart(RETRYING)
+        return self._step(NO_CONNECTION_AFTER_RESTART if self.restarted else NO_CONNECTION, None)
+
+    def _restart(self, message=RESTARTING):
+        """Close Thunderbird the normal way, make sure the add-on loads, and start it again in the background."""
+        self.restarted = True
+        self.progress(message)
+        if self.system.running():
+            self.system.close_program()
+            if not _until(self.system, lambda: not self.system.running(), CLOSE_SECONDS):
+                return self._step(RESTART_FAILED, None)
+        if self.profile is not None:
+            try:
+                refresh_addon(self.profile, self.package)
+                start_addons_promptly(self.profile)
+            except OSError:
+                return self._step(ADDON_FAILED, None)
+        try:
+            self.system.launch_background(self.program)
+        except OSError:
+            return self._step(START_FAILED, None)
+        return self._wait(STARTING)
 
     def start(self):
         self.program, version = find_program(self.system)
@@ -894,7 +929,9 @@ class Setup:
             if self.profile is None:
                 # Never opened: Thunderbird makes its profile on its first start.
                 if running:
-                    return self._step(FIRST_CLOSE_FAILED, None)
+                    self.system.close_program()
+                    if not _until(self.system, lambda: not self.system.running(), CLOSE_SECONDS):
+                        return self._step(FIRST_CLOSE_FAILED, None)
                 return self._first_start()
         state = addon_state(self.profile)
         if state == 'missing':
@@ -904,7 +941,7 @@ class Setup:
         if state == 'blocked':
             return self._step(ADDON_BLOCKED, None)
         if state == 'waiting' and running:
-            return self._step(ADDON_RESTART, None)
+            return self._restart()
         if not running:
             refresh_addon(self.profile, self.package)
             if self.adding:
@@ -1004,8 +1041,13 @@ class Setup:
             except OSError:
                 return self._step(ADDON_FAILED, None)
             if self.system.running():
-                return self._step(ADDON_INSTALLED + ADDON_RESTART, None)
-            return self._step(ADDON_INSTALLED + NOT_RUNNING, 'start')
+                return self._restart(ADDON_INSTALLED + RESTARTING)
+            # The yes was for this: start Thunderbird with it, without a second question.
+            try:
+                self.system.launch_background(self.program)
+            except OSError:
+                return self._step(START_FAILED, None)
+            return self._wait(ADDON_INSTALLED + STARTING)
         if question == 'start':
             if not yes: return self._step(NOT_STARTING, None)
             if not self._launch():

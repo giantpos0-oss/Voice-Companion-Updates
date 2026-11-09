@@ -50,7 +50,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.209-test'
+APP_VERSION = '0.2.210-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -2588,6 +2588,11 @@ def close_from_window(mode):
     speak('Voice Companion closed. Goodbye.' if saved else 'Voice Companion closed. Some of your work could not be saved.')
 
 
+def thunderbird_setup_words():
+    import thunderbird_setup
+    return thunderbird_setup
+
+
 def thunderbird_connect_ready(setup):
     """Thunderbird is connected: connect its new addresses, or offer to add another account to it."""
     import account_picker
@@ -2599,7 +2604,7 @@ def thunderbird_connect_ready(setup):
         found = accounts()
         pairs = words.identities(found)
         if not pairs:
-            return Step('Thunderbird is connected, but it has no email accounts yet. Add one now? Say yes or no.', 'add_another')
+            return Step('Thunderbird is connected, but it has no email accounts yet. Add one now?' + thunderbird_setup_words().YES_NO, 'add_another')
         added = words.save_identities(store, found, select=True)
     except (MailboxError, AccountError) as exc:
         return Step(str(exc), None)
@@ -2609,7 +2614,7 @@ def thunderbird_connect_ready(setup):
         names = '; '.join(account_picker.label(('thunderbird', identity['email'])) for _, identity in pairs)
         return Step(('Your Thunderbird account is already connected: ' if len(pairs) == 1 else
                      'Your Thunderbird accounts are already connected: ') + names +
-                    '. Add another email account to Thunderbird? Say yes or no.', 'add_another')
+                    '. Add another email account to Thunderbird?' + thunderbird_setup_words().YES_NO, 'add_another')
     selected = store.selected()
     if len(added) == 1:
         message = account_picker.label(selected) + ' is connected and selected.'
@@ -2626,7 +2631,9 @@ def thunderbird_add_ready(setup):
     from thunderbird_setup import Step
     from thunderbird_mailbox import accounts
     if setup.addon_outdated():
-        return Step(words.NEEDS_UPDATE, None)
+        updated = update_addon_for_adding(setup)
+        if updated is not None:
+            return updated
     THUNDERBIRD_VERSION = setup.version
     note = ''
     try:
@@ -2642,10 +2649,34 @@ def thunderbird_add_ready(setup):
     return Step(note + words.ADDRESS_PROMPT, 'address')
 
 
+def update_addon_for_adding(setup):
+    """The connection in Thunderbird is older than this copy's: update it now and go on (Will,
+    November 9, 2026: no "then say add Thunderbird account"). None: go on to the address."""
+    import thunderbird_accounts as words
+    import thunderbird_setup
+    from thunderbird_setup import Step
+    relay = setup._relay()
+    try:
+        outcome = thunderbird_setup.refresh_running_addon(setup.system, setup.package, relay, setup.progress,
+                                                          background=True, note=mail_log)
+    except Exception as exc:
+        mail_log('[thunderbird] add-on update for adding failed: %s' % exc)
+        outcome = 'failed'
+    if outcome in ('updated', 'current'):
+        if outcome == 'updated':
+            quiet_thunderbird(relay)
+        return None
+    if outcome == 'composing':
+        return Step(words.NEEDS_UPDATE_COMPOSING, None)
+    return Step(words.NEEDS_UPDATE_FAILED, None)
+
+
 THUNDERBIRD_VERSION = None
 THUNDERBIRD_STARTING = False   # a mail command waits for Thunderbird to connect (thunderbird_starter)
 # The sign-in page Thunderbird handed over, so it can be opened again or in the other browser.
 THUNDERBIRD_SIGN_IN = None
+# The sign-in page went to the person's own browser: come back to the front when the account is ready.
+THUNDERBIRD_SIGN_IN_OUTSIDE = False
 
 
 def addon_package():
@@ -3292,10 +3323,24 @@ def send_thunderbird_password(value, mode):
 
 
 def open_thunderbird_sign_in(mode, browser=None, announce=True):
-    """Open the sign-in page Thunderbird handed over in Voice Companion's browser (embedded Edge or Chrome)."""
-    global web_session
+    """Open the sign-in page Thunderbird handed over.
+
+    In the person's own default browser (sign_in_browser.py, Will, November 9, 2026): Google will not
+    sign in inside Voice Companion's guided Chrome. "Open sign-in page in Chrome" or "in embedded Edge"
+    still opens it in Voice Companion's browser, for someone who wants that."""
+    global web_session, THUNDERBIRD_SIGN_IN_OUTSIDE
     import thunderbird_accounts as words
     address = THUNDERBIRD_WATCH['address'] if THUNDERBIRD_WATCH else ''
+    if not browser:
+        import sign_in_browser
+        try:
+            name = sign_in_browser.open_page(THUNDERBIRD_SIGN_IN)
+        except OSError:
+            speak_status(words.SIGN_IN_BROWSER_FAILED)
+        else:
+            THUNDERBIRD_SIGN_IN_OUTSIDE = True
+            if announce:speak_status(words.sign_in_opening(address, name))
+            return mode
     try:
         web_session = web_session or WebSession(APP, progress=speak_status)
         web_session.auto_read = PREFERENCES.get('web_auto_read', True)
@@ -3448,7 +3493,7 @@ def poll_thunderbird_addon(system=None):
 
 def poll_thunderbird_watch(mode):
     """On the main loop: read Thunderbird's page, open its sign-in page, and say when the account is ready."""
-    global THUNDERBIRD_WATCH, THUNDERBIRD_SIGN_IN, mail_session, pending_send
+    global THUNDERBIRD_WATCH, THUNDERBIRD_SIGN_IN, THUNDERBIRD_SIGN_IN_OUTSIDE, mail_session, pending_send
     poll_thunderbird_accounts()
     poll_thunderbird_addon()
     shown = THUNDERBIRD_WINDOWS.take_message() if THUNDERBIRD_WINDOWS is not None else None
@@ -3509,7 +3554,18 @@ def poll_thunderbird_watch(mode):
                      'Say add account and choose Thunderbird to try again.')
         return mode
     speak_status(words.ready_message(new, chosen) + ' To add another, say add Thunderbird account.')
+    if THUNDERBIRD_SIGN_IN_OUTSIDE:
+        # The person signed in in their own browser: Voice Companion comes back to the front, with the keyboard.
+        THUNDERBIRD_SIGN_IN_OUTSIDE = False
+        bring_companion_forward()
     return mode
+
+
+def bring_companion_forward():
+    """Voice Companion's window to the front, with the keyboard (as after Chrome setup links)."""
+    if APP_WINDOW is not None and hasattr(APP_WINDOW, 'reclaim_focus'):
+        try:APP_WINDOW.reclaim_focus()
+        except Exception:pass
 
 
 def handle_mailbox_screen(text, command, mode, typed):
