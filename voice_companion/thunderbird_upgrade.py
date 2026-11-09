@@ -59,7 +59,7 @@ INBOX_TRIES, INBOX_WAIT_SECONDS = 4, 5
 MAIL_TYPES = ('imap', 'pop3', 'ews', 'graph', 'owl')    # accounts whose Inbox is checked before and after
 
 QUESTION = ('Thunderbird needs an update to work with Microsoft 365. Update it now? It takes a few minutes. '
-            'Your email and settings stay as they are. Say yes or no.')
+            'Your email and settings stay as they are. Say yes or no, press Y or N, or use the arrows to choose, then press Enter.')
 NOT_NOW = 'Okay. Thunderbird was not changed. To update it later, say update Thunderbird.'
 GETTING_READY = 'Getting Thunderbird ready for the update.'
 COMPOSING = ('A message is being written in Thunderbird, so Thunderbird was not updated. Nothing was changed. '

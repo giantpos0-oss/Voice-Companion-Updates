@@ -23,7 +23,7 @@ PROGRESS = None
 REMEMBER_IDENTITY = None
 STILL_SENDING = 'Still sending through Thunderbird. Press Escape to stop waiting.'
 SIGN_IN_TO_SEND = ('Microsoft wants you to sign in before Thunderbird can send this message. '
-                   'The sign-in page is opening in Voice Companion\'s browser. After you sign in, Thunderbird '
+                   'The sign-in page is opening in your web browser. After you sign in, Thunderbird '
                    'tries to send it. Check the Sent folder before you send it again.')
 SIGN_IN_SECONDS = 150   # how long a send listens for Thunderbird's sign-in page
 SIGN_IN_CHECK_SECONDS = 2

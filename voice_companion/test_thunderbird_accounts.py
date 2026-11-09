@@ -322,8 +322,9 @@ class AddThunderbirdAccountTests(CompanionTestCase):
             self.assertNotEqual(saved['account_id'], 'account1')
             self.assertEqual(thunderbird_mailbox.ThunderbirdMailbox(address, saved).folders(), [('Inbox', saved['account_id'] + '://INBOX')])
 
-    def test_google_sign_in_opens_in_voice_companions_browser(self):
-        opened = []
+    def test_google_sign_in_opens_in_your_own_browser_then_companion_comes_back(self):
+        # Will, November 9, 2026: Google would not sign in inside Voice Companion's guided Chrome.
+        started, opened, focused = [], [], []
 
         class Browser:
             snapshot = True
@@ -336,7 +337,50 @@ class AddThunderbirdAccountTests(CompanionTestCase):
                 return 'Sign in - Google Accounts.'
             def choose_browser(self, name):
                 opened.append('choose ' + name)
+
+        import sign_in_browser
+        with patch.object(companion, 'WebSession', Browser), patch.object(companion, 'bring_companion_forward', lambda: focused.append(True)), \
+             patch.object(companion, 'THUNDERBIRD_SIGN_IN_OUTSIDE', False), \
+             patch.object(sign_in_browser.os, 'startfile', started.append, create=True), \
+             patch.object(sign_in_browser, '_read_prog_id', lambda: 'FirefoxURL-308046B0AF4A39CB'), \
+             patch.object(companion, 'speak_web_result', lambda text, revision: self.said.append(text)):
+            companion.handle('add Thunderbird account', 'awake')
+            companion.handle('will@gmail.com', 'awake')
+            deadline = time.monotonic() + 10
+            mode = 'awake'
+            while not started and time.monotonic() < deadline:
+                mode = companion.poll_thunderbird_watch(mode)
+                time.sleep(0.05)
+            self.assertEqual(mode, 'awake')       # Voice Companion's own browser did not open
+            self.assertEqual(opened, [])
+            self.assertTrue(started[0].startswith('https://accounts.google.com/o/oauth2/auth?login_hint=will%40gmail.com'))
+            self.assertIn('Google sign-in page is opening in Firefox.', ' '.join(self.said))
+            # Voice Companion's browser, only when asked for by name.
+            companion.handle('open sign-in page in Chrome', 'awake')
+            self.assertEqual(opened, ['choose chrome', started[0]])
+            self.until_ready('web')
+            self.assertEqual(focused, [True])
+        self.assertIn('Thunderbird, will@gmail.com is connected and selected', self.said[-1])
+        self.assertIsNone(companion.THUNDERBIRD_SIGN_IN)
+
+    def test_without_a_default_browser_the_page_opens_in_companions_browser(self):
+        opened = []
+
+        class Browser:
+            snapshot = True
+            page_revision = 0
+            pending = submit_pending = None
+            def __init__(self, *args, **kwargs):
+                pass
+            def open(self, url):
+                opened.append(url); return 'Sign in - Google Accounts.'
+            def choose_browser(self, name):
+                pass
+        import sign_in_browser
+        def refuse(url):
+            raise OSError('no association')
         with patch.object(companion, 'WebSession', Browser), \
+             patch.object(sign_in_browser.os, 'startfile', refuse, create=True), \
              patch.object(companion, 'speak_web_result', lambda text, revision: self.said.append(text)):
             companion.handle('add Thunderbird account', 'awake')
             companion.handle('will@gmail.com', 'awake')
@@ -346,14 +390,7 @@ class AddThunderbirdAccountTests(CompanionTestCase):
                 mode = companion.poll_thunderbird_watch(mode)
                 time.sleep(0.05)
             self.assertEqual(mode, 'web')
-            self.assertTrue(opened[0].startswith('https://accounts.google.com/o/oauth2/auth?login_hint=will%40gmail.com'))
-            self.assertIn('Google sign-in page is opening in Voice Companion\'s browser', ' '.join(self.said))
-            # The other browser, if asked.
-            companion.handle('open sign-in page in Chrome', 'awake')
-            self.assertEqual(opened[1:], ['choose chrome', opened[0]])
-            self.until_ready('web')
-        self.assertIn('Thunderbird, will@gmail.com is connected and selected', self.said[-1])
-        self.assertIsNone(companion.THUNDERBIRD_SIGN_IN)
+            self.assertIn(thunderbird_accounts.SIGN_IN_BROWSER_FAILED, self.said)
 
     def test_address_thunderbird_already_has_is_connected_at_once(self):
         # Addresses added in Thunderbird earlier are connected before the question, and said.
@@ -375,7 +412,7 @@ class AddThunderbirdAccountTests(CompanionTestCase):
         companion.handle('add account', 'awake')
         companion.handle('Thunderbird.', 'awake')
         self.assertEqual(self.said[-1], 'Your Thunderbird account is already connected: Thunderbird, me@gmail.com. '
-                                        'Add another email account to Thunderbird? Say yes or no.')
+                                        'Add another email account to Thunderbird? Say yes or no, press Y or N, or use the arrows to choose, then press Enter.')
         companion.handle('Yes.', 'awake')
         self.assertEqual(self.said[-1], thunderbird_accounts.ADDRESS_PROMPT)
         companion.handle('cancel', 'awake')
@@ -443,11 +480,27 @@ class AddThunderbirdAccountTests(CompanionTestCase):
         companion.handle('continue in thunderbird', 'awake')
         self.assertEqual(self.said[-1], thunderbird_accounts.NOT_ADDING)
 
-    def test_an_older_add_on_must_be_updated_first(self):
-        with patch.object(self.relay, 'version', '1.0.0'):
+    def test_an_older_add_on_is_updated_then_the_address_is_asked(self):
+        # Will, November 9, 2026: no "then say add Thunderbird account" after the update.
+        calls = []
+        def refresh(system, package, relay, progress=None, background=True, note=None):
+            calls.append(background); return 'updated'
+        with patch.object(self.relay, 'version', '1.0.0'), \
+             patch.object(thunderbird_setup, 'refresh_running_addon', refresh), \
+             patch.object(companion, 'quiet_thunderbird', lambda relay: None):
             companion.handle('add thunderbird account', 'awake')
-        self.assertEqual(self.said[-1], thunderbird_accounts.NEEDS_UPDATE)
-        self.assertIsNone(companion.ACCOUNT_ENTRY)
+        self.assertEqual(calls, [True])
+        self.assertIsNotNone(companion.ACCOUNT_ENTRY)
+        self.assertIn(thunderbird_accounts.ADDRESS_PROMPT, self.said[-1])
+
+    def test_an_add_on_update_that_cannot_happen_now_says_why(self):
+        for outcome, words in (('composing', thunderbird_accounts.NEEDS_UPDATE_COMPOSING),
+                               ('not closed', thunderbird_accounts.NEEDS_UPDATE_FAILED)):
+            with self.subTest(outcome=outcome), patch.object(self.relay, 'version', '1.0.0'), \
+                 patch.object(thunderbird_setup, 'refresh_running_addon', lambda *a, **k: outcome):
+                companion.handle('add thunderbird account', 'awake')
+                self.assertEqual(self.said[-1], words)
+                self.assertIsNone(companion.ACCOUNT_ENTRY)
 
 
 class AddCommandRoutingTests(CompanionTestCase):
@@ -597,7 +650,7 @@ class StarterTests(StarterCase):
         flow = thunderbird_setup.Setup(system, self.package, lambda: 'x', lambda: RelayWithRequests(), self.said.append)
         with patch.object(companion, 'new_thunderbird_setup', lambda adding=False: flow), self.assertRaises(MailboxError) as raised:
             self.start(system, RelayWithRequests())
-        self.assertIn('Install Thunderbird? Say yes or no.', str(raised.exception))
+        self.assertIn('Install Thunderbird? Say yes or no, press Y or N, or use the arrows to choose, then press Enter.', str(raised.exception))
         self.assertEqual(companion.THUNDERBIRD_SETUP['question'], 'install_program')
 
     def test_mail_command_goes_on_by_itself_once_connected(self):
