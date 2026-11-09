@@ -215,6 +215,48 @@ class PublishFromEnvironmentTests(unittest.TestCase):
         self.assertEqual(code,0);self.assertIn('::notice title=Published::'+BASE,out)
 
 
+class AccountIdTests(unittest.TestCase):
+    """R2_ACCOUNT_ID (November 9, 2026): a wrong value said only "Invalid endpoint"."""
+    ID='0123456789abcdef0123456789abcdef'
+
+    def test_the_id_and_the_addresses_cloudflare_shows_are_accepted(self):
+        from r2_storage import account_id
+        for value in (self.ID,'  '+self.ID.upper()+'\n','https://'+self.ID+'.r2.cloudflarestorage.com',
+                      self.ID+'.r2.cloudflarestorage.com','https://'+self.ID+'.r2.cloudflarestorage.com/voice-companion-updates',
+                      'https://dash.cloudflare.com/'+self.ID+'/r2/overview'):
+            with self.subTest(value=value):self.assertEqual(account_id(value),self.ID)
+
+    def test_a_wrong_value_names_the_secret_and_the_problem_but_not_the_value(self):
+        from r2_storage import BadSetup, account_id
+        cases=(('https://example.r2.cloudflarestorage.com','web address'),
+               (self.ID[:16]+' '+self.ID[16:],'spaces or line breaks'),
+               ('my-account-name','characters other than 0 to 9'),
+               (self.ID[:31],'31 characters long'),
+               (self.ID+'00','34 characters long'))
+        for value,problem in cases:
+            with self.subTest(value=value):
+                with self.assertRaises(BadSetup) as caught:account_id(value)
+                message=str(caught.exception)
+                self.assertIn('R2_ACCOUNT_ID',message);self.assertIn(problem,message)
+                self.assertIn('32-character Account ID',message);self.assertNotIn(value.strip(),message)
+
+    def test_publishing_with_a_wrong_id_says_why_in_an_annotation(self):
+        out=io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code=publish_from_environment('setup.exe',environ={'GITHUB_ACTIONS':'true','R2_ACCOUNT_ID':'https://example.com','R2_ACCESS_KEY_ID':'a','R2_SECRET_ACCESS_KEY':'b'})
+        self.assertEqual(code,1)
+        self.assertIn('::error title=Not published::The R2_ACCOUNT_ID secret is not a Cloudflare account ID',out.getvalue())
+
+    def test_the_espeak_step_warns_with_the_reason(self):
+        import fetch_espeak_source
+        out=io.StringIO()
+        with tempfile.TemporaryDirectory() as folder,contextlib.redirect_stdout(out):
+            path=Path(folder)/'source.tar.gz';path.write_bytes(b'x')
+            kept=fetch_espeak_source.keep_in_bucket(path,environ={'GITHUB_ACTIONS':'true','R2_ACCOUNT_ID':'nope','R2_ACCESS_KEY_ID':'a','R2_SECRET_ACCESS_KEY':'b'})
+        self.assertFalse(kept)
+        self.assertIn('R2_ACCOUNT_ID secret is not a Cloudflare account ID',out.getvalue())
+
+
 class ShippedSettingsTests(unittest.TestCase):
     def test_the_shipped_settings_name_the_update_bucket(self):
         # Will, November 7, 2026: updates come from Cloudflare R2 at updates.voicecompanionapp.com.
@@ -273,10 +315,13 @@ class R2StoreTests(unittest.TestCase):
 
     def test_the_client_points_at_r2(self):
         from r2_storage import R2Store
-        store=R2Store.from_environment({'R2_ACCOUNT_ID':'acct','R2_ACCESS_KEY_ID':'id','R2_SECRET_ACCESS_KEY':'secret'})
-        self.assertEqual(store.client.meta.endpoint_url,'https://acct.r2.cloudflarestorage.com')
+        store=R2Store.from_environment({'R2_ACCOUNT_ID':'0123456789abcdef0123456789abcdef','R2_ACCESS_KEY_ID':'id','R2_SECRET_ACCESS_KEY':'secret'})
+        self.assertEqual(store.client.meta.endpoint_url,'https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com')
+        # The S3 API address Cloudflare shows beside the ID is accepted too.
+        store=R2Store.from_environment({'R2_ACCOUNT_ID':' https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com\n','R2_ACCESS_KEY_ID':'id','R2_SECRET_ACCESS_KEY':'secret'})
+        self.assertEqual(store.client.meta.endpoint_url,'https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com')
         self.assertEqual(store.bucket,'voice-companion-updates')
-        self.assertEqual(R2Store.from_environment({'R2_ACCOUNT_ID':'a','R2_ACCESS_KEY_ID':'b','R2_SECRET_ACCESS_KEY':'c','R2_BUCKET':'other'}).bucket,'other')
+        self.assertEqual(R2Store.from_environment({'R2_ACCOUNT_ID':'0123456789abcdef0123456789abcdef','R2_ACCESS_KEY_ID':'b','R2_SECRET_ACCESS_KEY':'c','R2_BUCKET':'other'}).bucket,'other')
 
 
 if __name__ == '__main__':

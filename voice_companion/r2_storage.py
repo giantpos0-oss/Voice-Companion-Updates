@@ -14,6 +14,7 @@ boto3 is imported only when a real bucket is opened, so tests and --help need no
 """
 import hashlib
 import os
+import re
 from pathlib import Path
 
 DEFAULT_BUCKET = 'voice-companion-updates'
@@ -41,6 +42,41 @@ class MissingSetup(RuntimeError):
     """The secrets needed to write to the bucket are not there."""
 
 
+class BadSetup(ValueError):
+    """A secret is there but cannot be right. The message says why, never the value."""
+
+
+ACCOUNT_ID = re.compile(r'[0-9a-f]{32}')
+
+
+def account_id(raw):
+    """The Cloudflare account ID from R2_ACCOUNT_ID.
+
+    Cloudflare shows the ID next to a full address (the S3 API address,
+    https://<id>.r2.cloudflarestorage.com), and both are easy to copy. Accept the
+    ID, that address, or a dashboard address with the ID in it. Anything else
+    stops with a reason that names the secret and describes the problem without
+    showing the value (November 9, 2026: a pasted address gave only "Invalid endpoint").
+    """
+    text = str(raw).strip().lower()
+    if ACCOUNT_ID.fullmatch(text):
+        return text
+    if '://' in text or '/' in text or '.' in text:
+        found = set(re.findall(r'(?<![0-9a-z])([0-9a-f]{32})(?![0-9a-z])', text))
+        if len(found) == 1:
+            return found.pop()
+    problems = ['it is ' + str(len(text)) + ' characters long']
+    if '://' in text:
+        problems.append('it is a web address')
+    if re.search(r'\s', text):
+        problems.append('it has spaces or line breaks inside it')
+    if re.search(r'[^0-9a-f]', text) and '://' not in text:
+        problems.append('it has characters other than 0 to 9 and a to f')
+    raise BadSetup('The R2_ACCOUNT_ID secret is not a Cloudflare account ID: ' + ', and '.join(problems)
+                   + '. It must be the 32-character Account ID from the R2 overview page in Cloudflare.'
+                   + ' Replace it in the repository settings, under Secrets and variables, Actions.')
+
+
 def content_type(name):
     name = str(name)
     if name == 'COPYING':
@@ -64,12 +100,12 @@ class R2Store:
         missing = missing_secrets(environ)
         if missing:
             raise MissingSetup('These repository secrets are missing: ' + ', '.join(missing) + '.')
+        account = account_id(environ['R2_ACCOUNT_ID'])
         try:
             import boto3
             from botocore.config import Config
         except ImportError as exc:
             raise MissingSetup('The boto3 package is not installed for publishing.') from exc
-        account = environ['R2_ACCOUNT_ID'].strip()
         client = boto3.client(
             's3',
             endpoint_url='https://' + account + '.r2.cloudflarestorage.com',
