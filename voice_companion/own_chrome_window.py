@@ -13,6 +13,7 @@ back by itself.
 
 Everything that touches Windows goes through a desktop object, so tests use fakes.
 """
+from hints import hint
 import os
 import time
 
@@ -28,8 +29,8 @@ NEEDED = {'sign-in': 'Google sign-in needs a window, so your Chrome came back.',
           'payment': 'This page asks for a card or payment, so your Chrome came back in case a helper needs to look.',
           'file': 'This page has a box for choosing a file, so your Chrome came back.'}
 HIDDEN_NOW = 'Your Chrome is hidden again. Companion still reads every page to you, and sound still plays.'
-SHOWN_NOW = ('Your Chrome is in front. Press Alt+Tab to come back to Voice Companion. '
-             'To hide it again, say hide browser window.')
+SHOWN_NOW = ('Your Chrome is in front. Press Alt+Tab to come back to Voice Companion.' +
+             hint(' To hide it again, say hide browser window.'))
 NOTHING_TO_SHOW = 'Your Chrome is not hidden. Press Alt+Tab to find it.'
 NOTHING_TO_HIDE = ('Only a Chrome window that Voice Companion opened can be hidden. '
                    'This Chrome was already open, so it stays as it is.')

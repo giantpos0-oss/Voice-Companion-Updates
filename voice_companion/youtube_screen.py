@@ -37,6 +37,7 @@ guided browser to Chrome. Nothing here types or sees a password.
 companion.py calls into this module from a few small hooks. `m` is the
 companion module.
 """
+from hints import hint
 import re
 import time
 from pathlib import Path
@@ -1330,7 +1331,7 @@ class YouTubeScreen:
             return problem
         details = self.player.details()
         if details.get('liked'):
-            return 'You already like this video. To take your like back, say remove like.'
+            return 'You already like this video.' + hint(' To take your like back, say remove like.')
         return self.ask(('like', True), 'Like ' + self.video['title'] + '? Say Yes or No.')
 
     def unlike(self):
@@ -2166,7 +2167,7 @@ def here(m, s, raw, command, typed=False):
         if command in OPEN:
             m.speak(s.where())
             return MODE
-        m.speak('YouTube. Say search for and words to search, or press Alt for the YouTube menu. Press F1 twice for help.')
+        m.speak('YouTube.' + hint(' Say search for and words to search, or press Alt for the YouTube menu. Press F1 twice for help.', instead=' I did not understand that.'))
         return MODE
     if action == 'leave':
         return leave(m, s)

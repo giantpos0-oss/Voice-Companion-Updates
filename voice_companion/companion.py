@@ -44,6 +44,7 @@ from onboard_help import HelpSession
 from speech_controls import request as speech_setting_request
 from file_manager import FileManager
 from settings_model import DEFAULTS, SettingsSession, prompt_text, keyboard_request
+from hints import hint, toggle_request as hints_toggle_request
 from keyboard_text import document_text,replace_keyboard_text,absolute
 from menu_navigation import boundary_notice, bounded_index, next_match, menu_label, announce_item
 
@@ -360,7 +361,7 @@ def create_named_document(value):
     checkpoint_document()
     apply_document_defaults(document)
     document.dictating=INPUT_MODE!='commands'
-    speak('New document, '+name+'. Speak or type to write. For help, say help with documents, or press F1 twice.')
+    speak('New document, '+name+'.'+hint(' Speak or type to write. For help, say help with documents, or press F1 twice.'))
     return 'document'
 
 def start_save_as(name_text=None):
@@ -765,8 +766,8 @@ SLEEP_RETURN_MODE = 'awake'
 MAIN_MENU_HELP = ('help me', 'what can i say', 'what can i do', 'what do i say', 'i need help', 'please help',
                   'help me please', 'help please', 'what are my choices', 'what are my options')
 MAIN_MENU_FIRST = 'You are on the main menu. It is the first screen, so there is nothing to go back to. Say a choice, or say help.'
-MAIN_MENU_NOT_UNDERSTOOD = 'I did not understand that. You are on the main menu. Press F1 twice for help.'
-MAIN_MENU_PROMPT = 'Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open.'
+MAIN_MENU_NOT_UNDERSTOOD = 'I did not understand that. You are on the main menu.' + hint(' Press F1 twice for help.')
+MAIN_MENU_PROMPT = 'Main menu.' + hint(' What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open.')
 
 # Said together with the next main menu announcement, in one message: a second
 # message would stop the first one (the keyboard voice interrupts itself).
@@ -2143,6 +2144,11 @@ def remember_question(text):
 
 def speak(text):
     global KEYBOARD_BATCH_TEXT
+    # Verbosity options, Hints and help messages: marked hints only (hints.py).
+    import hints
+    if hints.has_hint(text):
+        text=hints.spoken(text,hints.enabled(PREFERENCES))
+        if not text:return
     remember_question(text)
     if KEYBOARD_BATCH:
         KEYBOARD_BATCH_TEXT=text;return
@@ -3553,7 +3559,7 @@ def poll_thunderbird_watch(mode):
         speak_status('Thunderbird added ' + ' and '.join(new) + ', but Voice Companion could not save it. '
                      'Say add account and choose Thunderbird to try again.')
         return mode
-    speak_status(words.ready_message(new, chosen) + ' To add another, say add Thunderbird account.')
+    speak_status(words.ready_message(new, chosen) + hint(' To add another, say add Thunderbird account.'))
     if THUNDERBIRD_SIGN_IN_OUTSIDE:
         # The person signed in in their own browser: Voice Companion comes back to the front, with the keyboard.
         THUNDERBIRD_SIGN_IN_OUTSIDE = False
@@ -4554,6 +4560,13 @@ def _handle(text, mode, typed=False):
     if keep_open_request:
         PREFERENCES['web_keep_open']=keep_open_request[1]=='on'
         speak('Keep browser window open '+keep_open_request[1]+'.'+remembered(save_preferences));return mode
+    hints_request=hints_toggle_request(command)
+    if hints_request is not None:
+        # Verbosity options, Hints and help messages (Will, November 10, 2026).
+        PREFERENCES['speak_hints']=hints_request
+        speak(('Hints and help messages on. You hear tips on what you can say next.' if hints_request else
+               'Hints and help messages off. You hear just the result. To hear tips again, say hints on.')+remembered(save_preferences))
+        return mode
     auto_read_request=re.fullmatch(r'(?:(?:set|turn) )?(?:automatic page reading|automatically read (?:web )?pages|read pages automatically)(?: to)? (on|off)',command)
     toggle_read=re.fullmatch(r'(?:turn|switch) (on|off) automatic page reading',command)
     enable_read=re.fullmatch(r'(enable|disable) automatic page reading',command)
@@ -5973,7 +5986,7 @@ def _handle(text, mode, typed=False):
         # Nothing above understood the words. A misheard word must not throw you out of
         # this menu (or stop the file playing): stay, and say where you are.
         if command in ('main menu','back to main menu','go to main menu'):return 'awake'   # handle() says Main menu
-        speak('I did not understand that. You are on the '+options_return_notice(mode)[len('Back to '):].rstrip('.')+'. Press F1 twice for help.')
+        speak('I did not understand that. You are on the '+options_return_notice(mode)[len('Back to '):].rstrip('.')+'.'+hint(' Press F1 twice for help.'))
         return mode
     if mode == 'awake' and spoken_website(text):return 'awake'
     if mode == 'awake':

@@ -37,6 +37,7 @@ What always wins over hiding (Will, October 2026):
 Everything that touches Windows goes through a desktop object (Win32Desktop),
 so tests use a fake that follows the same rules.
 """
+from hints import hint
 import os
 import queue
 import threading
@@ -69,7 +70,7 @@ UPDATE = 'Thunderbird has a message about an update. Its window is open now. ' +
 OTHER = 'Thunderbird opened a window that may need you{title}. It is open now. ' + BACK
 MAIN_UP = 'Thunderbird brought its window up. It may be asking you something. Its window is open now. ' + BACK
 NOT_IN_FRONT = ' If you do not hear it, press Alt+Tab to find it.'
-SHOWN = 'Thunderbird is in front now. Press Alt+Tab to come back to Voice Companion. To put it away again, say hide Thunderbird.'
+SHOWN = 'Thunderbird is in front now. Press Alt+Tab to come back to Voice Companion.' + hint(' To put it away again, say hide Thunderbird.')
 SHOWN_NOT_FRONT = 'Thunderbird is open, but it could not come to the front. Press Alt+Tab to find it.'
 NOT_RUNNING = 'Thunderbird is not open right now.'
 HIDDEN_NOW = 'Thunderbird is out of the way now. It keeps running for your email. Say show Thunderbird to see it.'

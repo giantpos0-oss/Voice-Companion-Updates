@@ -22,6 +22,7 @@ Keys (each also has a voice command, see input_parity.SCREEN_KEYS and the guide)
 the main menu (email_by_name). companion.py calls into this module from a few
 small hooks; `m` is the companion module.
 """
+from hints import hint
 import re
 
 import contacts_book
@@ -470,8 +471,8 @@ def command_here(m, raw, command):
         select(CONTACTS.index(matches[0]))
         m.speak(describe())
         return MODE
-    m.speak('Address manager. Say next contact, find and a name, email contact, add contact, edit contact, or delete contact. '
-            'Press F1 twice for help, or Escape for the main menu.')
+    m.speak('Address manager.' + hint(' Say next contact, find and a name, email contact, add contact, edit contact, or delete contact. '
+            'Press F1 twice for help, or Escape for the main menu.', instead=' I did not understand that.'))
     return MODE
 
 

@@ -4,6 +4,7 @@ The browser is opened only after a user command. Page text is untrusted and is
 never treated as an instruction to the assistant. No credentials are stored by
 this module; the browser retains its own session in its dedicated profile.
 """
+from hints import hint
 from list_announcements import name_first
 from menu_navigation import announce_item
 from field_selection import FieldSelection, selection_command
@@ -3538,7 +3539,7 @@ class WebSession:
             self.list_focus='favorites'
             self.pending=None
             return ('Found '+str(len(self.favorite_items))+(' favorite. ' if len(self.favorite_items)==1 else ' favorites. ')+announce_item(self.favorite_items[0][1]['name'],0,len(self.favorite_items))+
-                    ' Say next or previous, then that one to open it.' if self.favorite_items else 'No favorites saved yet.')
+                    hint(' Say next or previous, then that one to open it.') if self.favorite_items else 'No favorites saved yet.')
         if command.startswith('go to '):
             item=self.favorites.get(spoken.strip()[6:])
             if item:return self.open(item['url'])

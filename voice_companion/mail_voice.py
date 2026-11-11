@@ -1,4 +1,5 @@
 """Voice state for a single connected mailbox; no persistent mail cache."""
+from hints import hint
 from list_announcements import name_first
 from menu_navigation import menu_label
 import re
@@ -291,9 +292,9 @@ class MailSession:
         if ambiguous_name:
             return ('I see ' + str(len(folders)) + ' folders named ' + ambiguous_name +
                     '. First choice: ' + menu_label(self._spoken_folder(folders[0][0])) +
-                    '. Say next or previous to hear another, then that one to ' + verb + '.')
+                    '.' + hint(' Say next or previous to hear another, then that one to ' + verb + '.'))
         return ('Found '+plural(len(folders), 'folder')+'. Folder 1: '+menu_label(self._spoken_folder(folders[0][0]))+
-                '. Say next or previous, then that one to ' + verb + '. Say cancel to leave this list.')
+                '.' + hint(' Say next or previous, then that one to ' + verb + '. Say cancel to leave this list.'))
 
     def _open_named_folder(self, spoken):
         self.folders = self.client().folders()
@@ -889,7 +890,7 @@ class MailSession:
                     verb = {'delete':'delete it', 'message_move':'move the messages there',
                             'move_current':'move this message there'}.get(action, 'choose it')
                     return (name_first('Folder '+str(index+1)+' of '+str(len(self.folder_picker['folders']))+': '+
-                            self._spoken_folder(self.folder_picker['folders'][index][0])+'. Say next or previous, then that one to '+verb+'.'))
+                            self._spoken_folder(self.folder_picker['folders'][index][0])+'.')+hint(' Say next or previous, then that one to '+verb+'.'))
                 self.folder_picker = None
                 self.folder_choice = None
             if self.folder_choice:
