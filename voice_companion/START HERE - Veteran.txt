@@ -2003,12 +2003,14 @@ If you open another category or tool before you choose OK, unsaved changes are l
 25.2 Choose how much speech you hear
 These settings are in Verbosity options.
 - Verbosity: how many hints you hear. High gives full hints. Medium gives shorter hints. Low gives brief prompts. This never shortens a document, email, error message, or Yes or No question.
+- Hints and help messages: tips on what you can say or press next, such as "Press F1 twice for help." It is on at first. Turn it off when you know the app well. Then you hear just the result. Say "Hints off" or "Hints on" to change it from any screen.
+With hints off, you still hear every question and how to answer it, such as "Say Yes to save or No to cancel." You still hear what went wrong and what to do next. If Companion did not understand you, it still says so.
 - Spoken punctuation: which marks are read. Choose none, some, most, or all.
 - Typing echo: what you hear while you type. Choose words, characters, characters and words, or none.
 - Delayed phonetic pronunciation: adds a letter's spoken name after a short pause. For example, B is followed by Bravo. It is on at first. Choose a delay of 0.5, 1, or 2 seconds, or turn it off. Moving on or stopping speech cancels a hint that has not been read yet.
 - Echo dictated text: what you hear after you dictate. Choose phrase by phrase to hear each bit after a short pause. Choose at the end of a sentence to wait for a full stop. Choose do not echo dictated text for quiet speech entry. This does not change typing echo.
 With at the end of a sentence, you can pause between phrases. Companion keeps them and reads the whole sentence once it ends. You hear the text without an Added label. A new task or a speech stop clears what is waiting.
-To change these by voice, say the setting name and the value. For example, say "Verbosity medium", "Punctuation most", "Typing echo words", "Phonetics off", or "Phonetic delay 1 second".
+To change these by voice, say the setting name and the value. For example, say "Verbosity medium", "Hints off", "Punctuation most", "Typing echo words", "Phonetics off", or "Phonetic delay 1 second".
 When encountering capital letters sets how a single capital letter sounds while you type or read by character.
 - Choose raise pitch, lower pitch, play a sound, say cap, or do nothing. Do nothing is the default.
 - Say cap says the word cap just before the letter, with no pause. You hear "cap B".

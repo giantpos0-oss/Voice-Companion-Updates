@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 774
-- Already had both ways: 612
+- Actions inventoried: 775
+- Already had both ways: 613
 - Gaps found: 162
 - Gaps fixed (Added): 154
 - Not applicable (N/A, with reason): 8
@@ -1166,6 +1166,12 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Verbosity
 
 - Voice: "Set Verbosity to ..."
+- Keyboard: Alt+O, arrows to Verbosity options, Tab to the field, arrows or Space, Enter to save
+- Status: Both
+
+### Hints and help messages
+
+- Voice: "Set Hints and help messages to ..."
 - Keyboard: Alt+O, arrows to Verbosity options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 
