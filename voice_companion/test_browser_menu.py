@@ -36,8 +36,11 @@ class BrowserMenuTests(unittest.TestCase):
         self.assertEqual(self.session.favorites.get('Other.')['name'],'Other.')
 
     def test_favorite_labels_aliases_and_go_to_saved_name(self):
-        self.assertIn('Go to favorite',self.session.menu.start())
-        self.assertNotIn('bookmark',self.session.menu.start())
+        # The menu says only its first item now (November 10, 2026); the item names are the choices.
+        self.session.menu.start()
+        names=[name for name,_ in self.session.menu.choices(self.session,False)]
+        self.assertIn('Go to favorite',names)
+        self.assertFalse(any('bookmark' in name.lower() for name in names))
         self.session.favorites.add('My News','https://example.test/News')
         self.assertEqual(self.run_command('go to My News')[1],('open','https://example.test/News'))
         self.run_command('go to favorite')

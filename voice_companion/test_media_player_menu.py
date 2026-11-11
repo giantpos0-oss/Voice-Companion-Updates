@@ -309,7 +309,8 @@ class MediaPlayerMenuTests(unittest.TestCase):
         step('Escape');self.assertEqual((mode,manager.location),('files',None))
         step('Escape');self.assertEqual(mode,'media_menu')
         self.said.clear();step('Escape');self.assertEqual(mode,'awake')
-        self.assertEqual(self.said.count(app.MAIN_MENU_PROMPT),1,self.said)
+        # Escape from the Media menu lands on Media on the main menu, said once (November 10, 2026).
+        self.assertEqual(self.said,['Media (M), 5 of 10.'])
 
     def test_player_after_media_menu_forgets_file_manager_origin(self):
         manager,mode=self.browse_to_song()

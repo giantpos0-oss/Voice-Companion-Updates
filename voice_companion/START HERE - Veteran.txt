@@ -230,7 +230,7 @@ Later, open the app from its desktop icon or the Windows Start menu. Use the ins
 3. Listen to the ready message. It says the version, any news about an update, whether the microphone is on, and where you are.
 4. If it offers an update, say "Yes" or "No", or press Y or N.
 5. When it says it is ready, say "Wake up", or press Down Arrow. If the microphone is off, you start on the main menu, so use the arrow keys.
-6. Wait for the main menu. Then say the name of the tool you want.
+6. Wait for the main menu. You hear its first item, File manager. Then say the name of the tool you want.
 For example, say "Word processor", "Notepad", "Email", "Web browser", "Radio", or "Podcasts".
 The keyboard works even while voice commands are asleep. Press Down Arrow to hear a menu item. Press Enter to open it.
 If a key press stops the ready message, say "What version?", or press Control+V. You hear the version and whether the microphone is on.
@@ -240,7 +240,7 @@ The main menu is where every task starts. Its apps are in groups. It has these c
 - File manager
 - Office tools
 - Organizer
-- Web browser
+- Web tools
 - Media
 - Options
 - Check for updates
@@ -256,10 +256,19 @@ Organizer has these apps:
 - Address manager. It keeps your contacts. It used to be called Contacts.
 - Schedule manager. It keeps your calendar. It used to be called Calendar.
 The old words still work. Say "Contacts" or "Calendar" to open them.
+Web tools has these choices:
+- Web browser
+- Web favorites
+- Web history
+- Downloads
+- Set up Chrome
+Web browser opens the web browser menu. Web favorites lists the pages you saved. Web history lists the pages you visited. Downloads opens the download manager. Set up Chrome links your own Chrome to Companion.
+You can still say "Web browser", "Web history", or "Download manager" from the main menu.
 Media has Radio, Podcasts, Media player, and YouTube. Shut down or restart has Shut down the computer and Restart the computer. Each one still asks first.
-To open Office tools, say "Office tools", or press Enter on it. To open Organizer, say "Organizer". Move and choose the same way as on the main menu.
-In Office tools, Organizer, or Shut down or restart, say "Help with main menu", or press F1 twice quickly, to hear this part of the guide.
-When you leave an app you opened from Office tools or Organizer, you go back to that menu. Escape there goes to the main menu. "Main menu" and F1 always go straight to the main menu.
+To open Office tools, say "Office tools", or press Enter on it. To open Organizer, say "Organizer". To open Web tools, say "Web tools". Move and choose the same way as on the main menu.
+In Office tools, Organizer, Web tools, or Shut down or restart, say "Help with main menu", or press F1 twice quickly, to hear this part of the guide.
+When you leave an app you opened from Office tools, Organizer, or Web tools, you go back to that menu. Escape there goes back to the main menu, on that menu's name. "Main menu" and F1 always go straight to the first item of the main menu.
+When you get to the main menu, you hear only the item you are on. For example, you hear "File manager (F), 1 of 10." The letter is the key that jumps to that item.
 Favorite apps is your own short list of apps. To open it, press Control+F1 on any screen, or say "Favorite apps".
 - It lists the apps you chose. The last item is Change favorite apps.
 - Change favorite apps opens Options on Favorite apps. Press Space on each app you want. Control+Up Arrow and Control+Down Arrow change the order.
@@ -280,7 +289,13 @@ Keys that only work on the main menu:
 The main menu is the first screen. "Go back" there tells you so.
 If the main menu does not know your words, it says "I did not understand that. You are on the main menu. Press F1 twice for help."
 On the main menu, Alt says that you are in the main menu. The main menu is already a menu, so it has no Alt menu of its own.
-On most other screens, press Alt to open a menu of that screen's actions. Each item says its key and its voice command. Use the arrows and Enter to choose. Press a number to open a group or choose an item. Type a letter to find an item. Escape goes back one level. Press Alt again to close the menu.
+On most other screens, press Alt to open a menu of that screen's actions. These menus work like Windows menus. Each group and each item has a letter, said after its name, such as "Reply (R), 3 of 9."
+- Press a group's letter to open the group. For example, in email, press Alt, then M for Message.
+- Press an item's letter to run it. For example, press Alt, M, then R to reply.
+- The same action has the same letter in every app. H is always help, O is always options, and M is always Main menu.
+- Numbers do not choose anything in these menus.
+- You can also use the arrows and Enter. Each item also says its shortcut key, if it has one, and its voice command.
+- Escape goes back one level. Press Alt again to close the menu.
 If a screen has no Alt menu, or you must answer a question first, Alt tells you why.
 
 1.4 Keys that work everywhere
@@ -476,7 +491,7 @@ These commands work in documents, email, web pages, and notes.
 - To move by letter or symbol, say "Next character" or "Previous character", or press Right Arrow or Left Arrow.
 - To move by word, say "Next word" or "Previous word", or press Control+Right Arrow or Control+Left Arrow.
 - To move by line, say "Next line" or "Previous line", or press Down Arrow or Up Arrow.
-- To move by sentence, say "Next sentence" or "Previous sentence". In a document, you can also press Alt, 5, then Q or R.
+- To move by sentence, say "Next sentence" or "Previous sentence". In a document, you can also press Alt, N, then S, or Alt, V, then S.
 - To move by paragraph, say "Next paragraph" or "Previous paragraph", or press Control+Down Arrow or Control+Up Arrow.
 - To reach the start or end of a line, say "Go to start of line" or "Go to end of line", or press Home or End.
 A line ends at a line break in the text. It may not match a line shown on the screen.
@@ -539,7 +554,7 @@ If the app finds one match, it changes that text at once. If it finds several, u
 To stop without a change, say "Cancel replacement", or press Escape.
 Say a punctuation name if you want it in the new text. For example, "Replace cat with dog period" puts a period after dog. A period that speech recognition adds by itself is not used.
 To replace the current word, sentence, or paragraph, say "Replace word with", "Replace sentence with", or "Replace paragraph with", followed by the new text. For example, say "Replace word with hello", "Replace sentence with Thank you", or "Replace paragraph with I will call tomorrow".
-To add text at a place, say "Insert before" or "Insert after", followed by words already in the text. For example, say "Insert before red fox". In a document, you can also press Alt, 2, then O or P.
+To add text at a place, say "Insert before" or "Insert after", followed by words already in the text. For example, say "Insert before red fox". In a document, you can also press Alt, C, then B or A.
 Choose a matching place if asked. Then speak the words to add. In Commands only, say "Type literally" before the new words.
 
 6. FILE MANAGER
@@ -712,7 +727,7 @@ A damaged file says what to do next. If Companion kept an earlier copy, say "Ope
 - To follow a link, press Enter on it.
 - To select and copy text, use the usual text keys.
 For reader help, say "Help with document reader", or press F1 twice quickly.
-Press Alt to open the document menu. It has Read, Move by, and Leave and help.
+Press Alt to open the document menu. It has Read, Go to, and Leave and help.
 
 7.4 Return to your files
 To close the reader, say "Back to files", or press Escape. You return to where you opened the file, on that same file. That can be File manager, the file list from Open a document, or your recent documents.
@@ -744,7 +759,7 @@ To start a document:
 2. Companion says, "Please say or type the name for your document, then press Enter or say confirm."
 3. Type the name, such as My Letter, and press Enter. Or say the name. Companion says it back. Then say "Confirm", or press Enter.
 4. Speak a short sentence or type into the document.
-5. To check what you wrote, say "Read paragraph", or press Alt, 5, then B.
+5. To check what you wrote, say "Read paragraph", or press Alt, R, then P.
 To stop without making a document, press Escape or say "Cancel" while Companion asks for the name.
 To change the name later, say "Name document", followed by the new name. Or press F2, type the name, and press Enter. You can change only the capitals, such as budget to Budget.
 If a document is damaged, Companion says what to do next. When it kept an earlier copy from before your last save, say "Open earlier copy" to use it. The damaged file is kept beside it.
@@ -791,7 +806,7 @@ With text selected, these commands change all the selected paragraphs.
 Line spacing is the space between the lines of a paragraph.
 - For single or double spacing, say "Single space" or "Double space", or press Control+1 or Control+2.
 - For one and a half, say "Line spacing 1.5", or press Control+5.
-- For another value, say "Line spacing", followed by the number. Or press Alt, 3, then I, and type the number.
+- For another value, say "Line spacing", followed by the number. Or press Alt, P, then S, and type the number.
 - For an exact value, say "Custom spacing". Give the value when asked, such as "One point seven five" or "Exactly eighteen points". Companion repeats it. Say "Yes" to use it, "No" to give another value, or "Cancel" to stop.
 - For the whole document, say "Set document line spacing to", followed by the value, such as "Set document line spacing to 1.25".
 - To check, say "Read line spacing" for this paragraph, or "Read document line spacing" for the whole document.
@@ -803,14 +818,14 @@ A bulleted list marks each item with a dot. A numbered list gives each item a nu
 1. Say "Bulleted list" or "Numbered list", or press Control+Shift+L or Control+Shift+7.
 2. Speak or type the first item.
 3. For the next item, say "New paragraph", or press Enter.
-4. To go back to plain text, say "End list", or press Alt, 4, then F.
+4. To go back to plain text, say "End list", or press Alt, I, then E.
 
 8.7 Make a table
 A table is a grid of boxes in rows and columns. Each box is called a cell.
 1. Say "Create table with", the number of rows, "rows and", the number of columns, and "columns". For example, say "Create table with two rows and two columns". Or press Control+Alt+T and type the size.
 2. Speak the text for the first cell.
 3. To move to the next cell, say "Next cell", or press Tab.
-4. To check your work, say "Read table", or press Alt, 8, then A.
+4. To check your work, say "Read table", or press Alt, A, then R.
 To move around a table:
 - "Previous cell", or press Shift+Tab.
 - "Next row" or "Previous row", or press Alt+Down Arrow or Alt+Up Arrow.
@@ -850,8 +865,23 @@ Your files are kept in Documents, in the Voice Companion folder. They use the .d
 Companion can reopen the simple files it makes. It may refuse a complex Word file, so that it does not change it the wrong way.
 
 8.9 Document command menu
-In a document, press Alt for the document menu. Its groups are File, Edit, Format, Insert, Read and navigate, Dictation, Table, and More commands.
-Use the arrows and Enter, or press a group number. Type a letter to find an item. Escape goes back a level, then back to the document.
+In a document, press Alt for the document menu. Its groups, with their letters, are:
+- File (F)
+- Edit (E)
+- Select (S)
+- Change (C): insert or replace words where you are.
+- Delete (D): delete the word, line, sentence, or paragraph you are in.
+- Text style (T): bold, italic, underline, fonts, and highlight.
+- Paragraph (P): alignment and line spacing.
+- Headings (H)
+- Insert (I): new lines, tables, lists, and dictation.
+- Read (R)
+- Next (N): move to the next character, word, line, sentence, paragraph, or heading.
+- Previous (V): move back by the same steps.
+- Table (A)
+- Options and help (O)
+Press a group's letter to open it. Then press an item's letter to run it. For example, Alt, F, then S saves.
+Each item says its letter, such as "Save (S), 1 of 6." You can also use the arrows and Enter. Escape goes back a level, then back to the document.
 Each item works the same as its voice command. If an item needs a value, type or say it and press Enter. Escape cancels.
 Document keys:
 - Control+S saves. F12 saves as. Control+Shift+S also saves as. F2 names the document.
@@ -886,7 +916,7 @@ To write a note:
 To save the note and go back to the Notepad menu, say "Go back", or press Escape. Escape on the Notepad menu goes back to Office tools, or to the main menu if you started there.
 To save the note and go straight to the main menu, say "Main menu", or press F1. Going to sleep also saves your text.
 For Notepad help, say "Help with notepad", or press F1 twice quickly.
-Press Alt to open the note menu. Its Notepad group has Save and close note, Read note, Saved notes, Notepad options, Notepad help, and Main menu. Its Edit group has New line, Undo, Redo, and Remove last words. Words you typed are added to the note first.
+Press Alt to open the note menu. Its Note group has Read note, Save and close note, and Saved notes. Its Edit group has New line, Undo, Redo, and Remove last words. Its Options and help group has Notepad options, Notepad help, and Main menu. Words you typed are added to the note first.
 
 9.2 Review or change a note
 - To review, say "Next word", "Previous word", "Next line", or "Previous line". Or use the arrows when the typing box is empty, as in other text.
@@ -944,7 +974,7 @@ If account setup is not available, ask your helper to check the app's email setu
 - To hear your saved accounts, say "List email accounts".
 - To hear the account in use, say "Which email account?". Check it before you send mail.
 To switch to another account:
-1. Say "Switch account". Or in email, press Alt, 6, then 2.
+1. Say "Switch account". Or in email, press Alt, T, then S.
 2. You hear each account, such as "Thunderbird, sam@gmail.com, 2 of 3". The account in use comes first and is called current.
 3. Press Up Arrow or Down Arrow, then Enter. Or say "Next" and "That one". You can also say the number, the service, or the address, such as "2", "Yahoo", "Gmail", or "sam at gmail dot com".
 Companion switches to that account and opens its inbox. To keep the account you have, say "Cancel", or press Escape.
@@ -953,7 +983,7 @@ You can also say "Switch to", followed by the service name, such as "Switch to Y
 With the keyboard, you can also press Alt+O and choose Email options. Sending account names the account in use. Choose another one there to switch.
 Each account starts with its kind, Thunderbird or Yahoo, such as "Thunderbird, sam@gmail.com". You can connect a Yahoo address two ways, straight to Yahoo and through Thunderbird. Then you hear both, "Yahoo, sam@yahoo.com" and "Thunderbird, sam@yahoo.com". To pick one by voice, say the kind, then the address. For example, say "Switch to Thunderbird, sam at yahoo dot com".
 To remove an account from Companion:
-1. Say "Remove email account". Or in email, press Alt, 6, then 4.
+1. Say "Remove email account". Or in email, press Alt, T, then R.
 2. Choose the account from the list, the same way as above.
 3. Listen to the question. It names the account.
 4. Say "Yes" to remove it, or "No" to keep it. Or press Y or N.
@@ -967,7 +997,7 @@ Accounts are also in the email menu. In email, press Alt, then 6. Choose Add acc
 
 10.3 Add and find contacts
 A contact is a saved name with an email address or a phone number. Address manager keeps your contacts. It is in Organizer on the main menu. See chapter 13.
-- To save a contact, say "Add contact", the person's name, "as", and their email address. For example, say "Add contact Bob as bob@example.com". Or in the inbox, press Alt, 5, then 5. Type the name, the word as, and the address, then press Enter.
+- To save a contact, say "Add contact", the person's name, "as", and their email address. For example, say "Add contact Bob as bob@example.com". Or in the inbox, press Alt, T, then C. Type the name, the word as, and the address, then press Enter.
 - To hear saved names, say "List contacts", or press P in the inbox. While you write an email, press Control+K. Use the arrows to hear each name. Press Enter to hear the address.
 - To find a contact, say "Find contact", followed by the saved name, such as "Find contact Bob".
 - When Companion asks who to email, you can say a saved contact's name.
@@ -976,7 +1006,7 @@ Your Google calendar is in Schedule manager. See chapter 14. Google Drive is not
 
 10.4 Add a Thunderbird account
 You can add an email account to Thunderbird without leaving Companion. Each address becomes its own account in Companion. You can add several, one after another.
-1. Say "Add Thunderbird account". Or in email, press Alt, 6, then 5.
+1. Say "Add Thunderbird account". Or in email, press Alt, T, then T.
 2. Type or say the email address, then press Enter.
 3. The first time, Companion asks for the name people see on your email. Type or say it, then press Enter.
 4. Companion opens the Thunderbird page for adding an account. It stays in the background. Companion fills in your name and address, and reads the page to you.
@@ -1007,7 +1037,7 @@ Companion waits up to 15 minutes. If you finish in Thunderbird later, say "Add a
 4. Speak the message in short parts. Listen back before you send.
 With the keyboard, type an address in the To box and press Enter. Then go on to the subject and the message.
 To speak an email address, say "at" for @ and "dot" for each period. For example, say "sam at example dot com" for sam@example.com. Say "underscore" for _ and "dash" for -.
-Press Alt to open the email draft menu. It has Message, Fields, Format, Contacts and help, Attachments, Undo and redo, and Importance and read receipt. Message has Send, Save draft, Read draft, Save and close, and Discard draft. While the menu is open, the keys you press choose items. They are not added to the message.
+Press Alt to open the email draft menu. It has Message, Edit, Go to, Format, Attachments, Contacts, Importance and read receipt, and Options and help. Edit has Undo and Redo. Go to moves to the To, Cc, Bcc, Subject, or message box. Message has Send, Save draft, Read draft, Save and close, and Discard draft. While the menu is open, the keys you press choose items. They are not added to the message.
 
 11.2 Change To, CC, BCC, or Subject
 A message has these parts:
@@ -1103,7 +1133,7 @@ To repeat the sender, subject, and date, say "Message details", or press I. To h
 - Alt+6: how many files are attached. Say "How many attachments?"
 For more of a long message, say "Continue reading", or press Down Arrow.
 To read it again from the top, say "Read from beginning". To go back to the message list, say "Back to folder" or "Go back", or press Escape.
-Press Alt to open the email menu. Its groups are Messages, Select, Go to folder, Folder actions, Drafts and contacts, Accounts, Pages, Options and help, and Header and attachments. For example, press Alt, 3, then 2 to go to Sent. Press Alt, 8, then 1 for Email options.
+Press Alt to open the email menu. Its groups are Message, Header, Attachments, Unread and flags, Select, Go to, Edit folders, View, and Tools. For example, press Alt, G, then S to go to Sent. Press Alt, T, then O for Email options.
 The single-letter email keys are listed in part 12.6.
 
 12.2 Go to folders
@@ -1157,11 +1187,11 @@ A forward includes the original attachments. Companion says their names when the
 To leave the reply, say "Cancel" or "Back to inbox". If you wrote something, Companion asks whether to save it as a draft, throw it away, or keep writing. Then you are back at the message you were reading.
 
 12.5 Create and manage folders
-- To create a folder, say "Create folder", followed by the name, such as "Create folder Receipts". Or press Alt, 4, then 1.
+- To create a folder, say "Create folder", followed by the name, such as "Create folder Receipts". Or press Alt, E, then C.
 - To create a folder inside another, say "Create folder", the name, "inside", and the other folder's name. For example, say "Create folder 2026 inside Receipts". Leave out the last name to choose it from a list, as in "Create folder 2026 inside".
 - To rename a folder, say "Rename folder", or press F2, and choose it. Then say "Rename to", followed by the new name, such as "Rename to Bills". Or give both names at once, such as "Rename folder Receipts to Bills".
-- To move a folder, say "Move folder", or press Alt, 4, then 3. Or give both names at once, such as "Move folder Bills into Archive".
-- To delete a folder, say "Delete folder", or press Alt, 4, then 4, and choose it. Or name it, such as "Delete folder Bills".
+- To move a folder, say "Move folder", or press Alt, E, then M. Or give both names at once, such as "Move folder Bills into Archive".
+- To delete a folder, say "Delete folder", or press Alt, E, then D, and choose it. Or name it, such as "Delete folder Bills".
 Listen to the full folder place and the action. Say "Yes" to go ahead or "No" to cancel.
 You can delete only empty folders you made. Built-in folders such as Inbox are protected.
 Some email services limit folder changes. For example, Yahoo does not let you rename, move, or delete a folder that has folders inside it.
@@ -1421,7 +1451,7 @@ Each calendar is named with its account, such as Calendar, Outlook, vet@outlook.
 15. BROWSE THE WEB
 
 15.1 Open the web browser menu
-Choose Web browser on the main menu. The web browser menu opens, even if you used a page earlier. It has these choices:
+Choose Web browser in Web tools on the main menu, or say "Web browser" from any menu. The web browser menu opens, even if you used a page earlier. You hear only its first item, such as "Search or enter address (S), 1 of 10." It has these choices:
 - Resume where you left off. This shows only when a page is kept open.
 - Search or enter address
 - Go to favorite
@@ -1433,8 +1463,8 @@ Choose Web browser on the main menu. The web browser menu opens, even if you use
 - Web history
 - Downloads
 - Set up Chrome
-Use the arrows and Enter, or say the name of a menu item. Press Escape to go back to the main menu.
-On this menu, Alt reads the menu again.
+Use the arrows and Enter, or say the name of a menu item. Press Escape to go back. You go back to Web tools if you opened the browser from there. If not, you go to the main menu.
+On this menu, Alt says where you are and the item you are on.
 
 15.2 Search or open an address
 1. Choose Search or enter address. From a page, you can also say "Search", or press Control+L.
@@ -1465,7 +1495,7 @@ Buttons and form fields say their names and types. A picture used as a button is
 Reading follows the place you choose. After you move to a heading, the arrows go on from that heading.
 When a website changes a form without a new page, the page view updates. For example, after an email step, you can move through the new password step. An old hidden field no longer works.
 A new page may start reading by itself. To stop this, turn off Automatic page reading in Web browser options.
-Press Alt to open the web page menu. It has Page, Lists, Favorites, and Options and help. The menu does not close the page. While you type in a page field, Alt does not open the menu.
+Press Alt to open the web page menu. It has Go to, Page, Favorites, Tools, and Options and help. The menu does not close the page. While you type in a page field, Alt does not open the menu.
 
 15.4 Move to headings, links, or controls
 Single letter keys move you around the page. Hold Shift with any of them to move back.
@@ -1658,7 +1688,7 @@ If you type the address of a file, Companion says the address is a file and down
 If you leave the page while embedded Edge is still downloading, its window stays open until the downloads end.
 
 17.2 Open your downloads
-To open the download manager, say "Download manager", or press Control+D on a web page or in the web browser menu. You can also choose Downloads in the web browser menu.
+To open the download manager, say "Download manager", or press Control+D on a web page or in the web browser menu. You can also choose Downloads in the web browser menu, or in Web tools on the main menu.
 - The newest download is first. Press Up Arrow and Down Arrow to hear each one.
 - Home and End reach the first and last. At either end you hear Start of list or End of list.
 - A running download says its name, how far along it is, and "downloading". For example: report.pdf, 45 percent, downloading.
@@ -1717,7 +1747,7 @@ The installer has a box named Set up Chrome and the Voice Companion extension wh
 If setup does not finish, ask your helper. A helper can open Voice Companion Browser Connection in the Chrome Web Store and choose Add to Chrome. For Edge or a test copy, a helper can follow Browser Connection Setup in the Voice Companion Start menu folder.
 
 18.2 Read and use your browser
-1. Open Web browser from the main menu. Choose Resume where you left off to read the active browser tab.
+1. Open Web browser from Web tools on the main menu. Choose Resume where you left off to read the active browser tab.
 2. Use your usual web keys and voice commands. They work the same as in chapter 15, including letter keys, lists, tables, and forms.
 3. Type and dictate in fields from Companion as usual. Tab moves among controls. Enter uses a control. Space selects a radio button or checkbox.
 4. Escape goes back to the web browser menu. From there, Escape goes to the main menu.
@@ -1791,7 +1821,7 @@ You can play a station from the main menu and most other screens. Say "Play", th
 In a document, email, note, or web text box, these words are typed as text. On a web page, "Play" is left for the page.
 
 20.3 Use the radio menus and keys
-The radio screen has two lists: an actions list and a results list. Tab or Shift+Tab moves between them.
+The radio screen has two lists: an actions list and a results list. When it opens, you hear only the first action, such as "Search stations (S), 1 of 22." Tab or Shift+Tab moves between the two lists.
 - Use the arrows, Home, End, and first letters to choose an item. Enter opens an action or plays a station.
 - Escape from the station results says "Station actions." The next Escape says "Radio menu." Escape again goes to the Media menu. "Go back" does the same as Escape.
 - Control+F opens search. Control+Shift+P lists saved stations. F5 refreshes the station lists.
@@ -1908,7 +1938,7 @@ To find a show by its name, search:
 - To go from episodes back to the show results, say "Back to podcasts", or press Escape.
 
 23.2 Use the podcast menus and keys
-The podcast screen has an actions list and a results list. Tab and Shift+Tab move between them.
+The podcast screen has an actions list and a results list. When it opens, you hear only the first action, such as "Browse podcasts (B), 1 of 25." Tab and Shift+Tab move between them.
 - Use the arrows, Home, End, and first letters to choose.
 - Enter on a show opens its episodes. Enter on an episode or downloaded file plays it.
 - Escape goes from player controls to episodes, then to shows, then to categories if you browsed, then to actions, then to the Media menu.
@@ -2089,7 +2119,7 @@ Thunderbird window has two choices:
 With either choice, Companion never hides a window Thunderbird opens by itself. When you add an account or sign in, Thunderbird works just as before. When Thunderbird opens a window, such as a sign-in or a password box, it comes to the front. Companion tells you what it is. Press Alt+Tab to come back to Companion.
 - Say "Show Thunderbird" to bring Thunderbird to the front.
 - Say "Hide Thunderbird" to put it back out of the way.
-- Both are also in the email menu, under Options and help.
+- Both are also in the email menu, under View.
 If you opened Thunderbird yourself, Companion leaves it alone.
 If anything goes wrong, choose the first option to go back to how it was.
 
@@ -2119,7 +2149,7 @@ Guided Chrome window has two choices. It only changes guided Chrome. Embedded Ed
 In the background, some pages need a real window. These are a Google sign-in, a check that you are a person, a page that asks for a card or payment, and a page where you choose a file to send. Then Companion opens Chrome again with its window, on the same page. It comes to the front, and Companion tells you why. Press Alt+Tab to come back to Companion.
 - Say "Show browser window" to see Chrome's window.
 - Say "Hide browser window" to run Chrome in the background again.
-- Both are also in the web page menu, under Options and help.
+- Both are also in the web page menu, under Tools.
 Your own Chrome window has two choices. It changes only the Chrome windows that Companion opens for the web or YouTube. A Chrome window you opened yourself is never hidden.
 - Show it, as before. This is the first choice.
 - Hide it while Companion uses it. Your Chrome is not on the screen, the taskbar or Alt+Tab. Companion still reads every page to you, and sound and video still play.

@@ -2,7 +2,8 @@
 
 File manager is first on the main menu, on its own. Office tools holds Word processor, Notepad,
 Email and Document reader. Organizer holds Address manager and Schedule manager (the old
-Contacts and Calendar). Web browser and Media stay on the main menu. Shut down or restart holds
+Contacts and Calendar). Web browser moved into Web tools (November 10, test_menu_layout.py);
+Media stays on the main menu. Shut down or restart holds
 the two power choices. Leaving an app opened from Office tools goes back to Office tools; Main
 menu and F1 still go to the main menu."""
 import unittest
@@ -31,7 +32,7 @@ class OfficeToolsMenuTests(CompanionTestCase):
 
     def test_main_menu_is_grouped(self):
         self.assertEqual([name for name, _ in companion.MAIN_MENU_CHOICES],
-                         ['File manager', 'Office tools', 'Organizer', 'Web browser', 'Media', 'Options',
+                         ['File manager', 'Office tools', 'Organizer', 'Web tools', 'Media', 'Options',
                           'Check for updates', 'Help', 'Shut down or restart', 'Exit Voice Companion'])
 
     def test_office_tools_lists_the_office_apps(self):
@@ -62,7 +63,8 @@ class OfficeToolsMenuTests(CompanionTestCase):
 
     def test_escape_from_office_tools_goes_to_the_main_menu(self):
         self.assertEqual(self.key('Escape', self.open_office()), 'awake')
-        self.assertIn('Main menu', self.said[-1])
+        # Only the item, on Office tools itself (Will, November 10, 2026).
+        self.assertEqual(self.said[-1], 'Office tools (O), 2 of 10.')
 
     def test_leaving_an_app_goes_back_to_office_tools_on_the_same_item(self):
         mode = self.open_office()

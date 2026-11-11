@@ -577,7 +577,7 @@ class CompanionWindow:
                             # Add the typed words to the note first, as Enter would.
                             self.commands.put(typed.get().strip());typed.delete(0,'end')
                         self.commands.put(('keyboard',direct));return 'break'
-                if mode in ('document','word_processor','document_menu','recent_documents','media_menu','office_menu','organizer_menu','favorites_menu','power_menu','local_media','notepad_menu','reader_menu','reader_recent','task_input'):
+                if mode in ('document','word_processor','document_menu','recent_documents','media_menu','office_menu','organizer_menu','web_tools_menu','favorites_menu','power_menu','local_media','notepad_menu','reader_menu','reader_recent','task_input'):
                     from task_navigation import SHORTCUTS
                     if mode=='document' and self.context.get('document_table') and key in ('Tab','ISO_Left_Tab'):
                         flush_pending_edit();cancel_phonetic()

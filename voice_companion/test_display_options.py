@@ -313,11 +313,11 @@ class ScreenTests(unittest.TestCase):
         app.screen_menu().open('mailbox')
         context = self.shown('mailbox')
         self.assertEqual(context['display_title'], 'Email menu')
-        self.assertEqual(context['display_items'][0], 'Messages')
+        self.assertEqual(context['display_items'][0], 'Message')
         app.screen_menu().choose(0, 'mailbox')
         context = self.shown('mailbox')
-        self.assertEqual(context['display_title'], 'Email menu: Messages')
-        self.assertEqual(context['display_items'][0], 'Check for new mail (F5)')
+        self.assertEqual(context['display_title'], 'Email menu: Message')
+        self.assertEqual(context['display_items'][0], 'New email (N)')
 
     def test_yes_or_no_question_shows_the_answers(self):
         context = self.shown('exit_confirm')

@@ -358,7 +358,7 @@ SCREEN_NAMES = {
     'note': 'Note', 'mailbox': 'Email', 'email_draft': 'Email draft', 'contacts': 'Address manager', 'calendar': 'Schedule manager',
     'downloads': 'Downloads', 'attachments': 'Attachments', 'web': 'Web page', 'browser_menu': 'Web browser menu',
     'search': 'Web search', 'help': 'Help', 'tutorial': 'Tutorial',
-    'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'favorites_menu': 'Favorite apps',
+    'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'web_tools_menu': 'Web tools', 'favorites_menu': 'Favorite apps',
     'power_menu': 'Shut down or restart',
     'media_menu': 'Media menu', 'media': 'Radio', 'podcast': 'Podcasts', 'local_media': 'Media player', 'youtube': 'YouTube',
     'settings': 'Options', 'document_name': 'Name the document', 'document_save': 'Save the document', 'draft_leave': 'Leave the email', 'document_replace': 'Replace a file',

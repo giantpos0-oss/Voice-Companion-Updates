@@ -78,10 +78,12 @@ HAND = [
     ('Speech and voices', 'AI voice setup for a trainer', '"AI voice setup"', 'Tab to the AI voice setup button, Enter', 'Both'),
     ('Speech and voices', 'Pause or resume radio and podcasts anywhere', '"Pause audio", "Resume audio"', 'Ctrl+P', 'Both'),
     # Reading and editing text
+    # YouTube: number keys jump through the video (on the YouTube screen, not in a menu).
+    ('Media', 'Jump through a YouTube video', '"Jump to 50 percent"', '1 to 9 on the YouTube screen', 'Both'),
     ('Reading and editing text', 'Read from the top', '"Read from top"', 'Ctrl+Shift+R in a document, draft, note or reader', 'Added: Ctrl+Shift+R in drafts, notes and the reader'),
     ('Reading and editing text', 'Continue reading', '"Continue reading"', 'Down Arrow', 'Both'),
     ('Reading and editing text', 'Move by character, word, line, paragraph', '"Next word", "Previous line", ...', 'Arrows, Ctrl+arrows', 'Both'),
-    ('Reading and editing text', 'Move by sentence', '"Next sentence", "Previous sentence"', 'Document menu: Alt, 5, then the item', 'Both'),
+    ('Reading and editing text', 'Move by sentence', '"Next sentence", "Previous sentence"', 'Document menu: Alt, N or Alt, V, then S', 'Both'),
     ('Reading and editing text', 'Start or end of a line', '"Go to start of line", "Go to end of line"', 'Home, End', 'Added: voice'),
     ('Reading and editing text', 'Start or end of the text', '"Go to beginning of document", "Go to end of document"', 'Ctrl+Home, Ctrl+End', 'Both'),
     ('Reading and editing text', 'Select with movement', '"Select next word", "Select paragraph", ...', 'Shift with a movement key', 'Both'),
@@ -92,7 +94,7 @@ HAND = [
     ('Reading and editing text', 'Scratch the selection or last dictation', '"Scratch that"', 'Ctrl+Shift+Z', 'Both'),
     ('Reading and editing text', 'Undo', '"Undo"', 'Ctrl+Z', 'Both'),
     ('Reading and editing text', 'Replace words', '"Replace cat with dog"', 'Ctrl+H, type, Enter', 'Both'),
-    ('Reading and editing text', 'Insert before or after words', '"Insert before ...", "Insert after ..."', 'Document menu: Alt, 2, then the item', 'Both'),
+    ('Reading and editing text', 'Insert before or after words', '"Insert before ...", "Insert after ..."', 'Document menu: Alt, C, then B or A', 'Both'),
     ('Reading and editing text', 'Choose among matches', '"Next", "Previous", "That one", "Match 3"', 'Arrows, Home, End, Enter; Escape cancels', 'Both'),
     ('Reading and editing text', 'Page Up and Page Down in a document', 'N/A', 'Page Up, Page Down', 'N/A - moves by a screen of text; say "Next paragraph" instead'),
     # Notepad
@@ -110,8 +112,8 @@ HAND = [
     ('Email setup', 'Choose Thunderbird (for Gmail, Outlook and others) or Yahoo', 'Say the service name', 'T or Y, or arrows, Enter', 'Both'),
     ('Email setup', 'Thunderbird setup', '"Thunderbird"', 'T or arrows to Thunderbird, Enter', 'Both'),
     ('Email setup', 'List, switch or check the account', '"List email accounts", "Switch to Yahoo", "Which email account?"', 'Alt+O, Email options, Sending account', 'Both'),
-    ('Email setup', 'Switch account from a list', '"Switch account", then the number, name or address', 'Email menu: Alt, 6, 2; arrows, Enter', 'Added: account list to choose from'),
-    ('Email setup', 'Remove an email account', '"Remove email account", then "Yes"', 'Email menu: Alt, 6, 4; arrows, Enter, Y', 'Added: voice and Alt menu item'),
+    ('Email setup', 'Switch account from a list', '"Switch account", then the number, name or address', 'Email menu: Alt, T, S; arrows, Enter', 'Added: account list to choose from'),
+    ('Email setup', 'Remove an email account', '"Remove email account", then "Yes"', 'Email menu: Alt, T, R; arrows, Enter, Y', 'Added: voice and Alt menu item'),
     ('Email setup', 'List contacts / find a contact', '"List contacts", "Find contact Bob"', 'Ctrl+K in email, arrows, Enter', 'Added: Ctrl+K'),
     ('Email setup', 'Add a contact', '"Add contact Bob as bob@example.com"', 'Ctrl+Shift+K in the inbox, type, Enter', 'Added: Ctrl+Shift+K'),
     # Write email
@@ -234,7 +236,7 @@ HAND = [
 ]
 
 # Catalog rows whose status is not plain Both: (area, action) -> status.
-ADDED = {('Word processor document: More commands', 'Run any document voice command'):
+ADDED = {('Word processor document: Options and help', 'Run any document voice command'):
              'N/A - this item is the keyboard way to type any spoken command'}
 ADDED_AREAS = {'Radio station actions': 'Added: voice (say the action name)'}
 

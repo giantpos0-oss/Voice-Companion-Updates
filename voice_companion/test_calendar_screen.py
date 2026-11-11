@@ -472,7 +472,7 @@ class GoToDateTests(CalendarHarness):
 
     def test_the_menu_item_has_the_key(self):
         from screen_menus import items
-        self.assertIn(('Day', 'Go to a date', 'Ctrl+G', 'go to date'), items('calendar'))
+        self.assertIn(('Go to', 'Go to a date', 'Ctrl+G', 'go to date'), items('calendar'))
 
 
 class EditEventTests(CalendarHarness):

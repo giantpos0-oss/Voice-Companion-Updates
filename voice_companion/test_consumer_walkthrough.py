@@ -126,7 +126,7 @@ class LeavingANoteTests(CompanionTestCase):
     def test_main_menu_with_words_is_one_message(self):
         self.assertEqual(self.leave(['Call Bob.'], 'Main menu.'), 'awake')
         self.assertEqual(len(self.said), 1, self.said)
-        self.assertTrue(self.said[0].startswith('Saved your note. Main menu.'), self.said)
+        self.assertEqual(self.said[0], 'Saved your note. ' + companion.MAIN_MENU_PROMPT)
 
     def test_an_empty_note_does_not_claim_it_was_saved(self):
         for how in ('Escape', 'Main menu.', 'Go back.'):
@@ -461,7 +461,7 @@ class FirstTimeEmailTests(CompanionTestCase):
             self.assertEqual(companion.handle('cancel', 'email_draft'), 'awake')
         self.assertEqual(len(self.said), 2, self.said)
         self.assertEqual(self.said[0], 'Draft canceled without saving.')
-        self.assertTrue(self.said[1].startswith('No email account is set up yet. Main menu.'), self.said)
+        self.assertEqual(self.said[1], 'No email account is set up yet. ' + companion.MAIN_MENU_PROMPT)
 
 
     def test_gmail_through_thunderbird_is_one_message(self):

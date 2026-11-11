@@ -730,7 +730,7 @@
 },
 "awake | back to main menu": {
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -815,6 +815,12 @@
 "awake | browser menu": {
 "said": [
 "Choose one of the available Guided browser options."
+],
+"screen_after": "awake"
+},
+"awake | calendar": {
+"said": [
+"Contacts and calendars come from Thunderbird, and Thunderbird is not set up yet. Say add Thunderbird account to set it up."
 ],
 "screen_after": "awake"
 },
@@ -1295,6 +1301,12 @@
 "Web browser menu."
 ],
 "screen_after": "browser_menu"
+},
+"awake | contacts": {
+"said": [
+"Address manager. No contacts yet. Press Control+N to add one, or say add contact. Only contacts saved on this computer are here. To use your Google or Outlook contacts, say add Thunderbird account."
+],
+"screen_after": "contacts"
 },
 "awake | continue document": {
 "said": [
@@ -2170,7 +2182,7 @@
 },
 "awake | internet radio": {
 "said": [
-"Radio menu. Search stations (S), 1 of 22. Tab switches between actions and results. Enter opens the selected item."
+"Radio menu. Search stations (S), 1 of 22."
 ],
 "screen_after": "media"
 },
@@ -2406,7 +2418,7 @@
 },
 "awake | listen to podcasts": {
 "said": [
-"Podcasts menu. Browse podcasts (B), 1 of 25. Tab switches between actions and results. Enter opens the selected item."
+"Podcasts menu. Browse podcasts (B), 1 of 25."
 ],
 "screen_after": "media"
 },
@@ -2448,7 +2460,7 @@
 },
 "awake | main menu": {
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -3055,7 +3067,7 @@
 },
 "awake | open podcast": {
 "said": [
-"Podcasts menu. Browse podcasts (B), 1 of 25. Tab switches between actions and results. Enter opens the selected item."
+"Podcasts menu. Browse podcasts (B), 1 of 25."
 ],
 "screen_after": "media"
 },
@@ -3296,7 +3308,7 @@
 },
 "awake | podcast": {
 "said": [
-"Podcasts menu. Browse podcasts (B), 1 of 25. Tab switches between actions and results. Enter opens the selected item."
+"Podcasts menu. Browse podcasts (B), 1 of 25."
 ],
 "screen_after": "media"
 },
@@ -3320,7 +3332,7 @@
 },
 "awake | podcasts": {
 "said": [
-"Podcasts menu. Browse podcasts (B), 1 of 25. Tab switches between actions and results. Enter opens the selected item."
+"Podcasts menu. Browse podcasts (B), 1 of 25."
 ],
 "screen_after": "media"
 },
@@ -3452,7 +3464,7 @@
 },
 "awake | radio": {
 "said": [
-"Radio menu. Search stations (S), 1 of 22. Tab switches between actions and results. Enter opens the selected item."
+"Radio menu. Search stations (S), 1 of 22."
 ],
 "screen_after": "media"
 },
@@ -6426,6 +6438,15 @@
 "Hello world. Second sentence. browser menu"
 ]
 },
+"document | calendar": {
+"said": [
+"calendar"
+],
+"screen_after": "document",
+"text": [
+"Hello world. Second sentence. calendar"
+]
+},
 "document | cancel": {
 "said": [
 "cancel"
@@ -7131,6 +7152,15 @@
 "screen_after": "browser_menu",
 "text": [
 "Hello world. Second sentence."
+]
+},
+"document | contacts": {
+"said": [
+"contacts"
+],
+"screen_after": "document",
+"text": [
+"Hello world. Second sentence. contacts"
 ]
 },
 "document | continue document": {
@@ -13930,7 +13960,7 @@
 "email_draft | back to main menu": {
 "said": [
 "Email draft saved locally as Routing check 92. It has not been sent.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
 "text": [
@@ -14061,6 +14091,15 @@
 "screen_after": "email_draft",
 "text": [
 "Hello world. browser menu"
+]
+},
+"email_draft | calendar": {
+"said": [
+"calendar"
+],
+"screen_after": "email_draft",
+"text": [
+"Hello world. calendar"
 ]
 },
 "email_draft | cancel": {
@@ -14617,8 +14656,8 @@
 },
 "email_draft | close email": {
 "said": [
-"Email draft saved locally as Routing check 138. It has not been sent.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Email draft saved locally as Routing check 139. It has not been sent.",
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
 "text": [
@@ -14844,6 +14883,15 @@
 "screen_after": "browser_menu",
 "text": [
 "Hello world."
+]
+},
+"email_draft | contacts": {
+"said": [
+"contacts"
+],
+"screen_after": "email_draft",
+"text": [
+"Hello world. contacts"
 ]
 },
 "email_draft | continue document": {
@@ -15427,8 +15475,8 @@
 },
 "email_draft | exit": {
 "said": [
-"Email draft saved locally as Routing check 187. It has not been sent.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Email draft saved locally as Routing check 189. It has not been sent.",
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
 "text": [
@@ -15473,8 +15521,8 @@
 },
 "email_draft | exit email": {
 "said": [
-"Email draft saved locally as Routing check 191. It has not been sent.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Email draft saved locally as Routing check 193. It has not been sent.",
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
 "text": [
@@ -16246,8 +16294,8 @@
 },
 "email_draft | leave email": {
 "said": [
-"Email draft saved locally as Routing check 258. It has not been sent.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Email draft saved locally as Routing check 260. It has not been sent.",
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
 "text": [
@@ -16571,8 +16619,8 @@
 },
 "email_draft | main menu": {
 "said": [
-"Email draft saved locally as Routing check 284. It has not been sent.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Email draft saved locally as Routing check 286. It has not been sent.",
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
 "text": [
@@ -18585,7 +18633,7 @@
 },
 "email_draft | save": {
 "said": [
-"Email draft saved locally as Routing check 451. It has not been sent."
+"Email draft saved locally as Routing check 453. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18603,7 +18651,7 @@
 },
 "email_draft | save document": {
 "said": [
-"Email draft saved locally as Routing check 452. It has not been sent."
+"Email draft saved locally as Routing check 454. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18621,7 +18669,7 @@
 },
 "email_draft | save draft": {
 "said": [
-"Email draft saved locally as Routing check 453. It has not been sent."
+"Email draft saved locally as Routing check 455. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18648,7 +18696,7 @@
 },
 "email_draft | save it": {
 "said": [
-"Email draft saved locally as Routing check 455. It has not been sent."
+"Email draft saved locally as Routing check 457. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18657,7 +18705,7 @@
 },
 "email_draft | save my document": {
 "said": [
-"Email draft saved locally as Routing check 456. It has not been sent."
+"Email draft saved locally as Routing check 458. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -21313,7 +21361,7 @@
 },
 "help | back": {
 "said": [
-"Help closed. Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Help closed. File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -21349,7 +21397,7 @@
 },
 "help | back to main menu": {
 "said": [
-"Help closed. Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Help closed. File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -21434,6 +21482,12 @@
 "help | browser menu": {
 "said": [
 "Choose one of the available Guided browser options."
+],
+"screen_after": "help"
+},
+"help | calendar": {
+"said": [
+"I did not understand that. Say next to hear a topic, or press Escape to leave Help."
 ],
 "screen_after": "help"
 },
@@ -21909,6 +21963,12 @@
 "Web browser menu."
 ],
 "screen_after": "browser_menu"
+},
+"help | contacts": {
+"said": [
+"I did not understand that. Say next to hear a topic, or press Escape to leave Help."
+],
+"screen_after": "help"
 },
 "help | continue document": {
 "said": [
@@ -22500,7 +22560,7 @@
 },
 "help | go back": {
 "said": [
-"Help closed. Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Help closed. File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -23022,7 +23082,7 @@
 },
 "help | main menu": {
 "said": [
-"Help closed. Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Help closed. File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -23311,7 +23371,7 @@
 "help | next voice": {
 "said": [
 "I can write a note or document, open email, search the web, or find radio and podcasts. Say add account to connect email. Say commands only, dictation only, or normal mode to choose how speech works.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -23977,7 +24037,7 @@
 "help | previous voice": {
 "said": [
 "I can write a note or document, open email, search the web, or find radio and podcasts. Say add account to connect email. Say commands only, dictation only, or normal mode to choose how speech works.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -26638,7 +26698,7 @@
 },
 "mailbox | back": {
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -26813,6 +26873,15 @@
 "mailbox | browser menu": {
 "said": [
 "Choose one of the available Guided browser options."
+],
+"screen_after": "mailbox"
+},
+"mailbox | calendar": {
+"calls": [
+"call.process('calendar')"
+],
+"said": [
+"session handled: calendar"
 ],
 "screen_after": "mailbox"
 },
@@ -27280,7 +27349,7 @@
 },
 "mailbox | close inbox": {
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -27452,6 +27521,15 @@
 "Web browser menu."
 ],
 "screen_after": "browser_menu"
+},
+"mailbox | contacts": {
+"calls": [
+"call.process('contacts')"
+],
+"said": [
+"session handled: contacts"
+],
+"screen_after": "mailbox"
 },
 "mailbox | continue document": {
 "calls": [
@@ -27954,7 +28032,7 @@
 },
 "mailbox | exit": {
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -28267,7 +28345,7 @@
 },
 "mailbox | go back": {
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -28372,7 +28450,7 @@
 },
 "mailbox | go to main menu": {
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -28427,7 +28505,7 @@
 "mailbox | go to website example dot com": {
 "said": [
 "I heard website websiteexample.com. Is that right? Say yes or no.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -28694,7 +28772,7 @@
 },
 "mailbox | leave email": {
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -28979,7 +29057,7 @@
 },
 "mailbox | main menu": {
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -33290,7 +33368,7 @@
 },
 "note | back to main menu": {
 "said": [
-"The note was empty, so nothing was saved. Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"The note was empty, so nothing was saved. File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -33375,6 +33453,12 @@
 "note | browser menu": {
 "said": [
 "browser menu"
+],
+"screen_after": "note"
+},
+"note | calendar": {
+"said": [
+"calendar"
 ],
 "screen_after": "note"
 },
@@ -33851,6 +33935,12 @@
 ],
 "screen_after": "browser_menu"
 },
+"note | contacts": {
+"said": [
+"contacts"
+],
+"screen_after": "note"
+},
 "note | continue document": {
 "said": [
 "continue document"
@@ -34118,7 +34208,7 @@
 "note | done dictating": {
 "said": [
 "The note was empty.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -34341,7 +34431,7 @@
 "note | finish note": {
 "said": [
 "The note was empty.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -34965,7 +35055,7 @@
 },
 "note | main menu": {
 "said": [
-"The note was empty, so nothing was saved. Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"The note was empty, so nothing was saved. File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -36360,7 +36450,7 @@
 "note | save note": {
 "said": [
 "The note was empty.",
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -38727,7 +38817,7 @@
 "call.leave(False)"
 ],
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -38867,6 +38957,16 @@
 "Web browser menu."
 ],
 "screen_after": "browser_menu"
+},
+"web | calendar": {
+"calls": [
+"call.command('calendar')",
+"call.page_revision.__ne__(<mock>)"
+],
+"said": [
+"session handled: calendar"
+],
+"screen_after": "web"
 },
 "web | cancel": {
 "calls": [
@@ -39339,7 +39439,7 @@
 "call.leave(False)"
 ],
 "said": [
-"Browser window closed. Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Browser window closed. File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -39398,7 +39498,7 @@
 "call.leave(False)"
 ],
 "said": [
-"Browser window closed. Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Browser window closed. File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -39407,7 +39507,7 @@
 "call.leave(False)"
 ],
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -39557,6 +39657,16 @@
 "Web browser menu."
 ],
 "screen_after": "browser_menu"
+},
+"web | contacts": {
+"calls": [
+"call.command('contacts')",
+"call.page_revision.__ne__(<mock>)"
+],
+"said": [
+"session handled: contacts"
+],
+"screen_after": "web"
 },
 "web | continue document": {
 "calls": [
@@ -40107,7 +40217,7 @@
 "call.leave(False)"
 ],
 "said": [
-"Browser window closed. Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Browser window closed. File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -40162,7 +40272,7 @@
 "call.leave(False)"
 ],
 "said": [
-"Browser window closed. Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"Browser window closed. File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -40963,7 +41073,7 @@
 "call.leave(False)"
 ],
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },
@@ -41251,7 +41361,7 @@
 "call.leave(False)"
 ],
 "said": [
-"Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
+"File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
 },

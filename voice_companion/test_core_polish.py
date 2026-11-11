@@ -301,7 +301,7 @@ class SpokenKeyNamesTests(CompanionTestCase):
         from menu_navigation import spoken_key
         for key, words in (('Ctrl+O', 'Control+O'), ('Ctrl+Shift+S', 'Control+Shift+S'), ('Up', 'Up Arrow'),
                            ('Ctrl+Shift+Down', 'Control+Shift+Down Arrow'), ('PgDn', 'Page Down'), ('Esc', 'Escape'),
-                           ('ShiftTab', 'Shift+Tab'), ('Alt, 3, 2', 'Alt, 3, 2'), ('F1', 'F1'), ('Double:F1', 'F1 twice'), ('Enter', 'Enter'),
+                           ('ShiftTab', 'Shift+Tab'), ('Alt, M, R', 'Alt, M, R'), ('F1', 'F1'), ('Double:F1', 'F1 twice'), ('Enter', 'Enter'),
                            ('Insert+Shift+Down', 'Insert+Shift+Down Arrow'), ('Ctrl+Alt+1', 'Control+Alt+1'), ('', '')):
             self.assertEqual(spoken_key(key), words)
 

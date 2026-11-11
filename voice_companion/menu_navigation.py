@@ -27,7 +27,7 @@ KEY_WORDS = {'Ctrl': 'Control', 'Esc': 'Escape', 'PgUp': 'Page Up', 'PgDn': 'Pag
 
 def spoken_key(key):
     """A key id in the guide's words: 'Ctrl+Shift+S' is 'Control+Shift+S', 'Up' is 'Up Arrow'.
-    Only whole key names between + signs change; menu paths such as 'Alt, 3, 2' stay.
+    Only whole key names between + signs change; menu paths such as 'Alt, M, R' stay.
     'Double:F1' is F1 pressed twice quickly, which opens help (F1 once is the main menu)."""
     if str(key).startswith('Double:'):
         return spoken_key(str(key)[len('Double:'):]) + ' twice'
