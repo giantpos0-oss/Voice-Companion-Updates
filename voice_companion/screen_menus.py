@@ -18,76 +18,76 @@ from menu_navigation import announce_item, next_match, spoken_key
 # A command with {value} asks for the value first. @options:<category> opens
 # that page of Options.
 MENUS = {
+    # Grouped as people expect from Outlook and Thunderbird (Will, November 10, 2026): what you do
+    # with a message, its header, its attachments, its read and flag marks, then places and views.
     'mailbox': ('Email menu', [
-        ('Messages', [
-            ('Check for new mail', 'F5', 'list messages'),
+        ('Message', [
+            ('New email', 'N', 'new email'),
             ('Read message', 'Enter', 'open current message'),
             ('Reply', 'R', 'reply'),
             ('Reply all', 'A', 'reply all'),
             ('Forward', 'F', 'forward'),
-            ('New email', 'N', 'new email'),
-            ('Delete', 'Delete', 'delete'),
+            ('Email the sender', 'E', 'new email to sender'),
             ('Move to folder', 'M', 'move'),
+            ('Delete', 'Delete', 'delete'),
             ('Message details', 'I', 'message details')]),
-        ('Select', [
-            ('Mark or unmark message', 'Space', 'toggle message selection'),
-            ('Select all messages', 'Ctrl+A', 'select all messages'),
-            ('Clear selection', 'U', 'clear selection'),
-            ('What is selected', 'S', 'what is selected'),
+        ('Header', [
+            ('From', 'Alt+1', 'who is it from'),
+            ('To', 'Alt+2', 'who is it to'),
+            ('CC', 'Alt+3', 'read the cc'),
+            ('Subject', 'Alt+4', 'what is the subject'),
+            ('Date sent', 'Alt+5', 'when was it sent'),
+            ('Copy sender address', 'C', 'copy sender address')]),
+        ('Attachments', [
+            ('List attachments', 'L', 'list attachments'),
+            ('Open attachment', '', 'open attachment'),
+            ('Save all attachments', '', 'save all attachments'),
+            ('Attachment sizes', '', 'how big are the attachments')]),
+        ('Unread and flags', [
             ('Mark as read or unread', 'Q', 'mark as read or unread'),
             ('Flag or unflag', 'X', 'flag or unflag'),
             ('Important or not important (Gmail)', 'H', 'mark important or not important'),
             ('Message status', '', 'message status')]),
-        ('Go to folder', [
+        ('Select', [
+            ('Select or unselect message', 'Space', 'toggle message selection'),
+            ('Select all messages', 'Ctrl+A', 'select all messages'),
+            ('Clear selection', 'U', 'clear selection'),
+            ('What is selected', 'S', 'what is selected')]),
+        ('Go to', [
             ('Inbox', '', 'go to inbox'),
             ('Sent', '', 'go to sent'),
             ('Drafts', '', 'go to drafts'),
             ('Trash', '', 'go to trash'),
             ('Spam', '', 'go to spam'),
             ('Choose a folder', 'G', 'go to folder'),
-            ('Which folder', 'W', 'which folder')]),
-        ('Folder actions', [
+            ('Which folder', 'W', 'which folder'),
+            ('Email drafts', 'D', 'open email draft'),
+            ('Main menu', '', 'main menu')]),
+        ('Edit folders', [
             ('Create folder', '', 'create folder'),
             ('Rename folder', 'F2', 'rename folder'),
             ('Move folder', '', 'move folder'),
             ('Delete empty folder', '', 'delete folder'),
             ('List folders', '', 'list folders')]),
-        ('Drafts and contacts', [
-            ('Copy sender address', 'C', 'copy sender address'),
-            ('Email the sender', 'E', 'new email to sender'),
-            ('Email drafts', 'D', 'open email draft'),
-            ('List contacts', 'P', 'list contacts'),
-            ('Add contact', '', 'add contact {value}')]),
-        ('Accounts', [
+        ('View', [
+            ('Check for new mail', 'F5', 'list messages'),
+            ('Next page of messages', 'Page Down', 'next messages'),
+            ('Previous page of messages', 'Page Up', 'previous messages'),
+            ('Newest message in folder', 'Ctrl+Home', 'newest message'),
+            ('Oldest message in folder', 'Ctrl+End', 'oldest message'),
+            ('Messages per page', '', 'email list size'),
+            ('Show Thunderbird', '', 'show thunderbird'),
+            ('Hide Thunderbird', '', 'hide thunderbird')]),
+        ('Tools', [
             ('Add account', '', 'add account'),
             ('Switch account', '', 'switch account'),
             ('Which account', '', 'which email account'),
             ('Remove account', '', 'remove email account'),
-            ('Add Thunderbird account', '', 'add thunderbird account')]),
-        ('Pages', [
-            ('Next page of messages', 'Page Down', 'next messages'),
-            ('Previous page of messages', 'Page Up', 'previous messages'),
-            ('Newest message in folder', 'Ctrl+Home', 'newest message'),
-            ('Oldest message in folder', 'Ctrl+End', 'oldest message')]),
-        ('Options and help', [
+            ('Add Thunderbird account', '', 'add thunderbird account'),
+            ('List contacts', 'P', 'list contacts'),
+            ('Add contact', '', 'add contact {value}'),
             ('Email options', '', '@options:Email'),
-            ('Messages per page', '', 'email list size'),
-            ('Show Thunderbird', '', 'show thunderbird'),
-            ('Hide Thunderbird', '', 'hide thunderbird'),
-            ('Email help', 'Double:F1', 'help with email'),
-            ('Main menu', '', 'main menu')]),
-        # Last, so the Alt paths people learned for the groups above stay the same. A menu has
-        # at most 9 groups, so the header lines (Alt+1 to Alt+6) join the attachments here.
-        ('Header and attachments', [
-            ('List attachments', 'L', 'list attachments'),
-            ('Save all attachments', '', 'save all attachments'),
-            ('Open attachment', '', 'open attachment'),
-            ('Attachment sizes', '', 'how big are the attachments'),
-            ('From', 'Alt+1', 'who is it from'),
-            ('To', 'Alt+2', 'who is it to'),
-            ('CC', 'Alt+3', 'read the cc'),
-            ('Subject', 'Alt+4', 'what is the subject'),
-            ('Date sent', 'Alt+5', 'when was it sent')]),
+            ('Email help', 'Double:F1', 'help with email')]),
     ]),
     'email_draft': ('Email draft menu', [
         ('Message', [
@@ -96,7 +96,10 @@ MENUS = {
             ('Read draft', 'Ctrl+R', 'read email draft'),
             ('Save and close', '', 'leave email'),
             ('Discard draft', '', 'discard draft')]),
-        ('Fields', [
+        ('Edit', [
+            ('Undo', 'Ctrl+Z', 'undo'),
+            ('Redo', 'Ctrl+Y', 'redo')]),
+        ('Go to', [
             ('To', '', 'go to to'),
             ('Cc', '', 'go to cc'),
             ('Bcc', '', 'go to bcc'),
@@ -106,21 +109,14 @@ MENUS = {
             ('Bold', 'Ctrl+B', 'toggle bold'),
             ('Italic', 'Ctrl+I', 'toggle italic'),
             ('Underline', 'Ctrl+U', 'toggle underline')]),
-        ('Contacts and help', [
-            ('List contacts', 'Ctrl+K', 'list contacts'),
-            ('Add contact', '', 'add contact {value}'),
-            ('Email options', '', '@options:Email'),
-            ('Writing email help', 'Double:F1', 'help with writing email')]),
         ('Attachments', [
             ('Attach a file', 'Ctrl+O', 'attach a file'),
             ('Attach the last download', '', 'attach the last download'),
             ('List attachments', 'Ctrl+L', 'list attachments'),
             ('Remove an attachment', '', 'remove attachment')]),
-        # Last, so the Alt paths of the groups above stay the same.
-        ('Undo and redo', [
-            ('Undo', 'Ctrl+Z', 'undo'),
-            ('Redo', 'Ctrl+Y', 'redo')]),
-        # Added after the groups above, so their Alt paths stay the same.
+        ('Contacts', [
+            ('List contacts', 'Ctrl+K', 'list contacts'),
+            ('Add contact', '', 'add contact {value}')]),
         ('Importance and read receipt', [
             ('Change importance', 'Ctrl+Shift+I', 'change importance'),
             ('High importance', '', 'high importance'),
@@ -128,46 +124,51 @@ MENUS = {
             ('Low importance', '', 'low importance'),
             ('Read receipt on or off', 'Ctrl+Shift+T', 'read receipt on or off'),
             ('Importance and receipt now', '', 'importance')]),
+        ('Options and help', [
+            ('Email options', '', '@options:Email'),
+            ('Writing email help', 'Double:F1', 'help with writing email')]),
     ]),
     # Named after what is open, so it is not confused with the Notepad menu you start from.
     'note': ('Note menu', [
-        ('Notepad', [
-            ('Save and close note', 'Ctrl+S', 'save note'),
+        ('Note', [
             ('Read note', 'Ctrl+R', 'read from top'),
-            ('Saved notes', 'Ctrl+O', 'list notes'),
-            ('Notepad options', '', '@options:Notepad'),
-            ('Notepad help', 'Double:F1', 'help with notepad'),
-            ('Main menu', '', 'main menu')]),
+            ('Save and close note', 'Ctrl+S', 'save note'),
+            ('Saved notes', 'Ctrl+O', 'list notes')]),
         ('Edit', [
             ('New line', '', 'new line'),
             ('Undo', 'Ctrl+Z', 'undo'),
             ('Redo', 'Ctrl+Y', 'redo'),
             ('Remove last words', '', 'scratch that')]),
+        ('Options and help', [
+            ('Notepad options', '', '@options:Notepad'),
+            ('Notepad help', 'Double:F1', 'help with notepad'),
+            ('Main menu', '', 'main menu')]),
     ]),
     'web': ('Web page menu', [
-        ('Page', [
+        ('Go to', [
             ('Back', 'Alt+Left', 'web key Back'),
             ('Forward', 'Alt+Right', 'web key Forward'),
             ('Refresh', 'F5', 'web key Refresh'),
             ('Search or enter address', 'Ctrl+L', 'web key Search'),
-            ('Find on page', 'Ctrl+F', 'find {value}'),
-            ('Top of page', 'Ctrl+Home', 'top of page'),
-            ('Bottom of page', 'Ctrl+End', 'bottom of page')]),
-        ('Lists', [
-            ('Headings', 'F6', 'list headings'),
-            ('Links', 'F7', 'list links'),
-            ('Form fields', 'F8', 'list fields'),
-            ('Downloads', 'Ctrl+D', 'download manager')]),
-        ('Favorites', [
-            ('Add favorite', '', 'add favorite'),
-            ('Go to favorite', '', 'go to favorite'),
             ('Web history', '', 'web history'),
             ('Web browser menu', 'Escape', 'web browser menu')]),
-        ('Options and help', [
-            ('Web browser options', '', '@options:Web browser'),
+        ('Page', [
+            ('Find on page', 'Ctrl+F', 'find {value}'),
+            ('Top of page', 'Ctrl+Home', 'top of page'),
+            ('Bottom of page', 'Ctrl+End', 'bottom of page'),
+            ('Headings', 'F6', 'list headings'),
+            ('Links', 'F7', 'list links'),
+            ('Form fields', 'F8', 'list fields')]),
+        ('Favorites', [
+            ('Add favorite', '', 'add favorite'),
+            ('Go to favorite', '', 'go to favorite')]),
+        ('Tools', [
+            ('Downloads', 'Ctrl+D', 'download manager'),
             ('Set up Chrome', '', 'set up chrome'),
             ('Show browser window', '', 'show browser window'),
-            ('Hide browser window', '', 'hide browser window'),
+            ('Hide browser window', '', 'hide browser window')]),
+        ('Options and help', [
+            ('Web browser options', '', '@options:Web browser'),
             ('Web help', 'Double:F1', 'help with web')]),
     ]),
     'downloads': ('Downloads menu', [
@@ -175,16 +176,17 @@ MENUS = {
             ('Open', 'Enter', 'open download'),
             ('Pause or resume', 'Space', 'pause or resume download'),
             ('Cancel or remove from list', 'Delete', 'delete download'),
-            ('Details', '', 'download details'),
-            ('Open downloads folder', '', 'open downloads folder')]),
-        ('Queue', [
-            ('Move to next', '', 'move to next'),
+            ('Details', '', 'download details')]),
+        ('Move in list', [
+            ('Start this one next', '', 'move to next'),
             ('Move earlier', 'Ctrl+Up', 'move download earlier'),
             ('Move later', 'Ctrl+Down', 'move download later')]),
-        ('Options and help', [
-            ('Download folder', '', '@options:Web browser'),
-            ('Downloads help', 'Double:F1', 'help with downloads'),
-            ('Close downloads', 'Escape', 'close downloads')]),
+        ('Folder', [
+            ('Open downloads folder', '', 'open downloads folder'),
+            ('Choose download folder', '', '@options:Web browser')]),
+        ('Leave and help', [
+            ('Close downloads', 'Escape', 'close downloads'),
+            ('Downloads help', 'Double:F1', 'help with downloads')]),
     ]),
     'contacts': ('Address manager menu', [
         ('Contact', [
@@ -194,14 +196,15 @@ MENUS = {
             ('Phone number', '', 'call details'),
             ('Edit contact', 'F2', 'edit contact'),
             ('Delete contact', 'Delete', 'delete contact')]),
-        ('Address manager', [
+        ('Address book', [
             ('Add contact', 'Ctrl+N', 'add contact'),
             ('Find contact', 'Ctrl+F', 'find contact {value}'),
             ('Refresh contacts', '', 'refresh contacts'),
-            ('Address manager help', 'Double:F1', 'help with contacts'),
-            ('Main menu', '', 'main menu'),
             # Last, so hiding it (one email account) moves no other item.
             ('Choose address book', 'Ctrl+L', 'choose address book')]),
+        ('Leave and help', [
+            ('Main menu', '', 'main menu'),
+            ('Address manager help', 'Double:F1', 'help with contacts')]),
     ]),
     'calendar': ('Schedule manager menu', [
         ('Event', [
@@ -211,19 +214,20 @@ MENUS = {
             ('Add event', 'Ctrl+N', 'add event'),
             ('Edit event', 'F2', 'edit event'),
             ('Delete event', 'Delete', 'delete event')]),
-        ('Day', [
+        ('Go to', [
             ('Today', 'Home', 'today'),
             ('Next day', 'Right', 'next day'),
             ('Previous day', 'Left', 'previous day'),
             ('Next week', 'Page Down', 'next week'),
             ('Previous week', 'Page Up', 'previous week'),
             ('Go to a date', 'Ctrl+G', 'go to date')]),
-        ('Schedule manager', [
+        ('Calendar', [
             ('Refresh calendar', '', 'refresh calendar'),
-            ('Schedule manager help', 'Double:F1', 'help with calendar'),
-            ('Main menu', '', 'main menu'),
             # Last, so hiding it (one email account) moves no other item.
             ('Choose calendar', 'Ctrl+L', 'choose calendar')]),
+        ('Leave and help', [
+            ('Main menu', '', 'main menu'),
+            ('Schedule manager help', 'Double:F1', 'help with calendar')]),
     ]),
     'help': ('Help menu', [
         ('Help', [
@@ -255,15 +259,16 @@ MENUS = {
             ('Save all', 'Ctrl+Shift+S', 'save all attachments'),
             ('Details', 'Ctrl+I', 'read attachment details'),
             ('Remove from this email', 'Delete', 'remove attachment'),
-            ('Attach another file', 'Ctrl+O', 'attach a file'),
-            ('Attachments help', 'Double:F1', 'help with attachments'),
-            ('Close the list', 'Escape', 'close attachments')]),
+            ('Attach another file', 'Ctrl+O', 'attach a file')]),
         # Tags, as in File manager (Will, November 4, 2026); the guide says this menu has every choice.
         ('Tags', [
             ('Tag or untag', 'Space', 'tag attachment'),
             ('Tag all', 'Ctrl+A', 'tag all attachments'),
             ('What is tagged', 'Ctrl+Shift+T', 'what attachments are tagged'),
             ('Clear tags', 'Ctrl+Shift+A', 'clear attachment tags')]),
+        ('Leave and help', [
+            ('Close the list', 'Escape', 'close attachments'),
+            ('Attachments help', 'Double:F1', 'help with attachments')]),
     ]),
     # Named after what is open, so it is not confused with the Document reader menu you start from.
     'file_reader': ('Document menu', [
@@ -275,7 +280,7 @@ MENUS = {
             ('Formatting', 'Insert+F', 'what formatting'),
             ('Selected text', 'Insert+Shift+Down', 'what is selected'),
             ('Say all from here', 'Insert+Down', 'say all')]),
-        ('Move by', [
+        ('Go to', [
             ('Next heading', 'H', 'next heading'),
             ('Previous heading', 'Shift+H', 'previous heading'),
             ('Next table', 'T', 'next table'),
@@ -301,7 +306,7 @@ MENUS = {
             ('Skip ad', 'S', 'skip ad'),
             ('Stop video', '', 'stop video'),
             ('Skip amount', '', 'skip amount {value}')]),
-        ('Sound and speed', [
+        ('Volume and speed', [
             ('Volume up', 'Ctrl+Up', 'video volume up'),
             ('Volume down', 'Ctrl+Down', 'video volume down'),
             ('Sound on or off', 'M', 'mute or unmute'),
@@ -314,17 +319,16 @@ MENUS = {
             ('Video quality', 'Q', 'video quality'),
             ('Video full screen', 'F', 'video full screen'),
             ('Autoplay on or off', 'A', 'autoplay on or off')]),
-        ('Chapters', [
-            ('List chapters', 'H', 'list chapters'),
-            ('Next chapter', 'Ctrl+Right', 'next chapter'),
-            ('Previous chapter', 'Ctrl+Left', 'previous chapter')]),
         ('This video', [
             ('Video details', 'I', 'video details'),
             ('Description', 'D', 'read description'),
             ('Comments', 'O', 'read comments'),
             ('Up next', 'X', 'up next'),
             ('Go to channel', 'G', 'go to channel'),
-            ('Open in browser', '', 'open in browser')]),
+            ('Open in browser', '', 'open in browser'),
+            ('List chapters', 'H', 'list chapters'),
+            ('Next chapter', 'Ctrl+Right', 'next chapter'),
+            ('Previous chapter', 'Ctrl+Left', 'previous chapter')]),
         ('Your account', [
             ('Like', 'T', 'like video'),
             ('Subscribe or unsubscribe', 'U', 'subscribe or unsubscribe'),

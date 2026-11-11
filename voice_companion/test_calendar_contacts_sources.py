@@ -259,7 +259,7 @@ class CalendarSourceTests(CalendarHarness):
         entries = app.SCREEN_MENU.entries()
         self.assertEqual(entries[-1], ('Choose calendar', 'Ctrl+L', 'choose calendar'))
         self.press('End', mode)
-        self.assertEqual(self.said(), 'Choose calendar (C), 4 of 4. Control+L. Say choose calendar.')
+        self.assertEqual(self.said(), 'Choose calendar (C), 2 of 2. Control+L. Say choose calendar.')
         self.press('Enter', mode)
         self.assertTrue(self.said().startswith('Choose the calendars to show.'))
 
@@ -536,8 +536,9 @@ class MainMenuWordsTests(CompanionHarness):
 
 class MenuFileTests(unittest.TestCase):
     def test_the_items_are_last_with_their_keys(self):
-        self.assertEqual(MENUS['calendar'][1][-1][1][-1], ('Choose calendar', 'Ctrl+L', 'choose calendar'))
-        self.assertEqual(MENUS['contacts'][1][-1][1][-1], ('Choose address book', 'Ctrl+L', 'choose address book'))
+        # Last in their groups, Calendar and Address book (November 10, 2026), so hiding them moves no other item.
+        self.assertEqual(dict(MENUS['calendar'][1])['Calendar'][-1], ('Choose calendar', 'Ctrl+L', 'choose calendar'))
+        self.assertEqual(dict(MENUS['contacts'][1])['Address book'][-1], ('Choose address book', 'Ctrl+L', 'choose address book'))
 
 
 if __name__ == '__main__':

@@ -144,6 +144,18 @@ class MainMenuArrivalTests(MenuLayoutCase):
         with mock.patch.object(companion, 'FILE_MANAGER', None):
             self.assertEqual(self.key('Enter', mode), 'files')
 
+    def test_a_choice_that_stays_on_the_main_menu_keeps_your_place(self):
+        # Check for updates says its answer and stays on the main menu. Down went back to
+        # File manager before, because choosing an item forgot where you were.
+        mode = self.key('F1', 'awake')
+        for _ in range(6):
+            mode = self.key('Down', mode)
+        self.assertTrue(self.said[-1].startswith('Check for updates (C), 7 of 10.'), self.said[-1])
+        with mock.patch.object(companion, 'UPDATES', None):
+            self.assertEqual(self.key('Enter', mode), 'awake')
+        self.key('Down', mode)
+        self.assertTrue(self.said[-1].startswith('Help (H), 8 of 10.'), self.said[-1])
+
     def test_saying_main_menu_from_an_app_says_only_the_first_item(self):
         mode = companion.handle('word processor', 'awake')
         self.assertEqual(companion.handle('Main menu.', mode), 'awake')
@@ -186,6 +198,83 @@ class MainMenuArrivalTests(MenuLayoutCase):
             with mock.patch.object(companion, 'VERBOSITY', verbosity):
                 companion.announce_main_menu()
             self.assertEqual(self.said[-1], FIRST_ITEM, verbosity)
+
+
+# Every (key, command) each Alt menu had before the regrouping of November 10, 2026.
+# Regrouping moves items and renames groups; it must never drop or change a command.
+ALT_MENU_COMMANDS = {
+    'mailbox': [('', '@options:Email'), ('', 'add account'), ('', 'add contact {value}'), ('', 'add thunderbird account'), ('', 'create folder'), ('', 'delete folder'), ('', 'email list size'), ('', 'go to drafts'), ('', 'go to inbox'), ('', 'go to sent'), ('', 'go to spam'), ('', 'go to trash'), ('', 'hide thunderbird'), ('', 'how big are the attachments'), ('', 'list folders'), ('', 'main menu'), ('', 'message status'), ('', 'move folder'), ('', 'open attachment'), ('', 'remove email account'), ('', 'save all attachments'), ('', 'show thunderbird'), ('', 'switch account'), ('', 'which email account'), ('A', 'reply all'), ('Alt+1', 'who is it from'), ('Alt+2', 'who is it to'), ('Alt+3', 'read the cc'), ('Alt+4', 'what is the subject'), ('Alt+5', 'when was it sent'), ('C', 'copy sender address'), ('Ctrl+A', 'select all messages'), ('Ctrl+End', 'oldest message'), ('Ctrl+Home', 'newest message'), ('D', 'open email draft'), ('Delete', 'delete'), ('Double:F1', 'help with email'), ('E', 'new email to sender'), ('Enter', 'open current message'), ('F', 'forward'), ('F2', 'rename folder'), ('F5', 'list messages'), ('G', 'go to folder'), ('H', 'mark important or not important'), ('I', 'message details'), ('L', 'list attachments'), ('M', 'move'), ('N', 'new email'), ('P', 'list contacts'), ('Page Down', 'next messages'), ('Page Up', 'previous messages'), ('Q', 'mark as read or unread'), ('R', 'reply'), ('S', 'what is selected'), ('Space', 'toggle message selection'), ('U', 'clear selection'), ('W', 'which folder'), ('X', 'flag or unflag')],
+    'email_draft': [('', '@options:Email'), ('', 'add contact {value}'), ('', 'attach the last download'), ('', 'discard draft'), ('', 'go to bcc'), ('', 'go to body'), ('', 'go to cc'), ('', 'go to subject'), ('', 'go to to'), ('', 'high importance'), ('', 'importance'), ('', 'leave email'), ('', 'low importance'), ('', 'normal importance'), ('', 'remove attachment'), ('Alt+S', 'send email'), ('Ctrl+B', 'toggle bold'), ('Ctrl+I', 'toggle italic'), ('Ctrl+K', 'list contacts'), ('Ctrl+L', 'list attachments'), ('Ctrl+O', 'attach a file'), ('Ctrl+R', 'read email draft'), ('Ctrl+S', 'save draft'), ('Ctrl+Shift+I', 'change importance'), ('Ctrl+Shift+T', 'read receipt on or off'), ('Ctrl+U', 'toggle underline'), ('Ctrl+Y', 'redo'), ('Ctrl+Z', 'undo'), ('Double:F1', 'help with writing email')],
+    'note': [('', '@options:Notepad'), ('', 'main menu'), ('', 'new line'), ('', 'scratch that'), ('Ctrl+O', 'list notes'), ('Ctrl+R', 'read from top'), ('Ctrl+S', 'save note'), ('Ctrl+Y', 'redo'), ('Ctrl+Z', 'undo'), ('Double:F1', 'help with notepad')],
+    'web': [('', '@options:Web browser'), ('', 'add favorite'), ('', 'go to favorite'), ('', 'hide browser window'), ('', 'set up chrome'), ('', 'show browser window'), ('', 'web history'), ('Alt+Left', 'web key Back'), ('Alt+Right', 'web key Forward'), ('Ctrl+D', 'download manager'), ('Ctrl+End', 'bottom of page'), ('Ctrl+F', 'find {value}'), ('Ctrl+Home', 'top of page'), ('Ctrl+L', 'web key Search'), ('Double:F1', 'help with web'), ('Escape', 'web browser menu'), ('F5', 'web key Refresh'), ('F6', 'list headings'), ('F7', 'list links'), ('F8', 'list fields')],
+    'downloads': [('', '@options:Web browser'), ('', 'download details'), ('', 'move to next'), ('', 'open downloads folder'), ('Ctrl+Down', 'move download later'), ('Ctrl+Up', 'move download earlier'), ('Delete', 'delete download'), ('Double:F1', 'help with downloads'), ('Enter', 'open download'), ('Escape', 'close downloads'), ('Space', 'pause or resume download')],
+    'contacts': [('', 'call details'), ('', 'main menu'), ('', 'read contact'), ('', 'refresh contacts'), ('Ctrl+E', 'email contact'), ('Ctrl+F', 'find contact {value}'), ('Ctrl+L', 'choose address book'), ('Ctrl+N', 'add contact'), ('Delete', 'delete contact'), ('Double:F1', 'help with contacts'), ('Enter', 'open contact'), ('F2', 'edit contact')],
+    'calendar': [('', 'main menu'), ('', 'refresh calendar'), ('Ctrl+G', 'go to date'), ('Ctrl+L', 'choose calendar'), ('Ctrl+N', 'add event'), ('Delete', 'delete event'), ('Double:F1', 'help with calendar'), ('Down', 'next event'), ('Enter', 'read event'), ('F2', 'edit event'), ('Home', 'today'), ('Left', 'previous day'), ('Page Down', 'next week'), ('Page Up', 'previous week'), ('Right', 'next day'), ('Up', 'previous event')],
+    'help': [('', 'close help'), ('', 'help topics'), ('', 'list subsections'), ('', 'main menu'), ('', 'open user guides'), ('', 'release notes'), ('', 'start tutorial')],
+    'tutorial': [('', 'main menu'), ('', 'next lesson'), ('', 'previous lesson'), ('Ctrl+Down', 'continue reading'), ('Ctrl+E', 'explain command {value}'), ('Ctrl+F', 'find lesson {value}'), ('Ctrl+L', 'lesson list'), ('Ctrl+R', 'repeat'), ('Double:F1', 'list commands')],
+    'attachments': [('Ctrl+A', 'tag all attachments'), ('Ctrl+D', 'save attachment to folder'), ('Ctrl+I', 'read attachment details'), ('Ctrl+O', 'attach a file'), ('Ctrl+S', 'save attachment'), ('Ctrl+Shift+A', 'clear attachment tags'), ('Ctrl+Shift+S', 'save all attachments'), ('Ctrl+Shift+T', 'what attachments are tagged'), ('Delete', 'remove attachment'), ('Double:F1', 'help with attachments'), ('Enter', 'open attachment'), ('Escape', 'close attachments'), ('Space', 'tag attachment')],
+    'file_reader': [('', 'go to beginning of document'), ('', 'go to end of document'), ('', 'main menu'), ('B', 'next bookmark'), ('Ctrl+F', 'find {value}'), ('Ctrl+R', 'read document'), ('Double:F1', 'help with document reader'), ('Enter', 'follow link'), ('Escape', 'back to files'), ('H', 'next heading'), ('Insert+Down', 'say all'), ('Insert+F', 'what formatting'), ('Insert+Shift+Down', 'what is selected'), ('K', 'next link'), ('L', 'next list'), ('N', 'next footnote'), ('Shift+H', 'previous heading'), ('T', 'next table')],
+    'youtube': [('', 'clear filters'), ('', 'history'), ('', 'liked videos'), ('', 'main menu'), ('', 'media menu'), ('', 'my playlists'), ('', 'my subscriptions'), ('', 'normal speed'), ('', 'open in browser'), ('', 'post comment {value}'), ('', 'save to watch later'), ('', 'sign in'), ('', 'sign out'), ('', 'skip amount {value}'), ('', 'stop video'), ('', 'subscriptions'), ('', 'watch later'), ('', 'youtube home'), ('', 'youtube menu'), ('0', 'restart video'), ('A', 'autoplay on or off'), ('C', 'captions on or off'), ('Ctrl+Down', 'video volume down'), ('Ctrl+F', 'search youtube'), ('Ctrl+Left', 'previous chapter'), ('Ctrl+Right', 'next chapter'), ('Ctrl+Shift+F', 'search filters'), ('Ctrl+Up', 'video volume up'), ('D', 'read description'), ('Double:F1', 'help with youtube'), ('Escape', 'go back'), ('F', 'video full screen'), ('F5', 'refresh youtube'), ('G', 'go to channel'), ('H', 'list chapters'), ('I', 'video details'), ('Left', 'skip back'), ('M', 'mute or unmute'), ('N', 'next video'), ('O', 'read comments'), ('P', 'previous video'), ('Q', 'video quality'), ('R', 'read caption'), ('Right', 'skip forward'), ('S', 'skip ad'), ('Space', 'play or pause video'), ('T', 'like video'), ('U', 'subscribe or unsubscribe'), ('W', 'save video'), ('X', 'up next'), ('comma', 'slower video'), ('period', 'faster video')],
+}
+
+ALT_MENU_GROUPS = {
+    'mailbox': ['Message', 'Header', 'Attachments', 'Unread and flags', 'Select', 'Go to', 'Edit folders', 'View', 'Tools'],
+    'email_draft': ['Message', 'Edit', 'Go to', 'Format', 'Attachments', 'Contacts', 'Importance and read receipt',
+                    'Options and help'],
+    'note': ['Note', 'Edit', 'Options and help'],
+    'web': ['Go to', 'Page', 'Favorites', 'Tools', 'Options and help'],
+    'downloads': ['Download', 'Move in list', 'Folder', 'Leave and help'],
+    'contacts': ['Contact', 'Address book', 'Leave and help'],
+    'calendar': ['Event', 'Go to', 'Calendar', 'Leave and help'],
+    'help': ['Help'],
+    'tutorial': ['Lessons'],
+    'attachments': ['Attachment', 'Tags', 'Leave and help'],
+    'file_reader': ['Read', 'Go to', 'Leave and help'],
+    'youtube': ['Play', 'Volume and speed', 'Captions and picture', 'This video', 'Your account', 'Search', 'Go to',
+                'Leave and help'],
+}
+
+
+class AltMenuCategoryTests(unittest.TestCase):
+    """Will, November 10, 2026: clear group names, and each item where a user would look."""
+    def test_groups_have_clear_names(self):
+        import screen_menus
+        self.assertEqual({mode: [name for name, _ in groups] for mode, (_, groups) in screen_menus.MENUS.items()},
+                         ALT_MENU_GROUPS)
+
+    def test_no_command_was_lost_or_changed(self):
+        import screen_menus
+        for mode, (_, groups) in screen_menus.MENUS.items():
+            with self.subTest(mode=mode):
+                self.assertEqual(sorted((key, command) for _, entries in groups for _, key, command in entries),
+                                 ALT_MENU_COMMANDS[mode])
+
+    def test_each_group_has_its_own_first_letter(self):
+        # A letter on the group list goes straight to one group.
+        import screen_menus
+        from menu_navigation import quick_key
+        for mode, (_, groups) in screen_menus.MENUS.items():
+            letters = [quick_key(name) for name, _ in groups]
+            self.assertEqual(len(letters), len(set(letters)), (mode, letters))
+
+    def test_items_sit_where_a_user_looks_for_them(self):
+        import screen_menus
+        where = {(mode, label): group for mode, (_, groups) in screen_menus.MENUS.items()
+                 for group, entries in groups for label, _, _ in entries}
+        for mode, label, group in (
+                ('mailbox', 'Mark as read or unread', 'Unread and flags'), ('mailbox', 'Flag or unflag', 'Unread and flags'),
+                ('mailbox', 'Copy sender address', 'Header'), ('mailbox', 'Email the sender', 'Message'),
+                ('mailbox', 'Email drafts', 'Go to'), ('mailbox', 'Check for new mail', 'View'),
+                ('mailbox', 'Show Thunderbird', 'View'), ('mailbox', 'Switch account', 'Tools'),
+                ('mailbox', 'Message details', 'Message'), ('mailbox', 'Main menu', 'Go to'),
+                ('email_draft', 'Undo', 'Edit'), ('email_draft', 'To', 'Go to'), ('email_draft', 'Email options', 'Options and help'),
+                ('web', 'Back', 'Go to'), ('web', 'Web history', 'Go to'), ('web', 'Downloads', 'Tools'),
+                ('web', 'Show browser window', 'Tools'), ('web', 'Headings', 'Page'),
+                ('downloads', 'Close downloads', 'Leave and help'), ('downloads', 'Open downloads folder', 'Folder'),
+                ('contacts', 'Main menu', 'Leave and help'), ('calendar', 'Today', 'Go to'),
+                ('attachments', 'Close the list', 'Leave and help'), ('youtube', 'List chapters', 'This video'),
+                ('note', 'Main menu', 'Options and help')):
+            self.assertEqual(where.get((mode, label)), group, (mode, label))
 
 
 if __name__ == '__main__':

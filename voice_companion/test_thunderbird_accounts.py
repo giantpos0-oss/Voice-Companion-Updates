@@ -549,7 +549,7 @@ class AddCommandRoutingTests(CompanionTestCase):
 
     def test_menu_item(self):
         from screen_menus import MENUS
-        accounts = dict(MENUS['mailbox'][1])['Accounts']
+        accounts = dict(MENUS['mailbox'][1])['Tools']
         self.assertIn(('Add Thunderbird account', '', 'add thunderbird account'), accounts)
 
 

@@ -5427,8 +5427,9 @@ def _handle(text, mode, typed=False):
         if MAIN_MENU_INDEX is None:
             speak('Say next or previous to choose an option.')
             return mode
+        # The place is kept: a choice that answers and stays here (Check for updates) leaves you on it.
+        # Leaving for another screen and coming back says the item again (announce_main_menu).
         request = MAIN_MENU_CHOICES[MAIN_MENU_INDEX][1]
-        MAIN_MENU_INDEX = None
         return handle(request, mode)
     document_request = command in ('create a document', 'new document', 'write a document', 'create document')
     note_request = command in ('write a note', 'new note', 'take a note')

@@ -612,7 +612,7 @@ class GuideContactKeysTests(unittest.TestCase):
         groups = MENUS['mailbox'][1]
         group = next(i for i, (_, entries) in enumerate(groups) if any(c == 'add contact {value}' for _, _, c in entries))
         index = next(i for i, (_, _, c) in enumerate(groups[group][1]) if c == 'add contact {value}')
-        expected = menu_path('mailbox', group, index)       # 'Alt, 5, 5'
+        expected = menu_path('mailbox', group, index)       # 'Alt, 9, 7'
         for name in ('START HERE - Veteran.txt', 'START HERE - Veteran.html'):
             text = re.sub(r'</?kbd>', '', (HERE / name).read_text(encoding='utf-8'))
             line = next(line for line in text.splitlines() if 'To save a contact, say "Add contact"' in line)

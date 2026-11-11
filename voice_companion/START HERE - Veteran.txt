@@ -721,7 +721,7 @@ A damaged file says what to do next. If Companion kept an earlier copy, say "Ope
 - To follow a link, press Enter on it.
 - To select and copy text, use the usual text keys.
 For reader help, say "Help with document reader", or press F1 twice quickly.
-Press Alt to open the document menu. It has Read, Move by, and Leave and help.
+Press Alt to open the document menu. It has Read, Go to, and Leave and help.
 
 7.4 Return to your files
 To close the reader, say "Back to files", or press Escape. You return to where you opened the file, on that same file. That can be File manager, the file list from Open a document, or your recent documents.
@@ -859,7 +859,7 @@ Your files are kept in Documents, in the Voice Companion folder. They use the .d
 Companion can reopen the simple files it makes. It may refuse a complex Word file, so that it does not change it the wrong way.
 
 8.9 Document command menu
-In a document, press Alt for the document menu. Its groups are File, Edit, Format, Insert, Read and navigate, Dictation, Table, and More commands.
+In a document, press Alt for the document menu. Its groups are File, Edit, Format, Insert, Read and navigate, Dictation, Tools and help, and Table.
 Use the arrows and Enter, or press a group number. Type a letter to find an item. Escape goes back a level, then back to the document.
 Each item works the same as its voice command. If an item needs a value, type or say it and press Enter. Escape cancels.
 Document keys:
@@ -895,7 +895,7 @@ To write a note:
 To save the note and go back to the Notepad menu, say "Go back", or press Escape. Escape on the Notepad menu goes back to Office tools, or to the main menu if you started there.
 To save the note and go straight to the main menu, say "Main menu", or press F1. Going to sleep also saves your text.
 For Notepad help, say "Help with notepad", or press F1 twice quickly.
-Press Alt to open the note menu. Its Notepad group has Save and close note, Read note, Saved notes, Notepad options, Notepad help, and Main menu. Its Edit group has New line, Undo, Redo, and Remove last words. Words you typed are added to the note first.
+Press Alt to open the note menu. Its Note group has Read note, Save and close note, and Saved notes. Its Edit group has New line, Undo, Redo, and Remove last words. Its Options and help group has Notepad options, Notepad help, and Main menu. Words you typed are added to the note first.
 
 9.2 Review or change a note
 - To review, say "Next word", "Previous word", "Next line", or "Previous line". Or use the arrows when the typing box is empty, as in other text.
@@ -953,7 +953,7 @@ If account setup is not available, ask your helper to check the app's email setu
 - To hear your saved accounts, say "List email accounts".
 - To hear the account in use, say "Which email account?". Check it before you send mail.
 To switch to another account:
-1. Say "Switch account". Or in email, press Alt, 6, then 2.
+1. Say "Switch account". Or in email, press Alt, 9, then 2.
 2. You hear each account, such as "Thunderbird, sam@gmail.com, 2 of 3". The account in use comes first and is called current.
 3. Press Up Arrow or Down Arrow, then Enter. Or say "Next" and "That one". You can also say the number, the service, or the address, such as "2", "Yahoo", "Gmail", or "sam at gmail dot com".
 Companion switches to that account and opens its inbox. To keep the account you have, say "Cancel", or press Escape.
@@ -962,7 +962,7 @@ You can also say "Switch to", followed by the service name, such as "Switch to Y
 With the keyboard, you can also press Alt+O and choose Email options. Sending account names the account in use. Choose another one there to switch.
 Each account starts with its kind, Thunderbird or Yahoo, such as "Thunderbird, sam@gmail.com". You can connect a Yahoo address two ways, straight to Yahoo and through Thunderbird. Then you hear both, "Yahoo, sam@yahoo.com" and "Thunderbird, sam@yahoo.com". To pick one by voice, say the kind, then the address. For example, say "Switch to Thunderbird, sam at yahoo dot com".
 To remove an account from Companion:
-1. Say "Remove email account". Or in email, press Alt, 6, then 4.
+1. Say "Remove email account". Or in email, press Alt, 9, then 4.
 2. Choose the account from the list, the same way as above.
 3. Listen to the question. It names the account.
 4. Say "Yes" to remove it, or "No" to keep it. Or press Y or N.
@@ -976,7 +976,7 @@ Accounts are also in the email menu. In email, press Alt, then 6. Choose Add acc
 
 10.3 Add and find contacts
 A contact is a saved name with an email address or a phone number. Address manager keeps your contacts. It is in Organizer on the main menu. See chapter 13.
-- To save a contact, say "Add contact", the person's name, "as", and their email address. For example, say "Add contact Bob as bob@example.com". Or in the inbox, press Alt, 5, then 5. Type the name, the word as, and the address, then press Enter.
+- To save a contact, say "Add contact", the person's name, "as", and their email address. For example, say "Add contact Bob as bob@example.com". Or in the inbox, press Alt, 9, then 7. Type the name, the word as, and the address, then press Enter.
 - To hear saved names, say "List contacts", or press P in the inbox. While you write an email, press Control+K. Use the arrows to hear each name. Press Enter to hear the address.
 - To find a contact, say "Find contact", followed by the saved name, such as "Find contact Bob".
 - When Companion asks who to email, you can say a saved contact's name.
@@ -985,7 +985,7 @@ Your Google calendar is in Schedule manager. See chapter 14. Google Drive is not
 
 10.4 Add a Thunderbird account
 You can add an email account to Thunderbird without leaving Companion. Each address becomes its own account in Companion. You can add several, one after another.
-1. Say "Add Thunderbird account". Or in email, press Alt, 6, then 5.
+1. Say "Add Thunderbird account". Or in email, press Alt, 9, then 5.
 2. Type or say the email address, then press Enter.
 3. The first time, Companion asks for the name people see on your email. Type or say it, then press Enter.
 4. Companion opens the Thunderbird page for adding an account. It stays in the background. Companion fills in your name and address, and reads the page to you.
@@ -1016,7 +1016,7 @@ Companion waits up to 15 minutes. If you finish in Thunderbird later, say "Add a
 4. Speak the message in short parts. Listen back before you send.
 With the keyboard, type an address in the To box and press Enter. Then go on to the subject and the message.
 To speak an email address, say "at" for @ and "dot" for each period. For example, say "sam at example dot com" for sam@example.com. Say "underscore" for _ and "dash" for -.
-Press Alt to open the email draft menu. It has Message, Fields, Format, Contacts and help, Attachments, Undo and redo, and Importance and read receipt. Message has Send, Save draft, Read draft, Save and close, and Discard draft. While the menu is open, the keys you press choose items. They are not added to the message.
+Press Alt to open the email draft menu. It has Message, Edit, Go to, Format, Attachments, Contacts, Importance and read receipt, and Options and help. Edit has Undo and Redo. Go to moves to the To, Cc, Bcc, Subject, or message box. Message has Send, Save draft, Read draft, Save and close, and Discard draft. While the menu is open, the keys you press choose items. They are not added to the message.
 
 11.2 Change To, CC, BCC, or Subject
 A message has these parts:
@@ -1112,7 +1112,7 @@ To repeat the sender, subject, and date, say "Message details", or press I. To h
 - Alt+6: how many files are attached. Say "How many attachments?"
 For more of a long message, say "Continue reading", or press Down Arrow.
 To read it again from the top, say "Read from beginning". To go back to the message list, say "Back to folder" or "Go back", or press Escape.
-Press Alt to open the email menu. Its groups are Messages, Select, Go to folder, Folder actions, Drafts and contacts, Accounts, Pages, Options and help, and Header and attachments. For example, press Alt, 3, then 2 to go to Sent. Press Alt, 8, then 1 for Email options.
+Press Alt to open the email menu. Its groups are Message, Header, Attachments, Unread and flags, Select, Go to, Edit folders, View, and Tools. For example, press Alt, 6, then 2 to go to Sent. Press Alt, 9, then 8 for Email options.
 The single-letter email keys are listed in part 12.6.
 
 12.2 Go to folders
@@ -1166,11 +1166,11 @@ A forward includes the original attachments. Companion says their names when the
 To leave the reply, say "Cancel" or "Back to inbox". If you wrote something, Companion asks whether to save it as a draft, throw it away, or keep writing. Then you are back at the message you were reading.
 
 12.5 Create and manage folders
-- To create a folder, say "Create folder", followed by the name, such as "Create folder Receipts". Or press Alt, 4, then 1.
+- To create a folder, say "Create folder", followed by the name, such as "Create folder Receipts". Or press Alt, 7, then 1.
 - To create a folder inside another, say "Create folder", the name, "inside", and the other folder's name. For example, say "Create folder 2026 inside Receipts". Leave out the last name to choose it from a list, as in "Create folder 2026 inside".
 - To rename a folder, say "Rename folder", or press F2, and choose it. Then say "Rename to", followed by the new name, such as "Rename to Bills". Or give both names at once, such as "Rename folder Receipts to Bills".
-- To move a folder, say "Move folder", or press Alt, 4, then 3. Or give both names at once, such as "Move folder Bills into Archive".
-- To delete a folder, say "Delete folder", or press Alt, 4, then 4, and choose it. Or name it, such as "Delete folder Bills".
+- To move a folder, say "Move folder", or press Alt, 7, then 3. Or give both names at once, such as "Move folder Bills into Archive".
+- To delete a folder, say "Delete folder", or press Alt, 7, then 4, and choose it. Or name it, such as "Delete folder Bills".
 Listen to the full folder place and the action. Say "Yes" to go ahead or "No" to cancel.
 You can delete only empty folders you made. Built-in folders such as Inbox are protected.
 Some email services limit folder changes. For example, Yahoo does not let you rename, move, or delete a folder that has folders inside it.
@@ -1474,7 +1474,7 @@ Buttons and form fields say their names and types. A picture used as a button is
 Reading follows the place you choose. After you move to a heading, the arrows go on from that heading.
 When a website changes a form without a new page, the page view updates. For example, after an email step, you can move through the new password step. An old hidden field no longer works.
 A new page may start reading by itself. To stop this, turn off Automatic page reading in Web browser options.
-Press Alt to open the web page menu. It has Page, Lists, Favorites, and Options and help. The menu does not close the page. While you type in a page field, Alt does not open the menu.
+Press Alt to open the web page menu. It has Go to, Page, Favorites, Tools, and Options and help. The menu does not close the page. While you type in a page field, Alt does not open the menu.
 
 15.4 Move to headings, links, or controls
 Single letter keys move you around the page. Hold Shift with any of them to move back.
@@ -2094,7 +2094,7 @@ Thunderbird window has two choices:
 With either choice, Companion never hides a window Thunderbird opens by itself. When you add an account or sign in, Thunderbird works just as before. When Thunderbird opens a window, such as a sign-in or a password box, it comes to the front. Companion tells you what it is. Press Alt+Tab to come back to Companion.
 - Say "Show Thunderbird" to bring Thunderbird to the front.
 - Say "Hide Thunderbird" to put it back out of the way.
-- Both are also in the email menu, under Options and help.
+- Both are also in the email menu, under View.
 If you opened Thunderbird yourself, Companion leaves it alone.
 If anything goes wrong, choose the first option to go back to how it was.
 
@@ -2124,7 +2124,7 @@ Guided Chrome window has two choices. It only changes guided Chrome. Embedded Ed
 In the background, some pages need a real window. These are a Google sign-in, a check that you are a person, a page that asks for a card or payment, and a page where you choose a file to send. Then Companion opens Chrome again with its window, on the same page. It comes to the front, and Companion tells you why. Press Alt+Tab to come back to Companion.
 - Say "Show browser window" to see Chrome's window.
 - Say "Hide browser window" to run Chrome in the background again.
-- Both are also in the web page menu, under Options and help.
+- Both are also in the web page menu, under Tools.
 Your own Chrome window has two choices. It changes only the Chrome windows that Companion opens for the web or YouTube. A Chrome window you opened yourself is never hidden.
 - Show it, as before. This is the first choice.
 - Hide it while Companion uses it. Your Chrome is not on the screen, the taskbar or Alt+Tab. Companion still reads every page to you, and sound and video still play.

@@ -37,7 +37,7 @@ DOCUMENT_ACTIONS = {
                           ('End of document', 'Ctrl+End', 'go to end of document'),
                           ('Document details', '', 'where am i')],
     'Dictation': [('Start dictation', 'F4', 'start dictation'), ('Pause dictation', 'Shift+F4', 'pause dictation')],
-    'More commands': [('Run any document voice command', 'Alt+T', '{value}'),
+    'Tools and help': [('Run any document voice command', 'Alt+T', '{value}'),
                       ('Document help', 'Double:F1', 'help with documents'), ('Word processor options', 'Alt+O', '@options')],
 }
 DOCUMENT_ACTIONS['Table'] = [(label, '', command) for label, command in (

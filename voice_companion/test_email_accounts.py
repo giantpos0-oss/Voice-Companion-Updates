@@ -239,9 +239,9 @@ class FolderAccountTests(AccountScreenTestCase):
     def test_folder_menu_item_lists_accounts(self):
         self.open_inbox()
         self.key('Alt')
-        companion.handle('3', 'mailbox')  # Go to folder group
-        self.key('End')
-        self.key('Up')     # the last two items are Choose a folder and Which folder
+        companion.handle('6', 'mailbox')  # Go to group (November 10, 2026)
+        for _ in range(5):
+            self.key('Down')   # Inbox, Sent, Drafts, Trash, Spam, then Choose a folder
         self.assertIn('Choose a folder', self.last())
         self.key('Enter')
         self.assertTrue(self.last().startswith('Choose an account.'), self.last())
@@ -285,14 +285,14 @@ class SwitchAccountTests(AccountScreenTestCase):
 
     def test_email_menu_switch_and_remove_items(self):
         from screen_menus import MENUS
-        accounts = dict(MENUS['mailbox'][1])['Accounts']
+        accounts = dict(MENUS['mailbox'][1])['Tools'][:5]   # Accounts joined Tools (November 10, 2026)
         self.assertEqual([(label, command) for label, _, command in accounts],
                          [('Add account', 'add account'), ('Switch account', 'switch account'),
                           ('Which account', 'which email account'), ('Remove account', 'remove email account'),
                           ('Add Thunderbird account', 'add thunderbird account')])
         self.open_inbox()
         companion.handle('email menu', 'mailbox')
-        companion.handle('6', 'mailbox')
+        companion.handle('9', 'mailbox')   # Tools
         companion.handle('2', 'mailbox')
         self.assertTrue(self.last().startswith('Choose an account to open.'), self.last())
         self.key('Down')
@@ -374,7 +374,7 @@ class RemoveAccountTests(AccountScreenTestCase):
     def test_alt_menu_remove_account(self):
         self.open_inbox()
         companion.handle('email menu', 'mailbox')
-        companion.handle('6', 'mailbox')
+        companion.handle('9', 'mailbox')   # Tools
         companion.handle('4', 'mailbox')
         self.assertTrue(self.last().startswith('Choose the account to remove.'), self.last())
 

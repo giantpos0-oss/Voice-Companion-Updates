@@ -234,7 +234,7 @@ HAND = [
 ]
 
 # Catalog rows whose status is not plain Both: (area, action) -> status.
-ADDED = {('Word processor document: More commands', 'Run any document voice command'):
+ADDED = {('Word processor document: Tools and help', 'Run any document voice command'):
              'N/A - this item is the keyboard way to type any spoken command'}
 ADDED_AREAS = {'Radio station actions': 'Added: voice (say the action name)'}
 
