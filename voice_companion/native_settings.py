@@ -193,8 +193,10 @@ class NativeSettings:
                     for i in range(4):
                         buf=c.create_unicode_buffer(headers[0].label(i));send(hwnd,0x180,0,c.cast(buf,c.c_void_p).value)
                     send(hwnd,0x186,0,0)
+                    # For a helper with a mouse, out of the Tab order (Will, November 10, 2026): Space and
+                    # Alt+Up or Alt+Down do the same, and so do "toggle header" and "move header up".
                     for j,(label,action) in enumerate((('Enable / disable','toggle'),('Move up','up'),('Move down','down'))):
-                        button=control('BUTTON',label,0x10000,225+j*155,y+110,145,27,300+j)
+                        button=control('BUTTON',label,0,225+j*155,y+110,145,27,300+j)
                         children.append(button);buttons[button]=label+', button.';header_buttons[button]=action
                     y+=90
                 elif field.kind=='apps':

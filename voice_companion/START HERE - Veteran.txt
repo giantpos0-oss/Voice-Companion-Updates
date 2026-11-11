@@ -1996,6 +1996,7 @@ Each setting says what kind of control it is, then its value:
 - An edit box says what is in it, or blank. Type to change it. A password edit box says hidden.
 - A button says button. Press Enter or Space to use it.
 - A list box, such as the one in Favorite apps, says the item you are on and where it is, such as "3 of 12". Use the arrows to move in it.
+Tab moves between the settings, then OK and Cancel. It skips the small buttons for a helper with a mouse, such as Move up. Their keys do the same thing.
 By voice, say "Next", "Previous", and "Okay" to open a category, or say its name. To change a setting, say "Set", the setting name, "to", and the value. For example, say "Set Speech rate to 4".
 Each button in Options also has its own spoken command, such as "Add account" or "Check for updates". You can say it from outside Options too.
 To go back to the categories without saving, say "Cancel" or "Back", or press Escape. To leave Options, say "Close settings".

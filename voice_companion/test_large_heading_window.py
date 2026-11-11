@@ -112,24 +112,26 @@ class LargeHeadingWindowTests(unittest.TestCase):
 
     def test_tab_never_moves_the_keyboard_silently(self):
         # On the YouTube screen with no list yet, Tab went silently to a scroll bar at large text,
-        # and to the Options button at normal text, where Enter then opened Options.
+        # and to the Options button at normal text, where Enter then opened Options. Since
+        # November 10, 2026 (Will) Tab never stops on those helper buttons at all: the command
+        # box is the one control on this screen, so the keyboard stays there.
         self.call(lambda: self.window.root.geometry('800x480'))
         self.window.set_context(dict(mode='youtube', source=None, text='', caret=0, ack=0, focus=True, menu_letters=False,
                                      display=__import__('display_options').settings({'display_text_size': '200 percent'}),
                                      display_title='YouTube'))
         time.sleep(.4)
         focused, said = self.tab_from_the_command_box()
-        self.assertNotEqual(focused, 'Scrollbar')
-        if focused == 'Button':
-            self.assertTrue(said and said[-1].endswith(' button. Enter activates. Shift+Tab goes back.'), said)
+        self.assertEqual(focused, 'Entry')
         self.call(lambda: self.window.root.geometry('1000x800'))
         self.window.set_context(dict(mode='youtube', source=None, text='', caret=0, ack=0, focus=True, menu_letters=False,
                                      display=__import__('display_options').settings({'display_text_size': '100 percent'}),
                                      display_title='YouTube.'))
         time.sleep(.4)
         focused, said = self.tab_from_the_command_box()
-        self.assertEqual(focused, 'Button')
-        self.assertEqual(said[-1:], ['Options (Alt+O) button. Enter activates. Shift+Tab goes back.'])
+        self.assertEqual(focused, 'Entry')
+        self.assertFalse(any('button' in text for text in said), said)
+        # The buttons are still there for a helper with a mouse.
+        self.assertTrue(self.call(lambda: all(b.winfo_ismapped() for b in self.window.row_buttons)))
 
 
 if __name__ == '__main__':
