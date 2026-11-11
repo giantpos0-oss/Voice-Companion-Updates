@@ -5486,29 +5486,29 @@
 },
 "document | Hints and help messages off": {
 "said": [
-"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+"Hints and help messages off"
 ],
 "screen_after": "document",
 "text": [
-"Hello world. Second sentence."
+"Hello world. Second sentence. Hints and help messages off"
 ]
 },
 "document | Hints off.": {
 "said": [
-"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+"Hints off."
 ],
 "screen_after": "document",
 "text": [
-"Hello world. Second sentence."
+"Hello world. Second sentence. Hints off."
 ]
 },
 "document | Hints on": {
 "said": [
-"Hints and help messages on. You hear tips on what you can say next."
+"Hints on"
 ],
 "screen_after": "document",
 "text": [
-"Hello world. Second sentence."
+"Hello world. Second sentence. Hints on"
 ]
 },
 "document | Hints on the wall are faded.": {
@@ -5882,11 +5882,11 @@
 },
 "document | Turn off the hints.": {
 "said": [
-"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+"Turn off the hints."
 ],
 "screen_after": "document",
 "text": [
-"Hello world. Second sentence."
+"Hello world. Second sentence. Turn off the hints."
 ]
 },
 "document | Update contact details as soon as you can.": {
@@ -13130,29 +13130,29 @@
 },
 "email_draft | Hints and help messages off": {
 "said": [
-"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+"Hints and help messages off"
 ],
 "screen_after": "email_draft",
 "text": [
-"Hello world."
+"Hello world. Hints and help messages off"
 ]
 },
 "email_draft | Hints off.": {
 "said": [
-"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+"Hints off."
 ],
 "screen_after": "email_draft",
 "text": [
-"Hello world."
+"Hello world. Hints off."
 ]
 },
 "email_draft | Hints on": {
 "said": [
-"Hints and help messages on. You hear tips on what you can say next."
+"Hints on"
 ],
 "screen_after": "email_draft",
 "text": [
-"Hello world."
+"Hello world. Hints on"
 ]
 },
 "email_draft | Hints on the wall are faded.": {
@@ -13526,11 +13526,11 @@
 },
 "email_draft | Turn off the hints.": {
 "said": [
-"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+"Turn off the hints."
 ],
 "screen_after": "email_draft",
 "text": [
-"Hello world."
+"Hello world. Turn off the hints."
 ]
 },
 "email_draft | Update contact details as soon as you can.": {
@@ -13959,7 +13959,7 @@
 },
 "email_draft | back to main menu": {
 "said": [
-"Email draft saved locally as Routing check 92. It has not been sent.",
+"Email draft saved locally as Routing check 96. It has not been sent.",
 "File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
@@ -14656,7 +14656,7 @@
 },
 "email_draft | close email": {
 "said": [
-"Email draft saved locally as Routing check 139. It has not been sent.",
+"Email draft saved locally as Routing check 143. It has not been sent.",
 "File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
@@ -15475,7 +15475,7 @@
 },
 "email_draft | exit": {
 "said": [
-"Email draft saved locally as Routing check 189. It has not been sent.",
+"Email draft saved locally as Routing check 193. It has not been sent.",
 "File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
@@ -15521,7 +15521,7 @@
 },
 "email_draft | exit email": {
 "said": [
-"Email draft saved locally as Routing check 193. It has not been sent.",
+"Email draft saved locally as Routing check 197. It has not been sent.",
 "File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
@@ -16294,7 +16294,7 @@
 },
 "email_draft | leave email": {
 "said": [
-"Email draft saved locally as Routing check 260. It has not been sent.",
+"Email draft saved locally as Routing check 264. It has not been sent.",
 "File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
@@ -16619,7 +16619,7 @@
 },
 "email_draft | main menu": {
 "said": [
-"Email draft saved locally as Routing check 286. It has not been sent.",
+"Email draft saved locally as Routing check 290. It has not been sent.",
 "File manager (F), 1 of 10."
 ],
 "screen_after": "awake",
@@ -18633,7 +18633,7 @@
 },
 "email_draft | save": {
 "said": [
-"Email draft saved locally as Routing check 453. It has not been sent."
+"Email draft saved locally as Routing check 457. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18651,7 +18651,7 @@
 },
 "email_draft | save document": {
 "said": [
-"Email draft saved locally as Routing check 454. It has not been sent."
+"Email draft saved locally as Routing check 458. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18669,7 +18669,7 @@
 },
 "email_draft | save draft": {
 "said": [
-"Email draft saved locally as Routing check 455. It has not been sent."
+"Email draft saved locally as Routing check 459. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18696,7 +18696,7 @@
 },
 "email_draft | save it": {
 "said": [
-"Email draft saved locally as Routing check 457. It has not been sent."
+"Email draft saved locally as Routing check 461. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18705,7 +18705,7 @@
 },
 "email_draft | save my document": {
 "said": [
-"Email draft saved locally as Routing check 458. It has not been sent."
+"Email draft saved locally as Routing check 462. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -32822,19 +32822,19 @@
 },
 "note | Hints and help messages off": {
 "said": [
-"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+"Hints and help messages off"
 ],
 "screen_after": "note"
 },
 "note | Hints off.": {
 "said": [
-"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+"Hints off."
 ],
 "screen_after": "note"
 },
 "note | Hints on": {
 "said": [
-"Hints and help messages on. You hear tips on what you can say next."
+"Hints on"
 ],
 "screen_after": "note"
 },
@@ -33086,7 +33086,7 @@
 },
 "note | Turn off the hints.": {
 "said": [
-"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+"Turn off the hints."
 ],
 "screen_after": "note"
 },
