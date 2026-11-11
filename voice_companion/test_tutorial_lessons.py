@@ -12,8 +12,10 @@ from tutorial_engine import TutorialSession, canonical_key, plain
 from tutorial_lessons import build, main_menu_apps
 
 
-def solution(step):
-    """The inputs that do a step, as a person would give them."""
+def solution(step, words_first=False):
+    """The inputs that do a step, as a person would give them: with keys, or with words first."""
+    if words_first and step.phrases:
+        return [('voice', step.phrases[0])]
     if step.replay:
         return list(step.replay)
     if step.keys:
@@ -73,15 +75,31 @@ class LessonTests(unittest.TestCase):
             def tracked(sim, *args, **kwargs):
                 original(sim, *args, **kwargs)
                 made.add(sim.folder)
-            with patch.object(tutorial_engine.EditorSim, '__init__', tracked):
+            def offline(*args, **kwargs):
+                raise AssertionError('A lesson tried to reach the internet or start a program.')
+            with patch.object(tutorial_engine.EditorSim, '__init__', tracked), \
+                    patch('urllib.request.urlopen', offline), patch('subprocess.Popen', offline), \
+                    patch('subprocess.run', offline), patch('webbrowser.open', offline), \
+                    patch('os.startfile', offline, create=True):
                 for position, (course, lesson) in enumerate(session.order):
                     with self.subTest(lesson=course.name + ': ' + lesson.title):
                         session.begin(position)
+                        answers = {}
+                        for name, sim in session.sims.items():
+                            def watched(kind, value, sim=sim, real=sim.feed, name=name):
+                                answers[name] = real(kind, value)
+                                return answers[name]
+                            sim.feed = watched
                         for number, step in enumerate(lesson.steps):
                             said = ''
+                            answers.clear()
                             for kind, value in solution(step):
                                 said, leave = give(session, kind, value)
                                 self.assertIsNone(leave, step.say)
+                            if step.sim and (step.feed or step.text) and not callable(step.reply):
+                                # The practice screen understood the input: the real code answered it.
+                                self.assertTrue(answers.get(step.sim), course.name + ', ' + lesson.title + ', step ' +
+                                                str(number + 1) + ' got no answer from the screen: ' + step.say)
                             self.assertTrue(session.step_index > number or session.state == 'between',
                                             course.name + ', ' + lesson.title + ', step ' + str(number + 1) + ': ' +
                                             step.say + ' Said: ' + said)
@@ -89,6 +107,26 @@ class LessonTests(unittest.TestCase):
             for path in made:
                 self.assertFalse(path.exists(), 'A practice folder was left behind.')
             self.assertEqual(sorted(p.name for p in Path(folder).iterdir()), [tutorial_engine.PROGRESS_FILE])
+
+    def test_every_lesson_can_be_done_by_voice_where_it_offers_words(self):
+        session = self.session()
+        for position, (course, lesson) in enumerate(session.order):
+            with self.subTest(lesson=course.name + ': ' + lesson.title):
+                session.begin(position)
+                answers = {}
+                for name, sim in session.sims.items():
+                    def watched(kind, value, real=sim.feed, name=name):
+                        answers[name] = real(kind, value)
+                        return answers[name]
+                    sim.feed = watched
+                for number, step in enumerate(lesson.steps):
+                    answers.clear()
+                    for kind, value in solution(step, words_first=True):
+                        said, _ = give(session, kind, value)
+                    self.assertTrue(session.step_index > number or session.state == 'between', step.say + ' Said: ' + said)
+                    if step.sim and (step.feed or step.text) and not callable(step.reply):
+                        self.assertTrue(answers.get(step.sim), lesson.title + ': the screen did not answer ' + step.say)
+        session.close_sims()
 
     def test_resuming_rebuilds_the_simulated_screen(self):
         # Stop after any step, start again: the step continues on the same simulated screen.

@@ -227,7 +227,7 @@ class WindowTests(unittest.TestCase):
                  ('s', 'S', 5): 'Ctrl+Shift+S', ('r', 'r', 0): 'R', ('R', 'R', 1): 'Shift+R', ('Tab', '\t', 1): 'ShiftTab',
                  ('ISO_Left_Tab', '', 1): 'ShiftTab', ('F2', '', 0): 'F2', ('Delete', '', 0): 'Delete',
                  ('space', ' ', 0): 'Space', ('Next', '', 0): 'Next', ('Control_L', '', 4): 'Control',
-                 ('Shift_L', '', 1): None, ('Alt_L', '', 0): None, ('1', '1', ALT_STATE): 'Alt+1',
+                 ('Shift_L', '', 1): None, ('Alt_L', '', 0): None,
                  ('Left', '', ALT_STATE): 'Alt+Left', ('1', '1', 4 | ALT_STATE): 'Ctrl+Alt+1', ('Escape', '', 0): 'Escape'}
         for (keysym, char, state), expected in cases.items():
             with self.subTest(keysym=keysym, state=state):

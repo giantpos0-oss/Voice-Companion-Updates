@@ -51,6 +51,64 @@ class DocumentReader:
             return 'The link target is not in this document.'
         return 'Link: '+target+'. Say open website followed by the address to browse.'
 
+# Document reader keys, as the window sends them, and the command each one runs. companion.py
+# (navigation_key) and the tutorial both read them here, so they cannot drift apart.
+READER_KEYS = {'Insert+F': 'what formatting', 'CapsLock+F': 'what formatting', 'Insert+Shift+Down': 'what is selected',
+               'CapsLock+Shift+Down': 'what is selected', 'Insert+Down': 'say all', 'CapsLock+Down': 'say all',
+               'H': 'next heading', 'Shift+H': 'previous heading', 'T': 'next table', 'Shift+T': 'previous table',
+               'K': 'next link', 'Shift+K': 'previous link', 'L': 'next list', 'Shift+L': 'previous list',
+               'B': 'next bookmark', 'Shift+B': 'previous bookmark', 'N': 'next footnote', 'Shift+N': 'previous footnote',
+               'Enter': 'follow link'}
+# What each quick letter moves to, in the guide's words, for menus and the tutorial.
+QUICK_LETTERS = (('H', 'heading'), ('T', 'table'), ('K', 'link'), ('L', 'list'), ('B', 'bookmark'), ('N', 'footnote'))
+
+
+def reader_command(reader, text, command):
+    """What the reader says for a reading or moving command, or None when it is not one.
+
+    command is the plain form of text (companion.normalized_command)."""
+    import re as _re
+    from reading_navigation import edge_notice, reading_request
+    structure = _re.fullmatch(r'(next|previous) (heading|table|row|cell|list|list item|link|footnote|bookmark)', command)
+    if structure:
+        return reader.navigate(structure[2], 1 if structure[1] == 'next' else -1)
+    if command in ('what formatting', 'say formatting', 'describe formatting'):
+        return reader.describe_formatting()
+    if command in ('what is selected', 'say selection', 'read selection'):
+        return reader.text[slice(*reader.selection)] if reader.selection else 'No text selected.'
+    if command in ('follow link', 'open link'):
+        return reader.follow_link()
+    request = reading_request(command)
+    if request:
+        unit, direction = request
+        result = reader.reading.read(direction) if unit == 'read' else reader.reading.move(unit, direction)
+        if unit != 'read':
+            result = edge_notice(reader.reading, 'document') + result
+        return result
+    if command in ('beginning of document', 'top of document', 'go to beginning of document'):
+        reader.reading.position = 0
+        return reader.reading.move('line', 0)
+    if command in ('end of document', 'go to end of document'):
+        reader.reading.position = max(0, len(reader.text) - 1)
+        said = reader.reading.move('line', 0)
+        # The place is the very end, as Control+End: Next word then says End of document.
+        reader.reading.position = max(0, len(reader.text) - 1)
+        return said
+    if command == 'find' or command.startswith(('find ', 'find,')):
+        # "Find milk." spoken: the recognizer's comma and closing period are not part of the words.
+        term = _re.sub(r'^\s*find\b[\s,:]*', '', text, flags=_re.I).strip().rstrip('.!?,').strip()
+        if not term:
+            return 'Please say the words to find after find.'
+        position = reader.text.casefold().find(term.casefold(), reader.reading.position + 1)
+        if position < 0:
+            position = reader.text.casefold().find(term.casefold())
+        if position < 0:
+            return 'Text not found.'
+        reader.reading.position = position
+        return reader.reading.move('line', 0)
+    return None
+
+
 def decode(data):
     if data.startswith((b'\xff\xfe',b'\xfe\xff')):return data.decode('utf-16')
     try:return data.decode('utf-8-sig')

@@ -300,8 +300,8 @@ class TaskMenuSim(Sim):
     def feed(self, kind, value):
         if kind == 'key':
             key = canonical_key(value)
-            if self.mode == 'document_menu' and len(key) == 1 and key.isalnum():
-                key = 'MenuPick:' + key     # the window sends letters and numbers so in the document menu
+            if self.mode == 'document_menu' and len(key) == 1 and key.isalpha():
+                key = 'MenuPick:' + key     # the window sends letters so in the document menu
             command = self.nav.keyboard(key, self.mode)
             if command is None and len(key) == 1 and key.isalnum():
                 command = 'letter:' + key.lower()
@@ -318,7 +318,10 @@ class TaskMenuSim(Sim):
             self.chosen = self.sandbox.requests.pop()
             self.sandbox.requests.clear()
         if result is None and not text and self.chosen is None:
-            return None
+            if kind != 'key':
+                return None
+            # A key the menu hands to the app as its command (Control+N in Notepad is "write a note").
+            self.chosen = command
         if self.chosen is not None and not text:
             name = next((n for n, _, c in self.nav.items(self.mode) if c == self.chosen), self.chosen)
             return 'That opens ' + name + '.'
@@ -928,7 +931,7 @@ class TutorialSession:
             return step.reply(self.sims, value)
         if step.feed and step.sim:
             sim = self.sims[step.sim]
-            spoken = sim.feed(kind, value if kind == 'key' or not step.phrases or step.text else step.phrases[0])
+            spoken = sim.feed(kind, value)      # your own words, as the app would get them
             return (spoken or '') + (' ' + step.reply if step.reply else '')
         if step.text and step.sim:
             return (self.sims[step.sim].feed('voice', value) or '') + (' ' + step.reply if step.reply else '')
@@ -943,8 +946,10 @@ class TutorialSession:
             return None
         if step.goal(self.sims):
             sim.chosen = None
-            reply = step.reply(self.sims, value) if callable(step.reply) else step.reply
-            return self.advance(((spoken or '') + ' ' + (reply or '')).strip())
+            if callable(step.reply):
+                # The step knows the app's own words for what the choice opens.
+                return self.advance(step.reply(self.sims, value))
+            return self.advance(((spoken or '') + ' ' + (step.reply or '')).strip())
         if sim.chosen is not None:
             # A wrong choice: the real app would have opened something else. Stay here.
             sim.chosen = None

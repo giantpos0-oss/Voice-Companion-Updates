@@ -26,12 +26,12 @@ class TutorialWindowKeyTests(base.AltKeyWindowTests):
         self.assertEqual(self.sent(), [('keyboard', key) for key in
                                        ('Down', 'Enter', 'Ctrl+N', 'R', 'Tab', 'Delete', 'F2', 'Escape')])
 
-    def test_alt_alone_and_alt_with_a_number_reach_the_tutorial(self):
+    def test_alt_alone_and_alt_with_an_arrow_reach_the_tutorial(self):
         self.screen(mode='tutorial', tutorial_keys=True)
         self.keys(('KeyPress', 'Alt_L', 0), ('KeyRelease', 'Alt_L', ALT_STATE))
-        self.keys(('KeyPress', 'Alt_L', 0), ('KeyPress', '1', ALT_STATE), ('KeyRelease', '1', ALT_STATE),
+        self.keys(('KeyPress', 'Alt_L', 0), ('KeyPress', 'Left', ALT_STATE), ('KeyRelease', 'Left', ALT_STATE),
                   ('KeyRelease', 'Alt_L', ALT_STATE))
-        self.assertEqual(self.sent(), [('keyboard', 'Alt'), ('keyboard', 'Alt+1')])
+        self.assertEqual(self.sent(), [('keyboard', 'Alt'), ('keyboard', 'Alt+Left')])
         self.assertEqual(self.given_to_windows(), [])
 
     def test_alt_t_opens_the_command_box_and_typed_words_are_sent_as_words(self):

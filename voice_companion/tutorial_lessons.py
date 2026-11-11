@@ -239,12 +239,14 @@ class MailboxSim(Sim):
         command = plain(value) if kind != 'key' else {'Down': 'next message', 'Up': 'previous message', 'Enter': 'that one',
                                                      'Escape': 'go back'}.get(key, '')
         row = self.ROWS[self.current - 1]
-        if key in MAIL_HEADER_KEYS:
-            question = MAIL_HEADER_KEYS[key]
-            from mail_voice import sender_name
-            return {'who is it from': 'From ' + sender_name(row) + '.', 'who is it to': 'To ' + row['to'] + '.',
-                    'read the cc': 'No CC.', 'what is the subject': 'Subject ' + row['subject'] + '.',
-                    'when was it sent': 'Sent ' + row['date'] + '.', 'how many attachments': 'No attachments.'}[question]
+        from mail_voice import MailSession, header_request
+        asked = header_request(MAIL_HEADER_KEYS[key]) if key in MAIL_HEADER_KEYS else header_request(command)
+        if asked in ('from', 'subject', 'date', 'attachments'):
+            # The real header line (MailSession.header), for the practice message.
+            from types import SimpleNamespace
+            here = SimpleNamespace(rows=self.ROWS, current=self.current, view='message', folder_id='inbox', attachments=[],
+                                   attachments_for=(row['id'], 'inbox'))
+            return MailSession.header(here, asked)
         if command in ('next message', 'previous message', 'next', 'previous') and self.view == 'folder':
             step = 1 if command.startswith('next') else -1
             if not 1 <= self.current + step <= len(self.ROWS):
@@ -258,80 +260,6 @@ class MailboxSim(Sim):
         if command in ('go back', 'back') and self.view == 'message':
             self.view = 'folder'
             return self.summary(self.current)
-        return None
-
-
-class MediaSim(Sim):
-    """The Radio or Podcasts screen, run by the real MediaNavigation with a stand-in player that plays nothing."""
-
-    class Hub:
-        def __init__(self):
-            self.stations = []
-            self.shows = []
-            self.episodes = []
-            self.station_index = self.show_index = self.episode_index = self.category_index = 0
-            self.preset_index = 0
-            self.current_station = None
-            self.preset_browsing = self.browsing_episodes = self.browsing_categories = False
-            self.awaiting_radio_search = self.awaiting_podcast_search = False
-            self.calls = []
-
-        def presets(self):
-            return []
-
-        def downloads(self):
-            return []
-
-        def recordings(self):
-            return []
-
-        def podcast_categories(self):
-            return []
-
-        def __getattr__(self, name):
-            def record(*args, **kwargs):
-                self.calls.append(name)
-                return ''
-            return record
-
-    def __init__(self, section):
-        from media_navigation import MediaNavigation
-        self.hub = MediaSim.Hub()
-        self.nav = MediaNavigation(self.hub, section)
-        self.title = 'Radio' if section == 'radio' else 'Podcasts'
-        self.opening = self.nav.enter(section, keyboard=True)
-
-    def menu(self):
-        return self.nav.state()
-
-    def current(self):
-        state = self.nav.state()
-        return state[0][state[1] or 0] if state else None
-
-    def feed(self, kind, value):
-        if kind == 'key':
-            key = canonical_key(value)
-            if key not in ('Up', 'Down', 'Left', 'Right', 'Home', 'End', 'Enter', 'Tab', 'ShiftTab', 'Space') and \
-                    not (len(key) == 1 and key.isalpha()):
-                return None
-            if key == 'Enter':
-                self.chosen = self.current()
-                return None
-            if len(key) == 1:
-                state = self.nav.state()
-                new = next_match(state[0], state[1], key)
-                if new is None:
-                    return 'No menu item starts with ' + key + '.'
-                state[2](new)
-                return announce_item(state[0][new], new, len(state[0]))
-            return self.nav.keyboard(key) or None
-        command = plain(value)
-        for action in self.nav.actions:
-            if command == plain(action.label) or action.command and command == action.command:
-                self.chosen = action.label
-                return None
-        if command in ('next', 'previous'):
-            return self.nav.keyboard('Down' if command == 'next' else 'Up')
         return None
 
 
@@ -358,18 +286,6 @@ class HelpSim(Sim):
             if value is None:
                 return None
         return self.session.process(value)
-
-
-class FileListSim(ListSim):
-    """File manager with three sample items. Each is said as File manager says it: name, kind, place."""
-
-    def __init__(self):
-        super().__init__('File manager', [('Documents, folder', 'open folder'), ('Music, folder', 'open folder'),
-                                          ('Letter to Sam.docx, file', 'open file')])
-
-    def say_item(self, index):
-        # As FileManager.say_current says it: "Documents, folder. 1 of 3."
-        return self.items[index][0] + '. ' + str(index + 1) + ' of ' + str(len(self.items)) + '.'
 
 
 class DocumentMenuSim(TaskMenuSim):
@@ -428,6 +344,8 @@ def task_menu_text(app, mode, title):
 def drill_step(label, key, command, screen, sim=None):
     """'<Label>. Press <key>, or say <command>.' The key and the command come from the app's own lists."""
     keys = (key_id(key),) if key and key_id(key) else ()
+    if keys and re.fullmatch(r'Alt\+\d', keys[0]):
+        keys = ()       # Alt and a number is not taught: menus are reached by arrows and letters
     phrase = phrase_of(command)
     phrases = (phrase,) if phrase else ()
     if not keys and not phrases:
@@ -442,37 +360,59 @@ def drill_step(label, key, command, screen, sim=None):
                 reply='', screen=screen, command=command)
 
 
+def menu_letters(path):
+    """The letter keys of a menu path ("Alt, E, U" says "Alt, then E, then U"), or '' when the
+    path uses numbers. Alt menus are reached by their arrows and letters, never by numbers."""
+    parts = path.split(', ')
+    if len(parts) < 2 or any(part.isdigit() for part in parts):
+        return ''
+    return ', then '.join(parts)
+
+
+def route(group_index, index, grouped):
+    """The keys that choose an item from a closed Alt menu, with the arrows and Enter."""
+    keys = [('key', 'Alt')]
+    if grouped:
+        keys += [('key', 'Down')] * group_index + [('key', 'Enter')]
+    return tuple(keys + [('key', 'Down')] * index + [('key', 'Enter')])
+
+
 def alt_menu_lessons(app, mode, intro):
-    """One lesson for each group of a screen's Alt menu: open the menu, choose items, then the keys."""
-    from screen_menus import MENUS, items
+    """One lesson for each group of a screen's Alt menu: open the menu, choose items, then the keys.
+
+    The groups, items and letters come from screen_menus.MENUS when the lesson is built, so the
+    lessons follow the menus as they change. Items a menu hides here (with one email account) are left out."""
+    from screen_menus import MENUS, menu_path
     title, groups = MENUS[mode]
+    grouped = len(groups) > 1
+    probe = AltMenuSim(app, mode).menu_object
+    probe.mode = mode
     lessons = []
-    for group_index, (group, entries) in enumerate(groups):
+    for group_index, (group, _) in enumerate(groups):
+        probe.group = group_index if grouped else None
+        shown = probe.entries()
         steps = [Step('Press Alt to open the ' + title + '.', keys=('Alt',), sim='menu', goal=lambda s: s['menu'].is_open(),
                       how='Press the Alt key once and let it go.', screen=mode, replay=(('key', 'Alt'),))]
-        if len(groups) > 1:
-            name = group
-            steps.append(Step('Open the ' + group + ' group. Use Down Arrow until you hear ' + group + ', then press Enter. '
-                              'Or press ' + str(group_index + 1) + '.', sim='menu', screen=mode,
-                              goal=lambda s, g=group_index: s['menu'].menu_object.group == g,
-                              how='Press Down Arrow until you hear ' + name + '. Then press Enter.',
-                              replay=(('key', str(group_index + 1)),)))
-        first = next(((label, command) for label, _, command in entries if not command.startswith('@')),
-                     (entries[0][0], entries[0][2]))
-        number = [command for _, _, command in entries].index(first[1]) + 1
-        steps.append(Step('Choose ' + first[0] + '. Use the arrows until you hear it, then press Enter.', sim='menu',
-                          screen=mode, goal=menu_goal('menu', first[1]), replay=(('key', str(number)),),
-                          how='Press Down Arrow until you hear ' + first[0] + '. Then press Enter.'))
-        for label, key, command in entries:
-            path = [row for row in items(mode) if row[0] == group and row[1] == label][0][2]
+        if grouped:
+            steps.append(Step('Open the ' + group + ' group. Use Down Arrow until you hear ' + group + ', then press Enter.',
+                              sim='menu', screen=mode, goal=lambda s, g=group_index: s['menu'].menu_object.group == g,
+                              how='Press Down Arrow until you hear ' + group + '. Then press Enter.',
+                              replay=(('key', 'Down'),) * group_index + (('key', 'Enter'),)))
+        first = next((i for i, entry in enumerate(shown) if not entry[2].startswith('@')), 0)
+        steps.append(Step('Choose ' + shown[first][0] + '. Use the arrows until you hear it, then press Enter.', sim='menu',
+                          screen=mode, goal=menu_goal('menu', shown[first][2]),
+                          replay=(('key', 'Down'),) * first + (('key', 'Enter'),),
+                          how='Press Down Arrow until you hear ' + shown[first][0] + '. Then press Enter.'))
+        for index, (label, key, command) in enumerate(shown):
             step = drill_step(label, key, command, mode)
             if step is None:
-                # No direct key and no words to say: the menu path, as the menu says it.
-                digits = path[len('Alt, '):].split(', ')
-                step = Step(label + '. Press Alt, then ' + ', then '.join(digits) + '.', sim='menu', screen=mode,
-                            goal=menu_goal('menu', command), how='Press Alt, then ' + ', then '.join(digits) +
-                            '. Press each key once.', command=command,
-                            replay=(('key', 'Alt'),) + tuple(('key', d) for d in digits))
+                # No direct key and no words to say: through the menu, with the arrows and Enter.
+                where = ('open the ' + group + ' group, then ' if grouped else '')
+                letters = menu_letters(menu_path(mode, group_index, [e[2] for e in groups[group_index][1]].index(command)))
+                how = ('Press Alt, ' + where + 'move to ' + label + ' and press Enter.' +
+                       (' Or press ' + letters + '.' if letters else ''))
+                step = Step(label + '. ' + how, sim='menu', screen=mode, goal=menu_goal('menu', command), how=how,
+                            command=command, replay=route(group_index, index, grouped))
             steps.append(step)
         lessons.append(Lesson(mode + '-' + plain(group).replace(' ', '-'), title + ': ' + group, intro, steps,
                               sims=lambda m=mode: {'menu': AltMenuSim(app, m)}))
@@ -634,6 +574,7 @@ def build(app):
     second = alt_groups[1] if len(alt_groups) > 1 else alt_groups[0]
     target = next(label for label, _, command in second[1] if not command.startswith('@'))
     target_command = next(command for label, _, command in second[1] if label == target)
+    target_index = [label for label, _, _ in second[1]].index(target)
     alt_steps = [
         Step('This is a note. Press Alt to open its menu.', sim='menu', goal=lambda s: s['menu'].is_open(),
              how='Press the Alt key once and let it go.', screen='note', replay=(('key', 'Alt'),)),
@@ -644,13 +585,12 @@ def build(app):
              goal=lambda s: s['menu'].menu_object.group == 1, how='Press Enter.', replay=(('key', 'Enter'),)),
         Step('Press Escape to go back to the groups. Escape goes back one level.', keys=('Escape',), sim='menu', feed=True,
              screen='note'),
-        Step('Press 2 to open the ' + second[0] + ' group at once. A number opens a group or chooses an item.', sim='menu',
-             screen='note', goal=lambda s: s['menu'].menu_object.group == 1, how='Press the number 2 key.',
-             replay=(('key', '2'),)),
-        Step('Choose ' + target + '. Press its first letter, ' + target[0].upper() + ', then press Enter.', sim='menu',
+        Step('Press Enter to open the ' + second[0] + ' group again.', sim='menu', screen='note',
+             goal=lambda s: s['menu'].menu_object.group == 1, how='Press Enter.', replay=(('key', 'Enter'),)),
+        Step('Choose ' + target + '. Use Down Arrow until you hear it, then press Enter.', sim='menu',
              screen='note', goal=menu_goal('menu', target_command),
-             how='Press the letter ' + target[0].upper() + ' until you hear ' + target + '. Then press Enter.',
-             replay=(('voice', target),)),
+             how='Press Down Arrow until you hear ' + target + '. Then press Enter.',
+             replay=(('key', 'Down'),) * target_index + (('key', 'Enter'),)),
         Step('Each item says its key, so next time you can press the key itself. Press Alt to open the menu, then Alt '
              'again to close it.', sim='menu', screen='note', goal=lambda s: getattr(s['menu'], 'closed_once', False),
              how='Press Alt to open the menu. Then press Alt again.', replay=(('key', 'Alt'), ('key', 'Alt'))),
@@ -721,12 +661,15 @@ def build(app):
         steps = []
         for label, key, command in entries:
             step = drill_step(label, key, command, 'document')
-            if step is None and key.startswith('Alt, '):
-                digits = key[len('Alt, '):].split(', ')
-                step = Step(label + '. Press Alt, then ' + ', then '.join(digits) + '.', sim='docmenu',
-                            goal=menu_goal('docmenu', command), screen='document', command=command,
-                            how='Press Alt, then ' + ', then '.join(digits) + '. Press each key once.',
-                            replay=(('key', 'Alt'),) + tuple(('key', d) for d in digits))
+            if step is None:
+                # Through the document menu, with the arrows and Enter (task_navigation's document menu).
+                group_index = list(DOCUMENT_ACTIONS).index(group)
+                index = [c for _, _, c in entries].index(command)
+                letters = menu_letters(key) if key.startswith('Alt, ') else ''
+                how = ('Press Alt, open the ' + group + ' group, then move to ' + label + ' and press Enter.' +
+                       (' Or press ' + letters + '.' if letters else ''))
+                step = Step(label + '. ' + how, sim='docmenu', goal=menu_goal('docmenu', command), screen='document',
+                            command=command, how=how, replay=route(group_index, index, True))
             if step is not None:
                 steps.append(step)
         document.append(Lesson('menu-' + plain(group).replace(' ', '-'), 'Document menu: ' + group,
@@ -768,7 +711,7 @@ def build(app):
              replay=(('key', 'Down'),)),
         Step('Press Up Arrow to go back to the first message.', sim='box', goal=lambda s: s['box'].current == 1,
              how='Press the Up Arrow key once.', screen='mailbox', replay=(('key', 'Up'),)),
-        Step('Press Alt+1 to hear who it is from. Alt+1 to Alt+6 read the header.', keys=('Alt+1',), sim='box', feed=True,
+        Step('Say who is it from, to hear the sender.', sim='box', feed=True,
              phrases=('who is it from',), screen='mailbox', command='who is it from'),
         Step('Press Enter to open the message.', sim='box', goal=lambda s: s['box'].view == 'message', how='Press Enter.',
              screen='mailbox', replay=(('key', 'Enter'),)),
@@ -843,77 +786,258 @@ def build(app):
 
     # File manager ---------------------------------------------------------------------------------
     from file_manager import GROUPS
-    files = [Lesson('move', 'Move through files', 'These are practice files. Your own files are not touched.', [
-        Step('This is File manager. Press Down Arrow for the next item.', sim='list', goal=index_goal('list', 1),
-             how='Press the Down Arrow key once.', screen='files', replay=(('key', 'Down'),)),
-        Step('Press End to reach the last item.', sim='list', goal=index_goal('list', 2), how='Press End.',
-             screen='files', replay=(('key', 'End'),)),
-        Step('Press Home to reach the first item.', sim='list', goal=index_goal('list', 0), how='Press Home.',
-             screen='files', replay=(('key', 'Home'),)),
-        Step('Press Enter to open the folder you hear.', sim='list', goal=menu_goal('list', 'open folder'),
-             how='Press Enter.', screen='files', replay=(('key', 'Enter'),)),
-        Step('Press Escape to go back to the folder above.', keys=('Escape',), reply='That goes up one folder.',
-             screen='files', command='escape'),
-        Step('Press Alt to open the File manager menu. Every action and its key is there.', keys=('Alt',),
-             reply='File manager menu. Here, nothing changes.', screen='files', command='file manager menu'),
-    ], sims=lambda: {'list': FileListSim()})]
+    from tutorial_sims import (FileSim, MediaSim as RealMediaSim, NoteSim, ReaderSim, YouTubeSim, calendar_sim,
+                               contacts_sim)
+    files_intro = 'These are practice files. They exist only in this lesson. Your own files are not touched.'
+    files = [
+        Lesson('folders', 'Open a folder and go back', files_intro, [
+            act('Listen: ' + FileSim(app).opening + ' Press Down Arrow for the next item.', 'files', keys=('Down',)),
+            act('Press Enter to open the Music folder.', 'files', keys=('Enter',), phrases=('open',)),
+            act('Press Escape to go back to the folder above.', 'files', keys=('Escape',), phrases=('go back',)),
+            act('Press End to reach the last item.', 'files', keys=('End',)),
+            act('Press Home to reach the first item.', 'files', keys=('Home',)),
+            act('Type the letter S to jump to the first name that starts with S.', 'files', keys=('S',)),
+        ], sims=lambda: {'files': FileSim(app)}),
+        Lesson('tags', 'Tag, copy and paste', files_intro + ' Tags choose several items at once.', [
+            act('Press Down Arrow to move to the Music folder.', 'files', keys=('Down',)),
+            act('Press Space to tag it.', 'files', keys=('Space',), phrases=('toggle tag',)),
+            act('Press Down Arrow to move to the letter.', 'files', keys=('Down',)),
+            act('Press Space to tag it too.', 'files', keys=('Space',), phrases=('toggle tag',)),
+            act('Press Control+Shift+T to hear what is tagged.', 'files', keys=('Ctrl+Shift+T',),
+                phrases=('what is tagged',)),
+            act('Press Control+C to copy the tagged items.', 'files', keys=('Ctrl+C',), phrases=('copy',)),
+            act('Press Home to move to the Documents folder.', 'files', keys=('Home',)),
+            act('Press Enter to open it.', 'files', keys=('Enter',), phrases=('open',)),
+            act('Press Control+V to paste the copies here.', 'files', keys=('Ctrl+V',), phrases=('paste',)),
+            act('Press Control+Shift+A to clear the tags.', 'files', keys=('Ctrl+Shift+A',), phrases=('clear tags',)),
+        ], sims=lambda: {'files': FileSim(app)}),
+        Lesson('rename', 'Rename and delete', files_intro + ' Delete always asks first.', [
+            act('Press End to move to the last file.', 'files', keys=('End',)),
+            act('Press F2 to rename it.', 'files', keys=('F2',), phrases=('rename',)),
+            own_words('Type a new name, such as Groceries.txt, then press Enter.', 'files', 'Groceries.txt'),
+            act('Press Delete to delete the file you are on.', 'files', keys=('Delete',), phrases=('delete',)),
+            act('Press N, for No, to keep it.', 'files', keys=('N',), phrases=('no',)),
+            act('Press Delete again.', 'files', keys=('Delete',), phrases=('delete',)),
+            act('Press Y, for Yes. Here, only the practice file is deleted.', 'files', keys=('Y',), phrases=('yes',)),
+        ], sims=lambda: {'files': FileSim(app)}),
+    ]
     for group_key, (title, entries) in GROUPS.items():
         steps = [s for s in (drill_step(label, key, command, 'files') for label, key, command in entries) if s]
         files.append(Lesson('menu-' + group_key, 'File manager: ' + title, 'Here, no file changes.', steps))
     courses.append(Course('files', 'File manager', ('file manager', 'files', 'folders'), files, apps=('file manager',)))
 
     # Notepad ------------------------------------------------------------------------------------------
-    notepad = [task_menu_lesson(app, 'notepad_menu', 'Notepad menu', 'menu', 'Notepad menu', 'Notepad opens on its menu.')]
+    note_steps = [
+        Step('Listen: ' + task_menu_text(app, 'notepad_menu', 'Notepad menu') + ' Press Control+N to write a note.',
+             sim='menu', goal=menu_goal('menu', 'write a note'), screen='notepad_menu', how='Hold Control and press N.',
+             replay=(('key', 'Ctrl+N'),), reply=lambda s, v: app.prompt_text(app.NEW_NOTE_PROMPT, app.VERBOSITY)),
+        own_words('Say your note, such as: Buy milk and bread. Or press Alt+T, type it, and press Enter.', 'note',
+              'Buy milk and bread.'),
+        own_words('Say a second sentence, such as: Call the pharmacy.', 'note', 'Call the pharmacy.'),
+        act('Press Control+R to hear the whole note.', 'note', keys=('Ctrl+R',), phrases=('read from top',)),
+        act('Press Control+S to save the note. Here, it is saved only in a practice folder.', 'note', keys=('Ctrl+S',),
+            phrases=('save note',), after=' ' + app.MAIN_MENU_PROMPT),
+    ]
+    notepad = [Lesson('write', 'Write and save a note', 'A note is plain text. Here, nothing is kept.', note_steps,
+                      sims=lambda: {'menu': TaskMenuSim(app, 'notepad_menu', 'Notepad menu'), 'note': NoteSim(app)})]
+    notepad.append(task_menu_lesson(app, 'notepad_menu', 'Notepad menu', 'menu', 'Notepad menu', 'Notepad opens on its menu.'))
     notepad += [l for l in (screen_key_lesson(app, 'note', 'Note', 'Keys while you write a note. Here, nothing is saved.',
                                               skip=('F1',)),) if l]
     notepad += alt_menu_lessons(app, 'note', 'Every note action is in this menu.')
     courses.append(Course('notepad', 'Notepad', ('notepad', 'notes', 'note'), notepad, apps=('notepad',)))
 
     # Document reader ------------------------------------------------------------------------------------
-    reader = [task_menu_lesson(app, 'reader_menu', 'Document reader menu', 'menu', 'Document reader menu',
-                               'Document reader opens on its menu. It reads files without changing them.')]
+    from document_reader import QUICK_LETTERS, READER_KEYS
+    sample = ReaderSim(app)
+    reader_open = sample.opening
+    kinds = {kind for kind in (n.kind for n in sample.reader.structure)}
+    sample.close()
+    reading = [act('Listen: ' + reader_open + ' Press Control+Home, or say go to beginning of document.', 'reader',
+                   phrases=('go to beginning of document', 'beginning of document'), keys=('Ctrl+Home',),
+                   reply=lambda s, v: reader_feed(s, 'go to beginning of document'), feed=False)]
+    for letter, kind in QUICK_LETTERS:
+        found = 'This practice document has one, so you move to it.' if kind in kinds else \
+            'This practice document has none, so you hear that there is no next one.'
+        reading.append(act('Press ' + letter + ' for the next ' + kind + '. ' + found, 'reader', keys=(letter,),
+                           phrases=(READER_KEYS[letter],)))
+    reading += [
+        act('Press Shift+H to go back to the heading before.', 'reader', keys=('Shift+H',), phrases=(READER_KEYS['Shift+H'],)),
+        act('Press Down Arrow to read the next line.', 'reader', keys=('Down',), phrases=('next line',)),
+        act('Say find water, to find words in the document.', 'reader', phrases=('find water',)),
+    ]
+    reader = [Lesson('read', 'Read and move by part', 'This practice document opens in the Document reader. '
+                     'The quick letters move by heading, table, link, list, bookmark and footnote.', reading,
+                     sims=lambda: {'reader': ReaderSim(app)})]
+    reader.append(task_menu_lesson(app, 'reader_menu', 'Document reader menu', 'menu', 'Document reader menu',
+                                   'Document reader opens on its menu. It reads files without changing them.'))
+    quick = [drill_step(command.capitalize(), key, command, 'file_reader') for key, command in READER_KEYS.items()]
+    reader.append(Lesson('quick-keys', 'Document reader quick keys', 'Each key moves or reads. Here, nothing changes.',
+                         [s for s in quick if s]))
     reader += [l for l in (screen_key_lesson(app, 'file_reader', 'Document reader', 'Keys while you read a file.',
                                              skip=('F1',)),) if l]
     reader += alt_menu_lessons(app, 'file_reader', 'Every reading action is in this menu.')
     courses.append(Course('reader', 'Document reader', ('document reader', 'reader'), reader, apps=('document reader',)))
 
-    # Address manager and Schedule manager -------------------------------------------------------------------
-    contacts = [l for l in (screen_key_lesson(app, 'contacts', 'Address manager', 'Keys in your contact list. '
-                                                                                 'Here, no contact changes.',
-                                              skip=('F1',)),) if l]
+    # Address manager ------------------------------------------------------------------------------------
+    book_intro = 'This is a practice address book. It is deleted when the lesson ends.'
+    adding = [
+        act('Listen: ' + contacts_sim(app).opening + ' Press Control+N to add a contact.', 'book', keys=('Ctrl+N',),
+            phrases=('add contact', 'new contact')),
+        own_words('Say or type the name, such as Sam Rivera.', 'book', 'Sam Rivera'),
+        own_words('Say or type the email address. Here, type sam@example.com.', 'book', 'sam@example.com'),
+        own_words('Say a phone number, such as 555 0100. Or press Enter to leave it out.', 'book', '555 0100', keys=('Enter',)),
+        act('Press Control+N to add one more contact.', 'book', keys=('Ctrl+N',), phrases=('add contact', 'new contact')),
+        own_words('Say or type the name, such as Pat Lee.', 'book', 'Pat Lee'),
+        act('Press Enter to leave out the email address.', 'book', keys=('Enter',), phrases=('skip',)),
+        own_words('Say a phone number, such as 555 0123.', 'book', '555 0123'),
+        act('Press Home to hear the first contact.', 'book', keys=('Home',), phrases=('first contact',)),
+        act('Press Down Arrow for the next contact.', 'book', keys=('Down',), phrases=('next contact',)),
+        act('Press Control+F to find a contact by name.', 'book', keys=('Ctrl+F',)),
+        own_words('Say or type part of a name, such as Sam.', 'book', 'Sam'),
+        act('Press Enter to open the contact.', 'book', keys=('Enter',), phrases=('open contact',)),
+        act('Press Down Arrow to hear its details, one at a time.', 'book', keys=('Down',), phrases=('next',)),
+        act('Press Escape to go back to the list.', 'book', keys=('Escape',), phrases=('back to contacts',)),
+    ]
+    changing = [
+        act('Sam Rivera is chosen. Press F2 to change the contact.', 'book', keys=('F2',), phrases=('edit contact',)),
+        act('Say phone, to change the phone number.', 'book', phrases=('phone',)),
+        own_words('Say the new number, such as 555 0199.', 'book', '555 0199'),
+        act('Press Y, for Yes, to save the change.', 'book', keys=('Y',), phrases=('yes',)),
+        act('Press Control+E to write an email to this contact. Here, no email opens.', 'book', keys=('Ctrl+E',),
+            phrases=('email contact',)),
+        act('Press Delete to delete the contact. Companion asks first.', 'book', keys=('Delete',),
+            phrases=('delete contact',)),
+        act('Press N, for No, to keep it.', 'book', keys=('N',), phrases=('no',)),
+        act('Press Delete again.', 'book', keys=('Delete',), phrases=('delete contact',)),
+        act('Press Y, for Yes. Here, only the practice contact is deleted.', 'book', keys=('Y',), phrases=('yes',)),
+    ]
+
+    def book_with_sam():
+        sim = contacts_sim(app)
+        for kind, value in (('key', 'Ctrl+N'), ('voice', 'Sam Rivera'), ('voice', 'sam@example.com'), ('voice', '555 0100')):
+            sim.feed(kind, value)
+        return {'book': sim}
+    contacts = [Lesson('add', 'Add and find a contact', book_intro, adding, sims=lambda: {'book': contacts_sim(app)}),
+                Lesson('change', 'Change, email and delete a contact', book_intro, changing, sims=book_with_sam)]
+    contacts += [l for l in (screen_key_lesson(app, 'contacts', 'Address manager', 'Keys in your contact list. '
+                                                                                  'Here, no contact changes.',
+                                               skip=('F1',)),) if l]
     contacts += alt_menu_lessons(app, 'contacts', 'Every contact action is in this menu.')
     courses.append(Course('contacts', 'Address manager', ('address manager', 'contacts', 'address book'), contacts,
                           apps=('contacts',)))
-    calendar = [l for l in (screen_key_lesson(app, 'calendar', 'Schedule manager', 'Keys in your calendar. '
-                                                                                  'Here, no event changes.',
-                                              skip=('F1',)),) if l]
+
+    # Schedule manager ----------------------------------------------------------------------------------------
+    cal_intro = 'This is a practice calendar with one appointment today. It is deleted when the lesson ends.'
+    days = [
+        act('Listen: ' + calendar_sim(app).opening + ' Press Enter to hear all about the event.', 'cal', keys=('Enter',),
+            phrases=('read event',)),
+        act('Press Right Arrow for the next day.', 'cal', keys=('Right',), phrases=('next day',)),
+        act('Press Home to come back to today.', 'cal', keys=('Home',), phrases=('today',)),
+        act('Press Page Down to move a week ahead.', 'cal', keys=('Next',), phrases=('next week',)),
+        act('Press Control+G to go to a date.', 'cal', keys=('Ctrl+G',), phrases=('go to date',)),
+        own_words('Say or type a date, such as today.', 'cal', 'today'),
+        act("Say what's on tomorrow, to hear another day.", 'cal', phrases=("what's on tomorrow", 'what is on tomorrow')),
+    ]
+    events = [
+        act('Press Control+N to add an event.', 'cal', keys=('Ctrl+N',), phrases=('add event',)),
+        own_words('Say when it is, such as tomorrow at 3 PM.', 'cal', 'tomorrow at 3 PM'),
+        own_words('Say what it is called, such as Haircut.', 'cal', 'Haircut'),
+        act('Listen to the question. Press Y, for Yes, to save it.', 'cal', keys=('Y',), phrases=('yes',)),
+        act('Press F2 to change the event.', 'cal', keys=('F2',), phrases=('edit event',)),
+        act('Say place, to change where it is.', 'cal', phrases=('place',)),
+        own_words('Say the place, such as VFW hall.', 'cal', 'VFW hall'),
+        act('Press Y to save the change.', 'cal', keys=('Y',), phrases=('yes',)),
+        act('Now move it to another day. Say move event to Friday at 2.', 'cal', phrases=('move event to friday at 2',)),
+        act('Press Y to save the move.', 'cal', keys=('Y',), phrases=('yes',)),
+        act('Press Delete to delete the event. Companion asks first.', 'cal', keys=('Delete',), phrases=('delete event',)),
+        act('Press Y, for Yes. Here, only the practice event is deleted.', 'cal', keys=('Y',), phrases=('yes',)),
+    ]
+    calendar = [Lesson('days', 'Hear what is on', cal_intro, days, sims=lambda: {'cal': calendar_sim(app)}),
+                Lesson('events', 'Add, change, move and delete an event', cal_intro, events,
+                       sims=lambda: {'cal': calendar_sim(app)})]
+    calendar += [l for l in (screen_key_lesson(app, 'calendar', 'Schedule manager', 'Keys in your calendar. '
+                                                                                   'Here, no event changes.',
+                                               skip=('F1',)),) if l]
     calendar += alt_menu_lessons(app, 'calendar', 'Every calendar action is in this menu.')
     courses.append(Course('calendar', 'Schedule manager', ('schedule manager', 'calendar', 'schedule'), calendar,
                           apps=('calendar',)))
 
-    # Media ------------------------------------------------------------------------------------------------
-    for section, name, aliases, app_command in (('radio', 'Radio', ('radio', 'stations'), 'radio'),
-                                                ('podcast', 'Podcasts', ('podcasts', 'podcast'), 'podcasts')):
-        sim = MediaSim(section)
-        actions = list(sim.nav.actions)
-        opening_words = sim.opening
-        steps = [Step('Listen: ' + opening_words + ' Press Down Arrow to hear the next action.', sim='media', screen='media',
-                      goal=lambda s: (s['media'].nav.index or 0) == 1, how='Press the Down Arrow key once.',
-                      replay=(('key', 'Down'),))]
-        for action in actions:
-            steps.append(Step(action.label + '. Move to it and press Enter, or say ' + action.label.lower() + '.',
-                              sim='media', screen='media', goal=menu_goal('media', action.label),
-                              how='Say ' + action.label.lower() + '. Or use the arrows until you hear it, then press Enter.',
-                              replay=(('voice', action.label),)))
-        courses.append(Course(section, name, aliases, [
-            Lesson('actions', name + ' actions', 'The actions list has every ' + name + ' task. Here, nothing plays.',
-                   steps, sims=lambda sec=section: {'media': MediaSim(sec)})], apps=(app_command,)))
+    # Radio and Podcasts ------------------------------------------------------------------------------------------
+    media_intro = 'These are practice stations and shows. Nothing plays and nothing is saved.'
+    radio_open = RealMediaSim(app, 'radio')
+    radio_words = radio_open.opening
+    radio_open.close()
+    radio_lessons = [
+        Lesson('play', 'Find and play a station', media_intro, [
+            act('Listen: ' + radio_words + ' Say search stations.', 'radio', phrases=('search stations', 'search radio', 'search')),
+            own_words('Say a station name or a kind of music, such as jazz.', 'radio', 'jazz'),
+            act('Press Down Arrow to hear the next station.', 'radio', keys=('Down',), phrases=('next',)),
+            act('Press Enter to play it.', 'radio', keys=('Enter',), phrases=('that one',)),
+            act('Say pause audio.', 'radio', phrases=('pause audio',)),
+            act('Say resume audio.', 'radio', phrases=('resume audio',)),
+        ], sims=lambda: {'radio': RealMediaSim(app, 'radio')}),
+        Lesson('presets', 'Save a station as a preset', media_intro + ' A preset is a saved station.', [
+            act('Say search radio for jazz.', 'radio', phrases=('search radio for jazz',)),
+            act('Say play station 1.', 'radio', phrases=('play station 1',)),
+            act('Say save preset as Jazz.', 'radio', phrases=('save preset as jazz',)),
+            act('Say list presets.', 'radio', phrases=('list presets',)),
+            act('Say play preset Jazz.', 'radio', phrases=('play preset jazz',)),
+            act('Say stop audio.', 'radio', phrases=('stop audio',)),
+        ], sims=lambda: {'radio': RealMediaSim(app, 'radio')}),
+        Lesson('record', 'Record a station', media_intro + ' Here, nothing is recorded.', [
+            act('Say search radio for jazz.', 'radio', phrases=('search radio for jazz',)),
+            act('Say record station 1 for 30 minutes.', 'radio', phrases=('record station 1 for 30 minutes',)),
+            act('Say stop recording.', 'radio', phrases=('stop recording',)),
+            act('Say list recordings, to find saved audio later.', 'radio', phrases=('list recordings',)),
+        ], sims=lambda: {'radio': RealMediaSim(app, 'radio')}),
+    ]
+    radio_lessons.append(media_actions_lesson(app, 'radio', 'Radio'))
+    courses.append(Course('radio', 'Radio', ('radio', 'stations'), radio_lessons, apps=('radio',)))
+    pod_open = RealMediaSim(app, 'podcast')
+    pod_words = pod_open.opening
+    pod_open.close()
+    podcast_lessons = [
+        Lesson('play', 'Find, subscribe and play', media_intro, [
+            act('Listen: ' + pod_words + ' Say search podcasts.', 'pod', phrases=('search podcasts', 'search')),
+            own_words('Say a show name or a subject, such as history.', 'pod', 'history'),
+            act('Say subscribe, to save this show.', 'pod', phrases=('subscribe',)),
+            act('Press Enter to open its episodes.', 'pod', keys=('Enter',), phrases=('that one',)),
+            act('Press Enter to play the first episode.', 'pod', keys=('Enter',), phrases=('that one',)),
+            act('Say fast forward 30 seconds.', 'pod', phrases=('fast forward 30 seconds',)),
+            act('Say back 15 seconds.', 'pod', phrases=('back 15 seconds',)),
+            act('Say next chapter. This episode has chapter marks.', 'pod', phrases=('next chapter',)),
+            act('Say previous chapter.', 'pod', phrases=('previous chapter',)),
+            act('Press Space to pause.', 'pod', keys=('Space',)),
+            act('Say list subscriptions, to hear your saved shows.', 'pod', phrases=('list subscriptions',)),
+        ], sims=lambda: {'pod': RealMediaSim(app, 'podcast')}),
+    ]
+    podcast_lessons.append(media_actions_lesson(app, 'podcast', 'Podcasts'))
+    courses.append(Course('podcast', 'Podcasts', ('podcasts', 'podcast'), podcast_lessons, apps=('podcasts',)))
     player = [task_menu_lesson(app, 'local_media', 'Media player', 'menu', 'Media player',
                                'Media player plays files on your computer. Here, nothing plays.')]
     courses.append(Course('player', 'Media player', ('media player', 'player'), player, apps=('media player',)))
-    youtube = [l for l in (screen_key_lesson(app, 'youtube', 'YouTube', 'One key for each video action, most as on '
-                                                                        'YouTube itself. Here, nothing plays.',
-                                             skip=('F1',)),) if l]
+
+    # YouTube --------------------------------------------------------------------------------------------------
+    yt_open = YouTubeSim(app)
+    yt_words = yt_open.opening
+    yt_open.close()
+    youtube = [Lesson('watch', 'Search and watch a video', 'These are practice videos. No browser opens and nothing plays.', [
+        act('Listen: ' + yt_words + ' Press Control+F to search.', 'yt', keys=('Ctrl+F',), phrases=('search youtube',)),
+        own_words('Say what to search for, such as coffee.', 'yt', 'coffee'),
+        act('Say confirm, or press Enter, to search.', 'yt', keys=('Enter',), phrases=('confirm',)),
+        act('Press Down Arrow for the next video.', 'yt', keys=('Down',), phrases=('next',)),
+        act('Press Enter to play it.', 'yt', keys=('Enter',)),
+        act('Press Space to pause.', 'yt', keys=('Space',), phrases=('play or pause video',)),
+        act('Press Space again to play.', 'yt', keys=('Space',), phrases=('play or pause video',)),
+        act('Press C to turn captions on.', 'yt', keys=('C',), phrases=('captions on or off',)),
+        act('Press Down Arrow to make it quieter. Up Arrow makes it louder.', 'yt', keys=('Down',),
+            phrases=('video volume down',)),
+        act('Press Right Arrow to skip forward.', 'yt', keys=('Right',), phrases=('skip forward',)),
+        act('Press Escape to go back to the list. The video keeps playing.', 'yt', keys=('Escape',), phrases=('go back',)),
+    ], sims=lambda: {'yt': YouTubeSim(app)})]
+    youtube += [l for l in (screen_key_lesson(app, 'youtube', 'YouTube', 'One key for each video action, most as on '
+                                                                         'YouTube itself. Here, nothing plays.',
+                                              skip=('F1',)),) if l]
     youtube += alt_menu_lessons(app, 'youtube', 'Every YouTube action is in this menu.')
     courses.append(Course('youtube', 'YouTube', ('youtube', 'videos'), youtube, apps=('youtube',)))
 
@@ -989,6 +1113,46 @@ def build(app):
 
 SEND_WORDS = ('send it', 'send email', 'send the email', 'send this email', 'send that', 'send this', 'send',
               'send my email', 'send now', 'send it now', 'send the message', 'please send it', 'please send')
+
+
+def act(say, sim, keys=(), phrases=(), reply='', feed=True, after='', **options):
+    """A step on a practice screen: the input it asks for goes to that screen, which answers with its own words."""
+    if after and not callable(reply):
+        reply = (lambda s, v, name=sim, keys=keys, phrases=phrases:
+                 (s[name].feed('key' if canonical_key(v) in keys else 'voice', v if canonical_key(v) in keys
+                               else (phrases[0] if phrases else v)) or '') + after)
+        feed = False
+    return Step(say, keys=keys, phrases=phrases, sim=sim, feed=feed, reply=reply, **options)
+
+
+def own_words(say, sim, example, keys=()):
+    """A step that takes your own words (a name, a date, a sentence), given to the practice screen."""
+    return Step(say, keys=keys, sim=sim, text=True, feed=True, example=example)
+
+
+def reader_feed(sims, command):
+    return sims['reader'].feed('voice', command)
+
+
+def media_actions_lesson(app, section, name):
+    """Every Radio or Podcasts action by name, answered by the real screen. A form it opens is closed again."""
+    from tutorial_sims import MediaSim
+    sim = MediaSim(app, section)
+    actions = list(sim.nav.actions)
+    sim.close()
+
+    def answer(sims, value, label):
+        media = sims['media']
+        said = media.feed('voice', label) or ''
+        if media.nav.form or media.nav.pending:
+            media.feed('key', 'Escape')
+        return said
+    steps = [Step(action.label + '. Say ' + action.label.lower() + '.', phrases=(action.label.lower(),), sim='media',
+                  reply=lambda s, v, label=action.label: answer(s, v, label), screen='media')
+             for action in actions]
+    return Lesson('actions', name + ' actions', 'Every ' + name + ' action, by name. You can also use the arrows and '
+                  'Enter in its actions list. Here, nothing plays.', steps,
+                  sims=lambda: {'media': MediaSim(app, section)})
 
 
 def join(names):

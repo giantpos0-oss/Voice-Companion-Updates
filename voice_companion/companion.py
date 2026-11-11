@@ -1261,7 +1261,8 @@ def _navigation_key(key,mode):
                 'Alt+N':'sort by name','Alt+C':'sort by date created','Alt+M':'sort by date modified','Alt+D':'sort by date added','Alt+A':'sort ascending','Ctrl+Shift+F':'search subfolders','Ctrl+Shift+X':'clear search','Alt+S':'sort files','Alt+Home':'main menu','Ctrl+Shift+1':'sort by name','Ctrl+Shift+2':'sort by date created','Ctrl+Shift+3':'sort by date modified','Ctrl+Shift+4':'sort by date added','Ctrl+Shift+Up':'sort ascending','Ctrl+Shift+Down':'sort descending','BackSpace':'file backspace'}.get(key) if not key.startswith('Letter:') else ('file letter '+key[7:])
     if mode=='file_reader' and key=='Escape':return 'back to files'
     if mode=='file_reader':
-        return {'Insert+F':'what formatting','CapsLock+F':'what formatting','Insert+Shift+Down':'what is selected','CapsLock+Shift+Down':'what is selected','Insert+Down':'say all','CapsLock+Down':'say all','H':'next heading','Shift+H':'previous heading','T':'next table','Shift+T':'previous table','K':'next link','Shift+K':'previous link','L':'next list','Shift+L':'previous list','B':'next bookmark','Shift+B':'previous bookmark','N':'next footnote','Shift+N':'previous footnote','Enter':'follow link'}.get(key)
+        # The reader's own keys, in one list the tutorial also uses (document_reader.READER_KEYS).
+        return __import__('document_reader').READER_KEYS.get(key)
     if mode=='web' and web_session and web_session.list_focus in ('links','headings') and key in ('Up','Down','Left','Right','Home','End','Enter','Escape'):
         web_session.list_prefix='';web_session.list_prefix_time=0
     if NAMED_LIST and key in ('Up','Down','Left','Right','Enter','Escape'):return {'Up':'previous','Left':'previous','Down':'next','Right':'next','Enter':'okay','Escape':'close list'}[key]
@@ -2444,6 +2445,10 @@ def recover_audio_overflow(recognizer, utterance):
     return True
 
 
+NOTE_SAVED = 'Saved your note.'
+NEW_NOTE_PROMPT = 'Dictation started. Speak naturally. Say save note when finished. Say list notes to open a saved note.'
+
+
 def save_note(text, say=None):
     """Save the note being written. Returns False, keeping the text, if it could not be saved."""
     global OPEN_NOTE
@@ -2456,14 +2461,14 @@ def save_note(text, say=None):
             return True
         if opened is not None and notepad.replace(APP, opened, text):
             OPEN_NOTE = None
-            say('Saved your note.')
+            say(NOTE_SAVED)
             return True
         notepad.add(APP, text)
     except OSError:
         say('Your note could not be saved. Your words are still here. Close any program using your notes file, then say save note again.')
         return False
     OPEN_NOTE = None
-    say('Your notes file changed, so this was saved as a new note.' if opened is not None else 'Saved your note.')
+    say('Your notes file changed, so this was saved as a new note.' if opened is not None else NOTE_SAVED)
     return True
 
 
@@ -4895,36 +4900,9 @@ def _handle(text, mode, typed=False):
         if command in ('main menu','back to main menu'):
             # handle() announces the main menu once when the screen changes.
             return 'awake'
-        request=reading_request(command)
-        structure_request=re.fullmatch(r'(next|previous) (heading|table|row|cell|list|list item|link|footnote|bookmark)',command)
-        if structure_request:
-            speak(FILE_READER.navigate(structure_request[2],1 if structure_request[1]=='next' else -1));return mode
-        if command in ('what formatting','say formatting','describe formatting'):
-            speak(FILE_READER.describe_formatting());return mode
-        if command in ('what is selected','say selection','read selection'):
-            selected=FILE_READER.selection
-            speak(FILE_READER.text[slice(*selected)] if selected else 'No text selected.');return mode
-        if command in ('follow link','open link'):
-            speak(FILE_READER.follow_link());return mode
-        if request:
-            unit,direction=request
-            result=FILE_READER.reading.read(direction) if unit=='read' else FILE_READER.reading.move(unit,direction)
-            if unit!='read':result=__import__('reading_navigation').edge_notice(FILE_READER.reading,'document')+result
-            speak(result)
-        elif command in ('beginning of document','top of document','go to beginning of document'):
-            FILE_READER.reading.position=0;speak(FILE_READER.reading.move('line',0))
-        elif command in ('end of document','go to end of document'):
-            FILE_READER.reading.position=max(0,len(FILE_READER.text)-1);speak(FILE_READER.reading.move('line',0))
-            # The place is the very end, as Control+End: Next word then says End of document.
-            FILE_READER.reading.position=max(0,len(FILE_READER.text)-1)
-        elif command=='find' or command.startswith(('find ','find,')):
-            # "Find milk." spoken: the recognizer's comma and closing period are not part of the words.
-            term=re.sub(r'^\s*find\b[\s,:]*','',text,flags=re.I).strip().rstrip('.!?,').strip()
-            if not term:speak('Please say the words to find after find.');return mode
-            position=FILE_READER.text.casefold().find(term.casefold(),FILE_READER.reading.position+1)
-            if position<0:position=FILE_READER.text.casefold().find(term.casefold())
-            if position<0:speak('Text not found.')
-            else:FILE_READER.reading.position=position;speak(FILE_READER.reading.move('line',0))
+        # Reading and moving by part: document_reader.reader_command, which the tutorial uses too.
+        said=__import__('document_reader').reader_command(FILE_READER,text,command)
+        if said is not None:speak(said)
         else:speak('Document reader. Use arrows to read, or say read document, next word, next sentence, next paragraph, find followed by text, or back to files. This document is read-only.')
         return mode
     help_topic = re.fullmatch(r'(?:help with|help for|open help topic|go to help topic) (.+)', command)
@@ -5422,7 +5400,7 @@ def _handle(text, mode, typed=False):
         note_buffer.clear()
         note_selection.text = None
         OPEN_NOTE = None
-        speak_prompt('Dictation started. Speak naturally. Say save note when finished. Say list notes to open a saved note.')
+        speak_prompt(NEW_NOTE_PROMPT)
         return 'note'
     if pending_website is not None:
         address, host = pending_website
@@ -5841,7 +5819,7 @@ def _handle(text, mode, typed=False):
         note_buffer.clear()
         note_selection.text = None
         OPEN_NOTE = None
-        speak_prompt('Dictation started. Speak naturally. Say save note when finished. Say list notes to open a saved note.')
+        speak_prompt(NEW_NOTE_PROMPT)
         return 'note'
     provider_websites = {'gmail': 'https://mail.google.com/',
                          'outlook': 'https://outlook.live.com/mail/',
