@@ -52,8 +52,18 @@ class MarkTests(unittest.TestCase):
 
     def test_a_lost_mark_says_the_hint_and_never_hides_words(self):
         message = 'Done.' + hint(' Say next.')
-        self.assertEqual(spoken(f'{message}', False), 'Done. Say next.')
-        self.assertEqual(spoken(message.strip(), False), 'Done. Say next.')
+        self.assertEqual(spoken(f'Note: {message}', False), 'Note: Done. Say next.')
+        self.assertEqual(spoken(message.replace('Done', 'Finished'), False), 'Finished. Say next.')
+
+    def test_str_strip_and_join_keep_the_mark(self):
+        message = '  Done.' + hint(' Say next.') + '  '
+        for kept in (str(message), message.strip(), message.rstrip(), '[' + message.lstrip()):
+            self.assertNotIn('Say next', spoken(kept, False), repr(kept))
+        self.assertEqual(message.strip(), 'Done. Say next.')
+        self.assertEqual(spoken(message.strip('. '), False), 'Done.')
+        self.assertEqual(spoken(hints.join(' ', ['One.', 'Two.' + hint(' Tip.'), 'Three.']), False), 'One. Two. Three.')
+        self.assertEqual(hints.join(', ', []), '')
+        self.assertEqual(hints.join(' ', ['a', 'b']), 'a b')
 
     def test_empty_hints_and_copies(self):
         self.assertFalse(hints.has_hint(hint('')))
@@ -268,6 +278,175 @@ class RealMessageTests(unittest.TestCase):
                     for word in banned:
                         self.assertNotIn(word, words, f'{path.name}:{node.lineno}')
         self.assertGreaterEqual(found, 20)
+
+
+class SpeechPathTests(unittest.TestCase):
+    """A marked message through every path that speaks, with hints off: the hint is gone everywhere."""
+    MESSAGE = 'Saved.' + hint(' Say read it to hear it.')
+
+    def setUp(self):
+        self.out = {}
+        record = lambda name: (lambda text, *a, **k: self.out.setdefault(name, []).append(str.__str__(text)))
+        class Voice:
+            problem = None
+            enabled = True
+            def __init__(self, name): self.speak = record(name)
+        self.voices = {name: Voice(name) for name in ('keyboard', 'espeak', 'ai')}
+        window = mock.Mock(); window.show.side_effect = record('window')
+        transcript = mock.Mock(); transcript.said.side_effect = record('transcript')
+        for name, value in (('PREFERENCES', dict(DEFAULTS, speak_hints=False)), ('TEXT_MODE', False), ('APP_WINDOW', window),
+                            ('TRANSCRIPT', transcript), ('KEYBOARD_BATCH', False), ('KEYBOARD_NAVIGATION', False),
+                            ('KEYBOARD_SPEECH', None), ('ESPEAK_SPEECH', None), ('AI_SPEECH', None), ('web_session', None),
+                            ('VERBOSITY', 'high'), ('voice', None)):
+            p = mock.patch.object(companion, name, value, create=(name == 'voice')); p.start(); self.addCleanup(p.stop)
+        for name, effect in (('mail_log', record('mail log')), ('update_audio_ducking', None),
+                             ('sapi_speak', lambda voice, text, *a, **k: record('sapi')(text)), ('sync_app_context', None)):
+            p = mock.patch.object(companion, name, side_effect=effect); p.start(); self.addCleanup(p.stop)
+
+    def check(self, *outputs):
+        for name in outputs:
+            self.assertTrue(self.out.get(name), (name, self.out))
+            for text in self.out[name]:
+                self.assertEqual(text, 'Saved.', (name, self.out))
+        self.out.clear()
+
+    def test_each_synthesizer_window_transcript_and_log(self):
+        companion.speak(self.MESSAGE); self.check('sapi', 'window', 'transcript', 'mail log')
+        with mock.patch.object(companion, 'ESPEAK_SPEECH', self.voices['espeak']):
+            companion.speak(self.MESSAGE); self.check('espeak', 'window', 'transcript')
+        with mock.patch.object(companion, 'AI_SPEECH', self.voices['ai']):
+            companion.speak(self.MESSAGE); self.check('ai')
+        with mock.patch.object(companion, 'KEYBOARD_SPEECH', self.voices['keyboard']), \
+                mock.patch.object(companion, 'KEYBOARD_NAVIGATION', True):
+            companion.speak(self.MESSAGE); self.check('keyboard', 'window')
+            companion.speak_keyboard_feedback(self.MESSAGE); self.check('keyboard', 'window', 'transcript')
+
+    def test_status_web_dictation_and_prompt_paths(self):
+        companion.speak_status(self.MESSAGE); self.check('sapi')
+        companion.speak_web_result(self.MESSAGE, 0); self.check('sapi')
+        with mock.patch.object(companion, 'web_session', mock.Mock(page_revision=2, last_dictated_text=None,
+                                                                    backend=mock.Mock(last_dictated_text=None))):
+            companion.speak_web_result(self.MESSAGE, 1); self.check('sapi')
+        companion.dictation_feedback(self.MESSAGE); self.check('sapi')
+        companion.mail_progress(self.MESSAGE); self.check('sapi')
+        for level in ('high', 'medium', 'low'):
+            with mock.patch.object(companion, 'VERBOSITY', level):
+                companion.speak_prompt(self.MESSAGE); self.check('sapi')
+
+    def test_a_batched_keyboard_message_is_kept_without_its_hint(self):
+        with mock.patch.object(companion, 'KEYBOARD_BATCH', True), mock.patch.object(companion, 'KEYBOARD_BATCH_TEXT', None):
+            companion.speak(self.MESSAGE)
+            self.assertEqual(companion.KEYBOARD_BATCH_TEXT, 'Saved.')
+            self.assertFalse(hints.has_hint(companion.KEYBOARD_BATCH_TEXT))
+
+    def test_the_window_key_feedback_and_its_transcript(self):
+        import app_window, speech_transcript
+        said = []
+        window = mock.Mock(keyboard_output=mock.Mock(problem=None, speak=said.append))
+        window.show.side_effect = said.append
+        with mock.patch.object(speech_transcript.TRANSCRIPT, 'said', side_effect=said.append):
+            app_window.CompanionWindow.feedback(window, self.MESSAGE)
+        self.assertEqual([str.__str__(x) for x in said], ['Saved.'] * 3)
+        said.clear()
+        app_window.CompanionWindow.feedback(window, hint('Only a tip.'))
+        self.assertEqual(said, [])
+
+    def test_startup_and_account_removal_join_their_parts_and_keep_marks(self):
+        import startup_speech
+        text = startup_speech.announcement('1.0', 'on', notices=['  Notice.' + hint(' Tip.') + ' '])
+        self.assertIn('Tip.', text)
+        self.assertNotIn('Tip.', spoken(text, False))
+        self.assertIn('The microphone is on.', spoken(text, False))
+        self.assertNotIn('Say wake up', spoken(text, False))
+        self.assertIn('Say wake up', spoken(text, True))
+        self.assertIn('Press F1 twice for help.', spoken(startup_speech.announcement('1.0', 'off'), False))
+
+
+class VerbosityTests(unittest.TestCase):
+    """Verbosity medium and low shorten only marked hints. Before, they cut everything after " Say "."""
+    WRONGLY_CUT = (
+        'The user guide could not open. Say help to try again.',
+        'No email account is connected. Say add account.',
+        'I could not find that document. Say list documents to hear the names.',
+        'Commands only is on. Say normal mode or dictation mode to write.',
+        'I could not open that draft. Say list email drafts to hear the names.',
+        'Website request canceled. Say open website followed by the address to try again.',
+        'Chrome is not set up yet. Set it up now? Say yes or no, or press Y or N.',
+        'Delete preset WGN? Say yes or no.',
+        'Voice name was not unique. Say list voices and try the full name.',
+    )
+
+    def test_recovery_steps_and_answer_words_are_never_cut(self):
+        for level in ('medium', 'low'):
+            for text in self.WRONGLY_CUT:
+                self.assertEqual(prompt_text(text, level), text, (level, text))
+
+    def test_the_real_speak_prompt_path_says_them_whole(self):
+        said = []
+        with mock.patch.object(companion, 'speak', side_effect=said.append):
+            for level in ('medium', 'low'):
+                with mock.patch.object(companion, 'VERBOSITY', level):
+                    companion.speak_prompt('The user guide could not open. Say help to try again.')
+                    self.assertEqual(said[-1], 'The user guide could not open. Say help to try again.')
+
+    def test_marked_hints_get_shorter_and_stay_marked(self):
+        message = 'Dictation started.' + hint(' Speak naturally. Say save note when finished. Say list notes to open a saved note.')
+        self.assertEqual(prompt_text(message, 'high'), message)
+        self.assertEqual(prompt_text(message, 'medium'), 'Dictation started. Speak naturally.')
+        self.assertEqual(spoken(prompt_text(message, 'medium'), False), 'Dictation started.')
+        self.assertEqual(prompt_text(message, 'low'), 'Dictation started.')
+        fallback = 'Downloads.' + hint(' Say pause download. Press F1 twice for help.', instead=' I did not understand that.')
+        self.assertEqual(prompt_text(fallback, 'low'), 'Downloads. I did not understand that.')
+        self.assertEqual(spoken(prompt_text(fallback, 'medium'), False), 'Downloads. I did not understand that.')
+
+    def test_main_menu_still_shortens(self):
+        self.assertEqual(prompt_text(companion.MAIN_MENU_PROMPT, 'low'), 'Main menu.')
+        self.assertTrue(prompt_text(companion.MAIN_MENU_PROMPT, 'medium').startswith('Main menu. What would you like to do?'))
+
+
+class MoreRealMessageTests(unittest.TestCase):
+    def test_thunderbird_account_ready(self):
+        import thunderbird_accounts as words
+        message = words.ready_message(['sam@gmail.com'], 'sam@gmail.com')
+        self.assertTrue(message.endswith('is connected and selected. Say check email to open it.'), message)
+        self.assertTrue(spoken(message, False).endswith('is connected and selected.'))
+        message = words.ready_message(['a@gmail.com', 'b@gmail.com'], None)
+        self.assertEqual(spoken(message, False), 'Thunderbird finished adding a@gmail.com and b@gmail.com. They are connected.')
+        self.assertEqual(spoken(words.also_connected_message(['a@gmail.com']), False),
+                         'Thunderbird also has a@gmail.com. It is connected to Voice Companion now.')
+
+    def test_removed_accounts_keep_what_happened(self):
+        import account_picker
+        result = mock.Mock(removed=[('gmail', 'sam@gmail.com')], selected=None, changed_selection=False,
+                           remaining=[('yahoo', 'x@yahoo.com')])
+        message = account_picker.retired_message(result)
+        self.assertIn('again, say add account and choose Thunderbird.', message)
+        off = spoken(message, False)
+        self.assertIn('removed from Voice Companion.', off)
+        self.assertIn('Your drafts and contacts are kept.', off)
+        self.assertNotIn('say add account', off)
+
+    def test_reading_on_in_long_text(self):
+        from reading_navigation import ReadingCursor
+        cursor = ReadingCursor(); cursor.set_text('word ' * 2000, reset=True)
+        piece = cursor.read()
+        self.assertTrue(piece.endswith(' Say continue reading for more.'))
+        self.assertFalse(spoken(piece, False).endswith('more.'))
+        self.assertTrue(spoken(piece, False).endswith('word'))
+
+    def test_web_text_entry_and_document_reader_link(self):
+        import document_reader, web_assistant
+        self.assertEqual(spoken(web_assistant.SKIP_AD_READY, False), 'Skip ad button ready.')
+        self.assertEqual(spoken(web_assistant.WINDOW_BACK, False), ' It is in front. Press Alt+Tab to come back to Voice Companion.'.strip())
+
+    def test_document_undo_tips(self):
+        from document_editor import VoiceDocument, Paragraph
+        with tempfile.TemporaryDirectory() as folder:
+            doc = VoiceDocument(Path(folder)); doc.paragraphs = [Paragraph('Hello there.'), Paragraph('Second.')]
+            message = doc.process('delete paragraph')
+            self.assertIn('Say undo to restore it.', message, message)
+            self.assertNotIn('Say undo', spoken(message, False))
+            self.assertTrue(spoken(message, False).startswith('Deleted paragraph'), message)
 
 
 class ScreenFallbackTests(unittest.TestCase):

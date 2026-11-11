@@ -1,4 +1,5 @@
 """Locally saved email drafts using the same voice editor as documents."""
+from hints import hint
 import html
 import hashlib
 import json
@@ -524,7 +525,7 @@ class VoiceEmail(VoiceDocument):
                 return 'Subject field. ' + ('Current subject: '+self.subject+'. ' if self.subject else '') + 'Say or type the subject to replace it.'
             if field in ('cc','bcc'):
                 return field.upper()+' field. '+('Current addresses: '+', '.join(getattr(self,field))+'. ' if getattr(self,field) else '')+'Say or type an address to add, or say skip.'
-            return 'Message body. Speak or type your message. Say send it when ready.'
+            return 'Message body. Speak or type your message.' + hint(' Say send it when ready.')
         if command in ('start dictation','dictate','continue writing'):
             self.compose_step = 'body'
         def contact_address(value):

@@ -379,9 +379,9 @@ class MailSession:
                 return (('End of list. ' if step > 0 else 'Start of list. ') + 'Folder ' + str(index + 1) + ' of ' +
                         str(len(picker['folders'])) + ': ' + self._spoken_folder(picker['folders'][index][0]) + '.')
             picker['index'] = new
-            return name_first('Folder ' + str(new + 1) + ' of ' + str(len(picker['folders'])) + ': ' + self._spoken_folder(picker['folders'][new][0]) + '. Say that one to ' + verb + '.')
+            return name_first('Folder ' + str(new + 1) + ' of ' + str(len(picker['folders'])) + ': ' + self._spoken_folder(picker['folders'][new][0]) + '.') + hint(' Say that one to ' + verb + '.')
         if command in ('current folder', 'repeat folder'):
-            return 'Selected folder: ' + self._spoken_folder(picker['folders'][picker['index']][0]) + '. Say that one to ' + verb + '.'
+            return 'Selected folder: ' + self._spoken_folder(picker['folders'][picker['index']][0]) + '.' + hint(' Say that one to ' + verb + '.')
         if command in ('okay', 'ok', 'select folder', 'that one', 'confirm', 'confirm that'):
             name, ident = picker['folders'][picker['index']]
             self.folder_picker = None
@@ -682,7 +682,7 @@ class MailSession:
         self.view = 'folder'
         self.body_text = ''
         self.body_offset = 0
-        return self._summary(self.current,True) + ' Say open current message to read it.'
+        return self._summary(self.current,True) + hint(' Say open current message to read it.')
 
     def _number(self, value):
         if not self.rows:
@@ -854,7 +854,7 @@ class MailSession:
                     'Showing ' + value + ' messages at a time. ') + result
         if command in ('email list size', 'mail list size', 'how many emails', 'how many messages per page'):
             return (ALL_MESSAGES if self.all_messages else
-                    str(self.list_size) + ' messages at a time.') + ' Say set to 20, set list to 1000, or set to all.'
+                    str(self.list_size) + ' messages at a time.') + hint(' Say set to 20, set list to 1000, or set to all.')
         open_selection = ('that one', 'okay', 'ok', 'confirm', 'confirm that')
         if self.pending and self.pending[0] == 'receipt':
             if command in ('yes', 'yes please', 'okay', 'ok', 'send it', 'send receipt', 'send read receipt'):
@@ -1213,7 +1213,7 @@ class MailSession:
                 self.folder_name, self.folder_id = 'Inbox', 'inbox'
                 self.previous_cursors.clear()
                 self._clear_marks()
-                done = 'Folder change completed. Say list folders to check it. '
+                done = 'Folder change completed.' + hint(' Say list folders to check it.') + ' '
                 try:
                     # The Inbox itself, so the next key is on a message, never "Empty list".
                     return done + self.list_messages()

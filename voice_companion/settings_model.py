@@ -228,16 +228,15 @@ class SettingsSession:
 
 
 def prompt_text(text,verbosity):
+    """Verbosity shortens only the parts marked as hints (hints.py). Before November 10, 2026,
+    medium and low cut everything after " Say ", which also cut recovery steps such as
+    "Say help to try again" and the answer words of a question."""
     if verbosity=='high':return text
     if text.startswith('Main menu.'):
         from hints import hint
         return 'Main menu.' if verbosity=='low' else 'Main menu.'+hint(' What would you like to do? Say next or previous, and OK to open.')
-    # Only explicitly marked application guidance uses this function; read text never does.
-    main,marker,hint=text.partition(' Say ')
-    if verbosity=='low':return main
-    if marker:
-        return main+' Say '+hint.split('. ')[0]
-    return text
+    from hints import brief
+    return brief(text,verbosity)
 
 
 def keyboard_request(key,mode):

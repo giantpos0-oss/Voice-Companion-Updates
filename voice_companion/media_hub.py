@@ -455,7 +455,7 @@ class MediaHub:
             saved.append({'name':name, 'url':station['url']})
             self._save('radio-presets.json', saved)
             self.preset_index = len(saved)-1
-            return 'Saved preset ' + name + '. Say play preset ' + name + ' later.'
+            return 'Saved preset ' + name + '.' + hint(' Say play preset ' + name + ' later.')
         match = re.fullmatch(r'(?:play|open) preset(?: (.+))?', cmd)
         if match:
             if not self.presets(): return NO_PRESETS
@@ -469,7 +469,7 @@ class MediaHub:
             self.station_index = None
             self.current_station = station
             self.preset_browsing = True
-            return 'Playing preset ' + station['name'] + '. Say pause or stop.'
+            return 'Playing preset ' + station['name'] + '.' + hint(' Say pause or stop.')
         match = re.fullmatch(r'(?:delete|remove) preset(?: (.+))?', cmd)
         if match:
             if not self.presets(): return NO_PRESETS
@@ -648,7 +648,7 @@ class MediaHub:
             return station['name']+' could not start in the audio player. Say next station or choose another result.'
         self._remember(station['url'], what='station', name=station['name'])
         self.current_station = station
-        return 'Playing ' + station['name'] + '. Say pause or stop.'
+        return 'Playing ' + station['name'] + '.' + hint(' Say pause or stop.')
 
     # Words that do not tell stations apart: "WGN" and "WGN Radio" are the same request.
     STATION_FILLER = ('the', 'radio', 'station', 'fm', 'am')
@@ -820,7 +820,7 @@ class MediaHub:
             self.record_stop = threading.Event()
             self.recording = threading.Thread(target=self._record_worker,args=(station,minutes,self.record_stop),daemon=True)
             self.recording.start()
-        return f'Recording {station["name"]} for up to {minutes} minutes. Say stop recording to finish early.'
+        return f'Recording {station["name"]} for up to {minutes} minutes.' + hint(' Say stop recording to finish early.')
 
     def schedule(self, station, when, minutes, repeat=False):
         if not 1<=minutes<=240 or when<=self.clock(): return 'Choose a future time and a length from 1 to 240 minutes.'
@@ -956,7 +956,7 @@ class MediaHub:
         self.browsing_categories=True
         self.browsing_episodes=False
         return ('Browse podcasts. Choose a category to hear its top podcasts. '+self.category_choice()+
-                ' Say next or previous to move, and that one to open it.')
+                hint(' Say next or previous to move, and that one to open it.'))
 
     def _chart(self, genre):
         """Top shows from Apple's chart, in chart order, each with its feed. Raises OSError or
@@ -1094,7 +1094,7 @@ class MediaHub:
         self.episode_index=None
         return ('Found '+_counted(len(subs),'subscription')+'. Subscription 1: '+subs[0]['name']+
                 ', automatic downloads '+str(_download_limit(subs[0].get('download_limit')))+
-                '. Say next or previous, that one to open episodes, or subscribe.' if subs else
+                '.'+hint(' Say next or previous, that one to open episodes, or subscribe.') if subs else
                 'No podcast subscriptions yet. To add one, search or browse podcasts, choose a show, and say subscribe.')
 
     def set_auto_download(self, limit, number=None):
@@ -1235,8 +1235,8 @@ class MediaHub:
         self.episode_index=i
         self.chapters=self._chapters(episode)
         if getattr(self.player,'loading',False) is True:
-            return 'Loading '+episode['title']+'. It starts in a moment. Say pause, back 15 seconds, or next episode.'
-        return 'Playing '+episode['title']+'. Say pause, back 15 seconds, or next episode.'
+            return 'Loading '+episode['title']+'. It starts in a moment.'+hint(' Say pause, back 15 seconds, or next episode.')
+        return 'Playing '+episode['title']+'.'+hint(' Say pause, back 15 seconds, or next episode.')
 
     def note_failure(self, what, error):
         """Why something could not play, for a helper: media-errors.txt in the data folder.
@@ -1465,7 +1465,7 @@ class MediaHub:
         try: self.player.open(files[i].as_uri(),files[i].stem,'radio')
         except Exception: return 'The saved radio recording could not play.'
         self._remember(files[i].as_uri(), what='recording', name=files[i].stem)
-        return 'Playing recording '+files[i].stem+'. Say pause audio or stop audio.'
+        return 'Playing recording '+files[i].stem+'.'+hint(' Say pause audio or stop audio.')
 
     def play_chosen(self, section):
         """"Play" with nothing loaded yet: play the station, preset or episode the
@@ -1479,8 +1479,8 @@ class MediaHub:
             if self.browsing_episodes and self.episodes and self.episode_index is not None:
                 return self.play_episode(self.episode_index+1)
             if self.shows and self.show_index is not None:
-                return (self.shows[self.show_index]['name']+' is chosen. Say that one to hear its episodes, '
-                        'then choose one to play.')
+                return (self.shows[self.show_index]['name']+' is chosen.'+hint(' Say that one to hear its episodes, '
+                        'then choose one to play.'))
         return None
 
     def command(self, spoken, section=None):
@@ -1521,7 +1521,7 @@ class MediaHub:
                 if not 0 <= index < len(self.stations):
                     return 'That is the '+('last' if step > 0 else 'first')+' station in these results.'
                 self.station_index = index
-                return name_first('Station '+str(index+1)+' of '+str(len(self.stations))+': '+self.stations[index]['name']+'. Say that one to play it.')
+                return name_first('Station '+str(index+1)+' of '+str(len(self.stations))+': '+self.stations[index]['name']+'.')+hint(' Say that one to play it.')
             if cmd in ('that one','confirm','confirm that','okay','ok','play this one','play that one'):
                 return self.play_station(self.station_index+1) if self.stations and self.station_index is not None else 'Search for stations first.'
             match=re.fullmatch(r'(?:play|open)\s+(?:(?:the|station|radio station|station number|number)\s+)*(\d+|[a-z]+)(?:\s+(?:one|station))?',cmd)
@@ -1557,7 +1557,7 @@ class MediaHub:
                         return 'That is the '+('last' if step>0 else 'first')+' episode in this feed.'
                     self.episode_index=index
                     return (name_first('Episode '+str(index+1)+' of '+str(len(self.episodes))+': '+self.episodes[index]['title']+
-                            '. Say that one to play it, or download this episode.'))
+                            '.')+hint(' Say that one to play it, or download this episode.'))
                 if cmd in ('that one','confirm','confirm that','okay','ok','play that one','play this one'):
                     return self.play_episode(self.episode_index+1) if self.episode_index is not None else 'This feed has no playable episodes.'
                 match=re.fullmatch(r'(?:play|stream)\s+(?:(?:episode|number|the)\s+)*(\d+|[a-z]+)(?:\s+one)?',cmd)
@@ -1573,7 +1573,7 @@ class MediaHub:
                 if cmd in ('back to podcasts','back to feeds','show podcasts'):
                     self.browsing_episodes=False
                     return ('Podcast '+str(self.show_index+1)+': '+self.shows[self.show_index]['name']+
-                            '. Say next or previous to browse podcasts.') if self.shows and self.show_index is not None else 'Search for podcasts first.'
+                            '.'+hint(' Say next or previous to browse podcasts.')) if self.shows and self.show_index is not None else 'Search for podcasts first.'
             if cmd in ('download this episode','download that one','download selected episode') and not self.browsing_episodes:
                 return 'Open a podcast and choose an episode first. Then say download this episode.'
             if cmd in ('search','search for','search podcast','search podcasts','find podcast','find podcasts'):
@@ -1598,7 +1598,7 @@ class MediaHub:
                     if not 0<=index<len(names):
                         return 'That is the '+('last' if step>0 else 'first')+' category.'
                     self.category_index=index
-                    return self.category_choice()+' Say that one to open it.'
+                    return self.category_choice()+hint(' Say that one to open it.')
                 if cmd in ('that one','confirm','confirm that','okay','ok','open','open that one','open this one','open category'):
                     return self.browse_category(names[max(0,min(self.category_index or 0,len(names)-1))])
                 if podcast_category(text): return self.browse_category(text)
@@ -1613,7 +1613,7 @@ class MediaHub:
                     return 'That is the '+('last' if step>0 else 'first')+' podcast in these results.'
                 self.browsing_episodes=False
                 self.show_index=index
-                return name_first('Podcast '+str(index+1)+' of '+str(len(self.shows))+': '+self.shows[index]['name']+'. Say that one to open episodes, or subscribe.')
+                return name_first('Podcast '+str(index+1)+' of '+str(len(self.shows))+': '+self.shows[index]['name']+'.')+hint(' Say that one to open episodes, or subscribe.')
             if cmd in ('that one','confirm','confirm that','okay','ok','open','open that one','open this one',
                        'open feed','open selected feed','open this feed','open podcast','browse episodes'):
                 return self.open_podcast(self.show_index+1) if self.shows and self.show_index is not None else 'Search for podcasts first.'
@@ -1622,8 +1622,8 @@ class MediaHub:
                 return self.subscribe(self.show_index+1) if self.shows and self.show_index is not None else 'Search for podcasts first.'
             if cmd in ('browse podcast feeds','browse feeds'):
                 return (name_first('Podcast '+str((self.show_index or 0)+1)+' of '+str(len(self.shows))+': '+
-                        self.shows[self.show_index or 0]['name']+'. Say next or previous to browse.'
-                        if self.shows else 'Say browse podcasts to choose a category, or search followed by a podcast name.'))
+                        self.shows[self.show_index or 0]['name']+'.')+hint(' Say next or previous to browse.')
+                        if self.shows else 'Say browse podcasts to choose a category, or search followed by a podcast name.')
         if cmd in ('search radio','find radio','find a station','find stations'):
             self.awaiting_radio_search=True
             return 'What station would you like to find? Say its name, or say cancel.'
@@ -1656,7 +1656,7 @@ class MediaHub:
             if not self.stations: return 'Search for radio stations first.'
             if cmd=='next stations': self.station_index=min((self.station_index or 0)+1,len(self.stations)-1)
             i=self.station_index or 0
-            return name_first('Station '+str(i+1)+' of '+str(len(self.stations))+': '+self.stations[i]['name']+'. Say that one to play it.')
+            return name_first('Station '+str(i+1)+' of '+str(len(self.stations))+': '+self.stations[i]['name']+'.')+hint(' Say that one to play it.')
         if cmd in ('refresh stations','update radio stations','refresh radio directories'):
             try: return self.refresh_iprd(force=True)+' Radio Browser is always searched live.'
             except (OSError,ValueError,TimeoutError):

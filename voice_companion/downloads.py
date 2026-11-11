@@ -14,6 +14,7 @@ lock, and spoken messages wait in `notices` for the main loop to say them.
 Control requests to a browser never wait for an answer: the answer arrives as
 a later report on the same thread that would otherwise be waiting for it.
 """
+from hints import hint
 import json
 import os
 import queue
@@ -714,7 +715,7 @@ class DownloadManager:
             if record.state == 'blocked':
                 return 'Answer Chrome about ' + name + ' first. In Chrome, press Control+J, then keep or delete the file.'
             if record.state == 'finished':
-                return name + ' is finished. Press Enter to open it.'
+                return name + ' is finished.' + hint(' Press Enter to open it.')
             return name + ' was cancelled. To get it, go back to the web page and choose the link again.'
 
     def cancel(self, record):
