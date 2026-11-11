@@ -480,7 +480,8 @@ class CatalogParityTests(unittest.TestCase):
         session=SettingsSession({}, {})
         for category in CATEGORIES:
             for field in fields(category,{}):
-                if field.kind=='action':continue
+                # The Favorite apps list has its own words, such as "select" and "move up" (test_favorite_apps).
+                if field.kind in ('action','apps'):continue
                 with self.subTest(field=field.key):
                     request=session.voice_setting((settings_phrase(field)+' on').capitalize()+'.')
                     self.assertIsNotNone(request,field.label);self.assertEqual(request[0],field.key)

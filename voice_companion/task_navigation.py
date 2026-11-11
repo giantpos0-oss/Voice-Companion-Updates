@@ -134,7 +134,8 @@ ORGANIZER_OPEN = ('organizer', 'open organizer', 'organizer menu', 'go to organi
                   'organiser menu', 'go to organiser')
 POWER_CHOICES = (('Shut down the computer', '', 'shut down computer'), ('Restart the computer', '', 'restart computer'))
 POWER_OPEN = ('shut down or restart', 'power menu', 'power options', 'open power menu')
-# Favorite apps (Control+F1): the apps you chose in Options, My menu, in this order.
+# Favorite apps (Control+F1): the apps you chose in Options, Favorite apps. This is the order
+# before you change it there (favorite_order), and the order of saved options from before 0.2.211.
 FAVORITE_APPS = (('File manager', 'file manager'), ('Word processor', 'word processor'), ('Notepad', 'notepad'),
                  ('Email', 'email'), ('Document reader', 'document reader'), ('Address manager', 'contacts'),
                  ('Schedule manager', 'calendar'), ('Web browser', 'web browser'), ('Radio', 'radio'),
@@ -142,8 +143,14 @@ FAVORITE_APPS = (('File manager', 'file manager'), ('Word processor', 'word proc
 # Not "favorites" or "my favorites": those are the web browser's saved pages.
 FAVORITES_OPEN = ('favorite apps', 'favourite apps', 'open favorite apps', 'open favourite apps',
                   'favorite apps menu', 'go to favorite apps', 'my favorite apps', 'my favourite apps')
+# The Options category is Favorite apps (Will, November 10, 2026); it was called My menu, and
+# those words still open it.
+FAVORITES_CATEGORY = 'Favorite apps'
 FAVORITES_CHANGE = ('change favorite apps', 'change favourite apps', 'edit favorite apps', 'edit favourite apps',
+                    'favorite apps options', 'favourite apps options', 'open favorite apps options',
                     'my menu', 'open my menu', 'my menu options')
+# The saved order of every app in Options, Favorite apps: a list of app names.
+FAVORITE_ORDER = 'favorite_order'
 
 
 def favorite_key(name):
@@ -151,9 +158,23 @@ def favorite_key(name):
     return 'favorite_' + name.lower().replace(' ', '_')
 
 
+def favorite_order(preferences):
+    """Every app name, in the order saved in Options. A damaged or missing order never loses an
+    app: unknown names and repeats are left out, and apps missing from it follow, in the usual order."""
+    saved = (preferences or {}).get(FAVORITE_ORDER)
+    names = {name.casefold(): name for name, _ in FAVORITE_APPS}
+    order = []
+    for item in saved if isinstance(saved, (list, tuple)) else ():
+        name = names.get(item.strip().casefold()) if isinstance(item, str) else None
+        if name and name not in order:
+            order.append(name)
+    return order + [name for name, _ in FAVORITE_APPS if name not in order]
+
+
 def favorite_items(preferences):
-    chosen = [(name, '', command) for name, command in FAVORITE_APPS if (preferences or {}).get(favorite_key(name))]
-    return chosen + [('Change favorite apps', '', '@options:My menu')]
+    commands = dict(FAVORITE_APPS)
+    chosen = [(name, '', commands[name]) for name in favorite_order(preferences) if (preferences or {}).get(favorite_key(name))]
+    return chosen + [('Change favorite apps', '', '@options:' + FAVORITES_CATEGORY)]
 
 
 # Group menus: leaving an app opened from one goes back to it (companion.group_return).
@@ -503,7 +524,7 @@ class TaskNavigation:
             if command.startswith('@options:'):return m.screen_menu().run(command, mode)
             if command == 'main menu':return 'awake'
         if mode == 'favorites_menu' and command.startswith('@options:'):
-            # Change favorite apps: Options opens on My menu; closing it comes back here.
+            # Change favorite apps: Options opens on Favorite apps; closing it comes back here.
             return m.screen_menu().run(command, mode)
         return m.handle(command, 'document' if mode == 'document_menu' else 'awake' if mode in MAIN_LEVEL_MENUS else mode, typed=True)
 
@@ -619,7 +640,7 @@ class TaskNavigation:
         if command in FAVORITES_OPEN and mode not in ('document','email_draft','note'):
             return m.open_favorites()
         if command in FAVORITES_CHANGE and mode not in ('document','email_draft','note'):
-            return m.screen_menu().run('@options:My menu', mode)
+            return m.screen_menu().run('@options:' + FAVORITES_CATEGORY, mode)
         if command in POWER_OPEN and mode not in ('document','email_draft','note'):
             return self.enter('power_menu', 'Shut down or restart')
         if command in ('media','media menu','open media') and mode not in ('document','email_draft'):

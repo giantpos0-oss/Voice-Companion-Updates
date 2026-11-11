@@ -6344,7 +6344,7 @@ GROUP_TITLES = {'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'f
 
 
 def open_favorites(lead=''):
-    """Favorite apps (Control+F1): the apps chosen in Options, My menu, then Change favorite apps."""
+    """Favorite apps (Control+F1): the apps chosen in Options, Favorite apps, then Change favorite apps."""
     navigation = task_navigation()
     items = navigation.items('favorites_menu')
     navigation.indices['favorites_menu'] = 0

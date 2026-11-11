@@ -81,7 +81,9 @@ class HelpSession:
         # Recognizers add punctuation and write "e-mail": compare words only, on both sides.
         wanted = plain_words(name).replace('e mail', 'email')
         # "Help with the microphone": people say the, my or a before the name.
-        wanted = re.sub(r'^(?:the|my|a|an) ', '', wanted)
+        # Not when the whole name is a topic word, such as "My menu", the old name of Favorite apps in Options.
+        if wanted not in ('my menu', 'my menu options'):
+            wanted = re.sub(r'^(?:the|my|a|an) ', '', wanted)
         aliases = {
             'files':'file manager','file manager':'file manager','file commands':'file manager','reader':'document reader','document reader':'document reader',
             'what is new':"what's new", 'whats new':"what's new", 'what s new':"what's new", 'release notes':"what's new",
@@ -101,7 +103,8 @@ class HelpSession:
             'calendar':'schedule manager', 'events':'schedule manager', 'appointments':'schedule manager',
             'schedule':'schedule manager', 'schedule manager':'schedule manager',
             'organizer':'getting started', 'office tools':'getting started', 'favorite apps':'getting started',
-            'favourite apps':'getting started', 'my menu':'change your options',
+            'favourite apps':'getting started', 'my menu':'change your options', 'my menu options':'change your options',
+            'favorite apps options':'change your options', 'favourite apps options':'change your options',
             'presets':'saved radio stations', 'radio presets':'saved radio stations',
             'settings':'change your options', 'options':'change your options', 'verbosity':'change your options',
             'keyboard':'using voice commands', 'email lists':'read and organize email', 'station database':'listen to radio',
@@ -129,6 +132,8 @@ class HelpSession:
                 'email attachments': 'open and save attachments',
                 'main menu': 'use the main menu', 'organizer': 'use the main menu', 'office tools': 'use the main menu',
                 'favorite apps': 'use the main menu', 'favourite apps': 'use the main menu', 'keys': 'keys that work everywhere',
+                'my menu': 'favorite apps in options', 'my menu options': 'favorite apps in options',
+                'favorite apps options': 'favorite apps in options', 'favourite apps options': 'favorite apps in options',
                 'keyboard shortcuts': 'keys that work everywhere', 'shortcuts': 'keys that work everywhere',
                 'shortcut keys': 'keys that work everywhere', 'microphone': 'set up your microphone',
                 'mic': 'set up your microphone', 'time': 'check the time and date', 'date': 'check the time and date',

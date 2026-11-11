@@ -29,8 +29,16 @@ class OptionsLayoutTests(unittest.TestCase):
 
     def test_check_boxes_never_overlap(self):
         # A check box is 27 pixels high and has no label above it.
-        fields = settings_model.fields('My menu', {})
+        fields = settings_model.fields('Startup and exit options', {})
         self.assertGreaterEqual(settings_step(fields), 30)
+
+    def test_the_favorite_apps_list_and_its_buttons_fit_above_the_ok_row(self):
+        from native_settings import APPS_HEIGHT
+        fields = settings_model.fields('Favorite apps', {})
+        step = settings_step(fields)
+        # The label, then the list, then the helper buttons 27 pixels high, all above the OK row at 530.
+        self.assertLessEqual(step - 17 + 22 + APPS_HEIGHT + 6 + 27, 510)
+        self.assertLessEqual(settings_bottom(fields, step), 510)
 
 
 if __name__ == '__main__':

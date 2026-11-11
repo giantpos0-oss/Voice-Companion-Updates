@@ -119,6 +119,7 @@ def option_explanation(field):
     if field.kind=='action':return 'Choose this button to '+field.label.lower()+'. It opens that task and leaves Options. Choose OK first if you want to save changed settings.'
     if field.kind=='password':return 'This is a private text box. Its contents are not read aloud. Leaving it blank keeps the saved key. A helper can enter a new key here. Choose OK to save or Cancel to leave it unchanged.'
     if field.kind=='check':return 'This is a checkbox. Press Space to turn it on or off. By voice, choose the setting and say on or off. Choose OK to save or Cancel to keep the earlier choice.'
+    if field.kind=='apps':return 'This list has every app. Press Space to select or unselect the app you hear. Control+Up and Control+Down move it. The apps you select are in Favorite apps, in this order. Control+F1 opens it. OK saves; Cancel keeps the earlier list.'
     if field.kind=='headers':return 'Choose which email details are read: From, Subject, Date, and Size. Keep at least one. Space adds or removes a detail. Alt Up and Alt Down change its place. OK saves; Cancel keeps the earlier order.'
     if field.key in ('rate','pitch'):choices='Choose a whole number from minus ten to ten. Zero is the normal setting.'
     elif field.key=='volume':choices='Choose a number from zero to one hundred for the speech volume.'

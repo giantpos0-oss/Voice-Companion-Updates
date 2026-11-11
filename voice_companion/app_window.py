@@ -170,7 +170,7 @@ class CompanionWindow:
                 try:self.ui_actions.get_nowait()
                 except queue.Empty:break
             self.root=self.typed=self.editor=self.current=self.file_list=None
-            self.file_toolbar=self.hint_label=None;self.file_buttons=[];self.update_buttons=[]
+            self.file_toolbar=self.hint_label=None;self.file_buttons=[];self.update_buttons=[];self.row_buttons=[]
             import gc
             gc.collect()
 
@@ -364,8 +364,10 @@ class CompanionWindow:
             arrangers=[]
             update_toolbar=tk.Frame(root)
             self.update_buttons=[]
+            # While an update downloads, Tab moves between these two buttons only (update_tab below).
+            # They are never in the window's own Tab order, so Tab elsewhere cannot reach them.
             for label,request,hint in (('Status','update status','Alt+S or F5'),('Cancel update','cancel update','Alt+C or Escape')):
-                button=tk.Button(update_toolbar,text=label,command=lambda command=request:self.commands.put(command),takefocus=True)
+                button=tk.Button(update_toolbar,text=label,command=lambda command=request:self.commands.put(command),takefocus=0)
                 button.pack(side='left',padx=3);self.update_buttons.append(button)
                 button.bind('<FocusIn>',lambda event,name=label,key=hint:self.feedback(name+' button. '+key+'. Enter activates.'))
                 button.bind('<Return>',lambda event,command=request:(self.commands.put(command),'break')[1])
@@ -812,13 +814,13 @@ class CompanionWindow:
             root.bind_all('<Alt-O>',settings_shortcut)
             route_alt_keys(root)
             button_row=tk.Frame(root)
-            row_buttons=[tk.Button(button_row,text='Options (Alt+O)',command=lambda:self.commands.put(('keyboard','settings'))),
-                         tk.Button(button_row, text='Enter typed command', command=submit_typed),
-                         tk.Button(button_row, text='AI voice setup (trainer)', command=self.setup_ai_voice)]
-            for button in row_buttons:
-                # Tab can reach these buttons from the command box. Say where the keyboard went, so
-                # Enter never opens Options or a dialog by surprise.
-                button.bind('<FocusIn>',lambda event,name=button.cget('text'):self.feedback(name+' button. Enter activates. Shift+Tab goes back.'))
+            # Buttons for a helper with a mouse. Tab never stops on them (Will, November 10, 2026): each
+            # has a key and a spoken command. Options is Alt+O or "Options"; Enter typed command is
+            # Enter in the command box; AI voice setup is "Set up AI voice", said or typed with Alt+T.
+            row_buttons=[tk.Button(button_row,text='Options (Alt+O)',command=lambda:self.commands.put(('keyboard','settings')),takefocus=0),
+                         tk.Button(button_row, text='Enter typed command', command=submit_typed,takefocus=0),
+                         tk.Button(button_row, text='AI voice setup (trainer)', command=self.setup_ai_voice,takefocus=0)]
+            self.row_buttons=row_buttons
             flow(button_row,row_buttons)
             self.current = tk.StringVar(root, value='Starting speech and microphone...')
             # The last thing spoken, in large text under the screen name. A few lines at most,
