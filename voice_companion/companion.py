@@ -766,7 +766,6 @@ MAIN_MENU_HELP = ('help me', 'what can i say', 'what can i do', 'what do i say',
                   'help me please', 'help please', 'what are my choices', 'what are my options')
 MAIN_MENU_FIRST = 'You are on the main menu. It is the first screen, so there is nothing to go back to. Say a choice, or say help.'
 MAIN_MENU_NOT_UNDERSTOOD = 'I did not understand that. You are on the main menu. Press F1 twice for help.'
-MAIN_MENU_PROMPT = 'Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open.'
 
 # Said together with the next main menu announcement, in one message: a second
 # message would stop the first one (the keyboard voice interrupts itself).
@@ -774,13 +773,20 @@ MAIN_MENU_LEAD = ''
 # Counts main menu announcements, so handle() does not say it a second time.
 MAIN_MENU_ANNOUNCED = 0
 
-def announce_main_menu():
+def main_menu_item(index=0):
+    """One main menu item, as the arrows say it: File manager (F), 1 of 10."""
+    return announce_item(MAIN_MENU_CHOICES[index][0], index, len(MAIN_MENU_CHOICES))
+
+def announce_main_menu(index=0):
+    """Arriving on the main menu says only the item you are on, BrailleSense style (Will,
+    November 10, 2026): F1 and Main menu go to the first item; Escape from a group on the
+    main menu lands on that group (main_menu_parent). The arrows go on from there."""
     global MAIN_MENU_INDEX, MAIN_MENU_LEAD, MAIN_MENU_ANNOUNCED
-    MAIN_MENU_INDEX = None
+    index = index if 0 <= index < len(MAIN_MENU_CHOICES) else 0
+    MAIN_MENU_INDEX = index
     MAIN_MENU_ANNOUNCED += 1
-    lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD, ''
-    if lead.strip():speak(lead.strip() + ' ' + prompt_text(MAIN_MENU_PROMPT, VERBOSITY))
-    else:speak_prompt(MAIN_MENU_PROMPT)
+    lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD.strip(), ''
+    speak((lead + ' ' if lead else '') + main_menu_item(index))
 
 def startup_prompt():
     """The startup announcement for the microphone as it is now (startup_speech.py)."""
@@ -790,9 +796,22 @@ def startup_prompt():
 MAIN_MENU_INDEX = None
 # Grouped (Will, November 6, 2026): File manager first, on its own. Office tools holds Word
 # processor, Notepad, Email and Document reader. Organizer holds Address manager (contacts) and
-# Schedule manager (calendar). Shut down or restart holds the two power choices. Every app's own
-# command still works from here ("email", "contacts", "calendar").
-MAIN_MENU_CHOICES = (('File manager', 'file manager'), ('Office tools', 'office tools'), ('Organizer', 'organizer'), ('Web browser', 'web browser'), ('Media', 'media menu'), ('Options', 'options'), ('Check for updates', 'check for updates'), ('Help', 'help'), ('Shut down or restart', 'shut down or restart'), ('Exit Voice Companion', 'exit companion'))
+# Schedule manager (calendar). Web tools (November 10) holds Web browser, Web favorites, Web history,
+# Downloads and Set up Chrome. Shut down or restart holds the two power choices. Every app's own
+# command still works from here ("email", "contacts", "calendar", "web browser").
+MAIN_MENU_CHOICES = (('File manager', 'file manager'), ('Office tools', 'office tools'), ('Organizer', 'organizer'), ('Web tools', 'web tools'), ('Media', 'media menu'), ('Options', 'options'), ('Check for updates', 'check for updates'), ('Help', 'help'), ('Shut down or restart', 'shut down or restart'), ('Exit Voice Companion', 'exit companion'))
+# What arriving on the main menu says (F1, Main menu, a screen closing): its first item only.
+MAIN_MENU_PROMPT = main_menu_item(0)
+# The groups on the main menu. Escape from one lands on its own item, as on a BrailleSense.
+MAIN_MENU_GROUPS = {'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'web_tools_menu': 'Web tools',
+                    'media_menu': 'Media', 'power_menu': 'Shut down or restart'}
+
+
+def main_menu_parent(text, mode):
+    """The main menu item to land on when `text` left `mode` for the main menu."""
+    if mode not in MAIN_MENU_GROUPS or text == '@main_menu' or normalized_command(text) in OFFICE_LEAVE_TO_MAIN:return 0
+    names = [name for name, _ in MAIN_MENU_CHOICES]
+    return names.index(MAIN_MENU_GROUPS[mode]) if MAIN_MENU_GROUPS[mode] in names else 0
 
 
 def resume_from_sleep():
@@ -1393,7 +1412,7 @@ def task_navigation():
 
 def options_return_notice(mode):
     logical=SLEEP_RETURN_MODE if mode=='sleep' else mode
-    return {'awake':'Main menu.','document':'Back to document.','email_draft':'Back to email draft.','mailbox':'Back to email.','web':'Back to web page.','browser_menu':'Back to web browser menu.','note':'Back to your note.','notepad_menu':'Back to Notepad menu.','reader_menu':'Back to Document reader menu.','files':'Back to file manager.','word_processor':'Back to Word processor menu.','document_menu':'Back to document menu.','media_menu':'Back to Media menu.','office_menu':'Back to Office tools.','organizer_menu':'Back to Organizer.','favorites_menu':'Back to Favorite apps.','contacts':'Back to Address manager.','calendar':'Back to Schedule manager.','power_menu':'Back to Shut down or restart.','local_media':'Back to Media player.','recent_documents':'Back to recent documents list.','reader_recent':'Back to recent documents list.','file_reader':'Back to document reader.','help':'Back to help.','media':'Back to media.','attachments':'Back to attachments.','draft_leave':'Back to the question about your email.','youtube':'Back to YouTube.'}.get(logical,'Back to '+logical.replace('_',' ')+'.')
+    return {'awake':'Main menu.','document':'Back to document.','email_draft':'Back to email draft.','mailbox':'Back to email.','web':'Back to web page.','browser_menu':'Back to web browser menu.','note':'Back to your note.','notepad_menu':'Back to Notepad menu.','reader_menu':'Back to Document reader menu.','files':'Back to file manager.','word_processor':'Back to Word processor menu.','document_menu':'Back to document menu.','media_menu':'Back to Media menu.','office_menu':'Back to Office tools.','organizer_menu':'Back to Organizer.','web_tools_menu':'Back to Web tools.','favorites_menu':'Back to Favorite apps.','contacts':'Back to Address manager.','calendar':'Back to Schedule manager.','power_menu':'Back to Shut down or restart.','local_media':'Back to Media player.','recent_documents':'Back to recent documents list.','reader_recent':'Back to recent documents list.','file_reader':'Back to document reader.','help':'Back to help.','media':'Back to media.','attachments':'Back to attachments.','draft_leave':'Back to the question about your email.','youtube':'Back to YouTube.'}.get(logical,'Back to '+logical.replace('_',' ')+'.')
 
 def poll_file_manager(mode):
     global FILE_READER,SLEEP_RETURN_MODE
@@ -5969,7 +5988,7 @@ def _handle(text, mode, typed=False):
         SEARCH_RETURN_MODE='awake'
         speak('Web address or search. Say or type an address or a search, then press Enter. Addresses do not need www or https. Escape cancels.')
         return 'search'
-    if mode in ('word_processor','notepad_menu','reader_menu','media_menu','office_menu','organizer_menu','favorites_menu','power_menu','local_media','recent_documents','reader_recent'):
+    if mode in ('word_processor','notepad_menu','reader_menu','media_menu','office_menu','organizer_menu','web_tools_menu','favorites_menu','power_menu','local_media','recent_documents','reader_recent'):
         # Nothing above understood the words. A misheard word must not throw you out of
         # this menu (or stop the file playing): stay, and say where you are.
         if command in ('main menu','back to main menu','go to main menu'):return 'awake'   # handle() says Main menu
@@ -6158,17 +6177,31 @@ def command_failed(exc, mode):
 # the main menu. Saying Main menu, or F1, still goes to the main menu (Will, November 5 and 6, 2026).
 OFFICE_RETURN = False
 OFFICE_LEAVE_TO_MAIN = ('main menu', 'back to main menu', 'go to main menu', 'go back to main menu', 'return to main menu')
-GROUP_MENU_MODES = ('office_menu', 'organizer_menu', 'favorites_menu')
+GROUP_MENU_MODES = ('office_menu', 'organizer_menu', 'web_tools_menu', 'favorites_menu')
 # Places that are not part of Office tools or Organizer: going there ends the way back.
 # Favorite apps holds the web browser and media too, so only Shut down or restart ends its way back.
 OFFICE_ELSEWHERE = ('web', 'browser_menu', 'search', 'media', 'media_menu', 'local_media', 'podcast', 'youtube', 'power_menu')
+# Web tools holds the web pages, search and Downloads: media, Shut down or restart and the
+# Office tools and Organizer apps end its way back. (A document or draft can be opened from a
+# download or a link, so those keep it.)
+WEB_TOOLS_ELSEWHERE = ('media', 'media_menu', 'podcast', 'youtube', 'power_menu', 'word_processor', 'notepad_menu',
+                       'reader_menu', 'mailbox', 'contacts', 'calendar')
+
+
+def way_back_ends(result):
+    """True when going to `result` ends the way back to the group menu in OFFICE_RETURN."""
+    if OFFICE_RETURN == 'favorites_menu':return False
+    if OFFICE_RETURN == 'web_tools_menu':return result in WEB_TOOLS_ELSEWHERE
+    return result in OFFICE_ELSEWHERE
 # Control+F1 opens Favorite apps once the screen you were on is closed (a document may ask
 # to save first). These questions keep that request waiting for their answer.
 FAVORITES_AFTER = False
 LEAVE_QUESTIONS = ('document_save', 'document_name', 'document_replace', 'draft_leave')
 
 
-def office_return(text, mode, result):
+def office_return(text, mode, result, announced=None):
+    """announced: MAIN_MENU_ANNOUNCED before the command. If the command already said the main
+    menu (Close browser), it stays there: going on to a group menu would talk over it."""
     global OFFICE_RETURN, MAIN_MENU_LEAD, FAVORITES_AFTER
     if FAVORITES_AFTER:
         if result == 'awake':
@@ -6183,14 +6216,15 @@ def office_return(text, mode, result):
         # Email with no account yet starts adding one on the main menu screen.
         OFFICE_RETURN = mode
         return result
-    leaving_to_main = text == '@main_menu' or normalized_command(text) in OFFICE_LEAVE_TO_MAIN
+    leaving_to_main = (text == '@main_menu' or normalized_command(text) in OFFICE_LEAVE_TO_MAIN
+                       or announced is not None and MAIN_MENU_ANNOUNCED != announced and result == 'awake')
     if mode in GROUP_MENU_MODES and result == 'awake' and not leaving_to_main and normalized_command(text) not in (
             'escape', 'go back', 'back', 'exit', 'leave', 'close'):
         # The app could not open (Schedule manager before Thunderbird is set up) and said why: stay here.
         lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD.strip(), ''
         if lead:speak(lead)
         return mode
-    if (result == 'power_menu' or result in OFFICE_ELSEWHERE and OFFICE_RETURN != 'favorites_menu'
+    if (result == 'power_menu' or way_back_ends(result)
             or result in GROUP_MENU_MODES or mode in GROUP_MENU_MODES and result == 'awake' and not setting_up):
         # Back in a group menu (Help closed there), or left it for the main menu: the way back
         # is used up. Kept, the next main menu key would jump into that menu.
@@ -6210,7 +6244,7 @@ def office_return(text, mode, result):
     return group_menu(back, (lead + ' ' if lead else '') + GROUP_TITLES[back] + '.')
 
 
-GROUP_TITLES = {'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'favorites_menu': 'Favorite apps',
+GROUP_TITLES = {'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'web_tools_menu': 'Web tools', 'favorites_menu': 'Favorite apps',
                 'power_menu': 'Shut down or restart'}
 
 
@@ -6284,7 +6318,7 @@ def handle(text, mode, typed=False):
         # A link or button chosen in an email (any key or voice path) opens here.
         mail_session.link_request=None
         result=open_email_link(url)
-    if _HANDLE_DEPTH == 0:result=office_return(text,mode,result)
+    if _HANDLE_DEPTH == 0:result=office_return(text,mode,result,announced)
     if _HANDLE_DEPTH == 0 and asking_account_type and account_setup and result not in (mode, 'sleep'):
         # A key or command that opened another screen (Control+T, Options) ends the account type
         # question; left on, its arrows would move through account types on that screen.
@@ -6297,7 +6331,7 @@ def handle(text, mode, typed=False):
         __import__('youtube_screen').main_menu(sys.modules[__name__])
         # Email with no account asks which account type: the main menu words would cut that off.
         setting_up=account_setup or ACCOUNT_ENTRY is not None or THUNDERBIRD_SETUP is not None
-        if MAIN_MENU_ANNOUNCED==announced and not setting_up:announce_main_menu()
+        if MAIN_MENU_ANNOUNCED==announced and not setting_up:announce_main_menu(main_menu_parent(text,mode))
     if result!=mode:DICTATION_ECHO.clear()
     if _HANDLE_DEPTH==0 and result!='exit':sync_app_context(result,result!=mode)
     return result

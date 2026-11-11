@@ -132,6 +132,12 @@ OFFICE_OPEN = ('office tools', 'open office tools', 'office tools menu', 'go to 
 ORGANIZER = (('Address manager', '', 'contacts'), ('Schedule manager', '', 'calendar'))
 ORGANIZER_OPEN = ('organizer', 'open organizer', 'organizer menu', 'go to organizer', 'organiser', 'open organiser',
                   'organiser menu', 'go to organiser')
+# Web tools (Will, November 10, 2026): the web browser and the other web places, which were
+# only inside the web browser menu before. Each item runs the same command as before, so
+# "web browser", "downloads" and "web history" still work from anywhere.
+WEB_TOOLS = (('Web browser', '', 'web browser'), ('Web favorites', '', 'list favorites'), ('Web history', '', 'web history'),
+             ('Downloads', '', 'download manager'), ('Set up Chrome', '', 'set up chrome'))
+WEB_TOOLS_OPEN = ('web tools', 'open web tools', 'web tools menu', 'go to web tools')
 POWER_CHOICES = (('Shut down the computer', '', 'shut down computer'), ('Restart the computer', '', 'restart computer'))
 POWER_OPEN = ('shut down or restart', 'power menu', 'power options', 'open power menu')
 # Favorite apps (Control+F1): the apps you chose in Options, My menu, in this order.
@@ -157,13 +163,14 @@ def favorite_items(preferences):
 
 
 # Group menus: leaving an app opened from one goes back to it (companion.group_return).
-GROUP_MENUS = {'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'favorites_menu': 'Favorite apps'}
+GROUP_MENUS = {'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'web_tools_menu': 'Web tools',
+               'favorites_menu': 'Favorite apps'}
 # Simple list menus: arrows, first letters, Enter and Escape.
 LIST_MENUS = ('word_processor', 'notepad_menu', 'reader_menu', 'media_menu', 'office_menu', 'organizer_menu',
-              'favorites_menu', 'power_menu')
+              'favorites_menu', 'power_menu', 'web_tools_menu')
 # Menus whose items run a command from the main menu.
 MAIN_LEVEL_MENUS = ('media_menu', 'word_processor', 'notepad_menu', 'office_menu', 'organizer_menu', 'favorites_menu',
-                    'power_menu')
+                    'power_menu', 'web_tools_menu')
 
 READER_BACK_WORDS = {'reader_recent': 'your recent documents', 'reader_picker': 'the file list',
                      'recent_documents': 'your recent documents', 'files': 'the file list',
@@ -224,6 +231,8 @@ class TaskNavigation:
             return list(OFFICE_TOOLS)
         if mode == 'organizer_menu':
             return list(ORGANIZER)
+        if mode == 'web_tools_menu':
+            return list(WEB_TOOLS)
         if mode == 'favorites_menu':
             return favorite_items(getattr(self.app, 'PREFERENCES', {}))
         if mode == 'power_menu':
@@ -534,7 +543,7 @@ class TaskNavigation:
                 return {'Ctrl+N':'create a document','Ctrl+O':'@open','Ctrl+R':'@recent','Alt+O':'@options'}[key]
             if mode == 'reader_menu' and key in ('Ctrl+O','Ctrl+R','Alt+O'):
                 return {'Ctrl+O':'@reader_open','Ctrl+R':'@reader_recent','Alt+O':'@options:Document reader'}[key]
-            if mode in ('office_menu','organizer_menu','favorites_menu','power_menu','media_menu') and key == 'Alt+O':
+            if mode in ('office_menu','organizer_menu','web_tools_menu','favorites_menu','power_menu','media_menu') and key == 'Alt+O':
                 # These menus have no options of their own: Alt+O opens Options, as on every screen.
                 return 'open options'
             if mode == 'notepad_menu' and key in ('Ctrl+N','Ctrl+O','Alt+O'):
@@ -585,7 +594,7 @@ class TaskNavigation:
             return self.action('@options',mode)
         if mode=='document_menu' and command in ('main menu','back to main menu','exit companion'):
             return m.handle(text,'document',typed=True)
-        if mode in ('word_processor','media_menu','office_menu','organizer_menu','favorites_menu','power_menu','recent_documents','document_menu','local_media','notepad_menu','reader_menu','reader_recent') and (m.spoken_control(command) or command in ('help','exit companion','go to sleep','wake up','main menu','back to main menu')):
+        if mode in ('word_processor','media_menu','office_menu','organizer_menu','web_tools_menu','favorites_menu','power_menu','recent_documents','document_menu','local_media','notepad_menu','reader_menu','reader_recent') and (m.spoken_control(command) or command in ('help','exit companion','go to sleep','wake up','main menu','back to main menu')):
             return None
         editor = m.document if mode == 'document' else m.email_draft if mode == 'email_draft' else None
         if editor is not None and command in ('toggle bold','toggle italic','toggle underline') and (mode == 'document' or (editor.compose_step or 'body') == 'body'):
@@ -616,6 +625,8 @@ class TaskNavigation:
             return self.enter('office_menu', 'Office tools')
         if command in ORGANIZER_OPEN and mode not in ('document','email_draft','note'):
             return self.enter('organizer_menu', 'Organizer')
+        if command in WEB_TOOLS_OPEN and mode not in ('document','email_draft','note'):
+            return self.enter('web_tools_menu', 'Web tools')
         if command in FAVORITES_OPEN and mode not in ('document','email_draft','note'):
             return m.open_favorites()
         if command in FAVORITES_CHANGE and mode not in ('document','email_draft','note'):

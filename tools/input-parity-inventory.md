@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 774
-- Already had both ways: 612
+- Actions inventoried: 779
+- Already had both ways: 617
 - Gaps found: 162
 - Gaps fixed (Added): 154
 - Not applicable (N/A, with reason): 8
@@ -33,9 +33,9 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: First letter, arrows, Enter
 - Status: Both
 
-### Web browser
+### Web tools
 
-- Voice: "Web browser"
+- Voice: "Web tools"
 - Keyboard: First letter, arrows, Enter
 - Status: Both
 
@@ -964,6 +964,38 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Schedule manager
 
 - Voice: "Calendar"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+## Web Tools Menu
+
+### Web browser
+
+- Voice: "Web browser"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Web favorites
+
+- Voice: "List favorites"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Web history
+
+- Voice: "Web history"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Downloads
+
+- Voice: "Download manager"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Set up Chrome
+
+- Voice: "Set up chrome"
 - Keyboard: First letter, arrows, Enter
 - Status: Both
 

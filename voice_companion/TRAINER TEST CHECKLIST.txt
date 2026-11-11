@@ -117,7 +117,8 @@ ___ Check results in the email service itself.
 Result: ____________________
 
 10. Web browser menus and bookmarks
-___ Choose Web browser. Check that the web browser menu opens.
+___ Choose Web tools, then Web browser. Check that the web browser menu opens.
+___ Press Escape. Check that you go back to Web tools.
 ___ Search or type an address by voice and keyboard.
 ___ Save the page with New bookmark. Speak a name, then try typing a name.
 ___ Open the bookmark list. Try first-letter and several-letter search.

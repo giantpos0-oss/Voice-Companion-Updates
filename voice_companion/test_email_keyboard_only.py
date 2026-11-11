@@ -128,7 +128,7 @@ class AttachmentListKeyTests(test_attachment_voice.PlacesTestCase):
         self.said.clear()
         self.assertEqual(self.press('F1', mode), 'awake')
         self.assertNotIn('Back to email draft', ' '.join(self.said))
-        self.assertIn('Main menu.', ' '.join(self.said))
+        self.assertTrue(self.said[-1].endswith(app.MAIN_MENU_PROMPT), self.said)
         mode = self.press('L', self.opened_message())
         self.said.clear()
         self.assertEqual(self.press('F1', mode), 'awake')

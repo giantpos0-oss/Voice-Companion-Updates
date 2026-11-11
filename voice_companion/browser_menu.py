@@ -58,7 +58,7 @@ class BrowserMenu:
 
     def start(self,resume=False):
         self.level = 'menu'; self.index = None; self.prefix = ''; self.target = None; self.return_to_page = False
-        return 'Web browser menu. '+('Resume where you left off, ' if resume else '')+'Search or enter address, Go to favorite, New favorite, Delete favorite, Rename favorite, Go back, Go forward, Web history, Downloads, or Set up Chrome. Use arrows and Enter, or say an option. Escape returns to the main menu.'
+        return 'Web browser menu. '+('Resume where you left off, ' if resume else '')+'Search or enter address, Go to favorite, New favorite, Delete favorite, Rename favorite, Go back, Go forward, Web history, Downloads, or Set up Chrome. Use arrows and Enter, or say an option. Escape goes back.'
 
     def menu(self, session, keep_open):
         if self.level in ('name', 'confirm'):

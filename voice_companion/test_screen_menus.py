@@ -319,7 +319,7 @@ class ScreenMenuTests(unittest.TestCase):
     def test_reader_main_menu_is_announced_once(self):
         mode = self.screen('file_reader')
         self.assertEqual(app.handle('Main menu.', mode), 'awake')
-        self.assertEqual(sum(text.startswith('Main menu. What would you like') for text in self.said), 1, self.said)
+        self.assertEqual(sum(text.endswith(app.MAIN_MENU_PROMPT) for text in self.said), 1, self.said)
 
     def test_menu_waits_for_a_question_or_picker(self):
         mode = self.screen('mailbox')

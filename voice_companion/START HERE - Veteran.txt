@@ -230,7 +230,7 @@ Later, open the app from its desktop icon or the Windows Start menu. Use the ins
 3. Listen to the ready message. It says the version, any news about an update, whether the microphone is on, and where you are.
 4. If it offers an update, say "Yes" or "No", or press Y or N.
 5. When it says it is ready, say "Wake up", or press Down Arrow. If the microphone is off, you start on the main menu, so use the arrow keys.
-6. Wait for the main menu. Then say the name of the tool you want.
+6. Wait for the main menu. You hear its first item, File manager. Then say the name of the tool you want.
 For example, say "Word processor", "Notepad", "Email", "Web browser", "Radio", or "Podcasts".
 The keyboard works even while voice commands are asleep. Press Down Arrow to hear a menu item. Press Enter to open it.
 If a key press stops the ready message, say "What version?", or press Control+V. You hear the version and whether the microphone is on.
@@ -240,7 +240,7 @@ The main menu is where every task starts. Its apps are in groups. It has these c
 - File manager
 - Office tools
 - Organizer
-- Web browser
+- Web tools
 - Media
 - Options
 - Check for updates
@@ -256,10 +256,19 @@ Organizer has these apps:
 - Address manager. It keeps your contacts. It used to be called Contacts.
 - Schedule manager. It keeps your calendar. It used to be called Calendar.
 The old words still work. Say "Contacts" or "Calendar" to open them.
+Web tools has these choices:
+- Web browser
+- Web favorites
+- Web history
+- Downloads
+- Set up Chrome
+Web browser opens the web browser menu. Web favorites lists the pages you saved. Web history lists the pages you visited. Downloads opens the download manager. Set up Chrome links your own Chrome to Companion.
+You can still say "Web browser", "Web history", or "Download manager" from the main menu.
 Media has Radio, Podcasts, Media player, and YouTube. Shut down or restart has Shut down the computer and Restart the computer. Each one still asks first.
-To open Office tools, say "Office tools", or press Enter on it. To open Organizer, say "Organizer". Move and choose the same way as on the main menu.
-In Office tools, Organizer, or Shut down or restart, say "Help with main menu", or press F1 twice quickly, to hear this part of the guide.
-When you leave an app you opened from Office tools or Organizer, you go back to that menu. Escape there goes to the main menu. "Main menu" and F1 always go straight to the main menu.
+To open Office tools, say "Office tools", or press Enter on it. To open Organizer, say "Organizer". To open Web tools, say "Web tools". Move and choose the same way as on the main menu.
+In Office tools, Organizer, Web tools, or Shut down or restart, say "Help with main menu", or press F1 twice quickly, to hear this part of the guide.
+When you leave an app you opened from Office tools, Organizer, or Web tools, you go back to that menu. Escape there goes back to the main menu, on that menu's name. "Main menu" and F1 always go straight to the first item of the main menu.
+When you get to the main menu, you hear only the item you are on. For example, you hear "File manager (F), 1 of 10." The letter is the key that jumps to that item.
 Favorite apps is your own short list of apps. To open it, press Control+F1 on any screen, or say "Favorite apps".
 - It lists the apps you chose. The last item is Change favorite apps.
 - Change favorite apps opens Options on My menu. Check each app you want in the list.
@@ -1421,7 +1430,7 @@ Each calendar is named with its account, such as Calendar, Outlook, vet@outlook.
 15. BROWSE THE WEB
 
 15.1 Open the web browser menu
-Choose Web browser on the main menu. The web browser menu opens, even if you used a page earlier. It has these choices:
+Choose Web browser in Web tools on the main menu, or say "Web browser" from any menu. The web browser menu opens, even if you used a page earlier. It has these choices:
 - Resume where you left off. This shows only when a page is kept open.
 - Search or enter address
 - Go to favorite
@@ -1433,7 +1442,7 @@ Choose Web browser on the main menu. The web browser menu opens, even if you use
 - Web history
 - Downloads
 - Set up Chrome
-Use the arrows and Enter, or say the name of a menu item. Press Escape to go back to the main menu.
+Use the arrows and Enter, or say the name of a menu item. Press Escape to go back. You go back to Web tools if you opened the browser from there. If not, you go to the main menu.
 On this menu, Alt reads the menu again.
 
 15.2 Search or open an address
@@ -1658,7 +1667,7 @@ If you type the address of a file, Companion says the address is a file and down
 If you leave the page while embedded Edge is still downloading, its window stays open until the downloads end.
 
 17.2 Open your downloads
-To open the download manager, say "Download manager", or press Control+D on a web page or in the web browser menu. You can also choose Downloads in the web browser menu.
+To open the download manager, say "Download manager", or press Control+D on a web page or in the web browser menu. You can also choose Downloads in the web browser menu, or in Web tools on the main menu.
 - The newest download is first. Press Up Arrow and Down Arrow to hear each one.
 - Home and End reach the first and last. At either end you hear Start of list or End of list.
 - A running download says its name, how far along it is, and "downloading". For example: report.pdf, 45 percent, downloading.
@@ -1717,7 +1726,7 @@ The installer has a box named Set up Chrome and the Voice Companion extension wh
 If setup does not finish, ask your helper. A helper can open Voice Companion Browser Connection in the Chrome Web Store and choose Add to Chrome. For Edge or a test copy, a helper can follow Browser Connection Setup in the Voice Companion Start menu folder.
 
 18.2 Read and use your browser
-1. Open Web browser from the main menu. Choose Resume where you left off to read the active browser tab.
+1. Open Web browser from Web tools on the main menu. Choose Resume where you left off to read the active browser tab.
 2. Use your usual web keys and voice commands. They work the same as in chapter 15, including letter keys, lists, tables, and forms.
 3. Type and dictate in fields from Companion as usual. Tab moves among controls. Enter uses a control. Space selects a radio button or checkbox.
 4. Escape goes back to the web browser menu. From there, Escape goes to the main menu.
