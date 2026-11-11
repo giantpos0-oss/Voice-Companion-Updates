@@ -1703,8 +1703,13 @@ def user_started_speaking(recognizer,mode):
 
 def writing_here(mode):
     """True where spoken words may be text to keep (a document, email, note, web text box, or
-    Dictation only mode). The echo rule is strict there: when in doubt, keep the user's words."""
-    return INPUT_MODE=='dictation' or writing_dictation(mode)
+    Dictation only mode), and in every box that waits for a typed or spoken answer: a day, a
+    name, a folder, an address (review, November 11, 2026: "Friday", said over "Type or say a
+    day, such as Friday", was taken for echo and dropped). The echo rule is strict there:
+    when in doubt, keep the user's words."""
+    if INPUT_MODE=='dictation' or writing_dictation(mode):return True
+    try:return key_text_box_open(mode) or ACCOUNT_ENTRY is not None or mode in ('account_entry','task_input','document_name')
+    except Exception:return True
 
 
 def command_here(text,mode):
@@ -4692,7 +4697,9 @@ def _handle(text, mode, typed=False):
     if keep_open_request:
         PREFERENCES['web_keep_open']=keep_open_request[1]=='on'
         speak('Keep browser window open '+keep_open_request[1]+'.'+remembered(save_preferences));return mode
-    hints_request=hints_toggle_request(command)
+    # Like the microphone and transcript switches, not while dictating: "Turn off the hints."
+    # in a document is a sentence (review, November 11, 2026). Typed, it is still a command.
+    hints_request=None if writing_dictation(mode,typed) else hints_toggle_request(command)
     if hints_request is not None:
         # Verbosity options, Hints and help messages (Will, November 10, 2026).
         PREFERENCES['speak_hints']=hints_request

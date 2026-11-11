@@ -35,8 +35,9 @@ MICROPHONE = {
 # Never "say wake up" when nothing is listening. Start tutorial works only after waking: asleep, only
 # "wake up" is heard.
 HOW_TO = {
-    'on': 'The microphone is on.' + hint(' Say wake up to control the app by voice, or use your Up and Down arrow keys, '
-          'Enter and Escape to move through the menus. After you wake it, say start tutorial to practice with the real keys and commands. '
+    # How to wake the app is never a hint: it starts asleep (review, November 11, 2026).
+    'on': 'The microphone is on. Say wake up to control the app by voice, or use your Up and Down arrow keys, '
+          'Enter and Escape to move through the menus.' + hint(' After you wake it, say start tutorial to practice with the real keys and commands. '
           'Help is available.'),
     'off': MICROPHONE['off'] + ' ' + KEYS + ' Press F1 twice for help.',
     'failed': MICROPHONE['failed'] + ' ' + KEYS + ' Press F1 twice for help. Check that a microphone is plugged in '

@@ -343,6 +343,15 @@ class LoopTests(unittest.TestCase):
                                   saying=said)
         self.acted(events, 'what time is it', 'awake')
 
+    def test_an_answer_said_over_its_question_is_kept(self):
+        # Review, November 11, 2026: "Friday" said over "Type or say a day, such as Friday"
+        # was taken for Companion's echo, and nothing happened.
+        for mode, said, answer in (('task_input', 'Go to a day. Type or say a day, such as Friday or October 30.', 'friday'),
+                                   ('document_name', 'Save as. Or say or type another folder, such as Desktop.', 'desktop')):
+            with self.subTest(mode=mode):
+                events, _ = self.run_loop(mode, [('partial', answer), ('final', answer)], saying=said)
+                self.acted(events, answer, mode)
+
     def test_typed_commands_and_keys_still_stop_speech_at_once(self):
         window = Mock(commands=queue.Queue())
         window.commands.put(('keyboard', 'Down'))

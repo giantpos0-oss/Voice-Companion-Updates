@@ -126,6 +126,22 @@ class OptionsSettingTests(unittest.TestCase):
             self.assertIs(saved['speak_hints'], False)
 
 
+class DictationGuardTests(unittest.TestCase):
+    """Review, November 11, 2026: "Turn off the hints." while dictating is a sentence."""
+    def test_dictating_it_writes_it_and_typing_it_changes_the_setting(self):
+        for name, value in (('PREFERENCES', dict(DEFAULTS)), ('INPUT_MODE', 'mixed'),
+                            ('document', mock.MagicMock(replacement_candidates=[], selection_candidates=[]))):
+            p = mock.patch.object(companion, name, value); p.start(); self.addCleanup(p.stop)
+        with mock.patch.object(companion, 'writing_dictation', return_value=True), \
+                mock.patch.object(companion, 'speak'), mock.patch.object(companion, 'save_preferences'):
+            companion.handle('Turn off the hints.', 'document')
+            self.assertIs(companion.PREFERENCES['speak_hints'], True)
+        with mock.patch.object(companion, 'writing_dictation', side_effect=lambda mode, typed=False: not typed), \
+                mock.patch.object(companion, 'speak'), mock.patch.object(companion, 'save_preferences'):
+            companion.handle('hints off', 'document', typed=True)
+            self.assertIs(companion.PREFERENCES['speak_hints'], False)
+
+
 class SpeakTests(unittest.TestCase):
     """The real speak(): only marked hints change."""
     def setUp(self):
@@ -361,8 +377,10 @@ class SpeechPathTests(unittest.TestCase):
         self.assertIn('Tip.', text)
         self.assertNotIn('Tip.', spoken(text, False))
         self.assertIn('The microphone is on.', spoken(text, False))
-        self.assertNotIn('Say wake up', spoken(text, False))
-        self.assertIn('Say wake up', spoken(text, True))
+        # The app starts asleep: how to wake it is always said (review, November 11, 2026).
+        self.assertIn('Say wake up', spoken(text, False))
+        self.assertNotIn('start tutorial', spoken(text, False))
+        self.assertIn('start tutorial', spoken(text, True))
         self.assertIn('Press F1 twice for help.', spoken(startup_speech.announcement('1.0', 'off'), False))
 
 
