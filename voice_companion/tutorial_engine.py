@@ -429,6 +429,17 @@ class MemoSim(Sim):
         return self.answer(self.value) if self.answer else self.value
 
 
+PRACTICE_PROBLEM = 'That could not be practiced here. The real app is not affected.'
+
+
+def feed(sim, kind, value):
+    """Give an input to a practice screen. A practice screen that fails never stops the tutorial."""
+    try:
+        return sim.feed(kind, value)
+    except Exception:
+        return PRACTICE_PROBLEM
+
+
 class Step:
     """One thing to do.
 
@@ -684,7 +695,7 @@ class TutorialSession:
         """Fresh simulated screens for the lesson."""
         self.close_sims()
         _, lesson = self.lesson()
-        self.sims = lesson.make_sims()
+        self.sims = lesson.make_sims()      # a factory that fails leaves nothing open (see tutorial_lessons)
         for sim in self.sims.values():
             if isinstance(sim, TaskMenuSim):
                 sim.open()
@@ -694,7 +705,15 @@ class TutorialSession:
         course, lesson = self.lesson()
         self.state = 'lesson'
         self.misses = 0
-        self.make_sims()
+        try:
+            self.make_sims()
+        except Exception:
+            # Its practice screen could not be built (in the packed app, a module's code may not
+            # be readable). Say so plainly; every other lesson still works.
+            self.close_sims()
+            self.state = 'between'
+            return self.say(course.name + ': ' + lesson.title + '. This lesson could not start on this computer. '
+                            'Your apps are not affected. Say next lesson to go on, or lesson list to choose another.')
         self.step_index = 0
         # Steps before a resumed one are replayed quietly, so the simulated screen is where you left it.
         while self.step_index < min(step, len(lesson.steps)):
@@ -721,7 +740,7 @@ class TutorialSession:
             inputs = (('voice', step.phrases[0]),) if step.phrases else (('key', step.keys[0]),) if step.keys else ()
         for kind, value in inputs:
             sim.chosen = None
-            sim.feed(kind, value)
+            feed(sim, kind, value)
         sim.chosen = None
 
     def step_text(self):
@@ -928,21 +947,21 @@ class TutorialSession:
     def reply(self, step, kind, value):
         if callable(step.reply):
             if step.sim and step.text:
-                self.sims[step.sim].feed('voice', value)
+                feed(self.sims[step.sim], 'voice', value)
             return step.reply(self.sims, value)
         if step.feed and step.sim:
             sim = self.sims[step.sim]
-            spoken = sim.feed(kind, value)      # your own words, as the app would get them
+            spoken = feed(sim, kind, value)      # your own words, as the app would get them
             return (spoken or '') + (' ' + step.reply if step.reply else '')
         if step.text and step.sim:
-            return (self.sims[step.sim].feed('voice', value) or '') + (' ' + step.reply if step.reply else '')
+            return (feed(self.sims[step.sim], 'voice', value) or '') + (' ' + step.reply if step.reply else '')
         return step.reply
 
     def goal_input(self, step, kind, value):
         """An input on a simulated screen. Returns the words to say, or None when the screen ignores it."""
         sim = self.sims[step.sim]
         sim.chosen = None
-        spoken = sim.feed(kind, value)
+        spoken = feed(sim, kind, value)
         if spoken is None and sim.chosen is None:
             return None
         if step.goal(self.sims):
