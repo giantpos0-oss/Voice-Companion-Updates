@@ -1658,10 +1658,47 @@ def user_started_speaking(recognizer,mode):
     except (ValueError,AttributeError,TypeError):return False
     if mode=='sleep' or not isinstance(partial,str):return False
     speaking=not SPEECH_PAUSED and speech_busy()
-    if not SPEECH_STOP.heard(partial,speaking,command=navigation_feedback_control(partial,mode)):return False
+    # While the words so far are a run of what Companion is saying, only a navigation word or a
+    # command Companion just suggested stops it now. Others wait for the end of the utterance
+    # (user_finished_speaking), so Companion's own "Main menu..." never stops itself.
+    command=lambda:navigation_feedback_control(partial,mode) or SPEECH_STOP.suggested(partial)
+    if not SPEECH_STOP.heard(partial,speaking,command=command,writing=writing_here(mode)):return False
     control_speech('pause')
     SPEECH_STOP.pausing()
     return True
+
+
+def writing_here(mode):
+    """True where spoken words may be text to keep (a document, email, note, web text box, or
+    Dictation only mode). The echo rule is strict there: when in doubt, keep the user's words."""
+    return INPUT_MODE=='dictation' or writing_dictation(mode)
+
+
+def command_here(text,mode):
+    """True when these words are a complete command the router acts on, on this screen. Such
+    words are never taken for Companion's own echo, even right after a prompt said them
+    ("Say check email to open it").
+
+    There is no way to run the router without its effects, so this asks the router's own
+    checks: the controls and navigation words, the fast commands of this screen, Help's words,
+    the voice names of this screen's keys and list items, and the commands Companion's own
+    speech just told the user to say."""
+    command=normalized_command(text)
+    if not command:return False
+    try:
+        if spoken_control(text) or speech_control(text) or navigation_feedback_control(text,mode):return True
+        if command in OFFICE_LEAVE_TO_MAIN or command in HELP_OPENERS or command.startswith(('help with ','help for ')):return True
+        if mode=='help' and HelpSession.accepts(text):return True
+        # Some screens send every word to the fast path; there that says nothing about these words.
+        if fast_command_request(command,mode) and not fast_command_request('zebra quilt marmalade',mode):return True
+        if yes_no_open(mode) and command in ('yes','yes please','no','no thanks','cancel','okay','ok'):return True
+        keys=__import__('input_parity').SCREEN_KEYS.get(mode,{})
+        if command in {normalized_command(value) for value in keys.values() if isinstance(value,str)}:return True
+        state=menu_state(mode)
+        if state and command in {normalized_command(re.sub(r'\s*\([^)]*\)$','',str(name))) for name in state[0]}:return True
+    except Exception:
+        pass   # a screen in an odd state: fall back to what Companion suggested
+    return SPEECH_STOP.suggested(text)
 
 
 def resume_for_user():
@@ -1669,17 +1706,17 @@ def resume_for_user():
     if SPEECH_PAUSED:control_speech('resume')
 
 
-def user_finished_speaking(text,mode,stopped):
+def user_finished_speaking(text,mode,stopped,overheard=False):
     """The end of an utterance. stopped: it paused Companion's speech (SPEECH_STOP.finish()).
-    False when the words must be ignored; then the old speech goes on."""
+    overheard: it came while Companion talked, and no word of it stopped Companion (each one
+    sounded like its echo). False when the words must be ignored; then the old speech goes on."""
     if mode=='sleep':return True
     if speech_control(text):return True   # Stop talking keeps the pause; Resume goes on
     if not normalized_command(text):
         if stopped:resume_for_user()
-        return True
-    if stopped and not spoken_control(text) and not fast_command_request(normalized_command(text),mode) \
-            and not navigation_feedback_control(text,mode) and SPEECH_STOP.echo(text):
-        resume_for_user()   # Companion's own words, heard back through the microphone
+        return not overheard
+    if (stopped or overheard) and not command_here(text,mode) and SPEECH_STOP.echo(text,writing_here(mode)):
+        if stopped:resume_for_user()   # Companion's own words, heard back through the microphone
         return False
     if mode=='help' and not (HelpSession.accepts(text) or spoken_control(text)):
         # Talk in the room never cuts a Help topic off (October 2026): it goes on where it paused.
@@ -6311,6 +6348,9 @@ def group_menu(menu, words):
     return menu
 
 
+HELP_OPENERS=('help','user guide','open user guide','manual','open manual','document help','email help','web help','radio help','podcast help','commands help','release notes')
+
+
 def handle(text, mode, typed=False):
     global _HANDLE_DEPTH, CONFIRM_CHOICE, KEYBOARD_NAVIGATION, POWER_RETURN_MODE, account_setup
     asking_account_type = account_setup
@@ -6321,7 +6361,7 @@ def handle(text, mode, typed=False):
         if mode=='exit':return mode
     previous_navigation=KEYBOARD_NAVIGATION
     quick_read=mode in ('document','email_draft','mailbox','help','web','note','file_reader') and reading_request(text) is not None and not (mode in ('document','email_draft') and INPUT_MODE=='dictation')
-    help_navigation=(mode=='help' and HelpSession.accepts(text)) or normalized_command(text) in ('help','user guide','open user guide','manual','open manual','document help','email help','web help','radio help','podcast help','commands help','release notes') or normalized_command(text).startswith(('help with ','help for '))
+    help_navigation=(mode=='help' and HelpSession.accepts(text)) or normalized_command(text) in HELP_OPENERS or normalized_command(text).startswith(('help with ','help for '))
     if help_navigation and not speech_control(text):
         interrupt_speech()
         KEYBOARD_NAVIGATION=True
@@ -6767,6 +6807,7 @@ def main():
                 if time.monotonic()<startup_quiet_until:recognizer.Reset();utterance.clear();continue
                 startup_speaking=False
             narration_busy=not SPEECH_PAUSED and speech_busy()
+            overheard=None
             if SPEECH_STOP.listening:
                 # The user is talking: their words are theirs, not Companion's echo.
                 settings_audio_blocked=False;settings_quiet_until=0
@@ -6785,37 +6826,40 @@ def main():
                     if not recognizer.AcceptWaveform(audio):
                         if user_started_speaking(recognizer,mode):
                             settings_audio_blocked=False;settings_quiet_until=0
-                    else:
-                        utterance.clear();SPEECH_STOP.finish()
-                        control=json.loads(recognizer.Result()).get('text','').lower()
-                        if spoken_control(control) or speech_control(control) or navigation_feedback_control(control,mode) or mode=='help' and HelpSession.accepts(control):
-                            interrupt_speech()
-                            mode=handle(control,mode)
-                            if mode=='exit':return 0
-                    continue
-                if settings_audio_blocked:
+                        continue
+                    # Words heard over Companion's speech: a command, or words to write, are acted
+                    # on below; Companion's own words heard back are dropped (speech_stop.py).
+                    overheard=json.loads(recognizer.Result()).get('text','').strip()
+                    if not user_finished_speaking(overheard.lower(),mode,SPEECH_STOP.finish(),overheard=True):
+                        utterance.clear();continue
+                    settings_audio_blocked=False;settings_quiet_until=0
+                elif settings_audio_blocked:
                     recognizer.Reset();utterance.clear();settings_audio_blocked=False
                     continue
-            if mode != 'sleep' and parakeet:
-                utterance.extend(audio)
-                # Never send more than 25 seconds as one model request.
-                if len(utterance) > 25 * sample_rate * 2:
+            if overheard is not None:
+                heard=overheard
+            else:
+                if mode != 'sleep' and parakeet:
+                    utterance.extend(audio)
+                    # Never send more than 25 seconds as one model request.
+                    if len(utterance) > 25 * sample_rate * 2:
+                        utterance.clear()
+                        recognizer.Reset()
+                        if SPEECH_STOP.finish():interrupt_speech()
+                        speak('That was too long. Please speak in shorter passages.')
+                        continue
+                if not recognizer.AcceptWaveform(audio):
+                    user_started_speaking(recognizer,mode)
+                    if mode != 'sleep' and fast_offline_silence(recognizer, utterance):
+                        continue
+                    continue
+                heard = json.loads(recognizer.Result()).get('text', '').strip()
+                local_control = heard.lower()
+                # Stop talking, go on, or end the old speech (speech_stop.py).
+                if not user_finished_speaking(local_control, mode, SPEECH_STOP.finish()):
                     utterance.clear()
-                    recognizer.Reset()
-                    if SPEECH_STOP.finish():interrupt_speech()
-                    speak('That was too long. Please speak in shorter passages.')
                     continue
-            if not recognizer.AcceptWaveform(audio):
-                user_started_speaking(recognizer,mode)
-                if mode != 'sleep' and fast_offline_silence(recognizer, utterance):
-                    continue
-                continue
-            heard = json.loads(recognizer.Result()).get('text', '').strip()
             local_control = heard.lower()
-            # Stop talking, go on, or end the old speech (speech_stop.py).
-            if not user_finished_speaking(local_control, mode, SPEECH_STOP.finish()):
-                utterance.clear()
-                continue
             if mode != 'sleep' and (spoken_control(local_control) or speech_control(local_control)):
                 utterance.clear()
                 mode = handle(local_control, mode)

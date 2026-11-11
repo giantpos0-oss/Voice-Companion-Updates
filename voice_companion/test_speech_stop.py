@@ -48,9 +48,14 @@ class GuardTests(unittest.TestCase):
             self.assertFalse(stop.heard(echo, speaking=True), echo)
         self.assertTrue(stop.heard('open email', speaking=True))
         stop.finish()
+        # Order matters: the same words in another order are the user's.
+        self.assertTrue(stop.heard('new messages you have', speaking=True))
+        stop.finish()
         # A navigation command always stops it, even when Companion just said the word.
         stop.said('Say next to hear more.')
         self.assertTrue(stop.heard('next', speaking=True, command=True))
+        self.assertTrue(stop.suggested('Next.'))
+        self.assertFalse(stop.suggested('next to hear more'))
         stop.finish()
         # Old words are no longer coming out of the speakers.
         clock.now += 60
@@ -161,7 +166,7 @@ class LoopTests(unittest.TestCase):
                   'KEYBOARD_SPEECH': None, 'ESPEAK_SPEECH': None, 'AI_SPEECH': None, 'SPEECH_PAUSED': False,
                   'AUDIO': Audio(), 'AUDIO_OVERFLOW': False, 'CHROME_SETUP': None, 'SETTINGS_PANEL': None,
                   'PREFERENCES': dict(app.PREFERENCES, microphone_off=False), 'SPEECH_STOP': SpeechStop(),
-                  'INPUT_MODE': 'mixed'}
+                  'INPUT_MODE': app.INPUT_MODE}
         for name, value in values.items():
             stack.enter_context(patch.object(app, name, value))
         stubs = {'Model': lambda path: object(), 'SetLogLevel': lambda level: None,
@@ -187,6 +192,9 @@ class LoopTests(unittest.TestCase):
             setup(stack)
         self.assertEqual(app.main(), 0)
         return events, state
+
+    def setUp(self):
+        patcher = patch.object(app, 'INPUT_MODE', 'mixed'); patcher.start(); self.addCleanup(patcher.stop)
 
     def test_a_command_stops_speech_on_its_first_real_word_on_every_screen(self):
         for mode, command in (('awake', 'open email'), ('document', 'save document'), ('email_draft', 'send it'),
@@ -269,6 +277,72 @@ class LoopTests(unittest.TestCase):
         self.assertEqual(events[1], ('interrupt',))
         self.assertEqual(events[2][:3], ('handle', 'please call me', 'document'))
 
+    def acted(self, events, words, mode):
+        handled = [event for event in events if event[0] == 'handle']
+        self.assertEqual([event[1:3] for event in handled], [(words, mode)], events)
+        self.assertIn(('interrupt',), events[:events.index(handled[0])])   # the old speech ended first
+
+    def test_a_suggested_command_said_during_the_prompt_is_acted_on(self):
+        # Coordinator, November 10, 2026: prompts tell people what to say. Saying it while
+        # Companion still talks must work, even though Companion just said those words.
+        cases = (
+            # The main menu reads its items; an item's name is a command there.
+            ('awake', 'Office tools (O), 2 of 10.', 'office tools'),
+            ('awake', app.MAIN_MENU_PROMPT, 'next'),
+            # Thunderbird setup (thunderbird_setup.py) and an email account that is ready.
+            ('awake', 'Okay. Nothing was installed. When you want Thunderbird, say add Thunderbird account.',
+             'add thunderbird account'),
+            ('awake', 'Gmail is connected and selected. Say check email to open it.', 'check email'),
+            # The inbox: R is Reply; its words are a command there.
+            ('mailbox', 'Message 2 of 9. From Bob. Lunch. Press R to reply, or say reply.', 'reply'),
+            ('mailbox', 'You have no new mail. Say get more emails to look again.', 'get more emails'),
+            # A web page.
+            ('web', 'Page loaded: Veterans Affairs. Say list links to hear the links.', 'list links'),
+        )
+        for mode, prompt, words in cases:
+            with self.subTest(mode=mode, words=words):
+                first = words.split()[0]
+                events, _ = self.run_loop(mode, [('partial', first), ('partial', words), ('final', words)], saying=prompt)
+                self.acted(events, words, mode)
+
+    def test_dictated_words_that_share_words_with_companion_are_kept(self):
+        # In writing fields, when in doubt, keep the user's words.
+        cases = (('The meeting is at noon.', 'the meeting is at noon tomorrow'),
+                 ('The meeting is at noon.', 'at noon'),
+                 ('Text added. The meeting is at noon.', 'is at noon'),
+                 ('Saved. Your document has 3 pages.', 'my document has three pages'))
+        for mode in ('document', 'email_draft', 'note'):
+            for said, dictated in cases:
+                with self.subTest(mode=mode, dictated=dictated), patch.object(app, 'INPUT_MODE', 'dictation'):
+                    events, _ = self.run_loop(mode, [('partial', dictated.split()[0]), ('partial', dictated),
+                                                     ('final', dictated)], saying=said)
+                    self.acted(events, dictated, mode)
+
+    def test_a_long_passage_heard_back_is_ignored_on_every_screen(self):
+        passage = ('The veterans center opens at nine in the morning on weekdays, and the parking lot is behind '
+                   'the main building next to the clinic.')
+        # One recognizer slip ("weak days").
+        echo = 'the veterans center opens at nine in the morning on weak days and the parking lot is behind the main building'
+        for mode in ('awake', 'mailbox', 'web', 'document', 'email_draft'):
+            with self.subTest(mode=mode), patch.object(app, 'INPUT_MODE', 'dictation' if mode in ('document', 'email_draft') else 'mixed'):
+                events, state = self.run_loop(mode, [('partial', 'the veterans'), ('partial', echo[:40]), ('final', echo)],
+                                              saying=passage)
+                self.assertEqual([event for event in events if event[0] != 'control'], [], events)
+                self.assertTrue(state['speaking'])
+
+    def test_numbers_said_as_digits_are_heard_back_as_words(self):
+        said = 'You have 12 new messages and 3 drafts in your inbox.'
+        events, _ = self.run_loop('awake', [('partial', 'you have twelve'),
+                                            ('final', 'you have twelve new messages and three drafts')], saying=said)
+        self.assertEqual(events, [])
+
+    def test_words_that_only_share_some_words_with_the_prompt_are_not_echo(self):
+        # The old rule (two thirds of the words said lately) took this for echo.
+        said = 'Main menu. What would you like to do? Say next or previous to move through the items.'
+        events, _ = self.run_loop('awake', [('partial', 'what'), ('partial', 'what time'), ('final', 'what time is it')],
+                                  saying=said)
+        self.acted(events, 'what time is it', 'awake')
+
     def test_typed_commands_and_keys_still_stop_speech_at_once(self):
         window = Mock(commands=queue.Queue())
         window.commands.put(('keyboard', 'Down'))
@@ -307,6 +381,20 @@ class PartialTests(unittest.TestCase):
         self.assertFalse(stopped); control.assert_not_called()
         stopped, control = self.partial('open email', 'sleep')
         self.assertFalse(stopped); control.assert_not_called()
+
+    def test_command_here_asks_the_screen_not_a_word_list(self):
+        with patch.object(app, 'SPEECH_STOP', SpeechStop()), patch.object(app, 'INPUT_MODE', 'mixed'), \
+                patch.object(app, 'MAIN_MENU_INDEX', None), patch.object(app, 'account_setup', False):
+            for words, mode in (('Office tools.', 'awake'), ('Web browser', 'awake'), ('reply', 'mailbox'),
+                                ('Main menu.', 'document'), ('next', 'help'), ('stop talking', 'web'),
+                                ('help with email', 'mailbox'), ('save draft', 'email_draft'), ('options', 'awake')):
+                self.assertTrue(app.command_here(words, mode), (words, mode))
+            for words, mode in (('The meeting is at noon.', 'document'), ('banana bread', 'awake'),
+                                ('reply', 'awake'), ('zebra quilt', 'media'), ('anything at all', 'settings')):
+                self.assertFalse(app.command_here(words, mode), (words, mode))
+            # What Companion just told the user to say counts too.
+            app.SPEECH_STOP.said('Thunderbird is installed and open. Close Thunderbird, then say add Thunderbird account to finish.')
+            self.assertTrue(app.command_here('Add Thunderbird account.', 'awake'))
 
     def test_navigation_stops_even_when_companion_just_said_the_word(self):
         stopped, _ = self.partial('next', 'awake', said='Say next to hear more.')
