@@ -772,8 +772,8 @@ def build(app):
              phrases=('who is it from',), screen='mailbox', command='who is it from'),
         Step('Press Enter to open the message.', sim='box', goal=lambda s: s['box'].view == 'message', how='Press Enter.',
              screen='mailbox', replay=(('key', 'Enter'),)),
-        Step('Press R to reply. Here, nothing is written.', keys=('R',), phrases=('reply',),
-             reply='That starts a reply. The To and Subject are filled in for you.', screen='mailbox', command='reply'),
+        Step('Press R to reply.', keys=('R',), phrases=('reply',),
+             reply='That starts a reply to the sender. Here, nothing is written.', screen='mailbox', command='reply'),
         Step('Press Escape to go back to the inbox.', sim='box', goal=lambda s: s['box'].view == 'folder',
              how='Press Escape.', screen='mailbox', replay=(('key', 'Escape'),)),
     ]
