@@ -1586,6 +1586,13 @@ def writing_dictation(mode, typed=False):
     return not typed and INPUT_MODE != 'commands' and editor_open
 
 
+def website_words(text):
+    """The address part of "Open website VA dot gov" or "Go to website VA dot gov".
+    "Go to website" is three words: taking the words after the first two left "website"
+    on the front ("websiteexample.com", November 2026)."""
+    return re.sub(r'^\W*(?:open|go\W+to)\W+(?:the\W+)?(?:website|web\W+site)\W+', '', str(text).strip(), flags=re.I)
+
+
 def spoken_website(text):
     """"Go to VA dot gov." or "VA dot gov." said outside a text box: ask to open the site,
     as "Open website" does, instead of a dead end. Returns True when it asked."""
@@ -1716,8 +1723,12 @@ def command_here(text,mode):
         if yes_no_open(mode) and command in ('yes','yes please','no','no thanks','cancel','okay','ok'):return True
         keys=__import__('input_parity').SCREEN_KEYS.get(mode,{})
         if command in {normalized_command(value) for value in keys.values() if isinstance(value,str)}:return True
-        state=menu_state(mode)
-        if state and command in {normalized_command(re.sub(r'\s*\([^)]*\)$','',str(name))) for name in state[0]}:return True
+        def names(menu):
+            state=menu_state(menu)
+            return {normalized_command(re.sub(r'\s*\([^)]*\)$','',str(name))) for name in state[0]} if state else set()
+        if command in names(mode):return True
+        # The apps inside the main menu's groups (Web tools, Office tools...) open from any screen.
+        if any(command in names(group) for group in GROUP_MENU_MODES+('media_menu',)):return True
     except Exception:
         pass   # a screen in an odd state: fall back to what Companion suggested
     return SPEECH_STOP.suggested(text)
@@ -5638,7 +5649,7 @@ def _handle(text, mode, typed=False):
             return 'awake'
         if command.startswith(('open website ', 'go to website ')):
             try:
-                pending_website = prepare_address(text.split(' ', 2)[2])
+                pending_website = prepare_address(website_words(text))
                 speak('I heard website ' + pending_website[1] + '. Is that right? Say yes or no.')
             except ValueError as exc:
                 speak(str(exc))
@@ -6034,7 +6045,7 @@ def _handle(text, mode, typed=False):
         speak(web_session.command(text))
         return mode
     if command.startswith(('open website ', 'go to website ')):
-        value = text.split(' ', 2)[2]
+        value = website_words(text)
         try:
             pending_website = prepare_address(value)
         except ValueError as exc:

@@ -2038,7 +2038,7 @@
 },
 "awake | go to website example dot com": {
 "said": [
-"I heard website websiteexample.com. Is that right? Say yes or no."
+"I heard website example.com. Is that right? Say yes or no."
 ],
 "screen_after": "awake"
 },
@@ -28504,7 +28504,7 @@
 },
 "mailbox | go to website example dot com": {
 "said": [
-"I heard website websiteexample.com. Is that right? Say yes or no.",
+"I heard website example.com. Is that right? Say yes or no.",
 "File manager (F), 1 of 10."
 ],
 "screen_after": "awake"
@@ -40738,7 +40738,7 @@
 },
 "web | go to website example dot com": {
 "said": [
-"I heard website websiteexample.com. Is that right? Say yes or no."
+"I heard website example.com. Is that right? Say yes or no."
 ],
 "screen_after": "web"
 },

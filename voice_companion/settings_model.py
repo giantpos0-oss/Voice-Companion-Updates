@@ -245,9 +245,7 @@ def prompt_text(text,verbosity):
     medium and low cut everything after " Say ", which also cut recovery steps such as
     "Say help to try again" and the answer words of a question."""
     if verbosity=='high':return text
-    if text.startswith('Main menu.'):
-        from hints import hint
-        return 'Main menu.' if verbosity=='low' else 'Main menu.'+hint(' What would you like to do? Say next or previous, and OK to open.')
+    # The main menu now says only its item (0.2.211), so it needs no special case here.
     from hints import brief
     return brief(text,verbosity)
 

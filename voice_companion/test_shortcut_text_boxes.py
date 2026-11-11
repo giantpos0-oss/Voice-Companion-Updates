@@ -135,7 +135,7 @@ class ShortcutTests(unittest.TestCase):
                 patch.object(self.app, 'create_named_document') as created:
             self.assertEqual(self.keys('document_name', 'F1'), 'awake')
         created.assert_not_called()
-        self.assertTrue(self.said[-1].startswith('Main menu'), self.said)
+        self.assertEqual(self.said[-1], self.app.main_menu_item(0), self.said)   # F1: the first item only
 
     def test_alt_f4_closes_companion_from_every_screen(self):
         # Alt+F4 (and the window's Close button) did nothing on YouTube, Contacts, Calendar,

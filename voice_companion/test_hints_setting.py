@@ -193,19 +193,23 @@ class VoiceCommandTests(unittest.TestCase):
 class RealMessageTests(unittest.TestCase):
     """Messages from several screens: what goes, and what always stays."""
     def test_main_menu(self):
-        self.assertEqual(spoken(companion.MAIN_MENU_PROMPT, False), 'Main menu.')
-        self.assertTrue(spoken(companion.MAIN_MENU_PROMPT, True).startswith('Main menu. What would you like to do? Say next'))
-        self.assertEqual(spoken(prompt_text(companion.MAIN_MENU_PROMPT, 'high'), False), 'Main menu.')
-        self.assertEqual(spoken(prompt_text(companion.MAIN_MENU_PROMPT, 'medium'), False), 'Main menu.')
-        self.assertEqual(prompt_text(companion.MAIN_MENU_PROMPT, 'medium'),
-                         'Main menu. What would you like to do? Say next or previous, and OK to open.')
+        # 0.2.211: the main menu says only its first item, with no hint to drop.
+        item = companion.main_menu_item(0)
+        self.assertEqual(item, 'File manager (F), 1 of 10.')
+        for level in ('high', 'medium', 'low'):
+            for on in (True, False):
+                self.assertEqual(spoken(prompt_text(companion.MAIN_MENU_PROMPT, level), on), item)
+        # A message that only starts with "Main menu." keeps all its words at every level.
+        message = 'Main menu. Help closed.'
+        for level in ('high', 'medium', 'low'):
+            self.assertEqual(prompt_text(message, level), message)
         self.assertEqual(spoken(companion.MAIN_MENU_NOT_UNDERSTOOD, False),
                          'I did not understand that. You are on the main menu.')
         said = []
         with mock.patch.object(companion, 'speak', side_effect=said.append), \
                 mock.patch.object(companion, 'VERBOSITY', 'high'), mock.patch.object(companion, 'MAIN_MENU_LEAD', 'Options closed.'):
             companion.announce_main_menu()
-        self.assertEqual(spoken(said[-1], False), 'Options closed. Main menu.')
+        self.assertEqual(spoken(said[-1], False), 'Options closed. File manager (F), 1 of 10.')
 
     def test_windows_brought_to_the_front(self):
         import own_chrome_window, window_hiding
@@ -399,9 +403,12 @@ class VerbosityTests(unittest.TestCase):
         self.assertEqual(prompt_text(fallback, 'low'), 'Downloads. I did not understand that.')
         self.assertEqual(spoken(prompt_text(fallback, 'medium'), False), 'Downloads. I did not understand that.')
 
-    def test_main_menu_still_shortens(self):
-        self.assertEqual(prompt_text(companion.MAIN_MENU_PROMPT, 'low'), 'Main menu.')
-        self.assertTrue(prompt_text(companion.MAIN_MENU_PROMPT, 'medium').startswith('Main menu. What would you like to do?'))
+    def test_marked_tips_still_shorten(self):
+        from hints import hint
+        tip = 'Downloads.' + hint(' Say pause download to pause. Say cancel download to stop it.')
+        self.assertEqual(prompt_text(tip, 'low'), 'Downloads.')
+        self.assertTrue(prompt_text(tip, 'medium').startswith('Downloads. Say pause download to pause.'))
+        self.assertNotIn('cancel download', prompt_text(tip, 'medium'))
 
 
 class MoreRealMessageTests(unittest.TestCase):
