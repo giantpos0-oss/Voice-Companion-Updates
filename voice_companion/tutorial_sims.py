@@ -29,14 +29,42 @@ def private(name, **replace):
     The code comes from the module's own loader, so this also works in the installed app,
     where modules are packed and there is no .py file to read."""
     import types
-    spec = importlib.util.find_spec(name)
-    code = spec.loader.get_code(name)
+    try:
+        spec = importlib.util.find_spec(name)
+        code = spec.loader.get_code(name)
+        if code is None:
+            raise ImportError('no code for ' + name)
+    except Exception as error:
+        raise PracticeUnavailable(name) from error
     module = types.ModuleType('tutorial_' + name)
     module.__file__ = spec.origin
     module.__dict__.update(replace)
     exec(code, module.__dict__)
     module.__dict__.update(replace)     # the module's own imports would put the real ones back
     return module
+
+
+class PracticeUnavailable(Exception):
+    """A practice screen could not be built (for example, its module's code could not be read)."""
+
+
+class PracticeStarter:
+    """Stands in for os.startfile in the practice screens: it only notes what would have opened."""
+
+    def __init__(self):
+        self.opened = []
+
+    def __call__(self, path, *args, **kwargs):
+        self.opened.append(str(path))
+
+
+def practice_os(starter):
+    """The os module for a private copy, with startfile and system replaced so nothing starts."""
+    import os
+    namespace = SimpleNamespace(**{name: getattr(os, name) for name in dir(os) if not name.startswith('__')})
+    namespace.startfile = starter
+    namespace.system = lambda *a, **k: 0
+    return namespace
 
 
 class NoAccounts:
@@ -65,6 +93,11 @@ def practice_box(app):
     for name in ('VOICE_LIST_COMMANDS', 'PICK_CONFIRM', 'CLOCK'):
         setattr(box, name, getattr(app, name))
     box.EMAIL_LINK_RECIPIENT = None
+    from task_navigation import TaskNavigation
+    navigation = TaskNavigation(box)
+    box.task_navigation = lambda: navigation
+    player = PracticeAudio()
+    box.media = lambda: SimpleNamespace(player=player)
     return box
 
 
@@ -140,13 +173,21 @@ class ScreenSim(Sim):
                     key = key.lower() if self.module.PENDING is not None else 'Letter:' + key.lower()
                 request = self.module.navigation_key(self.box, key)
             if not request:
-                return self.box.take() or None
+                return self.said_with_practice_notes()
             value = request
         if self.mode == 'task_input':
             self.set_mode(self.nav.handle(value, 'task_input') or self.screen)
             return self.box.take() or None
         self.set_mode(self.dispatch(value, self.screen, kind == 'key'))
-        return self.box.take() or None
+        return self.said_with_practice_notes()
+
+    def said_with_practice_notes(self):
+        said = self.box.take() or None
+        starter = getattr(self, 'starter', None)
+        if starter is not None and starter.opened:
+            starter.opened.clear()
+            said = (said or '') + ' Here, nothing opens.'
+        return said
 
     def close(self):
         shutil.rmtree(self.box.APP, ignore_errors=True)
@@ -183,10 +224,14 @@ def downloads_sim(app):
     (folder / 'download-history.json').write_text(json.dumps(records), encoding='utf-8')
     manager = model.DownloadManager(folder, folder_setting=lambda: str(files), background=False)
     model.manager = lambda data_folder=None: manager
-    screen = private('download_screen', downloads=model)
+    starter = PracticeStarter()
+    screen = private('download_screen', downloads=model, os=practice_os(starter))
     sim = ScreenSim(app, screen, 'downloads', 'Downloads')
+    shutil.rmtree(sim.box.APP, ignore_errors=True)     # this sim keeps its data in its own folder
     sim.box.APP = folder
-    sim.box.FILE_MANAGER = None
+    sim.starter = starter
+    from file_manager import FileManager
+    sim.box.FILE_MANAGER = FileManager(PracticeFiles())     # a document opens here, never in a real folder
     sim.box.SLEEP_RETURN_MODE = 'awake'
     sim.box.PREFERENCES = {'download_folder': str(files)}
     sim.open()
@@ -492,6 +537,11 @@ class YouTubeSim(Sim):
             video.title, video.duration, video.time, video.paused = item['title'], item['duration'], 0, True
         screen.open_video_page = open_video_page
         screen.check_signed_in = lambda: None
+
+        def no_browser():
+            # Signing in and other account actions need a browser: here none ever opens.
+            raise self.module.YouTubeError('That opens YouTube in a browser. Here, nothing opens.')
+        screen.web = no_browser
         self.screen, self.video = screen, video
         box.handle = self.dispatch
         self.opening = screen.show_menu('YouTube. ')
@@ -654,6 +704,12 @@ class FileSim(Sim):
             command = value
         if command.startswith('file letter '):
             command = 'file letters ' + command[len('file letter '):]     # as companion._handle passes them
+        current = manager.current() if not manager.menu and not manager.pending and manager.items else None
+        if plain_words(command) in ('enter', 'open') and current is not None and not current.folder:
+            # A practice file exists only in memory: say what opening it does, and read nothing from the disk.
+            return 'Opening ' + current.name + '. Here, nothing opens.'
+        if plain_words(command) in FILE_NOT_PRACTICED:
+            return 'That works on your real files. Here, nothing changes.'
         try:
             result = manager.command(command, typed=kind == 'key')
         except (ValueError, OSError) as error:
@@ -667,6 +723,15 @@ class FileSim(Sim):
         if manager.location is not None and not manager.location.startswith(PracticeFiles.ROOT):
             manager.refresh(PracticeFiles.ROOT)      # never outside the practice drive
         return self.settle(result) or result or None
+
+
+# File manager actions that read or write real files (zip, unzip, properties, email): never run on practice files.
+FILE_NOT_PRACTICED = ('zip', 'zip with password', 'unzip', 'properties', 'email this file', 'attach to draft',
+                      'drive list', 'search subfolders')
+
+
+def plain_words(text):
+    return ' '.join(str(text).casefold().strip().rstrip('.!?').split())
 
 
 def file_keys():

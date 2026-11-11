@@ -94,3 +94,91 @@ class PracticeScreenTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class ReviewFixTests(unittest.TestCase):
+    """Found in review of 0.2.211: the practice screens must never start a program, read a real
+    file, leave a folder behind, or stop the whole tutorial when one screen cannot be built."""
+    # Every way the app can start a program, open a file or folder, or reach the network.
+    BLOCKED = ('os.startfile', 'os.system', 'subprocess.Popen', 'subprocess.run', 'subprocess.call',
+               'subprocess.check_call', 'subprocess.check_output', 'webbrowser.open', 'webbrowser.open_new',
+               'webbrowser.open_new_tab', 'urllib.request.urlopen')
+    # Keys a person might press on any practice screen, beyond what a step asks for.
+    WANDER = ('End', 'Enter', 'Space', 'Delete', 'Y', 'Enter', 'Alt+Enter', 'Alt+Z', 'Alt+U', 'Ctrl+V', 'Home', 'Enter',
+              'Escape', 'Enter')
+
+    def blocked(self):
+        import contextlib
+        stack = contextlib.ExitStack()
+        def refuse(*args, **kwargs):
+            raise AssertionError('The tutorial tried to start a program, open a file or reach the internet.')
+        for target in self.BLOCKED:
+            stack.enter_context(patch(target, refuse, create=True))
+        return stack
+
+    def every_sim(self):
+        from tutorial_lessons import build
+        for course in build(companion):
+            for lesson in course.lessons:
+                yield lesson, lesson.make_sims()
+
+    def test_no_practice_screen_starts_a_program_or_reaches_the_internet(self):
+        with self.blocked():
+            for lesson, sims in self.every_sim():
+                for name, sim in sims.items():
+                    for key in self.WANDER:
+                        with self.subTest(lesson=lesson.title, sim=name, key=key):
+                            sim.feed('key', key)
+                    sim.close()
+
+    def test_the_downloads_screen_says_what_would_open(self):
+        with self.blocked():
+            sim = tutorial_sims.downloads_sim(companion)
+            sim.feed('key', 'End')
+            said = sim.feed('key', 'Enter')
+            sim.close()
+        self.assertIn('Family photos.zip', said)
+        self.assertIn('Here, nothing opens.', said)
+
+    def test_file_manager_never_reads_a_real_path(self):
+        with patch('document_reader.open_document', side_effect=AssertionError('a real path was read')), \
+                patch('zipfile.ZipFile', side_effect=AssertionError('a real zip was opened')):
+            sim = FileSim(companion)
+            sim.feed('key', 'End')
+            said = sim.feed('key', 'Enter')
+            self.assertIn('Shopping list.txt', said)
+            for key in ('Alt+Z', 'Alt+U', 'Alt+Enter'):
+                sim.feed('key', key)
+            sim.close()
+
+    def test_no_folder_is_left_behind(self):
+        import tutorial_engine
+        root = Path(tempfile.gettempdir())
+        def practice_folders():
+            return {p for p in root.iterdir() if p.name.startswith('vc-tutorial')}
+        before = practice_folders()
+        with tempfile.TemporaryDirectory() as progress:
+            session = tutorial_engine.TutorialSession(companion, progress)
+            self.assertEqual(practice_folders() - before, set(), 'building the lessons left folders')
+            for position in range(len(session.order)):
+                session.begin(position)
+                session.close_sims()
+                self.assertEqual(practice_folders() - before, set(), session.order[position][1].title)
+            session.begin(0)
+            session.stop()
+            self.assertEqual(practice_folders() - before, set())
+
+    def test_a_practice_screen_that_cannot_be_built_says_so_and_the_rest_work(self):
+        import tutorial_engine
+        def broken(*args, **kwargs):
+            raise ImportError('no code for this module')
+        with patch.object(tutorial_sims, 'private', broken):
+            session = tutorial_engine.TutorialSession(companion)
+            session.start()
+            said, _ = session.words('address manager')
+            self.assertIn('This lesson could not start', said)
+            self.assertIn('Say next lesson', said)
+            self.assertEqual(session.state, 'between')
+            said, _ = session.words('lesson list')
+            said, _ = session.words('word processor')
+            self.assertIn('Step 1 of', said)

@@ -749,11 +749,9 @@ def build(app):
     courses.append(Course('email', 'Email', ('email', 'mail', 'e mail'), email, apps=('email',)))
 
     # Web browser ----------------------------------------------------------------------------------
-    browser = BrowserMenuSim()
-    browser_opening = browser.opening
-    browser.close()
+    browser_opening = sample(BrowserMenuSim)
     web_menu = [
-        Step('Listen: ' + browser_opening + ' The menu opens on its first item. Press Enter to choose it.',
+        Step(listen(browser_opening) + 'The menu opens on its first item. Press Enter to choose it.',
              sim='menu', goal=menu_goal('menu', 'search'),
              how='Press Enter while you hear Search or enter address.', screen='browser_menu',
              replay=(('key', 'Enter'),)),
@@ -814,7 +812,7 @@ def build(app):
             act('Press Enter to open it.', 'menu', keys=('Enter',), reply='That opens the page. Here, no website opens.'),
         ], sims=lambda: {'menu': BrowserMenuSim()}),
         Lesson('downloads', 'Downloads', 'These are practice downloads. Your own downloads are not touched.', [
-            act('Listen: ' + downloads_sim(app).opening + ' Press Down Arrow for the next download.', 'files',
+            act(listen(sample(lambda: downloads_sim(app))) + 'Press Down Arrow for the next download.', 'files',
                 keys=('Down',)),
             act('Say download details, to hear its size and folder.', 'files', phrases=('download details',)),
             act('Press Delete to take a finished download off the list. The file stays in its folder.', 'files',
@@ -844,7 +842,7 @@ def build(app):
     files_intro = 'These are practice files. They exist only in this lesson. Your own files are not touched.'
     files = [
         Lesson('folders', 'Open a folder and go back', files_intro, [
-            act('Listen: ' + FileSim(app).opening + ' Press Down Arrow for the next item.', 'files', keys=('Down',)),
+            act(listen(sample(lambda: FileSim(app))) + 'Press Down Arrow for the next item.', 'files', keys=('Down',)),
             act('Press Enter to open the Music folder.', 'files', keys=('Enter',), phrases=('open',)),
             act('Press Escape to go back to the folder above.', 'files', keys=('Escape',), phrases=('go back',)),
             act('Press End to reach the last item.', 'files', keys=('End',)),
@@ -901,16 +899,14 @@ def build(app):
 
     # Document reader ------------------------------------------------------------------------------------
     from document_reader import QUICK_LETTERS, READER_KEYS
-    sample = ReaderSim(app)
-    reader_open = sample.opening
-    kinds = {kind for kind in (n.kind for n in sample.reader.structure)}
-    sample.close()
-    reading = [act('Listen: ' + reader_open + ' Press Control+Home, or say go to beginning of document.', 'reader',
+    reader_open, kinds = sample(lambda: ReaderSim(app), lambda sim: (sim.opening, {n.kind for n in sim.reader.structure}),
+                                ('', set()))
+    reading = [act(listen(reader_open) + 'Press Control+Home, or say go to beginning of document.', 'reader',
                    phrases=('go to beginning of document', 'beginning of document'), keys=('Ctrl+Home',),
                    reply=lambda s, v: reader_feed(s, 'go to beginning of document'), feed=False)]
     for letter, kind in QUICK_LETTERS:
         found = 'This practice document has one, so you move to it.' if kind in kinds else \
-            'This practice document has none, so you hear that there is no next one.'
+            'This practice document has none, so you hear that there is no next one.' if kinds else ''
         reading.append(act('Press ' + letter + ' for the next ' + kind + '. ' + found, 'reader', keys=(letter,),
                            phrases=(READER_KEYS[letter],)))
     reading += [
@@ -934,7 +930,7 @@ def build(app):
     # Address manager ------------------------------------------------------------------------------------
     book_intro = 'This is a practice address book. It is deleted when the lesson ends.'
     adding = [
-        act('Listen: ' + contacts_sim(app).opening + ' Press Control+N to add a contact.', 'book', keys=('Ctrl+N',),
+        act(listen(sample(lambda: contacts_sim(app))) + 'Press Control+N to add a contact.', 'book', keys=('Ctrl+N',),
             phrases=('add contact', 'new contact')),
         own_words('Say or type the name, such as Sam Rivera.', 'book', 'Sam Rivera'),
         own_words('Say or type the email address. Here, type sam@example.com.', 'book', 'sam@example.com'),
@@ -982,7 +978,7 @@ def build(app):
     # Schedule manager ----------------------------------------------------------------------------------------
     cal_intro = 'This is a practice calendar with one appointment today. It is deleted when the lesson ends.'
     days = [
-        act('Listen: ' + calendar_sim(app).opening + ' Press Enter to hear all about the event.', 'cal', keys=('Enter',),
+        act(listen(sample(lambda: calendar_sim(app))) + 'Press Enter to hear all about the event.', 'cal', keys=('Enter',),
             phrases=('read event',)),
         act('Press Right Arrow for the next day.', 'cal', keys=('Right',), phrases=('next day',)),
         act('Press Home to come back to today.', 'cal', keys=('Home',), phrases=('today',)),
@@ -1017,12 +1013,10 @@ def build(app):
 
     # Radio and Podcasts ------------------------------------------------------------------------------------------
     media_intro = 'These are practice stations and shows. Nothing plays and nothing is saved.'
-    radio_open = RealMediaSim(app, 'radio')
-    radio_words = radio_open.opening
-    radio_open.close()
+    radio_words = sample(lambda: RealMediaSim(app, 'radio'))
     radio_lessons = [
         Lesson('play', 'Find and play a station', media_intro, [
-            act('Listen: ' + radio_words + ' Say search stations.', 'radio', phrases=('search stations', 'search radio', 'search')),
+            act(listen(radio_words) + 'Say search stations.', 'radio', phrases=('search stations', 'search radio', 'search')),
             own_words('Say a station name or a kind of music, such as jazz.', 'radio', 'jazz'),
             act('Press Down Arrow to hear the next station.', 'radio', keys=('Down',), phrases=('next',)),
             act('Press Enter to play it.', 'radio', keys=('Enter',), phrases=('that one',)),
@@ -1046,12 +1040,10 @@ def build(app):
     ]
     radio_lessons.append(media_actions_lesson(app, 'radio', 'Radio'))
     courses.append(Course('radio', 'Radio', ('radio', 'stations'), radio_lessons, apps=('radio',)))
-    pod_open = RealMediaSim(app, 'podcast')
-    pod_words = pod_open.opening
-    pod_open.close()
+    pod_words = sample(lambda: RealMediaSim(app, 'podcast'))
     podcast_lessons = [
         Lesson('play', 'Find, subscribe and play', media_intro, [
-            act('Listen: ' + pod_words + ' Say search podcasts.', 'pod', phrases=('search podcasts', 'search')),
+            act(listen(pod_words) + 'Say search podcasts.', 'pod', phrases=('search podcasts', 'search')),
             own_words('Say a show name or a subject, such as history.', 'pod', 'history'),
             act('Say subscribe, to save this show.', 'pod', phrases=('subscribe',)),
             act('Press Enter to open its episodes.', 'pod', keys=('Enter',), phrases=('that one',)),
@@ -1071,11 +1063,9 @@ def build(app):
     courses.append(Course('player', 'Media player', ('media player', 'player'), player, apps=('media player',)))
 
     # YouTube --------------------------------------------------------------------------------------------------
-    yt_open = YouTubeSim(app)
-    yt_words = yt_open.opening
-    yt_open.close()
+    yt_words = sample(lambda: YouTubeSim(app))
     youtube = [Lesson('watch', 'Search and watch a video', 'These are practice videos. No browser opens and nothing plays.', [
-        act('Listen: ' + yt_words + ' Press Control+F to search.', 'yt', keys=('Ctrl+F',), phrases=('search youtube',)),
+        act(listen(yt_words) + 'Press Control+F to search.', 'yt', keys=('Ctrl+F',), phrases=('search youtube',)),
         own_words('Say what to search for, such as coffee.', 'yt', 'coffee'),
         act('Say confirm, or press Enter, to search.', 'yt', keys=('Enter',), phrases=('confirm',)),
         act('Press Down Arrow for the next video.', 'yt', keys=('Down',), phrases=('next',)),
@@ -1139,10 +1129,7 @@ def build(app):
                           apps=('options',)))
 
     # Help and updates -------------------------------------------------------------------------------------------
-    try:
-        help_opening = HelpSim(app).opening
-    except (OSError, ValueError):
-        help_opening = None      # the guide is missing or damaged: Help says so; practice the rest
+    help_opening = sample(lambda: HelpSim(app), default=None)   # None: the guide is missing or damaged
     help_steps = [] if help_opening is None else [
         Step('Listen: ' + str(help_opening) + ' Press Down Arrow to hear the next topic.', sim='help', screen='help',
              goal=lambda s: s['help'].session.topic_index == 1, how='Press the Down Arrow key once.',
@@ -1193,6 +1180,29 @@ SEND_WORDS = ('send it', 'send email', 'send the email', 'send this email', 'sen
               'send my email', 'send now', 'send it now', 'send the message', 'please send it', 'please send')
 
 
+def sample(factory, read=lambda sim: sim.opening, default=''):
+    """Something a practice screen says, read once while lessons are built. The screen is closed
+    at once, so no folder is left behind. If it cannot be built, the lesson still builds; it says
+    so when it starts (TutorialSession.begin)."""
+    sim = None
+    try:
+        sim = factory()
+        return read(sim)
+    except Exception:
+        return default
+    finally:
+        if sim is not None:
+            try:
+                sim.close()
+            except Exception:
+                pass
+
+
+def listen(words):
+    """'Listen: <the screen's words>' before a step, or nothing when they are not known."""
+    return 'Listen: ' + words + ' ' if words else ''
+
+
 def act(say, sim, keys=(), phrases=(), reply='', feed=True, after='', **options):
     """A step on a practice screen: the input it asks for goes to that screen, which answers with its own words."""
     if after and not callable(reply):
@@ -1215,9 +1225,8 @@ def reader_feed(sims, command):
 def media_actions_lesson(app, section, name):
     """Every Radio or Podcasts action by name, answered by the real screen. A form it opens is closed again."""
     from tutorial_sims import MediaSim
-    sim = MediaSim(app, section)
-    actions = list(sim.nav.actions)
-    sim.close()
+    from media_navigation import PODCASTS, RADIO
+    actions = list(RADIO if section == 'radio' else PODCASTS)     # the actions list the screen opens on
 
     def answer(sims, value, label):
         media = sims['media']
