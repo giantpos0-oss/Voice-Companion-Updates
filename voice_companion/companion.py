@@ -1644,11 +1644,49 @@ def navigation_feedback_control(value,mode):
     if re.fullmatch(r'(?:next|previous|prior)(?: (?:item|option|voice|synthesizer|message|folder|preset|station|episode|podcast|lesson|topic|paragraph|line|word|sentence|character|heading|link|button|field|list|list item|region|frame))?',command):return True
     return mode=='web' and web_feedback_control(command,mode)
 
-def interrupt_partial_navigation(recognizer,mode):
+from speech_stop import SpeechStop
+SPEECH_STOP=SpeechStop()
+
+
+def user_started_speaking(recognizer,mode):
+    """The one place where the user's voice stops Companion's speech (speech_stop.py).
+
+    The recognizer loop calls this with every partial result, on every screen. The first
+    real word of an utterance pauses speech at once; user_finished_speaking() decides at the
+    end of the utterance whether the old speech ends or goes on. True when speech paused now."""
     try:partial=json.loads(recognizer.PartialResult()).get('partial','')
-    except (ValueError,AttributeError):return False
-    if not navigation_feedback_control(partial,mode):return False
-    if speech_busy():interrupt_speech()
+    except (ValueError,AttributeError,TypeError):return False
+    if mode=='sleep' or not isinstance(partial,str):return False
+    speaking=not SPEECH_PAUSED and speech_busy()
+    if not SPEECH_STOP.heard(partial,speaking,command=navigation_feedback_control(partial,mode)):return False
+    control_speech('pause')
+    SPEECH_STOP.pausing()
+    return True
+
+
+def resume_for_user():
+    """Speech paused for words that came to nothing goes on from where it paused."""
+    if SPEECH_PAUSED:control_speech('resume')
+
+
+def user_finished_speaking(text,mode,stopped):
+    """The end of an utterance. stopped: it paused Companion's speech (SPEECH_STOP.finish()).
+    False when the words must be ignored; then the old speech goes on."""
+    if mode=='sleep':return True
+    if speech_control(text):return True   # Stop talking keeps the pause; Resume goes on
+    if not normalized_command(text):
+        if stopped:resume_for_user()
+        return True
+    if stopped and not spoken_control(text) and not fast_command_request(normalized_command(text),mode) \
+            and not navigation_feedback_control(text,mode) and SPEECH_STOP.echo(text):
+        resume_for_user()   # Companion's own words, heard back through the microphone
+        return False
+    if mode=='help' and not (HelpSession.accepts(text) or spoken_control(text)):
+        # Talk in the room never cuts a Help topic off (October 2026): it goes on where it paused.
+        if stopped:resume_for_user()
+        return True
+    # Any other words: the old speech ends. An unfinished dictated sentence is kept.
+    if speech_busy():interrupt_for_dictation()
     return True
 
 
@@ -1661,6 +1699,7 @@ def fast_offline_silence(recognizer, utterance):
     if partial not in FAST_SILENCE:
         return False
     control_speech('pause')
+    SPEECH_STOP.finish()
     recognizer.Reset()
     utterance.clear()
     return True
@@ -1687,6 +1726,7 @@ def interrupt_for_dictation():
 
 def interrupt_speech():
     global SPEECH_PAUSED
+    SPEECH_STOP.released()
     DICTATION_ECHO.clear()
     if APP_WINDOW is not None:APP_WINDOW.ui_actions.put(('cancel_phonetic',None))
     if KEYBOARD_SPEECH is not None:KEYBOARD_SPEECH.interrupt(notify=False)
@@ -1707,6 +1747,7 @@ def interrupt_speech():
 
 def control_speech(action):
     global SPEECH_PAUSED
+    SPEECH_STOP.released()
     if action=='pause' and APP_WINDOW is not None:APP_WINDOW.ui_actions.put(('cancel_phonetic',None))
     if KEYBOARD_SPEECH is not None:KEYBOARD_SPEECH.control(action)
     if ESPEAK_SPEECH is not None:
@@ -2142,7 +2183,8 @@ def dictation_feedback(result):
 
 def poll_dictation_echo():
     if DICTATION_ECHO.choice is not None and DICTATION_ECHO.choice!=PREFERENCES.get('dictation_echo','phrase by phrase'):DICTATION_ECHO.clear()
-    text=DICTATION_ECHO.take(busy=speech_busy())
+    # Never read dictation back while the user is still talking.
+    text=DICTATION_ECHO.take(busy=speech_busy() or SPEECH_STOP.listening)
     if text:speak(text)
 
 
@@ -2167,6 +2209,7 @@ def speak(text):
         APP_WINDOW.show(text)
     if TEXT_MODE:
         return
+    SPEECH_STOP.said(text)   # its words may come back through the microphone
     update_audio_ducking(True)
     if KEYBOARD_NAVIGATION and KEYBOARD_SPEECH and not KEYBOARD_SPEECH.problem:
         KEYBOARD_SPEECH.speak(punctuation_for_speech(text));return
@@ -2191,6 +2234,7 @@ def speak_keyboard_feedback(text):
     TRANSCRIPT.said(text)
     if APP_WINDOW is not None: APP_WINDOW.show(text)
     if not TEXT_MODE:
+        SPEECH_STOP.said(text)
         update_audio_ducking(True)
         if KEYBOARD_SPEECH and not KEYBOARD_SPEECH.problem:
             KEYBOARD_SPEECH.speak(text);return
@@ -2444,6 +2488,7 @@ def recover_audio_overflow(recognizer, utterance):
     if not AUDIO_OVERFLOW:
         return False
     AUDIO_OVERFLOW = False
+    if SPEECH_STOP.finish():interrupt_speech()   # paused speech would hold back the message below
     while True:
         try:
             AUDIO.get_nowait()
@@ -6606,6 +6651,10 @@ def main():
             if input_stream is not None and (MICROPHONE_OFF or not microphone_active(input_stream)):
                 close_microphone(input_stream)
                 input_stream=None;recognizer.Reset();utterance.clear()
+                if SPEECH_STOP.finish():resume_for_user()
+            if SPEECH_STOP.stale():
+                # Words that never ended (no end of the utterance came): speech goes on.
+                SPEECH_STOP.finish();resume_for_user()
             if input_stream is None and not MICROPHONE_OFF and time.monotonic()>=microphone_retry_at:
                 microphone_retry_at=time.monotonic()+2
                 input_stream=open_microphone(sd,attempts=1)
@@ -6718,17 +6767,26 @@ def main():
                 if time.monotonic()<startup_quiet_until:recognizer.Reset();utterance.clear();continue
                 startup_speaking=False
             narration_busy=not SPEECH_PAUSED and speech_busy()
-            if mode=='settings' or narration_busy or settings_audio_blocked:
+            if SPEECH_STOP.listening:
+                # The user is talking: their words are theirs, not Companion's echo.
+                settings_audio_blocked=False;settings_quiet_until=0
+            elif mode=='settings' or narration_busy or settings_audio_blocked:
                 # No synthesizer's readback may become another command or
                 # dictated paragraph, including while the app is in background.
                 # Keep local silence/sleep/exit controls available during feedback.
                 if narration_busy:settings_quiet_until=time.monotonic()+0.3
                 if time.monotonic()<settings_quiet_until:
                     settings_audio_blocked=True
-                    utterance.clear()
+                    # Keep the sound for Parakeet: if the user starts to talk now, it needs the first word too.
+                    if mode!='sleep' and parakeet:
+                        utterance.extend(audio)
+                        del utterance[:-20*sample_rate*2]   # under the 25-second limit below
+                    else:utterance.clear()
                     if not recognizer.AcceptWaveform(audio):
-                        interrupt_partial_navigation(recognizer,mode)
+                        if user_started_speaking(recognizer,mode):
+                            settings_audio_blocked=False;settings_quiet_until=0
                     else:
+                        utterance.clear();SPEECH_STOP.finish()
                         control=json.loads(recognizer.Result()).get('text','').lower()
                         if spoken_control(control) or speech_control(control) or navigation_feedback_control(control,mode) or mode=='help' and HelpSession.accepts(control):
                             interrupt_speech()
@@ -6744,26 +6802,26 @@ def main():
                 if len(utterance) > 25 * sample_rate * 2:
                     utterance.clear()
                     recognizer.Reset()
+                    if SPEECH_STOP.finish():interrupt_speech()
                     speak('That was too long. Please speak in shorter passages.')
                     continue
             if not recognizer.AcceptWaveform(audio):
-                if mode!='sleep':interrupt_partial_navigation(recognizer,mode)
+                user_started_speaking(recognizer,mode)
                 if mode != 'sleep' and fast_offline_silence(recognizer, utterance):
                     continue
                 continue
             heard = json.loads(recognizer.Result()).get('text', '').strip()
             local_control = heard.lower()
+            # Stop talking, go on, or end the old speech (speech_stop.py).
+            if not user_finished_speaking(local_control, mode, SPEECH_STOP.finish()):
+                utterance.clear()
+                continue
             if mode != 'sleep' and (spoken_control(local_control) or speech_control(local_control)):
                 utterance.clear()
                 mode = handle(local_control, mode)
                 if mode == 'exit':
                     return 0
                 continue
-            if mode != 'sleep' and speech_busy() and local_control and (mode!='help' or HelpSession.accepts(local_control)):
-                # Stop the current readback as soon as the offline recognizer
-                # recognizes a new utterance. Its words can still be refined
-                # by Parakeet before executing the requested action.
-                interrupt_for_dictation()
             if mode != 'sleep' and fast_command_request(local_control, mode):
                 utterance.clear()
                 mode = handle(local_control, mode)

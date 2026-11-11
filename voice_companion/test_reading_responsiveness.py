@@ -59,10 +59,12 @@ class ReadingResponsivenessTests(unittest.TestCase):
             for mode in ('document','email_draft','note'):self.assertFalse(app.navigation_feedback_control('next',mode))
         self.assertFalse(app.navigation_feedback_control('The next item is blue','document'))
 
-    def test_partial_navigation_interrupts_without_executing_or_resetting(self):
+    def test_partial_navigation_stops_speech_without_executing_or_resetting(self):
+        # One place stops speech for every partial result now (speech_stop.py, test_speech_stop.py).
         recognizer=Mock();recognizer.PartialResult.return_value='{"partial":"next"}'
-        with patch.object(app,'speech_busy',return_value=True),patch.object(app,'interrupt_speech') as stop,patch.object(app,'handle') as handle,patch.object(app,'INPUT_MODE','mixed'):
-            self.assertTrue(app.interrupt_partial_navigation(recognizer,'awake'))
-            stop.assert_called_once();handle.assert_not_called();recognizer.Reset.assert_not_called()
+        from speech_stop import SpeechStop
+        with patch.object(app,'SPEECH_STOP',SpeechStop()),patch.object(app,'SPEECH_PAUSED',False),patch.object(app,'speech_busy',return_value=True),patch.object(app,'control_speech') as stop,patch.object(app,'handle') as handle,patch.object(app,'INPUT_MODE','mixed'):
+            self.assertTrue(app.user_started_speaking(recognizer,'awake'))
+            stop.assert_called_once_with('pause');handle.assert_not_called();recognizer.Reset.assert_not_called()
 
 if __name__=='__main__':unittest.main()
