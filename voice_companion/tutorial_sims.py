@@ -26,20 +26,19 @@ from tutorial_engine import Sandbox, Sim, canonical_key
 def private(name, **replace):
     """A private copy of one of the app's modules, with some of its names replaced.
 
-    The code comes from the module's own loader, so this also works in the installed app,
-    where modules are packed and there is no .py file to read."""
-    import types
+    It is loaded with the module's own loader (exec_module, Python's standard import step), so it
+    also works in the installed app, where modules are packed and there is no .py file to read.
+    The copy is never put in sys.modules, so the real module stays as it is."""
     try:
         spec = importlib.util.find_spec(name)
-        code = spec.loader.get_code(name)
-        if code is None:
-            raise ImportError('no code for ' + name)
+        if spec is None or spec.loader is None or not hasattr(spec.loader, 'exec_module'):
+            raise ImportError('no loader for ' + name)
+        module = importlib.util.module_from_spec(spec)
+        module.__dict__.update(replace)
+        spec.loader.exec_module(module)
     except Exception as error:
         raise PracticeUnavailable(name) from error
-    module = types.ModuleType('tutorial_' + name)
-    module.__file__ = spec.origin
-    module.__dict__.update(replace)
-    exec(code, module.__dict__)
+    module.__name__ = 'tutorial_' + name
     module.__dict__.update(replace)     # the module's own imports would put the real ones back
     return module
 

@@ -55,6 +55,10 @@ def run(source, args):
     failures, totals = set(), []
     groups = ([[m] for m in sorted(p.stem for p in source.glob('test_*.py'))] + [['smoke_tests']]
               if args.each else [release_modules(source)])
+    if not args.each:
+        # The Windows build's own separate steps that can run here, each in its own process as
+        # there (0.2.211: test_update_recovery failed only on Windows, after an hour of building).
+        groups += [[name] for name in ('test_security_privacy', 'test_update_recovery') if (source / (name + '.py')).exists()]
     if args.live:
         groups.append(['test_web_live', 'test_consumer_web', 'test_web_semantics', 'test_web_fixes', 'test_web_modes_live', 'test_web_history', 'test_web_fields', 'test_web_media_live', 'test_browser_window_live', 'test_youtube_live', 'test_youtube_data_live'])
     for modules in groups:
@@ -91,6 +95,15 @@ def main():
     print('Repository checks: ' + ('passed.' if not tools.returncode else 'FAILED.'))
     if tools.returncode:
         print(tools_output[-6000:])
+        sys.exit(1)
+    # The Windows build's source security check (check_security.py): no eval or exec, no
+    # shell commands, no TLS bypass. Run here too, so it fails before an hour of Windows builds
+    # (0.2.211: the tutorial used exec and the build stopped at this step).
+    security = subprocess.run([sys.executable, 'check_security.py'], cwd=ROOT / 'voice_companion',
+                              env=environment(False), capture_output=True, text=True, timeout=300)
+    print('Security checks: ' + ('passed.' if not security.returncode else 'FAILED.'))
+    if security.returncode:
+        print(security.stdout[-3000:] + security.stderr[-1000:])
         sys.exit(1)
     if not args.compare:
         for name in sorted(failures): print('  ' + name)

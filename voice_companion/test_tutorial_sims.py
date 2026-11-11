@@ -182,3 +182,21 @@ class ReviewFixTests(unittest.TestCase):
             said, _ = session.words('lesson list')
             said, _ = session.words('word processor')
             self.assertIn('Step 1 of', said)
+
+
+class PrivateCopyTests(unittest.TestCase):
+    """private() loads a second copy with the standard loader, never exec (check_security.py)."""
+
+    def test_a_copy_is_separate_and_the_real_module_is_untouched(self):
+        import sys
+        import download_screen
+        copy = tutorial_sims.private('download_screen', APP='practice')
+        self.assertIsNot(copy, download_screen)
+        self.assertEqual(copy.APP, 'practice')
+        self.assertIs(sys.modules['download_screen'], download_screen)
+        self.assertNotEqual(getattr(download_screen, 'APP', None), 'practice')
+        self.assertNotIn('tutorial_download_screen', sys.modules)
+
+    def test_a_module_that_cannot_be_found_is_a_plain_unavailable(self):
+        with self.assertRaises(tutorial_sims.PracticeUnavailable):
+            tutorial_sims.private('no_such_module_anywhere')
