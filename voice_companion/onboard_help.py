@@ -108,7 +108,7 @@ class HelpSession:
             'presets':'saved radio stations', 'radio presets':'saved radio stations',
             'settings':'change your options', 'options':'change your options', 'verbosity':'change your options',
             'keyboard':'using voice commands', 'email lists':'read and organize email', 'station database':'listen to radio',
-            'notepad':'write a note', 'notes':'write a note', 'updates':'check for updates', 'tutorial':'using help and lessons',
+            'notepad':'write a note', 'notes':'write a note', 'updates':'check for updates', 'tutorial':'using help and lessons', 'practice':'using help and lessons',
             'downloads':'download files', 'download manager':'download files', 'download':'download files', 'download folder':'download files',
             'attachments':'read and organize email', 'attachment':'read and organize email', 'email attachments':'read and organize email',
             'display':'large text and colors', 'display options':'large text and colors', 'large text':'large text and colors',
@@ -138,7 +138,8 @@ class HelpSession:
                 'shortcut keys': 'keys that work everywhere', 'microphone': 'set up your microphone',
                 'mic': 'set up your microphone', 'time': 'check the time and date', 'date': 'check the time and date',
                 'time and date': 'check the time and date', 'date and time': 'check the time and date',
-                'clock': 'check the time and date', 'yes or no': 'answer yes or no', 'lessons': 'start the audio tutorial',
+                'clock': 'check the time and date', 'yes or no': 'answer yes or no', 'lessons': 'start the tutorial',
+                'tutorial': 'start the tutorial', 'practice': 'start the tutorial',
                 'transcript': 'keep a transcript of what companion says',
                 'speech transcript': 'keep a transcript of what companion says'}.get(wanted)
         wanted = plain_words(aliases.get(wanted, wanted))

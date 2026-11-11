@@ -36,7 +36,7 @@ MICROPHONE = {
 # "wake up" is heard.
 HOW_TO = {
     'on': 'The microphone is on.' + hint(' Say wake up to control the app by voice, or use your Up and Down arrow keys, '
-          'Enter and Escape to move through the menus. After you wake it, say start tutorial for spoken lessons that wait for you. '
+          'Enter and Escape to move through the menus. After you wake it, say start tutorial to practice with the real keys and commands. '
           'Help is available.'),
     'off': MICROPHONE['off'] + ' ' + KEYS + ' Press F1 twice for help.',
     'failed': MICROPHONE['failed'] + ' ' + KEYS + ' Press F1 twice for help. Check that a microphone is plugged in '

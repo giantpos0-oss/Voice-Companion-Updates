@@ -77,9 +77,6 @@ SCREEN_KEYS = {
     'local_media': {'F1': 'help with media player'},
     # YouTube (youtube_screen.py): one key per action, most as on YouTube itself (K, J, L, M, C, F).
     'youtube': dict(__import__('youtube_screen').KEYS),
-    'tutorial': {'Ctrl+R': 'repeat', 'F1': 'list commands', 'Ctrl+L': 'lesson list',
-                 'Ctrl+F': 'find lesson {value}', 'Ctrl+E': 'explain command {value}',
-                 'Ctrl+Down': 'continue reading'},
     'sleep': {'Ctrl+F12': 'wake up'},
 }
 # Email: Alt and a number says one line of the message's header, as screen reader users know
@@ -100,7 +97,6 @@ OLD_KEYS = {
     'attachments': {'Ctrl+T': 'attach a file'},
     'files': {'Ctrl+T': 'attach to draft'},
     'file_reader': {'Ctrl+Shift+R': 'read document'},
-    'tutorial': {'Ctrl+Shift+R': 'repeat', 'Ctrl+Shift+F': 'explain command {value}'},
     'mailbox': {'Ctrl+I': 'message details', 'Ctrl+Shift+I': 'which folder', 'Ctrl+O': 'open email draft',
                 'Ctrl+K': 'list contacts', 'Ctrl+Shift+K': 'add contact {value}', 'Ctrl+Shift+A': 'clear selection',
                 'Ctrl+Shift+S': 'what is selected', 'Ctrl+Shift+M': 'move folder'},

@@ -147,7 +147,7 @@ class HelpTopicNotFoundTests(CompanionTestCase):
                            ('the microphone', 'Set up your microphone'), ('microphone', 'Set up your microphone'),
                            ('time', 'Check the time and date'), ('the date', 'Check the time and date'),
                            ('time and date', 'Check the time and date'), ('yes or no', 'Answer Yes or No'),
-                           ('lessons', 'Start the audio tutorial'), ('transcript', 'Keep a transcript of what Companion says')):
+                           ('lessons', 'Start the tutorial'), ('tutorial', 'Start the tutorial'), ('practice', 'Start the tutorial'), ('transcript', 'Keep a transcript of what Companion says')):
             with self.subTest(name=name):
                 said = session.topic(name)
                 self.assertEqual(session.level, 'article', said)
@@ -167,50 +167,20 @@ class TutorialWordsTests(CompanionTestCase):
     """"Start the tutorial." and "Tutorial" were not understood on the main menu."""
 
     def test_natural_ways_to_ask_for_the_tutorial_start_it(self):
-        for words in ('Start the tutorial.', 'Tutorial', 'Lessons.', 'Open the tutorial', 'Start lessons'):
+        for words in ('Start the tutorial.', 'Tutorial', 'Lessons.', 'Open the tutorial', 'Start lessons', 'Practice.',
+                      'Audio tutorial.', 'Practice tutorial'):
             with self.subTest(words=words):
                 self.said.clear()
                 with patch.object(companion, 'tutorial_session', None):
                     self.assertEqual(companion.handle(words, 'awake'), 'tutorial')
-                self.assertTrue(self.said[0].startswith('Audio tutorial.'), self.said)
+                self.assertTrue(self.said[0].startswith('Tutorial. You practice each step'), self.said)
 
     def test_a_single_word_in_a_document_is_text(self):
-        for words in ('Tutorial.', 'Lessons.'):
+        for words in ('Tutorial.', 'Lessons.', 'Practice.'):
             with self.subTest(words=words):
                 document = self.open_document()
                 self.assertEqual(companion.handle(words, 'document'), 'document')
                 self.assertEqual(companion.document_text(document), words)
-
-
-class LessonPartsTests(unittest.TestCase):
-    """Long lessons were cut in the middle of a paragraph. A part began "It has the lesson list..."
-    with nothing before it, and another ended on a lone step number: "...each time. 4."."""
-
-    def test_parts_break_between_paragraphs_and_never_leave_a_step_number_alone(self):
-        from tutorial_curriculum import split_instruction
-        bullets = '\n\n'.join('- Bullet number %d says what to press and what you hear after it.' % n for n in range(20))
-        text = bullets + '\n\nPress Alt to open the lessons menu. It has the lesson list.'
-        parts = split_instruction(text, limit=1000)
-        self.assertGreater(len(parts), 1)
-        self.assertTrue(parts[-1].endswith('\n\nPress Alt to open the lessons menu. It has the lesson list.'), parts[-1])
-        self.assertTrue(all(part.startswith('- Bullet') for part in parts), parts)
-        steps = ' '.join('%d. Press the key for step %d and listen to what Companion says.' % (n, n) for n in range(1, 30))
-        for part in split_instruction(steps, limit=300):
-            with self.subTest(part=part[-30:]):
-                self.assertNotRegex(part, r'[.!?"]\s+\d+\.$')
-                self.assertRegex(part, r'^\d+\. Press')
-        self.assertEqual(split_instruction('One. Two.'), ['One. Two.'])
-        # An introduction that ends with a colon stays with what it introduces.
-        intro = 'x' * 960 + '.\n\nTo remove an account:\n\n1. Say "Remove email account".'
-        self.assertTrue(split_instruction(intro)[-1].startswith('To remove an account:'), split_instruction(intro))
-
-    def test_no_real_lesson_starts_with_a_dangling_word_or_ends_on_a_step_number(self):
-        from tutorial_curriculum import build_courses
-        for course in build_courses(companion.GUIDE):
-            for lesson in course['lessons']:
-                with self.subTest(course=course['name'], lesson=lesson['title']):
-                    self.assertNotRegex(lesson['text'], r'[.!?"]\s+\d+\.$')
-                    self.assertFalse(lesson['text'].startswith(('It has ', 'Then ', 'Everyone can see it.')), lesson['text'][:60])
 
 
 class MicrophoneThatCannotStartTests(CompanionTestCase):
@@ -258,7 +228,7 @@ class StartupWordsTests(unittest.TestCase):
 
     def test_the_tutorial_is_offered_after_waking(self):
         text = startup_speech.announcement('1.0', 'on')
-        self.assertIn('After you wake it, say start tutorial for spoken lessons that wait for you.', text)
+        self.assertIn('After you wake it, say start tutorial to practice with the real keys and commands.', text)
         self.assertNotIn('. Say start tutorial', text)
         self.assertIn('Help is available.', text)
 

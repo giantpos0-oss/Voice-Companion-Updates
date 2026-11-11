@@ -37,7 +37,7 @@ ___ Move to another part while Help is speaking. Check that the old speech stops
 ___ Say "Close help". Check that you return to the same document.
 ___ Repeat from email, the web, radio, podcasts, and the main menu.
 ___ Use arrows, Enter, and Escape in Help. Check that headings and choices are clear.
-___ Say "Start tutorial". Try Next lesson, Repeat, Lesson list, and Explain command.
+___ Say "Start tutorial". Do a step right and one wrong. Try Repeat, Show me, Skip, and Stop tutorial, then start again and choose Continue where you stopped.
 ___ Check that a lesson command does not change a real file, message, or page.
 ___ Open each guide format you use. Check the text, headings, and contents links.
 Result: ____________________

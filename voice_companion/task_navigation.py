@@ -573,8 +573,6 @@ class TaskNavigation:
                     'add contact {value}':'Add contact. Type or say the name, the word as, then the email address. Press Enter.',
                     'find contact {value}':'Find contact. Type or say a name, then press Enter.',
                     'go to {value}':'Go to a day. Type or say a day, such as Friday or October 30, then press Enter.',
-                    'find lesson {value}':'Find lesson. Type or say a subject, then press Enter.',
-                    'explain command {value}':'Explain command. Type or say the command, then press Enter.',
                     'skip amount {value}':'Skip amount. Type or say a time, such as 30 seconds, then press Enter.',
                     'search youtube for {value}':'Search YouTube. Type or say what to find, then press Enter.',
                     'post comment {value}':'Comment. Type or say your comment, then press Enter. You are asked before it is posted.'}.get(command)

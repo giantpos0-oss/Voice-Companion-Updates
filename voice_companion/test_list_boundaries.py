@@ -286,7 +286,6 @@ class OldKeysStillWorkTests(unittest.TestCase):
         self.assertEqual(screen_key('mailbox','I',0x4,{},None,''),'Ctrl+I')
         self.assertEqual(screen_command('Ctrl+I','mailbox'),'message details')
         self.assertEqual(screen_command('Ctrl+Shift+R','email_draft'),'read email draft')
-        self.assertEqual(screen_command('Ctrl+Shift+F','tutorial'),'@prompt:explain command {value}')
         for mode,keys in OLD_KEYS.items():
             for key in keys:
                 self.assertTrue(screen_command(key,mode),(mode,key))

@@ -108,9 +108,6 @@ class ScreenMenuTests(unittest.TestCase):
         elif mode == 'help':
             app.help_return_mode = 'awake'
             app.help_session = app.HelpSession(app.GUIDE, release_notes_path=app.GUIDE.parent / 'Voice Companion Release Notes.txt')
-        elif mode == 'tutorial':
-            app.tutorial_session = None
-            self.assertEqual(app.handle('start tutorial', 'awake'), 'tutorial')
         elif mode == 'attachments':
             import attachment_screen
             from email_draft import VoiceEmail
@@ -151,7 +148,7 @@ class ScreenMenuTests(unittest.TestCase):
 
     # Tests ---------------------------------------------------------------
     def test_every_main_screen_answers_alt(self):
-        for mode in ('mailbox', 'email_draft', 'note', 'web', 'help', 'tutorial', 'file_reader'):
+        for mode in ('mailbox', 'email_draft', 'note', 'web', 'help', 'file_reader'):
             with self.subTest(mode=mode):
                 self.screen(mode)
                 self.assertIn(mode, MENUS)

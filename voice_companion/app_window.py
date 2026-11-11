@@ -508,6 +508,16 @@ class CompanionWindow:
                 self.last_navigation=time.monotonic()
                 control=bool(event.state&4);shift=bool(event.state&1)
                 watch_alt(event)
+                if self.context.get('tutorial_keys') and not self.command_entry_active:
+                    # The tutorial checks every key itself, by its name (tutorial_engine.window_key).
+                    # Alt alone is sent when it is let go (alt_release); Alt+T still opens the command box.
+                    from tutorial_engine import window_key
+                    tutorial_key=window_key(key,event.char,event.state)
+                    if tutorial_key is None:return
+                    if tutorial_key=='Alt+T':
+                        self.command_entry_active=True;typed.focus_set()
+                    if self.keyboard_output:self.keyboard_output.interrupt()
+                    cancel_phonetic();self.commands.put(('keyboard',tutorial_key));return 'break'
                 if self.context.get('screen_menu') and not self.command_entry_active:
                     # An Alt menu is open: arrows, Enter, Escape, letters and numbers belong to it.
                     from screen_menus import overlay_key
@@ -771,6 +781,8 @@ class CompanionWindow:
                 self.report_entry_key(previous[0], typed.get(), previous[1], typed.index('insert'), event.keysym, event.char)
             typed.bind('<KeyPress>', before_key)
             def command_entry(event):
+                # In the tutorial, pressing Alt+T is also a step to check (tutorial_engine.py).
+                if self.context.get('tutorial_keys') and not self.command_entry_active:self.commands.put(('keyboard','Alt+T'))
                 self.command_entry_active=True;typed.focus_set();return 'break'
             root.bind_all('<Alt-t>',command_entry)
             root.after_idle(lambda:typed.focus_set() if self.context.get('source') is None and self.context.get('mode')!='settings' else None)

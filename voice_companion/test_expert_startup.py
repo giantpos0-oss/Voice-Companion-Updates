@@ -3,7 +3,9 @@
 An expert expects every message to be true for the state the app is in, short, and worded
 the same way on every screen (sweep, October 30, 2026)."""
 import queue
+import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 from unittest.mock import MagicMock, patch
 
@@ -129,38 +131,34 @@ class SleepWithUnsavedWorkTests(CompanionTestCase):
         self.assertTrue(self.said[0].endswith('Going to sleep. Say wake up when you need me.'), self.said)
 
 class TutorialListWordsTests(KeyTestCase):
-    """In the tutorial's lists, Down and Up said "File manager. 12 of 12. Press Enter or say
-    that one to open. " (the hint every time, and a space at the end), while Home and End said
-    "File manager (F), 12 of 12." The opening message named 10 of the 12 courses: Contacts and
-    calendar, and YouTube, were left out."""
+    """The tutorial's lesson list says each item as every list does ("Email (E), 5 of 18."),
+    and says how to choose once, when it opens."""
 
     def test_arrows_say_items_like_home_end_and_the_main_menu(self):
-        with patch.object(companion, 'tutorial_session', None):
+        from menu_navigation import announce_item
+        with patch.object(companion, 'tutorial_session', None), patch.object(companion, 'APP', Path(tempfile.mkdtemp())):
             mode = self.keys('awake', 'Ctrl+T')
             self.assertEqual(mode, 'tutorial')
+            names = [name for name, _ in companion.tutorial_session.picker_items()]
+            self.assertIn('Use Up and Down Arrow and Enter, or say a name', self.said[0])
+            self.assertTrue(self.said[0].endswith(announce_item(names[0], 0, len(names))), self.said)
             self.keys(mode, 'Down')
-            self.assertEqual(self.said, ['Getting started (G), 1 of 12.'])
-            self.keys(mode, 'Down')
-            self.assertEqual(self.said, ['Word processor (W), 2 of 12.'])
+            self.assertEqual(self.said, [announce_item(names[1], 1, len(names))])
             self.keys(mode, 'End')
-            self.assertEqual(self.said, ['File manager (F), 12 of 12.'])
+            self.assertEqual(self.said, [announce_item(names[-1], len(names) - 1, len(names))])
+            self.keys(mode, 'End')
+            self.assertEqual(self.said, ['End of list.'])
             self.keys(mode, 'Up')
-            self.assertEqual(self.said, ['Help and updates (H), 11 of 12.'])
-            # Opening a list still says how to choose, once.
-            self.keys(mode, 'Enter', 'Ctrl+L')
-            self.assertTrue(self.said[0].startswith('Help and updates lessons. '), self.said)
-            self.assertTrue(self.said[0].endswith(', 1 of ' + str(len(companion.tutorial_session.course()['lessons'])) +
-                                                  '. Press Enter or say that one to open.'), self.said)
-            self.keys(mode, 'Down')
-            self.assertRegex(self.said[0], r'^[^.]+, 2 of \d+\.$')
+            self.assertEqual(self.said, [announce_item(names[-2], len(names) - 2, len(names))])
 
-    def test_the_opening_message_names_every_course(self):
-        from practice_tutorial import PracticeTutorial
-        session = PracticeTutorial(companion.GUIDE)
-        names = [course['name'] for course in session.courses]
-        self.assertIn('Courses cover ' + ', '.join(names[:-1]) + ', and ' + names[-1] + '. ', session.start())
+    def test_the_lesson_list_names_every_course(self):
+        from tutorial_engine import TutorialSession
+        session = TutorialSession(companion)
+        names = [name for name, _ in session.picker_items()]
+        self.assertEqual(names[1:], [course.name for course in session.courses])
         guide = companion.GUIDE.read_text(encoding='utf-8')
-        self.assertIn('Courses cover ' + ', '.join(names[:-1]) + ', and ' + names[-1] + '.', guide)
+        listed = ', '.join(c.name for c in session.courses[:-1]) + ', and ' + session.courses[-1].name + '.'
+        self.assertIn('Courses cover ' + listed, guide)
 
 
 class HelpListWordsTests(KeyTestCase):

@@ -24,8 +24,8 @@ Contents
 3 Using Help And Lessons
   3.1 Open a Help topic
   3.2 Read part of a topic
-  3.3 Start the audio tutorial
-  3.4 Find, repeat, and leave a lesson
+  3.3 Start the tutorial
+  3.4 Practice a lesson
 4 Speech And Voices
   4.1 Stop or pause speech
   4.2 Change speed, volume, or pitch
@@ -284,7 +284,7 @@ Keys that only work on the main menu:
 - To hear the version and whether the microphone is on, say "What version?", or press Control+V.
 - To hear the speech mode, say "What mode?", or press Control+M.
 - To open the guide folder, say "Open user guides", or press Control+G.
-- To start the lessons, say "Start tutorial", or press Control+T.
+- To start the tutorial, say "Start tutorial", or press Control+T.
 - To open Help, say "Help", "Help me", or "What can I say?", or press F1 twice quickly. On the main menu, Help is this user guide.
 The main menu is the first screen. "Go back" there tells you so.
 If the main menu does not know your words, it says "I did not understand that. You are on the main menu. Press F1 twice for help."
@@ -395,7 +395,7 @@ To go straight to a topic, say "Help with", followed by its name. For example, s
 Other useful requests are "Help with radio", "Help with podcasts", "Help with presets", and "Help with commands".
 On most screens, F1 twice quickly opens the Help topic for that screen. Home and End reach the ends of a list.
 If Help does not know your words, it says so, and says what to say next. While Help reads aloud, it does not answer, so talk in the room does not stop the reading.
-Press Alt to open the help menu. It has Help topics, Subsections, Release notes, Lessons, the guide folder, Close help, and Main menu.
+Press Alt to open the help menu. It has Help topics, Subsections, Release notes, Tutorial, the guide folder, Close help, and Main menu.
 
 3.2 Read part of a topic
 Each Help topic has a list of smaller parts. Choose the part you want, then listen.
@@ -414,26 +414,30 @@ To return to the smaller parts, say "Back to subsections", or press Escape.
 For the full topic list, say "Back to topics", or press Escape again. To return to your work, say "Close help", or press Escape from the topic list.
 To hear the chapter and part you are in, say "Where am I?".
 
-3.3 Start the audio tutorial
-The tutorial is a set of spoken lessons. It waits for you between lessons. It explains the commands you give, but it does not carry them out. It never sends mail or changes your files.
+3.3 Start the tutorial
+The tutorial lets you practice. Each step says what to say or which key to press. Then it checks what you did and tells you if it was right. It uses the real keys and commands, so what you learn works in the app.
+Nothing you do in the tutorial sends mail, changes your files, changes your settings, or opens websites. The screens in a lesson are practice copies.
 1. Return to the main menu.
-2. Say "Start tutorial", or press Control+T on the main menu.
-3. Say a course name, such as "Email" or "Web browser". You can also use the arrows and Enter.
-4. Listen to the first lesson.
-5. When you are ready, say "Next lesson", or press Down Arrow.
-Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager.
+2. Say "Start tutorial", or press Control+T. You can also choose Tutorial in the Help menu.
+3. Choose where to start. Use the arrows and Enter, or say a name, such as "Email".
+4. Listen to the first step, and do what it says.
+The list has these items:
+- Continue where you stopped. It is there when you stopped in the middle of a lesson.
+- Go in order. It starts with the first lesson you have not finished.
+- One item for each course.
+Courses cover Getting around, Alt menus, Word processor, Email, Web browser, File manager, Notepad, Document reader, Address manager, Schedule manager, Radio, Podcasts, Media player, YouTube, Options, Help and updates, and Sleep and exit.
 
-3.4 Find, repeat, and leave a lesson
-- To hear the same lesson, say "Repeat", or press Control+R.
-- To go back a lesson, say "Previous lesson", or press Up Arrow.
-- For the lesson names, say "Lesson list", or press Control+L. Use the arrows and Enter to choose one.
-- To find a lesson, say "Find lesson" followed by a topic, such as "Find lesson favorites". Or press Control+F, type the topic, and press Enter.
-- For the course's command list, say "List commands", or press F1 twice quickly.
-- To learn about a command, say "Explain command", followed by the command, such as "Explain command send it". Or press Control+E, type the command, and press Enter.
-- If a long explanation pauses, say "Continue reading", or press Control+Down Arrow.
-- To go back one level, say "Go back", or press Escape. Say "Courses" to return to the course list.
-- To leave the tutorial, say "Main menu" or "Close tutorial", or press Escape from the course list.
-Press Alt to open the lessons menu. It has the lesson list, Repeat, Find lesson, Explain a command, and the other lesson commands.
+3.4 Practice a lesson
+- When a step is right, you hear a word of praise, what the app says, and the next step.
+- When it is not right, you hear what you said or pressed, and what to do. Try again.
+- After two tries, say "Show me" to hear just how to do it, or "Skip" to go on. You can also press Y to hear how, or N to skip.
+- To hear the step again, say "Repeat".
+- For tutorial help, say "What can I say?", or press F1 twice quickly.
+- To stop, say "Stop tutorial", or press Escape. F1 and "Main menu" stop it too. Your place is saved.
+- When a step asks for one of these keys or words, it does that step instead.
+- Some keys still do their own job: F12 says the time, F3 says what is playing, and F9 turns the microphone off or on. "Stop talking" and the speech speed and volume commands work too.
+- At the end of a lesson, press Enter, or say "Next lesson", for the next one. Say "Lesson list" to choose another.
+- If you have no microphone, press Alt+T, type the words, and press Enter.
 
 4. SPEECH AND VOICES
 

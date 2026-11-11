@@ -75,6 +75,8 @@ def title(m, mode, value):
         detail = _safe(lambda: m.web_session.snapshot['title'])
     elif mode == 'youtube':
         detail = _safe(lambda: __import__('youtube_screen').title_detail(m))
+    elif mode == 'tutorial':
+        detail = _safe(lambda: m.tutorial_session.lesson()[1].title if m.tutorial_session.state == 'lesson' else '')
     elif mode == 'help':
         session = getattr(m, 'help_session', None)
         if session is not None and session.level != 'topics':
@@ -165,7 +167,7 @@ HINT_KEYS = {
     'help': 'Arrows move. Escape goes back.',
     'file_reader': 'Arrows read. Escape goes back.',
     'local_media': 'Space plays or pauses. Alt opens the menu.',
-    'tutorial': 'F1 twice lists commands.',
+    'tutorial': 'Escape stops the tutorial. F1 twice for tutorial help.',
     'youtube': 'Enter plays. Space pauses. Alt opens the menu.',
 }
 QUESTION_HINT = 'Arrows choose. Enter answers.'
@@ -173,8 +175,7 @@ QUESTION_HINT = 'Arrows choose. Enter answers.'
 
 def has_help_key(mode):
     from input_parity import SCREEN_KEYS
-    # In the tutorial F1 lists the lesson's commands; HINT_KEYS says that instead.
-    return mode != 'tutorial' and ('F1' in SCREEN_KEYS.get(mode, {}) or mode in ('document', 'files'))
+    return 'F1' in SCREEN_KEYS.get(mode, {}) or mode in ('document', 'files')
 
 
 def hint(m, mode, value):
@@ -219,4 +220,8 @@ def context(m, mode, value):
     if logical == 'note':
         text = ' '.join(getattr(m, 'note_buffer', []) or [])
         result.update(display_text=text, display_caret=len(text))
+    if logical == 'tutorial' and lines is None:
+        # What the tutorial said last: the step to do, for anyone who reads the screen.
+        text = str(getattr(getattr(m, 'tutorial_session', None), 'previous', '') or '')
+        result.update(display_text=text, display_caret=0)
     return result
