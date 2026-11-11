@@ -215,6 +215,11 @@ def catalog():
     for category in CATEGORIES:
         for field in fields(category,{}):
             if field.kind=='action':add(category,field.label,ACTIONS[field.key],'Alt+O, arrows to '+category+', Tab to the button, Enter')
+            elif field.kind=='apps':
+                for name,voice,key in (('Select an app','select','Space'),('Unselect an app','unselect','Space'),('Move an app up','move up','Control+Up'),
+                                       ('Move an app down','move down','Control+Down'),('Move an app to the top','move to top','Control+Home'),
+                                       ('Move an app to the bottom','move to bottom','Control+End')):
+                    add(category,name,voice,'Alt+O, arrows to '+category+', Enter, '+key)
             else:add(category,field.label.split(';')[0],settings_phrase(field)+' ...','Alt+O, arrows to '+category+', Tab to the field, arrows or Space, Enter to save')
     from media_navigation import RADIO,RADIO_STATION,PODCASTS
     for area,actions in (('Radio',RADIO),('Radio station actions',RADIO_STATION),('Podcasts',PODCASTS)):

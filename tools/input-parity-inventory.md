@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 774
-- Already had both ways: 612
+- Actions inventoried: 768
+- Already had both ways: 606
 - Gaps found: 162
 - Gaps fixed (Added): 154
 - Not applicable (N/A, with reason): 8
@@ -1593,78 +1593,42 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Alt+O, arrows to Startup and exit options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 
-## My menu
+## Favorite apps
 
-### File manager in Favorite apps
+### Select an app
 
-- Voice: "Set File manager in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Select"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Space
 - Status: Both
 
-### Word processor in Favorite apps
+### Unselect an app
 
-- Voice: "Set Word processor in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Unselect"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Space
 - Status: Both
 
-### Notepad in Favorite apps
+### Move an app up
 
-- Voice: "Set Notepad in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Move up"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Control+Up
 - Status: Both
 
-### Email in Favorite apps
+### Move an app down
 
-- Voice: "Set Email in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Move down"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Control+Down
 - Status: Both
 
-### Document reader in Favorite apps
+### Move an app to the top
 
-- Voice: "Set Document reader in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Move to top"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Control+Home
 - Status: Both
 
-### Address manager in Favorite apps
+### Move an app to the bottom
 
-- Voice: "Set Address manager in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### Schedule manager in Favorite apps
-
-- Voice: "Set Schedule manager in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### Web browser in Favorite apps
-
-- Voice: "Set Web browser in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### Radio in Favorite apps
-
-- Voice: "Set Radio in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### Podcasts in Favorite apps
-
-- Voice: "Set Podcasts in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### Media player in Favorite apps
-
-- Voice: "Set Media player in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### YouTube in Favorite apps
-
-- Voice: "Set YouTube in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Move to bottom"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Control+End
 - Status: Both
 
 ## Radio

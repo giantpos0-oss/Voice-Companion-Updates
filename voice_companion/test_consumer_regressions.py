@@ -48,11 +48,12 @@ class ConsumerRegressionTests(unittest.TestCase):
             app.handle('previous','awake');speak.assert_called_with('Start of list.')
 
     def test_all_options_categories_are_named_options(self):
-        # My menu is the one section with its own name (Will, November 6, 2026): it holds Favorite apps.
+        # Favorite apps is the one section with its own name (Will, November 10, 2026; My menu before):
+        # it is named like the menu Control+F1 opens.
         for name in CATEGORIES:
             self.assertTrue(fields(name,{}))
-            if name!='My menu':self.assertTrue(name.endswith(' options'),name)
-        self.assertEqual([name for name in CATEGORIES if not name.endswith(' options')],['My menu'])
+            if name!='Favorite apps':self.assertTrue(name.endswith(' options'),name)
+        self.assertEqual([name for name in CATEGORIES if not name.endswith(' options')],['Favorite apps'])
 
     def test_refresh_is_available_while_keyboard_only_and_asleep(self):
         session=Mock(page_revision=1,refresh_changed=Mock(return_value=''))

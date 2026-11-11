@@ -15,7 +15,7 @@ def choice_feedback(value,index,count):
 # What kind of control each setting is, said with it, as a screen reader would (Will, October 30, 2026):
 # "Announce email header names, check box, not checked." "Speech rate, combo box, 0, 11 of 21."
 ROLES={'check':'check box','choice':'combo box','combo':'edit combo box','text':'edit','password':'password edit',
-       'action':'button','headers':'list box'}
+       'action':'button','headers':'list box','apps':'list box'}
 
 
 def check_words(value):
@@ -40,12 +40,23 @@ def control_words(field,value,index=None,count=None):
 BUTTON_WORDS={'OK':'OK, button. Saves your settings.','Cancel':'Cancel, button. Discards your changes.',
               'Close settings':'Close settings, button.'}
 
+# Options, Favorite apps: one list of every app, tall enough to show all twelve.
+APPS_HEIGHT=300
+
+
+def apps_words(field,model):
+    """Said when the Favorite apps list gets focus: its name, the app under the cursor, and the keys."""
+    from favorite_list import HINT
+    return field.label.split(';')[0]+', list box. '+model.label()+' '+HINT
+
+
 def settings_bottom(fields,step):
     """The lowest pixel the settings use, laid out step pixels apart (as render does)."""
     y=-17;bottom=0
     for field in fields:
         y+=step
         if field.kind=='headers':y+=90;bottom=y+49
+        elif field.kind=='apps':y+=APPS_HEIGHT+6;bottom=y+49
         else:bottom=y+50
     return bottom
 
@@ -53,7 +64,7 @@ def settings_bottom(fields,step):
 def settings_step(fields):
     """Pixels between settings on one page. A long page packs them closer, so the last one
     never lands on the OK and Cancel row at 530. A page of only check boxes and buttons has no
-    labels above them, so it can pack closer still (My menu has 12 check boxes)."""
+    labels above them, so it can pack closer still."""
     step=62
     smallest=34 if fields and all(field.kind in ('check','action') for field in fields) else 48
     while step>smallest and settings_bottom(fields,step)>510:step-=2
@@ -103,7 +114,7 @@ class NativeSettings:
         api('SetTimer',c.c_size_t,[w.HWND,c.c_size_t,w.UINT,c.c_void_p]);api('PostQuitMessage',None,[c.c_int])
         api('GetKeyState',c.c_short,[c.c_int])
         k.GetModuleHandleW.restype=w.HMODULE;k.GetModuleHandleW.argtypes=[w.LPCWSTR];instance=k.GetModuleHandleW(None)
-        headers=[None];header_buttons={};controls={};children=[];last_focus=[None];category=[None];buttons={};alive=[True];editing=[False];baseline=[copy.deepcopy(self.session.values)]
+        headers=[None];apps=[None];app_buttons={};header_buttons={};controls={};children=[];last_focus=[None];category=[None];buttons={};alive=[True];editing=[False];baseline=[copy.deepcopy(self.session.values)]
         def control(cls,label,style,x,y,width,height,identifier,extended=0):
             hwnd=create(extended,cls,label,0x50000000|style,x,y,width,height,self.hwnd,identifier,instance,None)
             if not hwnd:raise c.WinError(c.get_last_error())
@@ -112,6 +123,7 @@ class NativeSettings:
             buf=c.create_unicode_buffer(4096);u.GetWindowTextW(hwnd,buf,len(buf));return buf.value
         def raw(hwnd,field):
             if field.kind=='headers':return self.session.values[field.key]
+            if field.kind=='apps':return list(apps[0].order) if apps[0] else self.session.values[field.key]
             if field.kind=='check':return bool(send(hwnd,0xF0,0,0))
             if field.kind=='choice':
                 index=int(send(hwnd,0x147,0,0))
@@ -135,6 +147,7 @@ class NativeSettings:
             field=controls.get(hwnd)
             if not field:return ''
             if field.kind=='headers':return field.label.split(';')[0]+', list box. '+headers[0].label()+'. Space enables or disables. Alt+Up or Alt+Down changes order.'
+            if field.kind=='apps':return apps_words(field,apps[0])
             value=raw(hwnd,field)
             if field.kind=='choice' and field.choices:
                 return control_words(field,value,int(send(hwnd,0x147,0,0)),len(field.choices))
@@ -152,7 +165,7 @@ class NativeSettings:
             else:self.announce(notice)
         def render(focus_key=None):
             for hwnd in children:destroy(hwnd)
-            children.clear();controls.clear();buttons.clear();header_buttons.clear();headers[0]=None;last_focus[0]=None
+            children.clear();controls.clear();buttons.clear();header_buttons.clear();app_buttons.clear();headers[0]=None;apps[0]=None;last_focus[0]=None
             u.ShowWindow(category[0],0 if editing[0] else 5)
             u.SetWindowTextW(self.hwnd,'Voice Companion Options - '+self.session.category_name() if editing[0] else 'Voice Companion Options (Alt+O)')
             if not editing[0]:
@@ -184,6 +197,17 @@ class NativeSettings:
                         button=control('BUTTON',label,0x10000,225+j*155,y+110,145,27,300+j)
                         children.append(button);buttons[button]=label+', button.';header_buttons[button]=action
                     y+=90
+                elif field.kind=='apps':
+                    from favorite_list import FavoriteList
+                    apps[0]=FavoriteList(self.session)
+                    hwnd=control('LISTBOX','',0x10000|0x200000|1,225,y+22,460,APPS_HEIGHT,200+index)
+                    fill_apps(hwnd)
+                    # For a helper with a mouse. Out of the Tab order: Space, Control+Up and
+                    # Control+Down do the same, and so do "select", "move up" and "move down".
+                    for j,(label,action) in enumerate((('Select or unselect','toggle'),('Move up','up'),('Move down','down'))):
+                        button=control('BUTTON',label,0,225+j*155,y+APPS_HEIGHT+28,145,27,310+j)
+                        children.append(button);buttons[button]=label+', button.';app_buttons[button]=action
+                    y+=APPS_HEIGHT+6
                 elif field.kind in ('choice','combo'):
                     hwnd=control('COMBOBOX','',0x10000|0x200000|(3 if field.kind=='choice' else 2),225,y+22,460,300,200+index)
                     for item in field.choices:
@@ -197,6 +221,24 @@ class NativeSettings:
             ok=control('BUTTON','OK',0x10000|1,485,530,100,32,1);cancel=control('BUTTON','Cancel',0x10000,595,530,100,32,2)
             buttons[ok]=BUTTON_WORDS['OK'];buttons[cancel]=BUTTON_WORDS['Cancel'];children.extend((ok,cancel))
             target=next((h for h,f in controls.items() if f.key==focus_key),next((h for h in controls if u.IsWindowEnabled(h)),ok));focus(target)
+        def apps_list():
+            return next((h for h,f in controls.items() if f.kind=='apps'),None)
+        def fill_apps(hwnd):
+            model=apps[0];send(hwnd,0x184,0,0)
+            for i in range(len(model)):
+                buf=c.create_unicode_buffer(model.line(i));send(hwnd,0x180,0,c.cast(buf,c.c_void_p).value)
+            send(hwnd,0x186,model.index,0)
+        def change_apps(message,take_focus=False):
+            """Show the list as the model has it now, say what happened, and keep the keyboard there."""
+            hwnd=apps_list()
+            if hwnd is None:return
+            fill_apps(hwnd)
+            if take_focus:focus(hwnd);last_focus[0]=hwnd
+            self.announce(message)
+        def app_button(action):
+            hwnd=apps_list();model=apps[0]
+            model.index=max(0,min(len(model)-1,int(send(hwnd,0x188,0,0))))
+            change_apps(model.toggle() if action=='toggle' else model.move(action),True)
         def change_header(action):
             model=headers[0]
             if model is None:return
@@ -234,6 +276,11 @@ class NativeSettings:
             render();self.announce(describe(category[0]));last_focus[0]=category[0]
         def voice(text_command):
             cmd=text_command.lower().strip().rstrip('.!?')
+            if apps[0] and editing[0]:
+                # Favorite apps: "select", "unselect", "move up", "move to top", "next" and the like.
+                hwnd=apps_list();apps[0].index=max(0,min(len(apps[0])-1,int(send(hwnd,0x188,0,0))))
+                message=apps[0].voice(text_command)
+                if message:change_apps(message,True);return
             if cmd in ('toggle header','enable or disable header','move header up','move header down') and headers[0]:
                 change_header('toggle' if cmd in ('toggle header','enable or disable header') else 'up' if cmd.endswith('up') else 'down');return
             if cmd in ('next header','previous header') and headers[0]:
@@ -299,10 +346,13 @@ class NativeSettings:
                     if identifier==2:cancel_category();return 0
                     if identifier==100 and notice==1:select_category(int(send(category[0],0x188,0,0)));return 0
                     if lp in header_buttons and notice==0:change_header(header_buttons[lp]);return 0
+                    if lp in app_buttons and notice==0:app_button(app_buttons[lp]);return 0
                     if lp in controls:
                         field=controls[lp]
                         if field.kind=='headers' and notice==1:
                             headers[0].index=max(0,min(3,int(send(lp,0x188,0,0))));self.announce(describe(lp));return 0
+                        if field.kind=='apps' and notice==1:
+                            apps[0].index=max(0,min(len(apps[0])-1,int(send(lp,0x188,0,0))));self.announce(apps[0].label());return 0
                         if field.kind=='action' and notice==0:self.action_callback(field.key);close();return 0
                         if (field.kind=='check' and notice==0) or (field.kind in ('choice','combo') and notice==1):
                             self.session.set(field.key,raw(lp,field));announce_value(lp);last_focus[0]=lp
@@ -359,6 +409,15 @@ class NativeSettings:
             if message.message==0x100 and message.wParam==0x7B and self.keyboard and not (u.GetKeyState(0x11)&0x8000 or u.GetKeyState(0x10)&0x8000):
                 from time_date import key_request
                 self.keyboard(key_request(self.clock_presses.press()));continue
+            if message.message==0x100 and apps[0] and controls.get(get_focus()) and controls[get_focus()].kind=='apps':
+                # Favorite apps: arrows, Home, End and letters move; Space selects; Control with
+                # Up, Down, Home or End moves the app (favorite_list.FavoriteList.keyboard).
+                held=bool(u.GetKeyState(0x11)&0x8000)
+                key={0x26:'Up',0x28:'Down',0x24:'Home',0x23:'End',0x20:'Space'}.get(message.wParam) or ({0x21:'Home',0x22:'End'}.get(message.wParam) if not held else None) or (chr(message.wParam) if 65<=message.wParam<=90 else None)
+                if key:
+                    apps[0].index=max(0,min(len(apps[0])-1,int(send(get_focus(),0x188,0,0))))
+                    words=apps[0].keyboard(key,held)
+                    if words:change_apps(words);continue
             if message.message in (0x100,0x104) and headers[0]:
                 target=get_focus();field=controls.get(target)
                 if field and field.kind=='headers':

@@ -6,7 +6,7 @@ import threading
 import time
 import unittest
 from settings_model import CATEGORIES
-LAST=len(CATEGORIES)-1   # My menu is last (0.2.209); Startup and exit options comes just before it
+LAST=len(CATEGORIES)-1   # Favorite apps is last (My menu before 0.2.211); Startup and exit options comes just before it
 STARTUP=CATEGORIES.index('Startup and exit options')
 from native_settings import NativeSettings
 from settings_model import SettingsSession,DEFAULTS
@@ -55,7 +55,7 @@ class NativeSettingsTests(unittest.TestCase):
         def press(control,key,condition):
             before=len(self.notices);self.u.PostMessageW(control,0x100,key,0)
             self.wait(lambda:len(self.notices)>before and condition())
-        press(categories,0x23,lambda:self.session.category==LAST and 'My menu' in self.notices[-1] and 'of list' not in self.notices[-1])
+        press(categories,0x23,lambda:self.session.category==LAST and 'Favorite apps' in self.notices[-1] and 'of list' not in self.notices[-1])
         press(categories,0x23,lambda:self.session.category==LAST and 'End of list' in self.notices[-1])
         press(categories,0x28,lambda:self.session.category==LAST and 'End of list' in self.notices[-1])
         press(categories,0x24,lambda:self.session.category==0 and 'Verbosity options' in self.notices[-1] and 'of list' not in self.notices[-1])
