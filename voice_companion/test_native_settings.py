@@ -43,6 +43,7 @@ class NativeSettingsTests(unittest.TestCase):
         self.u.GetDlgItem.restype=w.HWND;self.u.GetDlgItem.argtypes=[w.HWND,c.c_int]
         self.u.SendMessageW.restype=c.c_ssize_t;self.u.SendMessageW.argtypes=[w.HWND,w.UINT,w.WPARAM,w.LPARAM]
         self.u.PostMessageW.restype=w.BOOL;self.u.PostMessageW.argtypes=[w.HWND,w.UINT,w.WPARAM,w.LPARAM]
+        self.u.GetWindowLongW.restype=c.c_long;self.u.GetWindowLongW.argtypes=[w.HWND,c.c_int]
         return self.panel.hwnd
     def wait(self,condition):
         until=time.monotonic()+5
@@ -75,11 +76,14 @@ class NativeSettingsTests(unittest.TestCase):
         self.u.PostMessageW(categories,0x100,0x0D,0)
         self.wait(lambda:any('Verbosity, combo box, high' in notice for notice in self.notices))
         choice=self.u.GetDlgItem(hwnd,200)
+        # Hints and help messages (0.2.211) comes right after Verbosity.
         self.u.PostMessageW(choice,0x100,9,0)
+        self.wait(lambda:any('Hints and help messages, check box' in notice for notice in self.notices))
+        self.u.PostMessageW(self.u.GetDlgItem(hwnd,201),0x100,9,0)
         self.wait(lambda:any('Spoken punctuation, combo box, none' in notice for notice in self.notices))
         before=len(self.notices)
         self.panel.command('previous setting')
-        self.wait(lambda:len(self.notices)>before and 'Verbosity, combo box, high' in self.notices[-1])
+        self.wait(lambda:len(self.notices)>before and 'Hints and help messages, check box' in self.notices[-1])
     def test_category_arrows_choose_enter_opens_then_checkbox_and_enter_save(self):
         hwnd=self.open_panel();categories=self.u.GetDlgItem(hwnd,100)
         self.u.PostMessageW(categories,0x100,0x28,0) # Choose only; Enter opens.
@@ -220,11 +224,15 @@ class NativeSettingsTests(unittest.TestCase):
         headers=self.u.GetDlgItem(hwnd,204)
         self.u.PostMessageW(headers,0x100,0x20,0)
         self.wait(lambda:self.session.values['email_header_order']=='subject, date')
-        self.panel.command('next setting');self.panel.command('next setting');self.panel.command('next setting')
-        self.wait(lambda:any('Move down, button.' in n for n in self.notices))
-        self.u.PostMessageW(self.u.GetDlgItem(hwnd,302),0x100,0x0D,0)
+        # The mouse buttons are out of the Tab order (0.2.211): no WS_TABSTOP.
+        for button in (300,301,302):
+            self.assertFalse(self.u.GetWindowLongW(self.u.GetDlgItem(hwnd,button),-16)&0x10000,button)
+        # The voice command moves the header, and so does a click on the mouse button.
+        self.panel.command('move header down')
         self.wait(lambda:any('From, disabled, 2 of 4' in n for n in self.notices))
-        self.u.PostMessageW(self.u.GetDlgItem(hwnd,302),0x100,0x1B,0)
+        self.u.SendMessageW(self.u.GetDlgItem(hwnd,301),0xF5,0,0)   # BM_CLICK on Move up
+        self.wait(lambda:any('From, disabled, 1 of 4' in n for n in self.notices))
+        self.u.PostMessageW(headers,0x100,0x1B,0)
         self.wait(lambda:not self.u.GetDlgItem(hwnd,204))
         self.assertEqual(self.session.values['email_header_order'],'from, subject, date');self.assertFalse(self.saved)
 
