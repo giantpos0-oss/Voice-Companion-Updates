@@ -606,17 +606,17 @@ class ContactsScreenTests(CompanionHarness):
 
 class GuideContactKeysTests(unittest.TestCase):
     def test_the_guide_gives_the_inbox_menu_keys_for_add_contact(self):
-        # Part 10.3 said Alt, 5, then 3, which opens Email drafts (sweep, November 6, 2026).
+        # Part 10.3 once gave a path that opened Email drafts (sweep, November 6, 2026). Paths are letters now.
         import re
         from screen_menus import MENUS, menu_path
         groups = MENUS['mailbox'][1]
         group = next(i for i, (_, entries) in enumerate(groups) if any(c == 'add contact {value}' for _, _, c in entries))
         index = next(i for i, (_, _, c) in enumerate(groups[group][1]) if c == 'add contact {value}')
-        expected = menu_path('mailbox', group, index)       # 'Alt, 9, 7'
+        expected = menu_path('mailbox', group, index)       # 'Alt, T, C'
         for name in ('START HERE - Veteran.txt', 'START HERE - Veteran.html'):
             text = re.sub(r'</?kbd>', '', (HERE / name).read_text(encoding='utf-8'))
             line = next(line for line in text.splitlines() if 'To save a contact, say "Add contact"' in line)
-            found = re.search(r'in the inbox, press (Alt, \d+), then (\d+)\.', line)
+            found = re.search(r'in the inbox, press (Alt, [A-Z]), then ([A-Z])\.', line)
             with self.subTest(guide=name):
                 self.assertIsNotNone(found, line)
                 self.assertEqual(found[1] + ', ' + found[2], expected)

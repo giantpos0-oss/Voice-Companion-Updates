@@ -193,8 +193,10 @@ class KeysTests(unittest.TestCase):
         self.assertEqual((SHORTCUTS['Ctrl+Z'], SHORTCUTS['Ctrl+Y']), ('undo', 'redo'))
         self.assertEqual((screen_command('Ctrl+Z', 'email_draft'), screen_command('Ctrl+Y', 'email_draft')), ('undo', 'redo'))
         edit = [name for name, _, _ in DOCUMENT_ACTIONS['Edit']]
-        # Redo is added last, so the menu letters people know stay the same.
-        self.assertEqual((edit[0], edit[-1], edit[1]), ('Undo', 'Redo', 'Select all'))
+        # Undo and Redo lead the Edit group, with their own letters U and R (November 10, 2026).
+        self.assertEqual(edit[:2], ['Undo', 'Redo'])
+        from task_navigation import DOCUMENT_ITEM_LETTERS
+        self.assertEqual((DOCUMENT_ITEM_LETTERS[('Edit', 'Undo')], DOCUMENT_ITEM_LETTERS[('Edit', 'Redo')]), ('U', 'R'))
 
 
 class SaveCommandTests(unittest.TestCase):

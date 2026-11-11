@@ -218,7 +218,7 @@ ALT_MENU_COMMANDS = {
 
 ALT_MENU_GROUPS = {
     'mailbox': ['Message', 'Header', 'Attachments', 'Unread and flags', 'Select', 'Go to', 'Edit folders', 'View', 'Tools'],
-    'email_draft': ['Message', 'Edit', 'Go to', 'Format', 'Attachments', 'Contacts', 'Importance and read receipt',
+    'email_draft': ['Message', 'Edit', 'Go to', 'Text style', 'Attachments', 'Contacts', 'Importance and read receipt',
                     'Options and help'],
     'note': ['Note', 'Edit', 'Options and help'],
     'web': ['Go to', 'Page', 'Favorites', 'Tools', 'Options and help'],
@@ -326,6 +326,125 @@ class MenuArrivalStyleTests(MenuLayoutCase):
             pattern = re.escape(title + '. ') + '(?:No apps are in it yet. To add apps, press Enter on Change favorite apps. )?' \
                 + re.escape(first + ' (' + first[0].upper() + '), 1 of ' + str(len(nav.items(mode))) + '.') + '( .+\\.)?$'
             self.assertRegex(self.said[-1], pattern, words)
+
+
+class AltMenuLetterTests(unittest.TestCase):
+    """Windows-style letters (Will, November 10, 2026): Alt, the group's letter, the item's letter.
+    No numbered paths: a number runs nothing."""
+    def all_menus(self):
+        """(app, group, group letter, [(label, letter, command)]) for every Alt menu."""
+        import screen_menus
+        rows = []
+        for mode, (_, groups) in screen_menus.MENUS.items():
+            for name, entries in groups:
+                rows.append((mode, name, screen_menus.group_letter(name),
+                             [(label, screen_menus.item_letter(command), command) for label, _, command in entries]))
+        for group, letter, entries in task_navigation.DOCUMENT_LAYOUT:
+            commands = {label: command for label, _, command in task_navigation.DOCUMENT_ACTIONS[group]}
+            rows.append(('document', group, letter, [(label, item, commands[label]) for label, item in entries]))
+        return rows
+
+    def test_no_two_items_in_a_group_share_a_letter(self):
+        groups = {}
+        for mode, name, letter, items in self.all_menus():
+            groups.setdefault(mode, []).append(letter)
+            letters = [item for _, item, _ in items]
+            self.assertEqual(len(letters), len(set(letters)), (mode, name, letters))
+            self.assertTrue(all(len(x) == 1 and x.isalpha() and x.isupper() for x in letters), (mode, name, letters))
+        for mode, letters in groups.items():
+            self.assertEqual(len(letters), len(set(letters)), (mode, letters))
+
+    def test_the_same_action_has_the_same_letter_in_every_app(self):
+        seen = {}
+        for mode, name, _, items in self.all_menus():
+            for label, letter, command in items:
+                action = 'help' if command.startswith('help with ') else 'options' if command.startswith('@options') else command
+                if action == '{value}':
+                    continue   # two different document items ask for words to say
+                with self.subTest(action=action, where=(mode, name)):
+                    self.assertEqual(seen.setdefault(action, (letter, mode, label))[0], letter, (seen[action], mode, label))
+        for shared, letter in (('help', 'H'), ('options', 'O'), ('main menu', 'M'), ('undo', 'U'), ('redo', 'R')):
+            self.assertEqual(seen[shared][0], letter, shared)
+
+    def test_group_names_that_repeat_use_the_same_letter(self):
+        letters = {}
+        for mode, name, letter, _ in self.all_menus():
+            self.assertEqual(letters.setdefault(name, letter), letter, (mode, name))
+
+    def test_no_spoken_item_or_guide_teaches_a_numbered_path(self):
+        import re
+        import screen_menus
+        from pathlib import Path
+        here = Path(__file__).parent
+        menu = companion.screen_menu()
+        for mode, (_, groups) in screen_menus.MENUS.items():
+            menu.mode = mode
+            for g in range(len(groups)):
+                menu.group = g if len(groups) > 1 else None
+                for i in range(len(menu.entries())):
+                    self.assertNotRegex(menu.describe(i), r'Alt, \d', mode)
+            menu.close()
+        for name in ('START HERE - Veteran.txt', 'START HERE - Veteran.html', 'TRAINER TEST CHECKLIST.txt',
+                     'tutorial_curriculum.py'):
+            text = re.sub(r'</?kbd>', '', (here / name).read_text(encoding='utf-8'))
+            self.assertIsNone(re.search(r'Alt, \d', text), name)
+
+
+class AltMenuKeyTests(MenuLayoutCase):
+    def setUp(self):
+        super().setUp()
+        from email_draft import VoiceEmail
+        from document_editor import Paragraph
+        draft = VoiceEmail(self.folder / 'Email Drafts', recipient='friend@example.com', subject='Hi',
+                           provider='thunderbird', compose_step='body')
+        draft.paragraphs = [Paragraph('See you soon.')]
+        companion.email_draft = draft
+        p = mock.patch.object(companion, 'SCREEN_MENU', None); p.start(); self.addCleanup(p.stop)
+
+    def press(self, key):
+        request = companion.navigation_key(key, 'email_draft')
+        return 'email_draft' if request is None else companion.handle(request, 'email_draft')
+
+    def test_letters_open_the_group_and_run_the_item(self):
+        self.press('Alt')
+        self.assertEqual(self.said[-1], 'Email draft menu. Message (M), 1 of 8.')
+        self.press('Letter:e')
+        self.assertEqual(self.said[-1], 'Edit menu. Undo (U), 1 of 2. Control+Z. Say undo.')
+        with mock.patch.object(companion, 'handle', wraps=companion.handle) as handled:
+            self.press('Letter:r')
+        self.assertIn(mock.call('redo', 'email_draft', typed=True), handled.call_args_list)
+        self.assertIsNone(companion.SCREEN_MENU.mode)
+
+    def test_a_number_runs_nothing(self):
+        self.press('Alt')
+        self.press('Letter:2')
+        self.assertEqual(self.said[-1], 'No item uses 2.')
+        self.assertEqual(companion.SCREEN_MENU.group, None)
+        self.press('Letter:m')
+        before = list(self.said)
+        self.press('Letter:1')
+        self.assertEqual(self.said[-1], 'No item uses 1.')
+        self.assertEqual(companion.SCREEN_MENU.mode, 'email_draft')   # still open, nothing ran
+        self.assertEqual(len(self.said), len(before) + 1)
+        # A spoken number does not choose an item either.
+        companion.handle('two', 'email_draft')
+        self.assertIsNone(companion.SCREEN_MENU.mode)
+
+    def test_a_letter_no_item_has_says_so(self):
+        self.press('Alt')
+        self.press('Letter:q')
+        self.assertEqual(self.said[-1], 'No item uses Q.')
+
+    def test_the_document_menu_uses_letters_not_numbers(self):
+        nav = companion.task_navigation()
+        nav.group = None
+        self.assertEqual(nav.keyboard('MenuPick:3', 'document_menu'), '@menu:none:3')
+        self.assertEqual(nav.keyboard('MenuPick:r', 'document_menu'), '@menu:' + str(list(task_navigation.DOCUMENT_ACTIONS).index('Read')))
+        nav.group = 'Read'
+        self.assertEqual(nav.keyboard('MenuPick:p', 'document_menu'),
+                         '@menu:' + str([n for n, _, _ in task_navigation.DOCUMENT_ACTIONS['Read']].index('Read paragraph')))
+        items = nav.items('document_menu')
+        self.assertEqual(nav.describe(items[1], 1, len(items)), 'Read paragraph (P), 2 of 9.')
 
 
 if __name__ == '__main__':

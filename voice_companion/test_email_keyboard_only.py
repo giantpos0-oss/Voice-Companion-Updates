@@ -162,21 +162,33 @@ class EmptyFolderWordsTests(test_attachment_voice.PlacesTestCase):
 
 
 class GuideKeyTests(unittest.TestCase):
-    def test_every_email_menu_path_in_the_guide_reaches_what_it_names(self):
-        # The guide said Alt, 5, then 3 adds a contact. That opens Email drafts; Add contact is Alt, 5, then 5.
+    def test_every_menu_path_in_the_guide_reaches_what_it_names(self):
+        # Letter paths only (Will, November 10, 2026): "Alt, T, then S" is Tools, then Switch account.
+        # Each path must reach an item, and a voice command quoted on the same line must be that item's.
         import re
         from pathlib import Path
+        import task_navigation
         guide = Path(__file__).with_name('START HERE - Veteran.txt').read_text(encoding='utf-8')
-        groups = screen_menus.MENUS['mailbox'][1]
+        menus = []   # (group letter, item letter, command)
+        for mode, (_, groups) in screen_menus.MENUS.items():
+            for name, entries in groups:
+                menus += [(screen_menus.group_letter(name), screen_menus.item_letter(c), c) for _, _, c in entries]
+        for group, letter, entries in task_navigation.DOCUMENT_LAYOUT:
+            commands = {label: c for label, _, c in task_navigation.DOCUMENT_ACTIONS[group]}
+            menus += [(letter, item, commands[label]) for label, item in entries]
         found = 0
         for line in guide.splitlines():
-            for path in re.finditer(r'(?:in the inbox|in email), press Alt, (\d), then (\d)', line):
-                said = re.findall(r'"([^"]+)"', line[:path.start()])[0].lower()
-                command = groups[int(path[1]) - 1][1][int(path[2]) - 1][2].replace(' {value}', '')
-                with self.subTest(line=line[:60]):
-                    self.assertTrue(said.startswith(command), (said, command))
-                found += 1
-        self.assertGreaterEqual(found, 4)
+            self.assertNotRegex(line, r'Alt, \d')
+            said = [words.lower().rstrip('.?') for words in re.findall(r'"([^"]+)"', line)]
+            for path in re.finditer(r'Alt, ([A-Z]), then ([A-Z])(?: or ([A-Z]))?', line):
+                for item in [l for l in path.groups()[1:] if l]:
+                    commands = [c.replace(' {value}', '') for g, i, c in menus if (g, i) == (path[1], item)]
+                    with self.subTest(line=line[:60], path=path[0]):
+                        self.assertTrue(commands, path[0])
+                        if said:
+                            self.assertTrue(any(c.startswith(w) or w.startswith(c) for c in commands for w in said), (said, commands))
+                    found += 1
+        self.assertGreaterEqual(found, 14)
 
 
 class LeaveDraftWordsTests(test_attachment_voice.PlacesTestCase):

@@ -289,7 +289,13 @@ Keys that only work on the main menu:
 The main menu is the first screen. "Go back" there tells you so.
 If the main menu does not know your words, it says "I did not understand that. You are on the main menu. Press F1 twice for help."
 On the main menu, Alt says that you are in the main menu. The main menu is already a menu, so it has no Alt menu of its own.
-On most other screens, press Alt to open a menu of that screen's actions. Each item says its key and its voice command. Use the arrows and Enter to choose. Press a number to open a group or choose an item. Type a letter to find an item. Escape goes back one level. Press Alt again to close the menu.
+On most other screens, press Alt to open a menu of that screen's actions. These menus work like Windows menus. Each group and each item has a letter, said after its name, such as "Reply (R), 3 of 9."
+- Press a group's letter to open the group. For example, in email, press Alt, then M for Message.
+- Press an item's letter to run it. For example, press Alt, M, then R to reply.
+- The same action has the same letter in every app. H is always help, O is always options, and M is always Main menu.
+- Numbers do not choose anything in these menus.
+- You can also use the arrows and Enter. Each item also says its shortcut key, if it has one, and its voice command.
+- Escape goes back one level. Press Alt again to close the menu.
 If a screen has no Alt menu, or you must answer a question first, Alt tells you why.
 
 1.4 Keys that work everywhere
@@ -485,7 +491,7 @@ These commands work in documents, email, web pages, and notes.
 - To move by letter or symbol, say "Next character" or "Previous character", or press Right Arrow or Left Arrow.
 - To move by word, say "Next word" or "Previous word", or press Control+Right Arrow or Control+Left Arrow.
 - To move by line, say "Next line" or "Previous line", or press Down Arrow or Up Arrow.
-- To move by sentence, say "Next sentence" or "Previous sentence". In a document, you can also press Alt, 5, then Q or R.
+- To move by sentence, say "Next sentence" or "Previous sentence". In a document, you can also press Alt, N, then S, or Alt, V, then S.
 - To move by paragraph, say "Next paragraph" or "Previous paragraph", or press Control+Down Arrow or Control+Up Arrow.
 - To reach the start or end of a line, say "Go to start of line" or "Go to end of line", or press Home or End.
 A line ends at a line break in the text. It may not match a line shown on the screen.
@@ -548,7 +554,7 @@ If the app finds one match, it changes that text at once. If it finds several, u
 To stop without a change, say "Cancel replacement", or press Escape.
 Say a punctuation name if you want it in the new text. For example, "Replace cat with dog period" puts a period after dog. A period that speech recognition adds by itself is not used.
 To replace the current word, sentence, or paragraph, say "Replace word with", "Replace sentence with", or "Replace paragraph with", followed by the new text. For example, say "Replace word with hello", "Replace sentence with Thank you", or "Replace paragraph with I will call tomorrow".
-To add text at a place, say "Insert before" or "Insert after", followed by words already in the text. For example, say "Insert before red fox". In a document, you can also press Alt, 2, then O or P.
+To add text at a place, say "Insert before" or "Insert after", followed by words already in the text. For example, say "Insert before red fox". In a document, you can also press Alt, C, then B or A.
 Choose a matching place if asked. Then speak the words to add. In Commands only, say "Type literally" before the new words.
 
 6. FILE MANAGER
@@ -753,7 +759,7 @@ To start a document:
 2. Companion says, "Please say or type the name for your document, then press Enter or say confirm."
 3. Type the name, such as My Letter, and press Enter. Or say the name. Companion says it back. Then say "Confirm", or press Enter.
 4. Speak a short sentence or type into the document.
-5. To check what you wrote, say "Read paragraph", or press Alt, 5, then B.
+5. To check what you wrote, say "Read paragraph", or press Alt, R, then P.
 To stop without making a document, press Escape or say "Cancel" while Companion asks for the name.
 To change the name later, say "Name document", followed by the new name. Or press F2, type the name, and press Enter. You can change only the capitals, such as budget to Budget.
 If a document is damaged, Companion says what to do next. When it kept an earlier copy from before your last save, say "Open earlier copy" to use it. The damaged file is kept beside it.
@@ -800,7 +806,7 @@ With text selected, these commands change all the selected paragraphs.
 Line spacing is the space between the lines of a paragraph.
 - For single or double spacing, say "Single space" or "Double space", or press Control+1 or Control+2.
 - For one and a half, say "Line spacing 1.5", or press Control+5.
-- For another value, say "Line spacing", followed by the number. Or press Alt, 3, then I, and type the number.
+- For another value, say "Line spacing", followed by the number. Or press Alt, P, then S, and type the number.
 - For an exact value, say "Custom spacing". Give the value when asked, such as "One point seven five" or "Exactly eighteen points". Companion repeats it. Say "Yes" to use it, "No" to give another value, or "Cancel" to stop.
 - For the whole document, say "Set document line spacing to", followed by the value, such as "Set document line spacing to 1.25".
 - To check, say "Read line spacing" for this paragraph, or "Read document line spacing" for the whole document.
@@ -812,14 +818,14 @@ A bulleted list marks each item with a dot. A numbered list gives each item a nu
 1. Say "Bulleted list" or "Numbered list", or press Control+Shift+L or Control+Shift+7.
 2. Speak or type the first item.
 3. For the next item, say "New paragraph", or press Enter.
-4. To go back to plain text, say "End list", or press Alt, 4, then F.
+4. To go back to plain text, say "End list", or press Alt, I, then E.
 
 8.7 Make a table
 A table is a grid of boxes in rows and columns. Each box is called a cell.
 1. Say "Create table with", the number of rows, "rows and", the number of columns, and "columns". For example, say "Create table with two rows and two columns". Or press Control+Alt+T and type the size.
 2. Speak the text for the first cell.
 3. To move to the next cell, say "Next cell", or press Tab.
-4. To check your work, say "Read table", or press Alt, 8, then A.
+4. To check your work, say "Read table", or press Alt, A, then R.
 To move around a table:
 - "Previous cell", or press Shift+Tab.
 - "Next row" or "Previous row", or press Alt+Down Arrow or Alt+Up Arrow.
@@ -859,8 +865,23 @@ Your files are kept in Documents, in the Voice Companion folder. They use the .d
 Companion can reopen the simple files it makes. It may refuse a complex Word file, so that it does not change it the wrong way.
 
 8.9 Document command menu
-In a document, press Alt for the document menu. Its groups are File, Edit, Format, Insert, Read and navigate, Dictation, Tools and help, and Table.
-Use the arrows and Enter, or press a group number. Type a letter to find an item. Escape goes back a level, then back to the document.
+In a document, press Alt for the document menu. Its groups, with their letters, are:
+- File (F)
+- Edit (E)
+- Select (S)
+- Change (C): insert or replace words where you are.
+- Delete (D): delete the word, line, sentence, or paragraph you are in.
+- Text style (T): bold, italic, underline, fonts, and highlight.
+- Paragraph (P): alignment and line spacing.
+- Headings (H)
+- Insert (I): new lines, tables, lists, and dictation.
+- Read (R)
+- Next (N): move to the next character, word, line, sentence, paragraph, or heading.
+- Previous (V): move back by the same steps.
+- Table (A)
+- Options and help (O)
+Press a group's letter to open it. Then press an item's letter to run it. For example, Alt, F, then S saves.
+Each item says its letter, such as "Save (S), 1 of 6." You can also use the arrows and Enter. Escape goes back a level, then back to the document.
 Each item works the same as its voice command. If an item needs a value, type or say it and press Enter. Escape cancels.
 Document keys:
 - Control+S saves. F12 saves as. Control+Shift+S also saves as. F2 names the document.
@@ -953,7 +974,7 @@ If account setup is not available, ask your helper to check the app's email setu
 - To hear your saved accounts, say "List email accounts".
 - To hear the account in use, say "Which email account?". Check it before you send mail.
 To switch to another account:
-1. Say "Switch account". Or in email, press Alt, 9, then 2.
+1. Say "Switch account". Or in email, press Alt, T, then S.
 2. You hear each account, such as "Thunderbird, sam@gmail.com, 2 of 3". The account in use comes first and is called current.
 3. Press Up Arrow or Down Arrow, then Enter. Or say "Next" and "That one". You can also say the number, the service, or the address, such as "2", "Yahoo", "Gmail", or "sam at gmail dot com".
 Companion switches to that account and opens its inbox. To keep the account you have, say "Cancel", or press Escape.
@@ -962,7 +983,7 @@ You can also say "Switch to", followed by the service name, such as "Switch to Y
 With the keyboard, you can also press Alt+O and choose Email options. Sending account names the account in use. Choose another one there to switch.
 Each account starts with its kind, Thunderbird or Yahoo, such as "Thunderbird, sam@gmail.com". You can connect a Yahoo address two ways, straight to Yahoo and through Thunderbird. Then you hear both, "Yahoo, sam@yahoo.com" and "Thunderbird, sam@yahoo.com". To pick one by voice, say the kind, then the address. For example, say "Switch to Thunderbird, sam at yahoo dot com".
 To remove an account from Companion:
-1. Say "Remove email account". Or in email, press Alt, 9, then 4.
+1. Say "Remove email account". Or in email, press Alt, T, then R.
 2. Choose the account from the list, the same way as above.
 3. Listen to the question. It names the account.
 4. Say "Yes" to remove it, or "No" to keep it. Or press Y or N.
@@ -976,7 +997,7 @@ Accounts are also in the email menu. In email, press Alt, then 6. Choose Add acc
 
 10.3 Add and find contacts
 A contact is a saved name with an email address or a phone number. Address manager keeps your contacts. It is in Organizer on the main menu. See chapter 13.
-- To save a contact, say "Add contact", the person's name, "as", and their email address. For example, say "Add contact Bob as bob@example.com". Or in the inbox, press Alt, 9, then 7. Type the name, the word as, and the address, then press Enter.
+- To save a contact, say "Add contact", the person's name, "as", and their email address. For example, say "Add contact Bob as bob@example.com". Or in the inbox, press Alt, T, then C. Type the name, the word as, and the address, then press Enter.
 - To hear saved names, say "List contacts", or press P in the inbox. While you write an email, press Control+K. Use the arrows to hear each name. Press Enter to hear the address.
 - To find a contact, say "Find contact", followed by the saved name, such as "Find contact Bob".
 - When Companion asks who to email, you can say a saved contact's name.
@@ -985,7 +1006,7 @@ Your Google calendar is in Schedule manager. See chapter 14. Google Drive is not
 
 10.4 Add a Thunderbird account
 You can add an email account to Thunderbird without leaving Companion. Each address becomes its own account in Companion. You can add several, one after another.
-1. Say "Add Thunderbird account". Or in email, press Alt, 9, then 5.
+1. Say "Add Thunderbird account". Or in email, press Alt, T, then T.
 2. Type or say the email address, then press Enter.
 3. The first time, Companion asks for the name people see on your email. Type or say it, then press Enter.
 4. Companion opens the Thunderbird page for adding an account. It stays in the background. Companion fills in your name and address, and reads the page to you.
@@ -1112,7 +1133,7 @@ To repeat the sender, subject, and date, say "Message details", or press I. To h
 - Alt+6: how many files are attached. Say "How many attachments?"
 For more of a long message, say "Continue reading", or press Down Arrow.
 To read it again from the top, say "Read from beginning". To go back to the message list, say "Back to folder" or "Go back", or press Escape.
-Press Alt to open the email menu. Its groups are Message, Header, Attachments, Unread and flags, Select, Go to, Edit folders, View, and Tools. For example, press Alt, 6, then 2 to go to Sent. Press Alt, 9, then 8 for Email options.
+Press Alt to open the email menu. Its groups are Message, Header, Attachments, Unread and flags, Select, Go to, Edit folders, View, and Tools. For example, press Alt, G, then S to go to Sent. Press Alt, T, then O for Email options.
 The single-letter email keys are listed in part 12.6.
 
 12.2 Go to folders
@@ -1166,11 +1187,11 @@ A forward includes the original attachments. Companion says their names when the
 To leave the reply, say "Cancel" or "Back to inbox". If you wrote something, Companion asks whether to save it as a draft, throw it away, or keep writing. Then you are back at the message you were reading.
 
 12.5 Create and manage folders
-- To create a folder, say "Create folder", followed by the name, such as "Create folder Receipts". Or press Alt, 7, then 1.
+- To create a folder, say "Create folder", followed by the name, such as "Create folder Receipts". Or press Alt, E, then C.
 - To create a folder inside another, say "Create folder", the name, "inside", and the other folder's name. For example, say "Create folder 2026 inside Receipts". Leave out the last name to choose it from a list, as in "Create folder 2026 inside".
 - To rename a folder, say "Rename folder", or press F2, and choose it. Then say "Rename to", followed by the new name, such as "Rename to Bills". Or give both names at once, such as "Rename folder Receipts to Bills".
-- To move a folder, say "Move folder", or press Alt, 7, then 3. Or give both names at once, such as "Move folder Bills into Archive".
-- To delete a folder, say "Delete folder", or press Alt, 7, then 4, and choose it. Or name it, such as "Delete folder Bills".
+- To move a folder, say "Move folder", or press Alt, E, then M. Or give both names at once, such as "Move folder Bills into Archive".
+- To delete a folder, say "Delete folder", or press Alt, E, then D, and choose it. Or name it, such as "Delete folder Bills".
 Listen to the full folder place and the action. Say "Yes" to go ahead or "No" to cancel.
 You can delete only empty folders you made. Built-in folders such as Inbox are protected.
 Some email services limit folder changes. For example, Yahoo does not let you rename, move, or delete a folder that has folders inside it.

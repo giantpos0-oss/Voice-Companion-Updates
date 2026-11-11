@@ -260,20 +260,19 @@ class ScreenMenuTests(unittest.TestCase):
         self.assertEqual(self.said[-1], 'Tools (T), 9 of 9.')
         self.press('Up', mode)
         self.assertEqual(self.said[-1], 'View (V), 8 of 9.')
+        # A group's letter opens it (Will, November 10, 2026).
         self.press('Letter:t', mode)
-        self.assertEqual(self.said[-1], 'Tools (T), 9 of 9.')
-        self.press('Enter', mode)
-        self.assertEqual(self.said[-1], 'Tools menu. Add account (A), 1 of 9. Alt, 9, 1. Say add account.')
+        self.assertEqual(self.said[-1], 'Tools menu. Add account (A), 1 of 9. Say add account.')
         self.press('Down', mode)
-        self.assertEqual(self.said[-1], 'Switch account (S), 2 of 9. Alt, 9, 2. Say switch account.')
+        self.assertEqual(self.said[-1], 'Switch account (S), 2 of 9. Say switch account.')
         self.press('Escape', mode)
         self.assertEqual(self.said[-1], 'Email menu. Tools (T), 9 of 9.')
         self.press('Letter:1', mode)
+        self.assertEqual(self.said[-1], 'No item uses 1.')
+        self.press('Letter:m', mode)
         self.assertEqual(self.said[-1], 'Message menu. New email (N), 1 of 9. N. Say new email.')
-        self.press('Letter:r', mode)
-        self.assertTrue(self.said[-1].startswith('Read message (R), 2 of 9. Enter.'))
-        self.press('Letter:r', mode)
-        self.assertTrue(self.said[-1].startswith('Reply (R), 3 of 9. R.'))
+        self.press('Down', mode)
+        self.assertTrue(self.said[-1].startswith('Open message (O), 2 of 9. Enter.'))
         self.press('Alt', mode)
         self.assertEqual(self.said[-1], 'Menu closed. Back to email.')
         self.assertIsNone(app.SCREEN_MENU.mode)
@@ -330,8 +329,8 @@ class ScreenMenuTests(unittest.TestCase):
 
     def test_draft_menu_send_without_account_keeps_draft(self):
         mode = self.screen('email_draft')
-        self.press('Alt', mode); self.press('Letter:1', mode)
-        self.assertEqual(self.press('Letter:1', mode), 'email_draft')
+        self.press('Alt', mode); self.press('Letter:m', mode)   # Message, then S for Send
+        self.assertEqual(self.press('Letter:s', mode), 'email_draft')
         self.assertIn('No email account is set up yet', ' '.join(self.said))
         self.assertIn('Thank you.', str(app.email_draft.paragraphs))
 

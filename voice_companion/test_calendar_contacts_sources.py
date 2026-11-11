@@ -255,7 +255,7 @@ class CalendarSourceTests(CalendarHarness):
     def test_the_alt_menu_has_choose_calendar_last(self):
         mode = self.open()
         self.press('Alt', mode)
-        self.press('Letter:3', mode)
+        self.press('Letter:c', mode)   # the Calendar group
         entries = app.SCREEN_MENU.entries()
         self.assertEqual(entries[-1], ('Choose calendar', 'Ctrl+L', 'choose calendar'))
         self.press('End', mode)
@@ -311,7 +311,7 @@ class CalendarOneAccountTests(CalendarHarness):
         app.handle('where am i', mode)
         self.assertTrue(self.said().startswith('Schedule manager. Today, Monday, October 26.'))
         self.press('Alt', mode)
-        self.press('Letter:3', mode)
+        self.press('Letter:c', mode)   # the Calendar group
         self.assertNotIn('choose calendar', [entry[2] for entry in app.SCREEN_MENU.entries()])
         self.assertFalse((self.root / pim_sources.FILE).exists())
 
@@ -439,7 +439,7 @@ class ContactsSourceTests(ContactsSourceHarness):
     def test_the_alt_menu_has_choose_address_book_last(self):
         mode = self.open()
         self.press('Alt', mode)
-        self.press('Letter:2', mode)
+        self.press('Letter:a', mode)   # the Address book group
         self.assertEqual(app.SCREEN_MENU.entries()[-1], ('Choose address book', 'Ctrl+L', 'choose address book'))
 
     def test_a_kept_address_book_that_is_gone_shows_all_and_says_so_once(self):

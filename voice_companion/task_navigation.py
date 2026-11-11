@@ -74,11 +74,54 @@ SHORTCUTS.update({'CapsLock+F':'what formatting','CapsLock+Shift+Down':'what is 
                  'Ctrl+Shift+L':'bulleted list','Ctrl+Shift+7':'numbered list','Ctrl+Alt+T':'create table with {value}',
                  'Ctrl+Shift+H':'highlight {value}','Ctrl+Alt+H':'list headings','Ctrl+Alt+Down':'next heading',
                  'Ctrl+Alt+Up':'previous heading','Ctrl+Shift+Delete':'delete selection','Ctrl+Alt+S':'select {value}'})
-DOCUMENT_ACTIONS['Format'].extend([('Heading '+str(level),'Ctrl+Alt+'+str(level),'heading '+str(level)) for level in range(2,7)])
-# Every command also has a stable two-step menu accelerator: Alt, group digit,
-# then the displayed item number. This covers commands without a conventional key.
-for _group,_items in DOCUMENT_ACTIONS.items():
-    DOCUMENT_ACTIONS[_group]=[(name,key or next((k for k,v in SHORTCUTS.items() if v==command),'Alt, '+str(list(DOCUMENT_ACTIONS).index(_group)+1)+', '+('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[i])),command) for i,(name,key,command) in enumerate(_items)]
+# Heading 2 to 6 have their own keys (Control+Alt+2 to 6); in the menu, Heading level asks
+# which level, so the menu needs no numbers.
+# The document menu works like a Windows menu (Will, November 10, 2026): Alt, the group's
+# letter, then the item's letter. Numbers do nothing. Groups are small enough that every item
+# has its own letter: mostly the first letter of its main word; otherwise a well-known letter
+# from it, as in Word (T for Cut, E for Replace, A for Table).
+# (group, letter, [(label, letter)]), in menu order.
+DOCUMENT_LAYOUT = (
+    ('File', 'F', (('Save', 'S'), ('Save as', 'A'), ('Rename', 'R'), ('Open', 'O'), ('New', 'N'), ('Close', 'C'))),
+    ('Edit', 'E', (('Undo', 'U'), ('Redo', 'R'), ('Cut', 'T'), ('Copy', 'C'), ('Paste', 'P'), ('Find text', 'F'),
+                   ('Replace text', 'E'), ('Scratch last dictation', 'S'))),
+    ('Select', 'S', (('Select all', 'A'), ('Select text', 'T'), ('Clear selection', 'C'), ('Set selection start', 'S'),
+                     ('Set selection end', 'E'), ('Describe selection', 'W'), ('Delete selected text', 'D'))),
+    ('Change', 'C', (('Insert before text', 'B'), ('Insert after text', 'A'), ('Replace current word', 'W'),
+                     ('Replace current sentence', 'S'), ('Replace current paragraph', 'P'))),
+    ('Delete', 'D', (('Delete current word', 'W'), ('Delete current line', 'L'), ('Delete current sentence', 'S'),
+                     ('Delete current paragraph', 'P'))),
+    ('Text style', 'T', (('Bold', 'B'), ('Italic', 'I'), ('Underline', 'U'), ('Remove bold', 'L'), ('Remove italic', 'T'),
+                     ('Remove underline', 'E'), ('Font', 'F'), ('Font size', 'S'), ('Word font', 'W'), ('Word font size', 'Z'),
+                     ('Highlight text', 'H'), ('Formatting details', 'D'))),
+    ('Paragraph', 'P', (('Align left', 'L'), ('Align center', 'C'), ('Align right', 'R'), ('Justify', 'J'),
+                        ('Line spacing', 'S'), ('Single spacing', 'G'), ('Double spacing', 'D'), ('One and a half spacing', 'H'),
+                        ('Whole document spacing', 'W'), ('Reset paragraph spacing', 'E'), ('Reset document spacing', 'T'))),
+    ('Headings', 'H', (('Heading', 'H'), ('Heading level', 'L'), ('Normal text', 'N'))),
+    ('Insert', 'I', (('New line', 'N'), ('New paragraph', 'P'), ('Table', 'T'), ('Bulleted list', 'B'),
+                     ('Numbered list', 'U'), ('End list', 'E'), ('Start dictation', 'S'), ('Pause dictation', 'A'))),
+    ('Read', 'R', (('Read document', 'R'), ('Read paragraph', 'P'), ('Read sentence', 'S'), ('Read word', 'W'),
+                   ('Document details', 'I'), ('List headings', 'H'), ('Navigate document', 'G'),
+                   ('Beginning of document', 'B'), ('End of document', 'E'))),
+    ('Next', 'N', (('Next character', 'C'), ('Next word', 'W'), ('Next line', 'L'), ('Next sentence', 'S'),
+                   ('Next paragraph', 'P'), ('Next heading', 'H'))),
+    ('Previous', 'V', (('Previous character', 'C'), ('Previous word', 'W'), ('Previous line', 'L'),
+                       ('Previous sentence', 'S'), ('Previous paragraph', 'P'))),
+    ('Table', 'A', (('Read table', 'R'), ('Read cell', 'E'), ('Next cell', 'N'), ('Previous cell', 'P'), ('Next row', 'W'),
+                    ('Previous row', 'O'), ('Next column', 'C'), ('Previous column', 'U'), ('Add row', 'A'),
+                    ('Add column', 'D'), ('Delete row', 'X'), ('Delete column', 'L'), ('Clear cell', 'K'),
+                    ('Delete table', 'T'), ('Leave table', 'V'))),
+    ('Options and help', 'O', (('Run any document voice command', 'R'), ('Document help', 'H'),
+                               ('Word processor options', 'O'))),
+)
+_BY_LABEL = {label: (label, key, command) for _items in DOCUMENT_ACTIONS.values() for label, key, command in _items}
+DOCUMENT_ACTIONS = {group: [_BY_LABEL[label] for label, _ in entries] for group, _, entries in DOCUMENT_LAYOUT}
+DOCUMENT_GROUP_LETTERS = {group: letter for group, letter, _ in DOCUMENT_LAYOUT}
+DOCUMENT_ITEM_LETTERS = {(group, label): letter for group, _, entries in DOCUMENT_LAYOUT for label, letter in entries}
+# The keys a menu item says: its shortcut, or its letter path ("Alt, R, P") when it has none.
+DOCUMENT_ACTIONS = {group: [(name, key or next((k for k, v in SHORTCUTS.items() if v == command),
+                                                'Alt, ' + DOCUMENT_GROUP_LETTERS[group] + ', ' + DOCUMENT_ITEM_LETTERS[(group, name)]), command)
+                            for name, key, command in items] for group, items in DOCUMENT_ACTIONS.items()}
 
 
 def spoken_speed(text):
@@ -274,7 +317,21 @@ class TaskNavigation:
         return mode
 
     def describe(self, item, index, count):
+        letter = self.menu_letter(item)
+        if letter:
+            # The document menu: the letter that opens the group or runs the item. Its letter path
+            # ("Alt, R, P") is not said inside the menu, only a real shortcut key.
+            key = '' if str(item[1]).startswith('Alt, ') else item[1]
+            return item[0] + ' (' + letter + '), ' + str(index + 1) + ' of ' + str(count) + '.' + (' '+spoken_key(key)+'.' if key else '')
         return announce_item(item[0], index, count) + (' '+spoken_key(item[1])+'.' if item[1] else '')
+
+    def menu_letter(self, item):
+        """The letter of a document menu group or item, or None for other menus."""
+        if str(item[2]).startswith('@group:'):
+            return DOCUMENT_GROUP_LETTERS.get(item[2][7:])
+        if self.group and item in DOCUMENT_ACTIONS.get(self.group, ()):
+            return DOCUMENT_ITEM_LETTERS[(self.group, item[0])]
+        return None
 
     def pick(self, kind, mode=None):
         m = self.app
@@ -518,9 +575,13 @@ class TaskNavigation:
 
     def keyboard(self, key, mode):
         if mode=='document_menu' and key.startswith('MenuPick:'):
+            # A letter opens a group or runs an item. A number does nothing (no numbered paths).
             token=key.split(':',1)[1].upper()
-            index='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.find(token) if self.group else int(token)-1 if token.isdigit() else -1
-            return '@menu:'+str(index)
+            if self.group:
+                index=next((i for i,(name,_,_) in enumerate(DOCUMENT_ACTIONS[self.group]) if DOCUMENT_ITEM_LETTERS[(self.group,name)]==token),-1)
+            else:
+                index=next((i for i,name in enumerate(DOCUMENT_ACTIONS) if DOCUMENT_GROUP_LETTERS[name]==token),-1)
+            return '@menu:'+str(index) if index>=0 else '@menu:none:'+token
         if mode == 'document':
             if key in ('Doc:NextCell','Doc:PreviousCell'):return 'next cell' if key=='Doc:NextCell' else 'previous cell'
             if key == 'Alt': self.group = None; return 'document menu'
@@ -641,19 +702,17 @@ class TaskNavigation:
             return self.enter('local_media', 'Media player')
         if command in ('document menu','document commands','menu') and mode == 'document':
             self.group = None
-            return self.enter('document_menu', 'Document menu. Use arrows and Enter to choose a group')
+            return self.enter('document_menu', 'Document menu')
         if mode == 'document' and (text in SHORTCUTS.values() or command.startswith('@')):
             return self.action(text, mode) if '{value}' in text or text.startswith('@') else None
         items = self.items(mode)
         if items is None: return None
+        if mode=='document_menu' and command.startswith('@menu:none:'):
+            m.speak('No item uses '+text.rsplit(':',1)[1].upper()+'.');return mode
         if mode=='document_menu' and command.startswith('@menu:'):
             index=int(command[6:])
             if 0<=index<len(items):return self.action(items[index][2],mode)
-            m.speak('No command for this key.');return mode
-        if mode=='document_menu' and command.isdigit():
-            index=int(command)-1
-            if 0<=index<len(items):return self.action(items[index][2],mode)
-            m.speak('Choose an item number from 1 to '+str(len(items))+'.');return mode
+            m.speak('No item uses that key.');return mode
         if mode == 'local_media':
             action = {'play or pause':'toggle','play':'play','resume':'play','pause':'pause','stop media':'stop','stop':'stop',
                       'back 15 seconds':'seek','rewind':'seek','forward 15 seconds':'seek'}.get(command)

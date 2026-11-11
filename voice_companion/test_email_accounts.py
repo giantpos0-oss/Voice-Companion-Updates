@@ -239,11 +239,8 @@ class FolderAccountTests(AccountScreenTestCase):
     def test_folder_menu_item_lists_accounts(self):
         self.open_inbox()
         self.key('Alt')
-        companion.handle('6', 'mailbox')  # Go to group (November 10, 2026)
-        for _ in range(5):
-            self.key('Down')   # Inbox, Sent, Drafts, Trash, Spam, then Choose a folder
-        self.assertIn('Choose a folder', self.last())
-        self.key('Enter')
+        self.key('Letter:g')   # Go to (November 10, 2026)
+        self.key('Letter:c')   # Choose a folder
         self.assertTrue(self.last().startswith('Choose an account.'), self.last())
         self.assertIn('Close this list first', companion.screen_menu().available('mailbox'))
 
@@ -292,8 +289,8 @@ class SwitchAccountTests(AccountScreenTestCase):
                           ('Add Thunderbird account', 'add thunderbird account')])
         self.open_inbox()
         companion.handle('email menu', 'mailbox')
-        companion.handle('9', 'mailbox')   # Tools
-        companion.handle('2', 'mailbox')
+        self.key('Letter:t')   # Tools, then S for Switch account
+        self.key('Letter:s')
         self.assertTrue(self.last().startswith('Choose an account to open.'), self.last())
         self.key('Down')
         self.key('Enter')
@@ -374,8 +371,8 @@ class RemoveAccountTests(AccountScreenTestCase):
     def test_alt_menu_remove_account(self):
         self.open_inbox()
         companion.handle('email menu', 'mailbox')
-        companion.handle('9', 'mailbox')   # Tools
-        companion.handle('4', 'mailbox')
+        self.key('Letter:t')   # Tools, then R for Remove account
+        self.key('Letter:r')
         self.assertTrue(self.last().startswith('Choose the account to remove.'), self.last())
 
 
