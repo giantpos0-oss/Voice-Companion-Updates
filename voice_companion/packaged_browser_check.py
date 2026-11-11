@@ -45,7 +45,8 @@ def _check(app,folder):
                 said=[]
                 with patch.object(app,'voice',voice),patch.object(app,'web_session',session),patch.object(app,'speak',lambda text='',*a,**k:said.append(str(text))),patch.object(app,'APP_WINDOW',Mock()),patch.object(app,'KEYBOARD_SPEECH',None):
                     mode=app.open_browser_menu();steps=['open: '+mode+': '+(said[-1] if said else '')]
-                    for key in ('Down','Down','Enter','Enter'):
+                    # The menu opens on its first item (0.2.211): one Down reaches Go to favorite.
+                    for key in ('Down','Enter','Enter'):
                         mode=app.handle(app.navigation_key(key,mode),mode);steps.append(key+': '+str(mode)+': '+(said[-1] if said else ''))
                     if mode!='web' or not session.navigation_succeeded:
                         raise AssertionError('App keyboard bookmark did not open (cycle '+str(cycle+1)+').\n'+'\n'.join(step[:300] for step in steps))

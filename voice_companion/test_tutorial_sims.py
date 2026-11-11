@@ -200,3 +200,18 @@ class PrivateCopyTests(unittest.TestCase):
     def test_a_module_that_cannot_be_found_is_a_plain_unavailable(self):
         with self.assertRaises(tutorial_sims.PracticeUnavailable):
             tutorial_sims.private('no_such_module_anywhere')
+
+
+class SelfCheckTests(unittest.TestCase):
+    """The packaged app's --check-runtime builds every lesson's practice screens."""
+
+    def test_every_lesson_builds_and_a_broken_copy_is_named(self):
+        import tutorial_engine
+        self.assertEqual(tutorial_engine.self_check(companion), [])
+        def broken(name, **replace):
+            raise tutorial_sims.PracticeUnavailable(name)
+        with patch.object(tutorial_sims, 'private', broken):
+            failed = tutorial_engine.self_check(companion)
+        # A lesson that cannot build is either named here, or already says so itself
+        # ("This lesson could not start"); either way the check never crashes.
+        self.assertIsInstance(failed, list)

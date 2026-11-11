@@ -6567,6 +6567,11 @@ def main():
                 raise RuntimeError('The onboard user guide is missing.')
             from guide_files import guide_sources
             guide_sources(expected_version=APP_VERSION)
+            # Every tutorial lesson's practice screens load in the packed app (0.2.211).
+            import tutorial_engine
+            broken = tutorial_engine.self_check(sys.modules[__name__])
+            if broken:
+                raise RuntimeError('Tutorial lessons could not start: ' + '; '.join(broken[:5]))
             update_root = Path(getattr(sys, '_MEIPASS', Path(__file__).parent))
             if getattr(sys, 'frozen', False):
                 for name in ('VoiceCompanion-WebView2.exe', 'Microsoft.Web.WebView2.Core.dll',

@@ -1076,3 +1076,25 @@ def finish(app, spoken, leave):
     # Said with the main menu in one message (handle() says it).
     app.MAIN_MENU_LEAD = spoken
     return 'awake'
+
+
+def self_check(app):
+    """Build every lesson's practice screens once and close them (the packaged app's
+    --check-runtime). Returns the lessons that could not start; empty means all can.
+    The installed app packs its modules, so this proves the practice copies load there."""
+    import tutorial_lessons
+    failed = []
+    for course in tutorial_lessons.build(app):
+        for lesson in course.lessons:
+            sims = {}
+            try:
+                sims = lesson.make_sims()
+            except Exception as error:
+                failed.append(course.name + ': ' + lesson.title + ' (' + type(error).__name__ + ')')
+            finally:
+                for sim in sims.values():
+                    try:
+                        sim.close()
+                    except Exception:
+                        pass
+    return failed
