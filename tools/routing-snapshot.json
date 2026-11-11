@@ -2152,7 +2152,7 @@
 },
 "awake | internet radio": {
 "said": [
-"Radio menu. Search stations (S), 1 of 22. Tab switches between actions and results. Enter opens the selected item."
+"Radio menu. Search stations (S), 1 of 22."
 ],
 "screen_after": "media"
 },
@@ -2388,7 +2388,7 @@
 },
 "awake | listen to podcasts": {
 "said": [
-"Podcasts menu. Browse podcasts (B), 1 of 25. Tab switches between actions and results. Enter opens the selected item."
+"Podcasts menu. Browse podcasts (B), 1 of 25."
 ],
 "screen_after": "media"
 },
@@ -3037,7 +3037,7 @@
 },
 "awake | open podcast": {
 "said": [
-"Podcasts menu. Browse podcasts (B), 1 of 25. Tab switches between actions and results. Enter opens the selected item."
+"Podcasts menu. Browse podcasts (B), 1 of 25."
 ],
 "screen_after": "media"
 },
@@ -3278,7 +3278,7 @@
 },
 "awake | podcast": {
 "said": [
-"Podcasts menu. Browse podcasts (B), 1 of 25. Tab switches between actions and results. Enter opens the selected item."
+"Podcasts menu. Browse podcasts (B), 1 of 25."
 ],
 "screen_after": "media"
 },
@@ -3302,7 +3302,7 @@
 },
 "awake | podcasts": {
 "said": [
-"Podcasts menu. Browse podcasts (B), 1 of 25. Tab switches between actions and results. Enter opens the selected item."
+"Podcasts menu. Browse podcasts (B), 1 of 25."
 ],
 "screen_after": "media"
 },
@@ -3434,7 +3434,7 @@
 },
 "awake | radio": {
 "said": [
-"Radio menu. Search stations (S), 1 of 22. Tab switches between actions and results. Enter opens the selected item."
+"Radio menu. Search stations (S), 1 of 22."
 ],
 "screen_after": "media"
 },

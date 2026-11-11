@@ -109,8 +109,7 @@ class WebToolsMenuTests(MenuLayoutCase):
         # Opened from Web tools or Favorite apps, Escape goes back there, not to the main menu.
         from browser_menu import BrowserMenu
         words = BrowserMenu(self.folder).start()
-        self.assertNotIn('main menu', words)
-        self.assertTrue(words.endswith('Escape goes back.'), words)
+        self.assertNotIn('main menu', words.lower())
 
     def test_going_to_media_ends_the_way_back_to_web_tools(self):
         companion.OFFICE_RETURN = 'web_tools_menu'
@@ -275,6 +274,58 @@ class AltMenuCategoryTests(unittest.TestCase):
                 ('attachments', 'Close the list', 'Leave and help'), ('youtube', 'List chapters', 'This video'),
                 ('note', 'Main menu', 'Options and help')):
             self.assertEqual(where.get((mode, label)), group, (mode, label))
+
+
+class MenuArrivalStyleTests(MenuLayoutCase):
+    """Every menu opens with its name and only its first item, letter shown (November 10, 2026)."""
+    def test_web_browser_menu_says_only_its_first_item(self):
+        from browser_menu import BrowserMenu
+        menu = BrowserMenu(self.folder)
+        self.assertEqual(menu.start(), 'Web browser menu. Search or enter address (S), 1 of 10.')
+        self.assertEqual(menu.index, 0)
+        session = mock.Mock(snapshot=None)
+        session.backend.regular = False
+        self.assertEqual(menu.process('next', session, False), ('Go to favorite (G), 2 of 10.', None))
+        self.assertEqual(menu.start(resume=True), 'Web browser menu. Resume where you left off (R), 1 of 11.')
+
+    def test_enter_right_after_opening_the_web_browser_menu_opens_search(self):
+        from browser_menu import BrowserMenu
+        menu = BrowserMenu(self.folder)
+        menu.start()
+        session = mock.Mock(snapshot=None)
+        session.backend.regular = False
+        self.assertEqual(menu.process('enter', session, False), ('', 'search'))
+
+    def test_alt_on_the_web_browser_menu_says_where_you_are(self):
+        from browser_menu import BrowserMenu
+        companion.web_session = mock.Mock(snapshot=None)
+        companion.web_session.backend.regular = False
+        companion.web_session.menu = BrowserMenu(self.folder)
+        companion.web_session.menu.start()
+        companion.web_session.menu.process('next', companion.web_session, False)
+        companion.screen_menu().handle('@sm:alt', 'browser_menu')
+        self.assertEqual(self.said[-1], 'Web browser menu. Go to favorite (G), 2 of 10.')
+
+    def test_radio_and_podcasts_say_only_their_first_item(self):
+        from media_navigation import MediaNavigation
+        hub = mock.Mock(stations=[], shows=[], browsing_episodes=False, preset_browsing=False, browsing_categories=False)
+        nav = MediaNavigation(hub)
+        self.assertEqual(nav.enter('radio'), 'Radio menu. Search stations (S), 1 of 22.')
+        self.assertEqual(nav.enter('podcast'), 'Podcasts menu. Browse podcasts (B), 1 of 25.')
+
+    def test_list_menus_open_with_their_name_and_first_item(self):
+        import re
+        nav = companion.task_navigation()
+        for words, mode, title in (('office tools', 'office_menu', 'Office tools'), ('organizer', 'organizer_menu', 'Organizer'),
+                                   ('web tools', 'web_tools_menu', 'Web tools'), ('media menu', 'media_menu', 'Media menu'),
+                                   ('shut down or restart', 'power_menu', 'Shut down or restart'),
+                                   ('word processor', 'word_processor', 'Word processor menu'),
+                                   ('notepad', 'notepad_menu', 'Notepad menu'), ('favorite apps', 'favorites_menu', 'Favorite apps')):
+            self.assertEqual(companion.handle(words, 'awake'), mode, words)
+            first = nav.items(mode)[0][0]
+            pattern = re.escape(title + '. ') + '(?:No apps are in it yet. To add apps, press Enter on Change favorite apps. )?' \
+                + re.escape(first + ' (' + first[0].upper() + '), 1 of ' + str(len(nav.items(mode))) + '.') + '( .+\\.)?$'
+            self.assertRegex(self.said[-1], pattern, words)
 
 
 if __name__ == '__main__':

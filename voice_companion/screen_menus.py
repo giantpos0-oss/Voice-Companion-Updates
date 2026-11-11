@@ -562,6 +562,14 @@ class ScreenMenu:
             m.speak('Main menu. ' + announce_item(names[m.MAIN_MENU_INDEX], m.MAIN_MENU_INDEX, len(names)))
             return mode
         if mode == 'browser_menu':
+            menu = getattr(m.web_session, 'menu', None)
+            if menu is not None and menu.level == 'menu':
+                # Where you are, on the item you are on, as Alt on the main menu says it.
+                state = menu.menu(m.web_session, m.PREFERENCES.get('web_keep_open', False))
+                if state:
+                    menu.index = state[1] or 0
+                    m.speak('Web browser menu. ' + menu.notice(state[0]))
+                    return mode
             return m.handle('web browser menu', mode, typed=True)
         if mode in ('media', 'podcast') and m.MEDIA_HUB:
             nav = m.media_navigation()

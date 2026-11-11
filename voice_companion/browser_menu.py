@@ -56,9 +56,15 @@ class BrowserMenu:
             items.insert(0,('Resume where you left off', 'resume'))
         return items
 
+    # The menu without Resume where you left off, which comes first when a page is kept open.
+    BASE_CHOICES = 10
+
     def start(self,resume=False):
-        self.level = 'menu'; self.index = None; self.prefix = ''; self.target = None; self.return_to_page = False
-        return 'Web browser menu. '+('Resume where you left off, ' if resume else '')+'Search or enter address, Go to favorite, New favorite, Delete favorite, Rename favorite, Go back, Go forward, Web history, Downloads, or Set up Chrome. Use arrows and Enter, or say an option. Escape goes back.'
+        """Back to the top of the menu. Says only its first item, as every menu does (Will,
+        November 10, 2026): Enter opens it, and the arrows go on from there."""
+        self.level = 'menu'; self.index = 0; self.prefix = ''; self.target = None; self.return_to_page = False
+        first = 'Resume where you left off' if resume else 'Search or enter address'
+        return 'Web browser menu. '+announce_item(first, 0, self.BASE_CHOICES + (1 if resume else 0))
 
     def menu(self, session, keep_open):
         if self.level in ('name', 'confirm'):
@@ -68,7 +74,8 @@ class BrowserMenu:
         return (names, self.index, lambda index: setattr(self, 'index', index)) if names else None
 
     def notice(self, names):
-        return announce_item(names[self.index], self.index, len(names), hotkey=False)
+        # Menu items show their letter, as on every menu; favorite and page names do not.
+        return announce_item(names[self.index], self.index, len(names), hotkey=self.level == 'menu')
 
     def letter(self, value, names):
         now = time.monotonic()

@@ -67,7 +67,9 @@ class MediaNavigation:
     def enter(self,section,keyboard=False):
         self.hub.awaiting_radio_search=False;self.hub.awaiting_podcast_search=False
         self.section=section;self.keyboard_mode=keyboard;self.full_radio_actions=False;self.focus='actions';self.index=0;self.form=None;self.pending=None;self.view='stations' if section=='radio' else 'shows';self.revision+=1
-        return ('Radio' if section=='radio' else 'Podcasts')+' menu. '+self.announce()+ ' Tab switches between actions and results. Enter opens the selected item.'
+        # Only the first item, as every menu says it (Will, November 10, 2026). Tab to the
+        # results is in the guide and in Radio help.
+        return ('Radio' if section=='radio' else 'Podcasts')+' menu. '+self.announce()
     def items(self):
         h=self.hub
         if self.view=='stations':return h.stations

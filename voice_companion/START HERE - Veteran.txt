@@ -1430,7 +1430,7 @@ Each calendar is named with its account, such as Calendar, Outlook, vet@outlook.
 15. BROWSE THE WEB
 
 15.1 Open the web browser menu
-Choose Web browser in Web tools on the main menu, or say "Web browser" from any menu. The web browser menu opens, even if you used a page earlier. It has these choices:
+Choose Web browser in Web tools on the main menu, or say "Web browser" from any menu. The web browser menu opens, even if you used a page earlier. You hear only its first item, such as "Search or enter address (S), 1 of 10." It has these choices:
 - Resume where you left off. This shows only when a page is kept open.
 - Search or enter address
 - Go to favorite
@@ -1443,7 +1443,7 @@ Choose Web browser in Web tools on the main menu, or say "Web browser" from any 
 - Downloads
 - Set up Chrome
 Use the arrows and Enter, or say the name of a menu item. Press Escape to go back. You go back to Web tools if you opened the browser from there. If not, you go to the main menu.
-On this menu, Alt reads the menu again.
+On this menu, Alt says where you are and the item you are on.
 
 15.2 Search or open an address
 1. Choose Search or enter address. From a page, you can also say "Search", or press Control+L.
@@ -1800,7 +1800,7 @@ You can play a station from the main menu and most other screens. Say "Play", th
 In a document, email, note, or web text box, these words are typed as text. On a web page, "Play" is left for the page.
 
 20.3 Use the radio menus and keys
-The radio screen has two lists: an actions list and a results list. Tab or Shift+Tab moves between them.
+The radio screen has two lists: an actions list and a results list. When it opens, you hear only the first action, such as "Search stations (S), 1 of 22." Tab or Shift+Tab moves between the two lists.
 - Use the arrows, Home, End, and first letters to choose an item. Enter opens an action or plays a station.
 - Escape from the station results says "Station actions." The next Escape says "Radio menu." Escape again goes to the Media menu. "Go back" does the same as Escape.
 - Control+F opens search. Control+Shift+P lists saved stations. F5 refreshes the station lists.
@@ -1917,7 +1917,7 @@ To find a show by its name, search:
 - To go from episodes back to the show results, say "Back to podcasts", or press Escape.
 
 23.2 Use the podcast menus and keys
-The podcast screen has an actions list and a results list. Tab and Shift+Tab move between them.
+The podcast screen has an actions list and a results list. When it opens, you hear only the first action, such as "Browse podcasts (B), 1 of 25." Tab and Shift+Tab move between them.
 - Use the arrows, Home, End, and first letters to choose.
 - Enter on a show opens its episodes. Enter on an episode or downloaded file plays it.
 - Escape goes from player controls to episodes, then to shows, then to categories if you browsed, then to actions, then to the Media menu.
