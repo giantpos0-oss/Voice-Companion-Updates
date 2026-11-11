@@ -7,10 +7,10 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 774
-- Already had both ways: 612
-- Gaps found: 162
-- Gaps fixed (Added): 154
+- Actions inventoried: 759
+- Already had both ways: 607
+- Gaps found: 152
+- Gaps fixed (Added): 144
 - Not applicable (N/A, with reason): 8
 
 ## Main menu
@@ -33,9 +33,9 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: First letter, arrows, Enter
 - Status: Both
 
-### Web browser
+### Web tools
 
-- Voice: "Web browser"
+- Voice: "Web tools"
 - Keyboard: First letter, arrows, Enter
 - Status: Both
 
@@ -315,22 +315,22 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+Z
 - Status: Both
 
-### Select all
+### Redo
 
-- Voice: "Select all"
-- Keyboard: Ctrl+A
-- Status: Both
-
-### Copy
-
-- Voice: "Copy selection"
-- Keyboard: Ctrl+C
+- Voice: "Redo"
+- Keyboard: Ctrl+Y
 - Status: Both
 
 ### Cut
 
 - Voice: "Cut selection"
 - Keyboard: Ctrl+X
+- Status: Both
+
+### Copy
+
+- Voice: "Copy selection"
+- Keyboard: Ctrl+C
 - Status: Both
 
 ### Paste
@@ -351,22 +351,42 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+H
 - Status: Both
 
+### Scratch last dictation
+
+- Voice: "Scratch that"
+- Keyboard: Ctrl+Shift+Z
+- Status: Both
+
+## Word processor document: Select
+
+### Select all
+
+- Voice: "Select all"
+- Keyboard: Ctrl+A
+- Status: Both
+
 ### Select text
 
 - Voice: "Select ..."
 - Keyboard: Ctrl+Alt+S
 - Status: Both
 
-### Delete selected text
+### Clear selection
 
-- Voice: "Delete selection"
-- Keyboard: Ctrl+Shift+Delete
+- Voice: "Clear selection"
+- Keyboard: Alt, S, C
 - Status: Both
 
-### Scratch last dictation
+### Set selection start
 
-- Voice: "Scratch that"
-- Keyboard: Ctrl+Shift+Z
+- Voice: "Selection start at ..."
+- Keyboard: Alt, S, S
+- Status: Both
+
+### Set selection end
+
+- Voice: "Selection end at ..."
+- Keyboard: Alt, S, E
 - Status: Both
 
 ### Describe selection
@@ -375,85 +395,71 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Insert+Shift+Down
 - Status: Both
 
-### Clear selection
+### Delete selected text
 
-- Voice: "Clear selection"
-- Keyboard: Alt, 2, L
+- Voice: "Delete selection"
+- Keyboard: Ctrl+Shift+Delete
 - Status: Both
 
-### Set selection start
-
-- Voice: "Selection start at ..."
-- Keyboard: Alt, 2, M
-- Status: Both
-
-### Set selection end
-
-- Voice: "Selection end at ..."
-- Keyboard: Alt, 2, N
-- Status: Both
+## Word processor document: Change
 
 ### Insert before text
 
 - Voice: "Insert before ..."
-- Keyboard: Alt, 2, O
+- Keyboard: Alt, C, B
 - Status: Both
 
 ### Insert after text
 
 - Voice: "Insert after ..."
-- Keyboard: Alt, 2, P
+- Keyboard: Alt, C, A
 - Status: Both
 
 ### Replace current word
 
 - Voice: "Replace word with ..."
-- Keyboard: Alt, 2, Q
+- Keyboard: Alt, C, W
 - Status: Both
 
 ### Replace current sentence
 
 - Voice: "Replace sentence with ..."
-- Keyboard: Alt, 2, R
+- Keyboard: Alt, C, S
 - Status: Both
 
 ### Replace current paragraph
 
 - Voice: "Replace paragraph with ..."
-- Keyboard: Alt, 2, S
+- Keyboard: Alt, C, P
 - Status: Both
+
+## Word processor document: Delete
 
 ### Delete current word
 
 - Voice: "Delete current word"
-- Keyboard: Alt, 2, T
+- Keyboard: Alt, D, W
 - Status: Both
 
 ### Delete current line
 
 - Voice: "Delete current line"
-- Keyboard: Alt, 2, U
+- Keyboard: Alt, D, L
 - Status: Both
 
 ### Delete current sentence
 
 - Voice: "Delete sentence"
-- Keyboard: Alt, 2, V
+- Keyboard: Alt, D, S
 - Status: Both
 
 ### Delete current paragraph
 
 - Voice: "Delete current paragraph"
-- Keyboard: Alt, 2, W
+- Keyboard: Alt, D, P
 - Status: Both
 
-### Redo
-
-- Voice: "Redo"
-- Keyboard: Ctrl+Y
-- Status: Both
-
-## Word processor document: Format
+## Word processor document: Text style
 
 ### Bold
 
@@ -476,19 +482,19 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Remove bold
 
 - Voice: "Remove bold"
-- Keyboard: Alt, 3, D
+- Keyboard: Alt, T, L
 - Status: Both
 
 ### Remove italic
 
 - Voice: "Remove italic"
-- Keyboard: Alt, 3, E
+- Keyboard: Alt, T, T
 - Status: Both
 
 ### Remove underline
 
 - Voice: "Remove underline"
-- Keyboard: Alt, 3, F
+- Keyboard: Alt, T, E
 - Status: Both
 
 ### Font
@@ -503,40 +509,22 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+Shift+P
 - Status: Both
 
-### Line spacing
+### Word font
 
-- Voice: "Line spacing ..."
-- Keyboard: Alt, 3, I
+- Voice: "Set word font ..."
+- Keyboard: Alt, T, W
 - Status: Both
 
-### Single spacing
+### Word font size
 
-- Voice: "Single space"
-- Keyboard: Ctrl+1
+- Voice: "Set word size ..."
+- Keyboard: Alt, T, Z
 - Status: Both
 
-### Double spacing
+### Highlight text
 
-- Voice: "Double space"
-- Keyboard: Ctrl+2
-- Status: Both
-
-### One and a half spacing
-
-- Voice: "Line spacing 1.5"
-- Keyboard: Ctrl+5
-- Status: Both
-
-### Heading
-
-- Voice: "Heading one"
-- Keyboard: Ctrl+Alt+1
-- Status: Both
-
-### Normal text
-
-- Voice: "Normal text"
-- Keyboard: Ctrl+Shift+N
+- Voice: "Highlight ..."
+- Keyboard: Ctrl+Shift+H
 - Status: Both
 
 ### Formatting details
@@ -544,6 +532,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Voice: "What formatting"
 - Keyboard: Insert+F
 - Status: Both
+
+## Word processor document: Paragraph
 
 ### Align left
 
@@ -569,76 +559,66 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+J
 - Status: Both
 
-### Heading level
+### Line spacing
 
-- Voice: "Heading ..."
-- Keyboard: Alt, 3, T
+- Voice: "Line spacing ..."
+- Keyboard: Alt, P, S
 - Status: Both
 
-### Highlight text
+### Single spacing
 
-- Voice: "Highlight ..."
-- Keyboard: Ctrl+Shift+H
+- Voice: "Single space"
+- Keyboard: Ctrl+1
 - Status: Both
 
-### Word font
+### Double spacing
 
-- Voice: "Set word font ..."
-- Keyboard: Alt, 3, V
+- Voice: "Double space"
+- Keyboard: Ctrl+2
 - Status: Both
 
-### Word font size
+### One and a half spacing
 
-- Voice: "Set word size ..."
-- Keyboard: Alt, 3, W
+- Voice: "Line spacing 1.5"
+- Keyboard: Ctrl+5
 - Status: Both
 
 ### Whole document spacing
 
 - Voice: "Document line spacing ..."
-- Keyboard: Alt, 3, X
+- Keyboard: Alt, P, W
 - Status: Both
 
 ### Reset paragraph spacing
 
 - Voice: "Reset line spacing"
-- Keyboard: Alt, 3, Y
+- Keyboard: Alt, P, E
 - Status: Both
 
 ### Reset document spacing
 
 - Voice: "Reset document line spacing"
-- Keyboard: Alt, 3, Z
+- Keyboard: Alt, P, T
 - Status: Both
 
-### Heading 2
+## Word processor document: Headings
 
-- Voice: "Heading 2"
-- Keyboard: Ctrl+Alt+2
+### Heading
+
+- Voice: "Heading one"
+- Keyboard: Ctrl+Alt+1
 - Status: Both
 
-### Heading 3
+### Heading level
 
-- Voice: "Heading 3"
-- Keyboard: Ctrl+Alt+3
+- Voice: "Heading ..."
+- Keyboard: Alt, H, L
 - Status: Both
 
-### Heading 4
+### Normal text
 
-- Voice: "Heading 4"
-- Keyboard: Ctrl+Alt+4
-- Status: Both
-
-### Heading 5
-
-- Voice: "Heading 5"
-- Keyboard: Ctrl+Alt+5
-- Status: Both
-
-### Heading 6
-
-- Voice: "Heading 6"
-- Keyboard: Ctrl+Alt+6
+- Voice: "Normal text"
+- Keyboard: Ctrl+Shift+N
 - Status: Both
 
 ## Word processor document: Insert
@@ -676,10 +656,22 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### End list
 
 - Voice: "End list"
-- Keyboard: Alt, 4, F
+- Keyboard: Alt, I, E
 - Status: Both
 
-## Word processor document: Read and navigate
+### Start dictation
+
+- Voice: "Start dictation"
+- Keyboard: F4
+- Status: Both
+
+### Pause dictation
+
+- Voice: "Pause dictation"
+- Keyboard: Shift+F4
+- Status: Both
+
+## Word processor document: Read
 
 ### Read document
 
@@ -690,25 +682,25 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Read paragraph
 
 - Voice: "Read paragraph"
-- Keyboard: Alt, 5, B
+- Keyboard: Alt, R, P
 - Status: Both
 
 ### Read sentence
 
 - Voice: "Read sentence"
-- Keyboard: Alt, 5, C
+- Keyboard: Alt, R, S
 - Status: Both
 
 ### Read word
 
 - Voice: "Read word"
-- Keyboard: Alt, 5, D
+- Keyboard: Alt, R, W
 - Status: Both
 
-### Next heading
+### Document details
 
-- Voice: "Next heading"
-- Keyboard: Ctrl+Alt+Down
+- Voice: "Where am i"
+- Keyboard: Alt, R, I
 - Status: Both
 
 ### List headings
@@ -735,104 +727,74 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+End
 - Status: Both
 
-### Document details
-
-- Voice: "Where am i"
-- Keyboard: Alt, 5, J
-- Status: Both
+## Word processor document: Next
 
 ### Next character
 
 - Voice: "Next character"
-- Keyboard: Alt, 5, K
-- Status: Both
-
-### Previous character
-
-- Voice: "Previous character"
-- Keyboard: Alt, 5, L
+- Keyboard: Alt, N, C
 - Status: Both
 
 ### Next word
 
 - Voice: "Next word"
-- Keyboard: Alt, 5, M
-- Status: Both
-
-### Previous word
-
-- Voice: "Previous word"
-- Keyboard: Alt, 5, N
+- Keyboard: Alt, N, W
 - Status: Both
 
 ### Next line
 
 - Voice: "Next line"
-- Keyboard: Alt, 5, O
-- Status: Both
-
-### Previous line
-
-- Voice: "Previous line"
-- Keyboard: Alt, 5, P
+- Keyboard: Alt, N, L
 - Status: Both
 
 ### Next sentence
 
 - Voice: "Next sentence"
-- Keyboard: Alt, 5, Q
-- Status: Both
-
-### Previous sentence
-
-- Voice: "Previous sentence"
-- Keyboard: Alt, 5, R
+- Keyboard: Alt, N, S
 - Status: Both
 
 ### Next paragraph
 
 - Voice: "Next paragraph"
-- Keyboard: Alt, 5, S
+- Keyboard: Alt, N, P
+- Status: Both
+
+### Next heading
+
+- Voice: "Next heading"
+- Keyboard: Ctrl+Alt+Down
+- Status: Both
+
+## Word processor document: Previous
+
+### Previous character
+
+- Voice: "Previous character"
+- Keyboard: Alt, V, C
+- Status: Both
+
+### Previous word
+
+- Voice: "Previous word"
+- Keyboard: Alt, V, W
+- Status: Both
+
+### Previous line
+
+- Voice: "Previous line"
+- Keyboard: Alt, V, L
+- Status: Both
+
+### Previous sentence
+
+- Voice: "Previous sentence"
+- Keyboard: Alt, V, S
 - Status: Both
 
 ### Previous paragraph
 
 - Voice: "Previous paragraph"
-- Keyboard: Alt, 5, T
-- Status: Both
-
-## Word processor document: Dictation
-
-### Start dictation
-
-- Voice: "Start dictation"
-- Keyboard: F4
-- Status: Both
-
-### Pause dictation
-
-- Voice: "Pause dictation"
-- Keyboard: Shift+F4
-- Status: Both
-
-## Word processor document: More commands
-
-### Run any document voice command
-
-- Voice: "Run any document voice command"
-- Keyboard: Alt+T
-- Status: N/A - this item is the keyboard way to type any spoken command
-
-### Document help
-
-- Voice: "Help with documents"
-- Keyboard: F1 twice
-- Status: Both
-
-### Word processor options
-
-- Voice: "Word processor options"
-- Keyboard: Alt+O
+- Keyboard: Alt, V, P
 - Status: Both
 
 ## Word processor document: Table
@@ -840,13 +802,13 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Read table
 
 - Voice: "Read table"
-- Keyboard: Alt, 8, A
+- Keyboard: Alt, A, R
 - Status: Both
 
 ### Read cell
 
 - Voice: "Read cell"
-- Keyboard: Alt, 8, B
+- Keyboard: Alt, A, E
 - Status: Both
 
 ### Next cell
@@ -888,43 +850,63 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Add row
 
 - Voice: "Add row"
-- Keyboard: Alt, 8, I
+- Keyboard: Alt, A, A
 - Status: Both
 
 ### Add column
 
 - Voice: "Add column"
-- Keyboard: Alt, 8, J
+- Keyboard: Alt, A, D
 - Status: Both
 
 ### Delete row
 
 - Voice: "Delete row"
-- Keyboard: Alt, 8, K
+- Keyboard: Alt, A, X
 - Status: Both
 
 ### Delete column
 
 - Voice: "Delete column"
-- Keyboard: Alt, 8, L
+- Keyboard: Alt, A, L
 - Status: Both
 
 ### Clear cell
 
 - Voice: "Clear cell"
-- Keyboard: Alt, 8, M
+- Keyboard: Alt, A, K
 - Status: Both
 
 ### Delete table
 
 - Voice: "Delete table"
-- Keyboard: Alt, 8, N
+- Keyboard: Alt, A, T
 - Status: Both
 
 ### Leave table
 
 - Voice: "Leave table"
-- Keyboard: Alt, 8, O
+- Keyboard: Alt, A, V
+- Status: Both
+
+## Word processor document: Options and help
+
+### Run any document voice command
+
+- Voice: "Run any document voice command"
+- Keyboard: Alt+T
+- Status: N/A - this item is the keyboard way to type any spoken command
+
+### Document help
+
+- Voice: "Help with documents"
+- Keyboard: F1 twice
+- Status: Both
+
+### Word processor options
+
+- Voice: "Word processor options"
+- Keyboard: Alt+O
 - Status: Both
 
 ## Office Menu
@@ -964,6 +946,38 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Schedule manager
 
 - Voice: "Calendar"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+## Web Tools Menu
+
+### Web browser
+
+- Voice: "Web browser"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Web favorites
+
+- Voice: "List favorites"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Web history
+
+- Voice: "Web history"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Downloads
+
+- Voice: "Download manager"
+- Keyboard: First letter, arrows, Enter
+- Status: Both
+
+### Set up Chrome
+
+- Voice: "Set up chrome"
 - Keyboard: First letter, arrows, Enter
 - Status: Both
 
@@ -1166,6 +1180,12 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Verbosity
 
 - Voice: "Set Verbosity to ..."
+- Keyboard: Alt+O, arrows to Verbosity options, Tab to the field, arrows or Space, Enter to save
+- Status: Both
+
+### Hints and help messages
+
+- Voice: "Set Hints and help messages to ..."
 - Keyboard: Alt+O, arrows to Verbosity options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 
@@ -1593,78 +1613,42 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Alt+O, arrows to Startup and exit options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 
-## My menu
+## Favorite apps
 
-### File manager in Favorite apps
+### Select an app
 
-- Voice: "Set File manager in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Select"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Space
 - Status: Both
 
-### Word processor in Favorite apps
+### Unselect an app
 
-- Voice: "Set Word processor in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Unselect"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Space
 - Status: Both
 
-### Notepad in Favorite apps
+### Move an app up
 
-- Voice: "Set Notepad in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Move up"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Control+Up
 - Status: Both
 
-### Email in Favorite apps
+### Move an app down
 
-- Voice: "Set Email in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Move down"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Control+Down
 - Status: Both
 
-### Document reader in Favorite apps
+### Move an app to the top
 
-- Voice: "Set Document reader in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Move to top"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Control+Home
 - Status: Both
 
-### Address manager in Favorite apps
+### Move an app to the bottom
 
-- Voice: "Set Address manager in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### Schedule manager in Favorite apps
-
-- Voice: "Set Schedule manager in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### Web browser in Favorite apps
-
-- Voice: "Set Web browser in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### Radio in Favorite apps
-
-- Voice: "Set Radio in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### Podcasts in Favorite apps
-
-- Voice: "Set Podcasts in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### Media player in Favorite apps
-
-- Voice: "Set Media player in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
-- Status: Both
-
-### YouTube in Favorite apps
-
-- Voice: "Set YouTube in Favorite apps to ..."
-- Keyboard: Alt+O, arrows to My menu, Tab to the field, arrows or Space, Enter to save
+- Voice: "Move to bottom"
+- Keyboard: Alt+O, arrows to Favorite apps, Enter, Control+End
 - Status: Both
 
 ## Radio
@@ -1997,15 +1981,15 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Actions list: arrows to the action, Enter
 - Status: Both
 
-## Alt menu, Email: Messages
+## Alt menu, Email: Message
 
-### Check for new mail
+### New email
 
-- Voice: "List messages"
-- Keyboard: F5
+- Voice: "New email"
+- Keyboard: N
 - Status: Both
 
-### Read message
+### Open message
 
 - Voice: "Open current message"
 - Keyboard: Enter
@@ -2029,16 +2013,10 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: F
 - Status: Both
 
-### New email
+### Email the sender
 
-- Voice: "New email"
-- Keyboard: N
-- Status: Both
-
-### Delete
-
-- Voice: "Delete"
-- Keyboard: Delete
+- Voice: "New email to sender"
+- Keyboard: E
 - Status: Both
 
 ### Move to folder
@@ -2047,291 +2025,19 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: M
 - Status: Both
 
+### Delete
+
+- Voice: "Delete"
+- Keyboard: Delete
+- Status: Both
+
 ### Message details
 
 - Voice: "Message details"
 - Keyboard: I
 - Status: Both
 
-## Alt menu, Email: Select
-
-### Mark or unmark message
-
-- Voice: "Toggle message selection"
-- Keyboard: Space
-- Status: Both
-
-### Select all messages
-
-- Voice: "Select all messages"
-- Keyboard: Ctrl+A
-- Status: Both
-
-### Clear selection
-
-- Voice: "Clear selection"
-- Keyboard: U
-- Status: Both
-
-### What is selected
-
-- Voice: "What is selected"
-- Keyboard: S
-- Status: Both
-
-### Mark as read or unread
-
-- Voice: "Mark as read or unread"
-- Keyboard: Q
-- Status: Both
-
-### Flag or unflag
-
-- Voice: "Flag or unflag"
-- Keyboard: X
-- Status: Both
-
-### Important or not important (Gmail)
-
-- Voice: "Mark important or not important"
-- Keyboard: H
-- Status: Both
-
-### Message status
-
-- Voice: "Message status"
-- Keyboard: Alt, 2, 8
-- Status: Added: Alt menu path
-
-## Alt menu, Email: Go to folder
-
-### Inbox
-
-- Voice: "Go to inbox"
-- Keyboard: Alt, 3, 1
-- Status: Added: Alt menu path
-
-### Sent
-
-- Voice: "Go to sent"
-- Keyboard: Alt, 3, 2
-- Status: Added: Alt menu path
-
-### Drafts
-
-- Voice: "Go to drafts"
-- Keyboard: Alt, 3, 3
-- Status: Added: Alt menu path
-
-### Trash
-
-- Voice: "Go to trash"
-- Keyboard: Alt, 3, 4
-- Status: Added: Alt menu path
-
-### Spam
-
-- Voice: "Go to spam"
-- Keyboard: Alt, 3, 5
-- Status: Added: Alt menu path
-
-### Choose a folder
-
-- Voice: "Go to folder"
-- Keyboard: G
-- Status: Both
-
-### Which folder
-
-- Voice: "Which folder"
-- Keyboard: W
-- Status: Both
-
-## Alt menu, Email: Folder actions
-
-### Create folder
-
-- Voice: "Create folder"
-- Keyboard: Alt, 4, 1
-- Status: Added: Alt menu path
-
-### Rename folder
-
-- Voice: "Rename folder"
-- Keyboard: F2
-- Status: Both
-
-### Move folder
-
-- Voice: "Move folder"
-- Keyboard: Alt, 4, 3
-- Status: Added: Alt menu path
-
-### Delete empty folder
-
-- Voice: "Delete folder"
-- Keyboard: Alt, 4, 4
-- Status: Added: Alt menu path
-
-### List folders
-
-- Voice: "List folders"
-- Keyboard: Alt, 4, 5
-- Status: Added: Alt menu path
-
-## Alt menu, Email: Drafts and contacts
-
-### Copy sender address
-
-- Voice: "Copy sender address"
-- Keyboard: C
-- Status: Both
-
-### Email the sender
-
-- Voice: "New email to sender"
-- Keyboard: E
-- Status: Both
-
-### Email drafts
-
-- Voice: "Open email draft"
-- Keyboard: D
-- Status: Both
-
-### List contacts
-
-- Voice: "List contacts"
-- Keyboard: P
-- Status: Both
-
-### Add contact
-
-- Voice: "Add contact ..."
-- Keyboard: Alt, 5, 5
-- Status: Added: Alt menu path
-
-## Alt menu, Email: Accounts
-
-### Add account
-
-- Voice: "Add account"
-- Keyboard: Alt, 6, 1
-- Status: Added: Alt menu path
-
-### Switch account
-
-- Voice: "Switch account"
-- Keyboard: Alt, 6, 2
-- Status: Added: Alt menu path
-
-### Which account
-
-- Voice: "Which email account"
-- Keyboard: Alt, 6, 3
-- Status: Added: Alt menu path
-
-### Remove account
-
-- Voice: "Remove email account"
-- Keyboard: Alt, 6, 4
-- Status: Added: Alt menu path
-
-### Add Thunderbird account
-
-- Voice: "Add thunderbird account"
-- Keyboard: Alt, 6, 5
-- Status: Added: Alt menu path
-
-## Alt menu, Email: Pages
-
-### Next page of messages
-
-- Voice: "Next messages"
-- Keyboard: Page Down
-- Status: Both
-
-### Previous page of messages
-
-- Voice: "Previous messages"
-- Keyboard: Page Up
-- Status: Both
-
-### Newest message in folder
-
-- Voice: "Newest message"
-- Keyboard: Ctrl+Home
-- Status: Both
-
-### Oldest message in folder
-
-- Voice: "Oldest message"
-- Keyboard: Ctrl+End
-- Status: Both
-
-## Alt menu, Email: Options and help
-
-### Email options
-
-- Voice: "Options, then Email options"
-- Keyboard: Alt, 8, 1
-- Status: Added: Alt menu path
-
-### Messages per page
-
-- Voice: "Email list size"
-- Keyboard: Alt, 8, 2
-- Status: Added: Alt menu path
-
-### Show Thunderbird
-
-- Voice: "Show thunderbird"
-- Keyboard: Alt, 8, 3
-- Status: Added: Alt menu path
-
-### Hide Thunderbird
-
-- Voice: "Hide thunderbird"
-- Keyboard: Alt, 8, 4
-- Status: Added: Alt menu path
-
-### Email help
-
-- Voice: "Help with email"
-- Keyboard: F1 twice
-- Status: Both
-
-### Main menu
-
-- Voice: "Main menu"
-- Keyboard: Alt, 8, 6
-- Status: Added: Alt menu path
-
-## Alt menu, Email: Header and attachments
-
-### List attachments
-
-- Voice: "List attachments"
-- Keyboard: L
-- Status: Both
-
-### Save all attachments
-
-- Voice: "Save all attachments"
-- Keyboard: Alt, 9, 2
-- Status: Added: Alt menu path
-
-### Open attachment
-
-- Voice: "Open attachment"
-- Keyboard: Alt, 9, 3
-- Status: Added: Alt menu path
-
-### Attachment sizes
-
-- Voice: "How big are the attachments"
-- Keyboard: Alt, 9, 4
-- Status: Added: Alt menu path
+## Alt menu, Email: Header
 
 ### From
 
@@ -2363,6 +2069,284 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Alt+5
 - Status: Both
 
+### Copy sender address
+
+- Voice: "Copy sender address"
+- Keyboard: C
+- Status: Both
+
+## Alt menu, Email: Attachments
+
+### List attachments
+
+- Voice: "List attachments"
+- Keyboard: L
+- Status: Both
+
+### Open attachment
+
+- Voice: "Open attachment"
+- Keyboard: Alt, A, O
+- Status: Added: Alt menu path
+
+### Save all attachments
+
+- Voice: "Save all attachments"
+- Keyboard: Alt, A, S
+- Status: Added: Alt menu path
+
+### Attachment sizes
+
+- Voice: "How big are the attachments"
+- Keyboard: Alt, A, Z
+- Status: Added: Alt menu path
+
+## Alt menu, Email: Unread and flags
+
+### Mark as read or unread
+
+- Voice: "Mark as read or unread"
+- Keyboard: Q
+- Status: Both
+
+### Flag or unflag
+
+- Voice: "Flag or unflag"
+- Keyboard: X
+- Status: Both
+
+### Important or not important (Gmail)
+
+- Voice: "Mark important or not important"
+- Keyboard: H
+- Status: Both
+
+### Message status
+
+- Voice: "Message status"
+- Keyboard: Alt, U, S
+- Status: Added: Alt menu path
+
+## Alt menu, Email: Select
+
+### Select or unselect message
+
+- Voice: "Toggle message selection"
+- Keyboard: Space
+- Status: Both
+
+### Select all messages
+
+- Voice: "Select all messages"
+- Keyboard: Ctrl+A
+- Status: Both
+
+### Clear selection
+
+- Voice: "Clear selection"
+- Keyboard: U
+- Status: Both
+
+### What is selected
+
+- Voice: "What is selected"
+- Keyboard: S
+- Status: Both
+
+## Alt menu, Email: Go to
+
+### Inbox
+
+- Voice: "Go to inbox"
+- Keyboard: Alt, G, I
+- Status: Added: Alt menu path
+
+### Sent
+
+- Voice: "Go to sent"
+- Keyboard: Alt, G, S
+- Status: Added: Alt menu path
+
+### Drafts
+
+- Voice: "Go to drafts"
+- Keyboard: Alt, G, D
+- Status: Added: Alt menu path
+
+### Trash
+
+- Voice: "Go to trash"
+- Keyboard: Alt, G, T
+- Status: Added: Alt menu path
+
+### Spam
+
+- Voice: "Go to spam"
+- Keyboard: Alt, G, P
+- Status: Added: Alt menu path
+
+### Choose a folder
+
+- Voice: "Go to folder"
+- Keyboard: G
+- Status: Both
+
+### Which folder
+
+- Voice: "Which folder"
+- Keyboard: W
+- Status: Both
+
+### Email drafts
+
+- Voice: "Open email draft"
+- Keyboard: D
+- Status: Both
+
+### Main menu
+
+- Voice: "Main menu"
+- Keyboard: Alt, G, M
+- Status: Added: Alt menu path
+
+## Alt menu, Email: Edit folders
+
+### Create folder
+
+- Voice: "Create folder"
+- Keyboard: Alt, E, C
+- Status: Added: Alt menu path
+
+### Rename folder
+
+- Voice: "Rename folder"
+- Keyboard: F2
+- Status: Both
+
+### Move folder
+
+- Voice: "Move folder"
+- Keyboard: Alt, E, M
+- Status: Added: Alt menu path
+
+### Delete empty folder
+
+- Voice: "Delete folder"
+- Keyboard: Alt, E, D
+- Status: Added: Alt menu path
+
+### List folders
+
+- Voice: "List folders"
+- Keyboard: Alt, E, L
+- Status: Added: Alt menu path
+
+## Alt menu, Email: View
+
+### Check for new mail
+
+- Voice: "List messages"
+- Keyboard: F5
+- Status: Both
+
+### Next page of messages
+
+- Voice: "Next messages"
+- Keyboard: Page Down
+- Status: Both
+
+### Previous page of messages
+
+- Voice: "Previous messages"
+- Keyboard: Page Up
+- Status: Both
+
+### Newest message in folder
+
+- Voice: "Newest message"
+- Keyboard: Ctrl+Home
+- Status: Both
+
+### Oldest message in folder
+
+- Voice: "Oldest message"
+- Keyboard: Ctrl+End
+- Status: Both
+
+### Messages per page
+
+- Voice: "Email list size"
+- Keyboard: Alt, V, M
+- Status: Added: Alt menu path
+
+### Show Thunderbird
+
+- Voice: "Show thunderbird"
+- Keyboard: Alt, V, S
+- Status: Added: Alt menu path
+
+### Hide Thunderbird
+
+- Voice: "Hide thunderbird"
+- Keyboard: Alt, V, H
+- Status: Added: Alt menu path
+
+## Alt menu, Email: Tools
+
+### Add account
+
+- Voice: "Add account"
+- Keyboard: Alt, T, A
+- Status: Added: Alt menu path
+
+### Switch account
+
+- Voice: "Switch account"
+- Keyboard: Alt, T, S
+- Status: Added: Alt menu path
+
+### Which account
+
+- Voice: "Which email account"
+- Keyboard: Alt, T, W
+- Status: Added: Alt menu path
+
+### Remove account
+
+- Voice: "Remove email account"
+- Keyboard: Alt, T, R
+- Status: Added: Alt menu path
+
+### Add Thunderbird account
+
+- Voice: "Add thunderbird account"
+- Keyboard: Alt, T, T
+- Status: Added: Alt menu path
+
+### List contacts
+
+- Voice: "List contacts"
+- Keyboard: P
+- Status: Both
+
+### Add contact
+
+- Voice: "Add contact ..."
+- Keyboard: Alt, T, C
+- Status: Added: Alt menu path
+
+### Email options
+
+- Voice: "Options, then Email options"
+- Keyboard: Alt, T, O
+- Status: Added: Alt menu path
+
+### Email help
+
+- Voice: "Help with email"
+- Keyboard: F1 twice
+- Status: Both
+
 ## Alt menu, Email draft: Message
 
 ### Send
@@ -2386,48 +2370,62 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Save and close
 
 - Voice: "Leave email"
-- Keyboard: Alt, 1, 4
+- Keyboard: Alt, M, C
 - Status: Added: Alt menu path
 
 ### Discard draft
 
 - Voice: "Discard draft"
-- Keyboard: Alt, 1, 5
+- Keyboard: Alt, M, D
 - Status: Added: Alt menu path
 
-## Alt menu, Email draft: Fields
+## Alt menu, Email draft: Edit
+
+### Undo
+
+- Voice: "Undo"
+- Keyboard: Ctrl+Z
+- Status: Both
+
+### Redo
+
+- Voice: "Redo"
+- Keyboard: Ctrl+Y
+- Status: Both
+
+## Alt menu, Email draft: Go to
 
 ### To
 
 - Voice: "Go to to"
-- Keyboard: Alt, 2, 1
+- Keyboard: Alt, G, T
 - Status: Added: Alt menu path
 
 ### Cc
 
 - Voice: "Go to cc"
-- Keyboard: Alt, 2, 2
+- Keyboard: Alt, G, C
 - Status: Added: Alt menu path
 
 ### Bcc
 
 - Voice: "Go to bcc"
-- Keyboard: Alt, 2, 3
+- Keyboard: Alt, G, B
 - Status: Added: Alt menu path
 
 ### Subject
 
 - Voice: "Go to subject"
-- Keyboard: Alt, 2, 4
+- Keyboard: Alt, G, S
 - Status: Added: Alt menu path
 
 ### Message body
 
 - Voice: "Go to body"
-- Keyboard: Alt, 2, 5
+- Keyboard: Alt, G, M
 - Status: Added: Alt menu path
 
-## Alt menu, Email draft: Format
+## Alt menu, Email draft: Text style
 
 ### Bold
 
@@ -2447,32 +2445,6 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+U
 - Status: Both
 
-## Alt menu, Email draft: Contacts and help
-
-### List contacts
-
-- Voice: "List contacts"
-- Keyboard: Ctrl+K
-- Status: Both
-
-### Add contact
-
-- Voice: "Add contact ..."
-- Keyboard: Alt, 4, 2
-- Status: Added: Alt menu path
-
-### Email options
-
-- Voice: "Options, then Email options"
-- Keyboard: Alt, 4, 3
-- Status: Added: Alt menu path
-
-### Writing email help
-
-- Voice: "Help with writing email"
-- Keyboard: F1 twice
-- Status: Both
-
 ## Alt menu, Email draft: Attachments
 
 ### Attach a file
@@ -2484,7 +2456,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Attach the last download
 
 - Voice: "Attach the last download"
-- Keyboard: Alt, 5, 2
+- Keyboard: Alt, A, D
 - Status: Added: Alt menu path
 
 ### List attachments
@@ -2496,22 +2468,22 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Remove an attachment
 
 - Voice: "Remove attachment"
-- Keyboard: Alt, 5, 4
+- Keyboard: Alt, A, R
 - Status: Added: Alt menu path
 
-## Alt menu, Email draft: Undo and redo
+## Alt menu, Email draft: Contacts
 
-### Undo
+### List contacts
 
-- Voice: "Undo"
-- Keyboard: Ctrl+Z
+- Voice: "List contacts"
+- Keyboard: Ctrl+K
 - Status: Both
 
-### Redo
+### Add contact
 
-- Voice: "Redo"
-- Keyboard: Ctrl+Y
-- Status: Both
+- Voice: "Add contact ..."
+- Keyboard: Alt, C, C
+- Status: Added: Alt menu path
 
 ## Alt menu, Email draft: Importance and read receipt
 
@@ -2524,19 +2496,19 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### High importance
 
 - Voice: "High importance"
-- Keyboard: Alt, 7, 2
+- Keyboard: Alt, I, H
 - Status: Added: Alt menu path
 
 ### Normal importance
 
 - Voice: "Normal importance"
-- Keyboard: Alt, 7, 3
+- Keyboard: Alt, I, N
 - Status: Added: Alt menu path
 
 ### Low importance
 
 - Voice: "Low importance"
-- Keyboard: Alt, 7, 4
+- Keyboard: Alt, I, L
 - Status: Added: Alt menu path
 
 ### Read receipt on or off
@@ -2548,21 +2520,35 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Importance and receipt now
 
 - Voice: "Importance"
-- Keyboard: Alt, 7, 6
+- Keyboard: Alt, I, I
 - Status: Added: Alt menu path
 
-## Alt menu, Note: Notepad
+## Alt menu, Email draft: Options and help
 
-### Save and close note
+### Email options
 
-- Voice: "Save note"
-- Keyboard: Ctrl+S
+- Voice: "Options, then Email options"
+- Keyboard: Alt, O, O
+- Status: Added: Alt menu path
+
+### Writing email help
+
+- Voice: "Help with writing email"
+- Keyboard: F1 twice
 - Status: Both
+
+## Alt menu, Note: Note
 
 ### Read note
 
 - Voice: "Read from top"
 - Keyboard: Ctrl+R
+- Status: Both
+
+### Save and close note
+
+- Voice: "Save note"
+- Keyboard: Ctrl+S
 - Status: Both
 
 ### Saved notes
@@ -2571,30 +2557,12 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+O
 - Status: Both
 
-### Notepad options
-
-- Voice: "Options, then Notepad options"
-- Keyboard: Alt, 1, 4
-- Status: Added: Alt menu path
-
-### Notepad help
-
-- Voice: "Help with notepad"
-- Keyboard: F1 twice
-- Status: Both
-
-### Main menu
-
-- Voice: "Main menu"
-- Keyboard: Alt, 1, 6
-- Status: Added: Alt menu path
-
 ## Alt menu, Note: Edit
 
 ### New line
 
 - Voice: "New line"
-- Keyboard: Alt, 2, 1
+- Keyboard: Alt, E, N
 - Status: Added: Alt menu path
 
 ### Undo
@@ -2609,13 +2577,33 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+Y
 - Status: Both
 
-### Remove last words
+### Scratch last words
 
 - Voice: "Scratch that"
-- Keyboard: Alt, 2, 4
+- Keyboard: Alt, E, S
 - Status: Added: Alt menu path
 
-## Alt menu, Web page: Page
+## Alt menu, Note: Options and help
+
+### Notepad options
+
+- Voice: "Options, then Notepad options"
+- Keyboard: Alt, O, O
+- Status: Added: Alt menu path
+
+### Notepad help
+
+- Voice: "Help with notepad"
+- Keyboard: F1 twice
+- Status: Both
+
+### Main menu
+
+- Voice: "Main menu"
+- Keyboard: Alt, O, M
+- Status: Added: Alt menu path
+
+## Alt menu, Web page: Go to
 
 ### Back
 
@@ -2641,6 +2629,20 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+L
 - Status: Both
 
+### Web history
+
+- Voice: "Web history"
+- Keyboard: Alt, G, H
+- Status: Added: Alt menu path
+
+### Web browser menu
+
+- Voice: "Web browser menu"
+- Keyboard: Escape
+- Status: Both
+
+## Alt menu, Web page: Page
+
 ### Find on page
 
 - Voice: "Find ..."
@@ -2658,8 +2660,6 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Voice: "Bottom of page"
 - Keyboard: Ctrl+End
 - Status: Both
-
-## Alt menu, Web page: Lists
 
 ### Headings
 
@@ -2679,62 +2679,52 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: F8
 - Status: Both
 
+## Alt menu, Web page: Favorites
+
+### Add favorite
+
+- Voice: "Add favorite"
+- Keyboard: Alt, F, A
+- Status: Added: Alt menu path
+
+### Go to favorite
+
+- Voice: "Go to favorite"
+- Keyboard: Alt, F, G
+- Status: Added: Alt menu path
+
+## Alt menu, Web page: Tools
+
 ### Downloads
 
 - Voice: "Download manager"
 - Keyboard: Ctrl+D
 - Status: Both
 
-## Alt menu, Web page: Favorites
+### Set up Chrome
 
-### Add favorite
-
-- Voice: "Add favorite"
-- Keyboard: Alt, 3, 1
+- Voice: "Set up chrome"
+- Keyboard: Alt, T, C
 - Status: Added: Alt menu path
 
-### Go to favorite
+### Show browser window
 
-- Voice: "Go to favorite"
-- Keyboard: Alt, 3, 2
+- Voice: "Show browser window"
+- Keyboard: Alt, T, S
 - Status: Added: Alt menu path
 
-### Web history
+### Hide browser window
 
-- Voice: "Web history"
-- Keyboard: Alt, 3, 3
+- Voice: "Hide browser window"
+- Keyboard: Alt, T, H
 - Status: Added: Alt menu path
-
-### Web browser menu
-
-- Voice: "Web browser menu"
-- Keyboard: Escape
-- Status: Both
 
 ## Alt menu, Web page: Options and help
 
 ### Web browser options
 
 - Voice: "Options, then Web browser options"
-- Keyboard: Alt, 4, 1
-- Status: Added: Alt menu path
-
-### Set up Chrome
-
-- Voice: "Set up chrome"
-- Keyboard: Alt, 4, 2
-- Status: Added: Alt menu path
-
-### Show browser window
-
-- Voice: "Show browser window"
-- Keyboard: Alt, 4, 3
-- Status: Added: Alt menu path
-
-### Hide browser window
-
-- Voice: "Hide browser window"
-- Keyboard: Alt, 4, 4
+- Keyboard: Alt, O, O
 - Status: Added: Alt menu path
 
 ### Web help
@@ -2766,21 +2756,15 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Details
 
 - Voice: "Download details"
-- Keyboard: Alt, 1, 4
+- Keyboard: Alt, D, I
 - Status: Added: Alt menu path
 
-### Open downloads folder
+## Alt menu, Downloads: Move in list
 
-- Voice: "Open downloads folder"
-- Keyboard: Alt, 1, 5
-- Status: Added: Alt menu path
-
-## Alt menu, Downloads: Queue
-
-### Move to next
+### Start this one next
 
 - Voice: "Move to next"
-- Keyboard: Alt, 2, 1
+- Keyboard: Alt, M, S
 - Status: Added: Alt menu path
 
 ### Move earlier
@@ -2795,24 +2779,32 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+Down
 - Status: Both
 
-## Alt menu, Downloads: Options and help
+## Alt menu, Downloads: Folder
 
-### Download folder
+### Open downloads folder
 
-- Voice: "Options, then Web browser options"
-- Keyboard: Alt, 3, 1
+- Voice: "Open downloads folder"
+- Keyboard: Alt, F, F
 - Status: Added: Alt menu path
 
-### Downloads help
+### Choose download folder
 
-- Voice: "Help with downloads"
-- Keyboard: F1 twice
-- Status: Both
+- Voice: "Options, then Web browser options"
+- Keyboard: Alt, F, O
+- Status: Added: Alt menu path
+
+## Alt menu, Downloads: Leave and help
 
 ### Close downloads
 
 - Voice: "Close downloads"
 - Keyboard: Escape
+- Status: Both
+
+### Downloads help
+
+- Voice: "Help with downloads"
+- Keyboard: F1 twice
 - Status: Both
 
 ## Alt menu, Address manager: Contact
@@ -2832,13 +2824,13 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Read all details
 
 - Voice: "Read contact"
-- Keyboard: Alt, 1, 3
+- Keyboard: Alt, C, R
 - Status: Added: Alt menu path
 
 ### Phone number
 
 - Voice: "Call details"
-- Keyboard: Alt, 1, 4
+- Keyboard: Alt, C, P
 - Status: Added: Alt menu path
 
 ### Edit contact
@@ -2853,7 +2845,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Delete
 - Status: Both
 
-## Alt menu, Address manager: Address manager
+## Alt menu, Address manager: Address book
 
 ### Add contact
 
@@ -2870,25 +2862,27 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Refresh contacts
 
 - Voice: "Refresh contacts"
-- Keyboard: Alt, 2, 3
-- Status: Added: Alt menu path
-
-### Address manager help
-
-- Voice: "Help with contacts"
-- Keyboard: F1 twice
-- Status: Both
-
-### Main menu
-
-- Voice: "Main menu"
-- Keyboard: Alt, 2, 5
+- Keyboard: Alt, A, R
 - Status: Added: Alt menu path
 
 ### Choose address book
 
 - Voice: "Choose address book"
 - Keyboard: Ctrl+L
+- Status: Both
+
+## Alt menu, Address manager: Leave and help
+
+### Main menu
+
+- Voice: "Main menu"
+- Keyboard: Alt, L, M
+- Status: Added: Alt menu path
+
+### Address manager help
+
+- Voice: "Help with contacts"
+- Keyboard: F1 twice
 - Status: Both
 
 ## Alt menu, Schedule manager: Event
@@ -2929,7 +2923,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Delete
 - Status: Both
 
-## Alt menu, Schedule manager: Day
+## Alt menu, Schedule manager: Go to
 
 ### Today
 
@@ -2967,24 +2961,12 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+G
 - Status: Both
 
-## Alt menu, Schedule manager: Schedule manager
+## Alt menu, Schedule manager: Calendar
 
 ### Refresh calendar
 
 - Voice: "Refresh calendar"
-- Keyboard: Alt, 3, 1
-- Status: Added: Alt menu path
-
-### Schedule manager help
-
-- Voice: "Help with calendar"
-- Keyboard: F1 twice
-- Status: Both
-
-### Main menu
-
-- Voice: "Main menu"
-- Keyboard: Alt, 3, 3
+- Keyboard: Alt, C, R
 - Status: Added: Alt menu path
 
 ### Choose calendar
@@ -2993,104 +2975,62 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+L
 - Status: Both
 
+## Alt menu, Schedule manager: Leave and help
+
+### Main menu
+
+- Voice: "Main menu"
+- Keyboard: Alt, L, M
+- Status: Added: Alt menu path
+
+### Schedule manager help
+
+- Voice: "Help with calendar"
+- Keyboard: F1 twice
+- Status: Both
+
 ## Alt menu, Help: Help
 
 ### Help topics
 
 - Voice: "Help topics"
-- Keyboard: Alt, 1
+- Keyboard: Alt, T
 - Status: Added: Alt menu path
 
 ### Subsections
 
 - Voice: "List subsections"
-- Keyboard: Alt, 2
+- Keyboard: Alt, S
 - Status: Added: Alt menu path
 
 ### Release notes
 
 - Voice: "Release notes"
-- Keyboard: Alt, 3
+- Keyboard: Alt, R
 - Status: Added: Alt menu path
 
-### Lessons
+### Tutorial
 
 - Voice: "Start tutorial"
-- Keyboard: Alt, 4
+- Keyboard: Alt, L
 - Status: Added: Alt menu path
 
 ### Open the guide folder
 
 - Voice: "Open user guides"
-- Keyboard: Alt, 5
+- Keyboard: Alt, G
 - Status: Added: Alt menu path
 
 ### Close help
 
 - Voice: "Close help"
-- Keyboard: Alt, 6
+- Keyboard: Alt, C
 - Status: Added: Alt menu path
 
 ### Main menu
 
 - Voice: "Main menu"
-- Keyboard: Alt, 7
-- Status: Added: Alt menu path
-
-## Alt menu, Lessons: Lessons
-
-### Lesson list
-
-- Voice: "Lesson list"
-- Keyboard: Ctrl+L
-- Status: Both
-
-### Repeat
-
-- Voice: "Repeat"
-- Keyboard: Ctrl+R
-- Status: Both
-
-### Continue reading
-
-- Voice: "Continue reading"
-- Keyboard: Ctrl+Down
-- Status: Both
-
-### Next lesson
-
-- Voice: "Next lesson"
-- Keyboard: Alt, 4
-- Status: Added: Alt menu path
-
-### Previous lesson
-
-- Voice: "Previous lesson"
-- Keyboard: Alt, 5
-- Status: Added: Alt menu path
-
-### Find lesson
-
-- Voice: "Find lesson ..."
-- Keyboard: Ctrl+F
-- Status: Both
-
-### Explain a command
-
-- Voice: "Explain command ..."
-- Keyboard: Ctrl+E
-- Status: Both
-
-### List commands
-
-- Voice: "List commands"
-- Keyboard: F1 twice
-- Status: Both
-
-### Main menu
-
-- Voice: "Main menu"
-- Keyboard: Alt, 9
+- Keyboard: Alt, M
 - Status: Added: Alt menu path
 
 ## Alt menu, Attachments: Attachment
@@ -3137,18 +3077,6 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+O
 - Status: Both
 
-### Attachments help
-
-- Voice: "Help with attachments"
-- Keyboard: F1 twice
-- Status: Both
-
-### Close the list
-
-- Voice: "Close attachments"
-- Keyboard: Escape
-- Status: Both
-
 ## Alt menu, Attachments: Tags
 
 ### Tag or untag
@@ -3175,6 +3103,20 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+Shift+A
 - Status: Both
 
+## Alt menu, Attachments: Leave and help
+
+### Close the list
+
+- Voice: "Close attachments"
+- Keyboard: Escape
+- Status: Both
+
+### Attachments help
+
+- Voice: "Help with attachments"
+- Keyboard: F1 twice
+- Status: Both
+
 ## Alt menu, Document: Read
 
 ### Read document
@@ -3192,16 +3134,16 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Beginning of document
 
 - Voice: "Go to beginning of document"
-- Keyboard: Alt, 1, 3
+- Keyboard: Alt, R, B
 - Status: Added: Alt menu path
 
 ### End of document
 
 - Voice: "Go to end of document"
-- Keyboard: Alt, 1, 4
+- Keyboard: Alt, R, E
 - Status: Added: Alt menu path
 
-### Formatting
+### Formatting details
 
 - Voice: "What formatting"
 - Keyboard: Insert+F
@@ -3219,7 +3161,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Insert+Down
 - Status: Both
 
-## Alt menu, Document: Move by
+## Alt menu, Document: Go to
 
 ### Next heading
 
@@ -3280,7 +3222,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Main menu
 
 - Voice: "Main menu"
-- Keyboard: Alt, 3, 2
+- Keyboard: Alt, L, M
 - Status: Added: Alt menu path
 
 ### Document reader help
@@ -3336,16 +3278,16 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Stop video
 
 - Voice: "Stop video"
-- Keyboard: Alt, 1, 8
+- Keyboard: Alt, P, S
 - Status: Added: Alt menu path
 
 ### Skip amount
 
 - Voice: "Skip amount ..."
-- Keyboard: Alt, 1, 9
+- Keyboard: Alt, P, M
 - Status: Added: Alt menu path
 
-## Alt menu, YouTube actions: Sound and speed
+## Alt menu, YouTube actions: Volume and speed
 
 ### Volume up
 
@@ -3380,7 +3322,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Normal speed
 
 - Voice: "Normal speed"
-- Keyboard: Alt, 2, 6
+- Keyboard: Alt, V, N
 - Status: Added: Alt menu path
 
 ## Alt menu, YouTube actions: Captions and picture
@@ -3413,26 +3355,6 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 - Voice: "Autoplay on or off"
 - Keyboard: A
-- Status: Both
-
-## Alt menu, YouTube actions: Chapters
-
-### List chapters
-
-- Voice: "List chapters"
-- Keyboard: H
-- Status: Both
-
-### Next chapter
-
-- Voice: "Next chapter"
-- Keyboard: Ctrl+Right
-- Status: Both
-
-### Previous chapter
-
-- Voice: "Previous chapter"
-- Keyboard: Ctrl+Left
 - Status: Both
 
 ## Alt menu, YouTube actions: This video
@@ -3470,8 +3392,26 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Open in browser
 
 - Voice: "Open in browser"
-- Keyboard: Alt, 5, 6
+- Keyboard: Alt, T, B
 - Status: Added: Alt menu path
+
+### List chapters
+
+- Voice: "List chapters"
+- Keyboard: H
+- Status: Both
+
+### Next chapter
+
+- Voice: "Next chapter"
+- Keyboard: Ctrl+Right
+- Status: Both
+
+### Previous chapter
+
+- Voice: "Previous chapter"
+- Keyboard: Ctrl+Left
+- Status: Both
 
 ## Alt menu, YouTube actions: Your account
 
@@ -3490,7 +3430,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Save to Watch later
 
 - Voice: "Save to watch later"
-- Keyboard: Alt, 6, 3
+- Keyboard: Alt, Y, W
 - Status: Added: Alt menu path
 
 ### Save to a playlist
@@ -3502,19 +3442,19 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Add a comment
 
 - Voice: "Post comment ..."
-- Keyboard: Alt, 6, 5
+- Keyboard: Alt, Y, C
 - Status: Added: Alt menu path
 
 ### Sign in
 
 - Voice: "Sign in"
-- Keyboard: Alt, 6, 6
+- Keyboard: Alt, Y, I
 - Status: Added: Alt menu path
 
 ### Sign out
 
 - Voice: "Sign out"
-- Keyboard: Alt, 6, 7
+- Keyboard: Alt, Y, O
 - Status: Added: Alt menu path
 
 ## Alt menu, YouTube actions: Search
@@ -3534,7 +3474,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Clear filters
 
 - Voice: "Clear filters"
-- Keyboard: Alt, 7, 3
+- Keyboard: Alt, S, C
 - Status: Added: Alt menu path
 
 ## Alt menu, YouTube actions: Go to
@@ -3542,49 +3482,49 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### YouTube menu
 
 - Voice: "Youtube menu"
-- Keyboard: Alt, 8, 1
+- Keyboard: Alt, G, Y
 - Status: Added: Alt menu path
 
 ### Home
 
 - Voice: "Youtube home"
-- Keyboard: Alt, 8, 2
+- Keyboard: Alt, G, H
 - Status: Added: Alt menu path
 
 ### New from subscriptions
 
 - Voice: "Subscriptions"
-- Keyboard: Alt, 8, 3
+- Keyboard: Alt, G, N
 - Status: Added: Alt menu path
 
 ### Subscribed channels
 
 - Voice: "My subscriptions"
-- Keyboard: Alt, 8, 4
+- Keyboard: Alt, G, C
 - Status: Added: Alt menu path
 
 ### History
 
 - Voice: "History"
-- Keyboard: Alt, 8, 5
+- Keyboard: Alt, G, I
 - Status: Added: Alt menu path
 
 ### Watch later
 
 - Voice: "Watch later"
-- Keyboard: Alt, 8, 6
+- Keyboard: Alt, G, W
 - Status: Added: Alt menu path
 
 ### Liked videos
 
 - Voice: "Liked videos"
-- Keyboard: Alt, 8, 7
+- Keyboard: Alt, G, L
 - Status: Added: Alt menu path
 
 ### Your playlists
 
 - Voice: "My playlists"
-- Keyboard: Alt, 8, 8
+- Keyboard: Alt, G, P
 - Status: Added: Alt menu path
 
 ### Load the list again
@@ -3610,13 +3550,13 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Media menu
 
 - Voice: "Media menu"
-- Keyboard: Alt, 9, 3
+- Keyboard: Alt, L, E
 - Status: Added: Alt menu path
 
 ### Main menu
 
 - Voice: "Main menu"
-- Keyboard: Alt, 9, 4
+- Keyboard: Alt, L, M
 - Status: Added: Alt menu path
 
 ## Browser menu
@@ -3865,64 +3805,52 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Help, End (last topic), Enter
 - Status: Both
 
-### Start the audio tutorial
+### Start the tutorial
 
 - Voice: "Start tutorial"
-- Keyboard: Ctrl+T on the main menu
-- Status: Added: Ctrl+T
+- Keyboard: Ctrl+T on the main menu, or Tutorial in the Help Alt menu
+- Status: Both
 
-### Choose a course or lesson
+### Choose where to start
 
-- Voice: Course name, "Next lesson", "Previous lesson"
+- Voice: Course name, "Go in order", "Continue where I stopped"
 - Keyboard: Arrows, Enter
 - Status: Both
 
-### Repeat a lesson
+### Do a step
 
-- Voice: "Repeat"
-- Keyboard: Ctrl+Shift+R
-- Status: Added: Ctrl+Shift+R
-
-### Lesson list
-
-- Voice: "Lesson list"
-- Keyboard: Ctrl+L
-- Status: Added: Ctrl+L
-
-### Command list for a course
-
-- Voice: "List commands"
-- Keyboard: F1 in the tutorial
-- Status: Added: F1
-
-### Find a lesson
-
-- Voice: "Find lesson ..."
-- Keyboard: Ctrl+F, type, Enter
-- Status: Added: Ctrl+F
-
-### Explain a command
-
-- Voice: "Explain command ..."
-- Keyboard: Ctrl+Shift+F, type, Enter
-- Status: Added: Ctrl+Shift+F
-
-### Continue a long explanation
-
-- Voice: "Continue reading"
-- Keyboard: Ctrl+Down Arrow
-- Status: Added: Ctrl+Down
-
-### Back one level / course list
-
-- Voice: "Go back", "Courses"
-- Keyboard: Escape
+- Voice: The command the step asks for
+- Keyboard: The key the step asks for
 - Status: Both
 
-### Leave the tutorial
+### Hear the step again
 
-- Voice: "Close tutorial", "Main menu"
-- Keyboard: Escape from the course list
+- Voice: "Repeat"
+- Keyboard: F1 twice quickly (tutorial help ends with the step)
+- Status: Both
+
+### Hear how, or skip a step
+
+- Voice: "Show me", "Skip"
+- Keyboard: Y or N after two tries
+- Status: Both
+
+### Tutorial help
+
+- Voice: "What can I say?"
+- Keyboard: F1 twice quickly
+- Status: Both
+
+### Next lesson or lesson list
+
+- Voice: "Next lesson", "Lesson list"
+- Keyboard: Enter at the end of a lesson
+- Status: Both
+
+### Stop the tutorial
+
+- Voice: "Stop tutorial", "Main menu"
+- Keyboard: Escape, F1
 - Status: Both
 
 ## Speech and voices
@@ -3969,6 +3897,14 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+P
 - Status: Both
 
+## Media
+
+### Jump through a YouTube video
+
+- Voice: "Jump to 50 percent"
+- Keyboard: 1 to 9 on the YouTube screen
+- Status: Both
+
 ## Reading and editing text
 
 ### Read from the top
@@ -3992,7 +3928,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Move by sentence
 
 - Voice: "Next sentence", "Previous sentence"
-- Keyboard: Document menu: Alt, 5, then the item
+- Keyboard: Document menu: Alt, N or Alt, V, then S
 - Status: Both
 
 ### Start or end of a line
@@ -4058,7 +3994,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Insert before or after words
 
 - Voice: "Insert before ...", "Insert after ..."
-- Keyboard: Document menu: Alt, 2, then the item
+- Keyboard: Document menu: Alt, C, then B or A
 - Status: Both
 
 ### Choose among matches
@@ -4158,13 +4094,13 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Switch account from a list
 
 - Voice: "Switch account", then the number, name or address
-- Keyboard: Email menu: Alt, 6, 2; arrows, Enter
+- Keyboard: Email menu: Alt, T, S; arrows, Enter
 - Status: Added: account list to choose from
 
 ### Remove an email account
 
 - Voice: "Remove email account", then "Yes"
-- Keyboard: Email menu: Alt, 6, 4; arrows, Enter, Y
+- Keyboard: Email menu: Alt, T, R; arrows, Enter, Y
 - Status: Added: voice and Alt menu item
 
 ### List contacts / find a contact

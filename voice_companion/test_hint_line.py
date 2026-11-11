@@ -25,7 +25,7 @@ class HintLineTests(unittest.TestCase):
         self.assertEqual(hint('awake'), 'Main menu. F1 twice for help. Arrows move. Enter opens.')
         self.assertEqual(hint('mailbox'), 'Email. F1 twice for help. Enter opens. R replies. N writes new.')
         self.assertEqual(hint('help'), 'Help. Arrows move. Escape goes back.')
-        self.assertEqual(hint('tutorial'), 'Tutorial. F1 twice lists commands.')
+        self.assertEqual(hint('tutorial'), 'Tutorial. Escape stops the tutorial. F1 twice for tutorial help.')
         self.assertTrue(hint('word_processor').endswith('Arrows move. Enter chooses.'))
 
     def test_a_question_says_how_to_answer(self):

@@ -37,7 +37,7 @@ DOCUMENT_ACTIONS = {
                           ('End of document', 'Ctrl+End', 'go to end of document'),
                           ('Document details', '', 'where am i')],
     'Dictation': [('Start dictation', 'F4', 'start dictation'), ('Pause dictation', 'Shift+F4', 'pause dictation')],
-    'More commands': [('Run any document voice command', 'Alt+T', '{value}'),
+    'Tools and help': [('Run any document voice command', 'Alt+T', '{value}'),
                       ('Document help', 'Double:F1', 'help with documents'), ('Word processor options', 'Alt+O', '@options')],
 }
 DOCUMENT_ACTIONS['Table'] = [(label, '', command) for label, command in (
@@ -74,11 +74,54 @@ SHORTCUTS.update({'CapsLock+F':'what formatting','CapsLock+Shift+Down':'what is 
                  'Ctrl+Shift+L':'bulleted list','Ctrl+Shift+7':'numbered list','Ctrl+Alt+T':'create table with {value}',
                  'Ctrl+Shift+H':'highlight {value}','Ctrl+Alt+H':'list headings','Ctrl+Alt+Down':'next heading',
                  'Ctrl+Alt+Up':'previous heading','Ctrl+Shift+Delete':'delete selection','Ctrl+Alt+S':'select {value}'})
-DOCUMENT_ACTIONS['Format'].extend([('Heading '+str(level),'Ctrl+Alt+'+str(level),'heading '+str(level)) for level in range(2,7)])
-# Every command also has a stable two-step menu accelerator: Alt, group digit,
-# then the displayed item number. This covers commands without a conventional key.
-for _group,_items in DOCUMENT_ACTIONS.items():
-    DOCUMENT_ACTIONS[_group]=[(name,key or next((k for k,v in SHORTCUTS.items() if v==command),'Alt, '+str(list(DOCUMENT_ACTIONS).index(_group)+1)+', '+('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[i])),command) for i,(name,key,command) in enumerate(_items)]
+# Heading 2 to 6 have their own keys (Control+Alt+2 to 6); in the menu, Heading level asks
+# which level, so the menu needs no numbers.
+# The document menu works like a Windows menu (Will, November 10, 2026): Alt, the group's
+# letter, then the item's letter. Numbers do nothing. Groups are small enough that every item
+# has its own letter: mostly the first letter of its main word; otherwise a well-known letter
+# from it, as in Word (T for Cut, E for Replace, A for Table).
+# (group, letter, [(label, letter)]), in menu order.
+DOCUMENT_LAYOUT = (
+    ('File', 'F', (('Save', 'S'), ('Save as', 'A'), ('Rename', 'R'), ('Open', 'O'), ('New', 'N'), ('Close', 'C'))),
+    ('Edit', 'E', (('Undo', 'U'), ('Redo', 'R'), ('Cut', 'T'), ('Copy', 'C'), ('Paste', 'P'), ('Find text', 'F'),
+                   ('Replace text', 'E'), ('Scratch last dictation', 'S'))),
+    ('Select', 'S', (('Select all', 'A'), ('Select text', 'T'), ('Clear selection', 'C'), ('Set selection start', 'S'),
+                     ('Set selection end', 'E'), ('Describe selection', 'W'), ('Delete selected text', 'D'))),
+    ('Change', 'C', (('Insert before text', 'B'), ('Insert after text', 'A'), ('Replace current word', 'W'),
+                     ('Replace current sentence', 'S'), ('Replace current paragraph', 'P'))),
+    ('Delete', 'D', (('Delete current word', 'W'), ('Delete current line', 'L'), ('Delete current sentence', 'S'),
+                     ('Delete current paragraph', 'P'))),
+    ('Text style', 'T', (('Bold', 'B'), ('Italic', 'I'), ('Underline', 'U'), ('Remove bold', 'L'), ('Remove italic', 'T'),
+                     ('Remove underline', 'E'), ('Font', 'F'), ('Font size', 'S'), ('Word font', 'W'), ('Word font size', 'Z'),
+                     ('Highlight text', 'H'), ('Formatting details', 'D'))),
+    ('Paragraph', 'P', (('Align left', 'L'), ('Align center', 'C'), ('Align right', 'R'), ('Justify', 'J'),
+                        ('Line spacing', 'S'), ('Single spacing', 'G'), ('Double spacing', 'D'), ('One and a half spacing', 'H'),
+                        ('Whole document spacing', 'W'), ('Reset paragraph spacing', 'E'), ('Reset document spacing', 'T'))),
+    ('Headings', 'H', (('Heading', 'H'), ('Heading level', 'L'), ('Normal text', 'N'))),
+    ('Insert', 'I', (('New line', 'N'), ('New paragraph', 'P'), ('Table', 'T'), ('Bulleted list', 'B'),
+                     ('Numbered list', 'U'), ('End list', 'E'), ('Start dictation', 'S'), ('Pause dictation', 'A'))),
+    ('Read', 'R', (('Read document', 'R'), ('Read paragraph', 'P'), ('Read sentence', 'S'), ('Read word', 'W'),
+                   ('Document details', 'I'), ('List headings', 'H'), ('Navigate document', 'G'),
+                   ('Beginning of document', 'B'), ('End of document', 'E'))),
+    ('Next', 'N', (('Next character', 'C'), ('Next word', 'W'), ('Next line', 'L'), ('Next sentence', 'S'),
+                   ('Next paragraph', 'P'), ('Next heading', 'H'))),
+    ('Previous', 'V', (('Previous character', 'C'), ('Previous word', 'W'), ('Previous line', 'L'),
+                       ('Previous sentence', 'S'), ('Previous paragraph', 'P'))),
+    ('Table', 'A', (('Read table', 'R'), ('Read cell', 'E'), ('Next cell', 'N'), ('Previous cell', 'P'), ('Next row', 'W'),
+                    ('Previous row', 'O'), ('Next column', 'C'), ('Previous column', 'U'), ('Add row', 'A'),
+                    ('Add column', 'D'), ('Delete row', 'X'), ('Delete column', 'L'), ('Clear cell', 'K'),
+                    ('Delete table', 'T'), ('Leave table', 'V'))),
+    ('Options and help', 'O', (('Run any document voice command', 'R'), ('Document help', 'H'),
+                               ('Word processor options', 'O'))),
+)
+_BY_LABEL = {label: (label, key, command) for _items in DOCUMENT_ACTIONS.values() for label, key, command in _items}
+DOCUMENT_ACTIONS = {group: [_BY_LABEL[label] for label, _ in entries] for group, _, entries in DOCUMENT_LAYOUT}
+DOCUMENT_GROUP_LETTERS = {group: letter for group, letter, _ in DOCUMENT_LAYOUT}
+DOCUMENT_ITEM_LETTERS = {(group, label): letter for group, _, entries in DOCUMENT_LAYOUT for label, letter in entries}
+# The keys a menu item says: its shortcut, or its letter path ("Alt, R, P") when it has none.
+DOCUMENT_ACTIONS = {group: [(name, key or next((k for k, v in SHORTCUTS.items() if v == command),
+                                                'Alt, ' + DOCUMENT_GROUP_LETTERS[group] + ', ' + DOCUMENT_ITEM_LETTERS[(group, name)]), command)
+                            for name, key, command in items] for group, items in DOCUMENT_ACTIONS.items()}
 
 
 def spoken_speed(text):
@@ -132,9 +175,16 @@ OFFICE_OPEN = ('office tools', 'open office tools', 'office tools menu', 'go to 
 ORGANIZER = (('Address manager', '', 'contacts'), ('Schedule manager', '', 'calendar'))
 ORGANIZER_OPEN = ('organizer', 'open organizer', 'organizer menu', 'go to organizer', 'organiser', 'open organiser',
                   'organiser menu', 'go to organiser')
+# Web tools (Will, November 10, 2026): the web browser and the other web places, which were
+# only inside the web browser menu before. Each item runs the same command as before, so
+# "web browser", "downloads" and "web history" still work from anywhere.
+WEB_TOOLS = (('Web browser', '', 'web browser'), ('Web favorites', '', 'list favorites'), ('Web history', '', 'web history'),
+             ('Downloads', '', 'download manager'), ('Set up Chrome', '', 'set up chrome'))
+WEB_TOOLS_OPEN = ('web tools', 'open web tools', 'web tools menu', 'go to web tools')
 POWER_CHOICES = (('Shut down the computer', '', 'shut down computer'), ('Restart the computer', '', 'restart computer'))
 POWER_OPEN = ('shut down or restart', 'power menu', 'power options', 'open power menu')
-# Favorite apps (Control+F1): the apps you chose in Options, My menu, in this order.
+# Favorite apps (Control+F1): the apps you chose in Options, Favorite apps. This is the order
+# before you change it there (favorite_order), and the order of saved options from before 0.2.211.
 FAVORITE_APPS = (('File manager', 'file manager'), ('Word processor', 'word processor'), ('Notepad', 'notepad'),
                  ('Email', 'email'), ('Document reader', 'document reader'), ('Address manager', 'contacts'),
                  ('Schedule manager', 'calendar'), ('Web browser', 'web browser'), ('Radio', 'radio'),
@@ -142,8 +192,14 @@ FAVORITE_APPS = (('File manager', 'file manager'), ('Word processor', 'word proc
 # Not "favorites" or "my favorites": those are the web browser's saved pages.
 FAVORITES_OPEN = ('favorite apps', 'favourite apps', 'open favorite apps', 'open favourite apps',
                   'favorite apps menu', 'go to favorite apps', 'my favorite apps', 'my favourite apps')
+# The Options category is Favorite apps (Will, November 10, 2026); it was called My menu, and
+# those words still open it.
+FAVORITES_CATEGORY = 'Favorite apps'
 FAVORITES_CHANGE = ('change favorite apps', 'change favourite apps', 'edit favorite apps', 'edit favourite apps',
+                    'favorite apps options', 'favourite apps options', 'open favorite apps options',
                     'my menu', 'open my menu', 'my menu options')
+# The saved order of every app in Options, Favorite apps: a list of app names.
+FAVORITE_ORDER = 'favorite_order'
 
 
 def favorite_key(name):
@@ -151,19 +207,34 @@ def favorite_key(name):
     return 'favorite_' + name.lower().replace(' ', '_')
 
 
+def favorite_order(preferences):
+    """Every app name, in the order saved in Options. A damaged or missing order never loses an
+    app: unknown names and repeats are left out, and apps missing from it follow, in the usual order."""
+    saved = (preferences or {}).get(FAVORITE_ORDER)
+    names = {name.casefold(): name for name, _ in FAVORITE_APPS}
+    order = []
+    for item in saved if isinstance(saved, (list, tuple)) else ():
+        name = names.get(item.strip().casefold()) if isinstance(item, str) else None
+        if name and name not in order:
+            order.append(name)
+    return order + [name for name, _ in FAVORITE_APPS if name not in order]
+
+
 def favorite_items(preferences):
-    chosen = [(name, '', command) for name, command in FAVORITE_APPS if (preferences or {}).get(favorite_key(name))]
-    return chosen + [('Change favorite apps', '', '@options:My menu')]
+    commands = dict(FAVORITE_APPS)
+    chosen = [(name, '', commands[name]) for name in favorite_order(preferences) if (preferences or {}).get(favorite_key(name))]
+    return chosen + [('Change favorite apps', '', '@options:' + FAVORITES_CATEGORY)]
 
 
 # Group menus: leaving an app opened from one goes back to it (companion.group_return).
-GROUP_MENUS = {'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'favorites_menu': 'Favorite apps'}
+GROUP_MENUS = {'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'web_tools_menu': 'Web tools',
+               'favorites_menu': 'Favorite apps'}
 # Simple list menus: arrows, first letters, Enter and Escape.
 LIST_MENUS = ('word_processor', 'notepad_menu', 'reader_menu', 'media_menu', 'office_menu', 'organizer_menu',
-              'favorites_menu', 'power_menu')
+              'favorites_menu', 'power_menu', 'web_tools_menu')
 # Menus whose items run a command from the main menu.
 MAIN_LEVEL_MENUS = ('media_menu', 'word_processor', 'notepad_menu', 'office_menu', 'organizer_menu', 'favorites_menu',
-                    'power_menu')
+                    'power_menu', 'web_tools_menu')
 
 READER_BACK_WORDS = {'reader_recent': 'your recent documents', 'reader_picker': 'the file list',
                      'recent_documents': 'your recent documents', 'files': 'the file list',
@@ -224,6 +295,8 @@ class TaskNavigation:
             return list(OFFICE_TOOLS)
         if mode == 'organizer_menu':
             return list(ORGANIZER)
+        if mode == 'web_tools_menu':
+            return list(WEB_TOOLS)
         if mode == 'favorites_menu':
             return favorite_items(getattr(self.app, 'PREFERENCES', {}))
         if mode == 'power_menu':
@@ -265,7 +338,21 @@ class TaskNavigation:
         return mode
 
     def describe(self, item, index, count):
+        letter = self.menu_letter(item)
+        if letter:
+            # The document menu: the letter that opens the group or runs the item. Its letter path
+            # ("Alt, R, P") is not said inside the menu, only a real shortcut key.
+            key = '' if str(item[1]).startswith('Alt, ') else item[1]
+            return item[0] + ' (' + letter + '), ' + str(index + 1) + ' of ' + str(count) + '.' + (' '+spoken_key(key)+'.' if key else '')
         return announce_item(item[0], index, count) + (' '+spoken_key(item[1])+'.' if item[1] else '')
+
+    def menu_letter(self, item):
+        """The letter of a document menu group or item, or None for other menus."""
+        if str(item[2]).startswith('@group:'):
+            return DOCUMENT_GROUP_LETTERS.get(item[2][7:])
+        if self.group and item in DOCUMENT_ACTIONS.get(self.group, ()):
+            return DOCUMENT_ITEM_LETTERS[(self.group, item[0])]
+        return None
 
     def pick(self, kind, mode=None):
         m = self.app
@@ -486,8 +573,6 @@ class TaskNavigation:
                     'add contact {value}':'Add contact. Type or say the name, the word as, then the email address. Press Enter.',
                     'find contact {value}':'Find contact. Type or say a name, then press Enter.',
                     'go to {value}':'Go to a day. Type or say a day, such as Friday or October 30, then press Enter.',
-                    'find lesson {value}':'Find lesson. Type or say a subject, then press Enter.',
-                    'explain command {value}':'Explain command. Type or say the command, then press Enter.',
                     'skip amount {value}':'Skip amount. Type or say a time, such as 30 seconds, then press Enter.',
                     'search youtube for {value}':'Search YouTube. Type or say what to find, then press Enter.',
                     'post comment {value}':'Comment. Type or say your comment, then press Enter. You are asked before it is posted.'}.get(command)
@@ -503,15 +588,19 @@ class TaskNavigation:
             if command.startswith('@options:'):return m.screen_menu().run(command, mode)
             if command == 'main menu':return 'awake'
         if mode == 'favorites_menu' and command.startswith('@options:'):
-            # Change favorite apps: Options opens on My menu; closing it comes back here.
+            # Change favorite apps: Options opens on Favorite apps; closing it comes back here.
             return m.screen_menu().run(command, mode)
         return m.handle(command, 'document' if mode == 'document_menu' else 'awake' if mode in MAIN_LEVEL_MENUS else mode, typed=True)
 
     def keyboard(self, key, mode):
         if mode=='document_menu' and key.startswith('MenuPick:'):
+            # A letter opens a group or runs an item. A number does nothing (no numbered paths).
             token=key.split(':',1)[1].upper()
-            index='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.find(token) if self.group else int(token)-1 if token.isdigit() else -1
-            return '@menu:'+str(index)
+            if self.group:
+                index=next((i for i,(name,_,_) in enumerate(DOCUMENT_ACTIONS[self.group]) if DOCUMENT_ITEM_LETTERS[(self.group,name)]==token),-1)
+            else:
+                index=next((i for i,name in enumerate(DOCUMENT_ACTIONS) if DOCUMENT_GROUP_LETTERS[name]==token),-1)
+            return '@menu:'+str(index) if index>=0 else '@menu:none:'+token
         if mode == 'document':
             if key in ('Doc:NextCell','Doc:PreviousCell'):return 'next cell' if key=='Doc:NextCell' else 'previous cell'
             if key == 'Alt': self.group = None; return 'document menu'
@@ -534,7 +623,7 @@ class TaskNavigation:
                 return {'Ctrl+N':'create a document','Ctrl+O':'@open','Ctrl+R':'@recent','Alt+O':'@options'}[key]
             if mode == 'reader_menu' and key in ('Ctrl+O','Ctrl+R','Alt+O'):
                 return {'Ctrl+O':'@reader_open','Ctrl+R':'@reader_recent','Alt+O':'@options:Document reader'}[key]
-            if mode in ('office_menu','organizer_menu','favorites_menu','power_menu','media_menu') and key == 'Alt+O':
+            if mode in ('office_menu','organizer_menu','web_tools_menu','favorites_menu','power_menu','media_menu') and key == 'Alt+O':
                 # These menus have no options of their own: Alt+O opens Options, as on every screen.
                 return 'open options'
             if mode == 'notepad_menu' and key in ('Ctrl+N','Ctrl+O','Alt+O'):
@@ -585,7 +674,7 @@ class TaskNavigation:
             return self.action('@options',mode)
         if mode=='document_menu' and command in ('main menu','back to main menu','exit companion'):
             return m.handle(text,'document',typed=True)
-        if mode in ('word_processor','media_menu','office_menu','organizer_menu','favorites_menu','power_menu','recent_documents','document_menu','local_media','notepad_menu','reader_menu','reader_recent') and (m.spoken_control(command) or command in ('help','exit companion','go to sleep','wake up','main menu','back to main menu')):
+        if mode in ('word_processor','media_menu','office_menu','organizer_menu','web_tools_menu','favorites_menu','power_menu','recent_documents','document_menu','local_media','notepad_menu','reader_menu','reader_recent') and (m.spoken_control(command) or command in ('help','exit companion','go to sleep','wake up','main menu','back to main menu')):
             return None
         editor = m.document if mode == 'document' else m.email_draft if mode == 'email_draft' else None
         if editor is not None and command in ('toggle bold','toggle italic','toggle underline') and (mode == 'document' or (editor.compose_step or 'body') == 'body'):
@@ -616,10 +705,12 @@ class TaskNavigation:
             return self.enter('office_menu', 'Office tools')
         if command in ORGANIZER_OPEN and mode not in ('document','email_draft','note'):
             return self.enter('organizer_menu', 'Organizer')
+        if command in WEB_TOOLS_OPEN and mode not in ('document','email_draft','note'):
+            return self.enter('web_tools_menu', 'Web tools')
         if command in FAVORITES_OPEN and mode not in ('document','email_draft','note'):
             return m.open_favorites()
         if command in FAVORITES_CHANGE and mode not in ('document','email_draft','note'):
-            return m.screen_menu().run('@options:My menu', mode)
+            return m.screen_menu().run('@options:' + FAVORITES_CATEGORY, mode)
         if command in POWER_OPEN and mode not in ('document','email_draft','note'):
             return self.enter('power_menu', 'Shut down or restart')
         if command in ('media','media menu','open media') and mode not in ('document','email_draft'):
@@ -630,19 +721,17 @@ class TaskNavigation:
             return self.enter('local_media', 'Media player')
         if command in ('document menu','document commands','menu') and mode == 'document':
             self.group = None
-            return self.enter('document_menu', 'Document menu. Use arrows and Enter to choose a group')
+            return self.enter('document_menu', 'Document menu')
         if mode == 'document' and (text in SHORTCUTS.values() or command.startswith('@')):
             return self.action(text, mode) if '{value}' in text or text.startswith('@') else None
         items = self.items(mode)
         if items is None: return None
+        if mode=='document_menu' and command.startswith('@menu:none:'):
+            m.speak('No item uses '+text.rsplit(':',1)[1].upper()+'.');return mode
         if mode=='document_menu' and command.startswith('@menu:'):
             index=int(command[6:])
             if 0<=index<len(items):return self.action(items[index][2],mode)
-            m.speak('No command for this key.');return mode
-        if mode=='document_menu' and command.isdigit():
-            index=int(command)-1
-            if 0<=index<len(items):return self.action(items[index][2],mode)
-            m.speak('Choose an item number from 1 to '+str(len(items))+'.');return mode
+            m.speak('No item uses that key.');return mode
         if mode == 'local_media':
             action = {'play or pause':'toggle','play':'play','resume':'play','pause':'pause','stop media':'stop','stop':'stop',
                       'back 15 seconds':'seek','rewind':'seek','forward 15 seconds':'seek'}.get(command)

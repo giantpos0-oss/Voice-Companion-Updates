@@ -23,6 +23,7 @@ where words are commands, and "add appointment tomorrow at 3 PM called doctor"
 from the main menu. companion.py calls into this module from a few small hooks;
 `m` is the companion module.
 """
+from hints import hint
 import re
 from datetime import datetime, time, timedelta
 
@@ -486,8 +487,8 @@ def command_here(m, raw, command):
     if asked_for and looks_like_date(asked_for[1]) or missing_date(raw, today(m)):
         # "go to February 30", "What's on February 30?": a date was meant. Say why, and ask again.
         return ask(m, 'go-to', date_problem(m, raw))
-    m.speak('Schedule manager. Say next event, next day, today, read event, add event, edit event, or delete event. '
-            'Press F1 twice for help, or Escape for the main menu.')
+    m.speak('Schedule manager.' + hint(' Say next event, next day, today, read event, add event, edit event, or delete event. '
+            'Press F1 twice for help, or Escape for the main menu.', instead=' I did not understand that.'))
     return MODE
 
 
@@ -844,7 +845,7 @@ def add_question(m):
         passed = 'That time has already passed. '
     others = len(writable()) > 1
     return (DRAFT.get('note', '') + 'Add ' + DRAFT['title'] + ', ' + draft_time_words(m) + ', to ' + calendar_words(DRAFT['calendar']) +
-            '? ' + passed + 'Say Yes to save or No to cancel.' + (' To use another calendar, say change calendar.' if others else ''))
+            '? ' + passed + 'Say Yes to save or No to cancel.' + (hint(' To use another calendar, say change calendar.') if others else ''))
 
 
 KEPT_TRY_AGAIN = 'Its name and time are kept. Say Yes to try again, or No to cancel.'
@@ -1328,7 +1329,7 @@ def confirm_edit(m):
         CHOICES = ('yes', 'no')
         tail = ' Say Yes to save or No to cancel.'
         if EDIT['field'] == 'calendar' and len(other_calendars(event)) > 1:
-            tail += ' To use another calendar, say change calendar.'
+            tail += hint(' To use another calendar, say change calendar.')
     elif 'calendarId' in edit_changes():
         CHOICES = ('yes', 'no')
         tail = ' ' + name + ' repeats. All of them will move. Say Yes to save or No to cancel.'

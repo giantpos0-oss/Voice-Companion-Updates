@@ -1,4 +1,5 @@
 """Spoken file lists backed by the Windows Shell, with asynchronous Shell work."""
+from hints import hint
 from dataclasses import dataclass
 from pathlib import Path
 import os
@@ -576,7 +577,7 @@ class FileManager:
             extended=getattr(self.backend,'extended',None)
             def shown(lines):
                 self.properties=lines;self.menu='properties';self.menu_index=0
-                return 'Properties of '+item.name+'. '+self.say_current()+' Use the arrows to read more. Escape closes.'
+                return 'Properties of '+item.name+'. '+self.say_current()+hint(' Use the arrows to read more. Escape closes.')
             return self.start_job(lambda:properties(item.path,extended),shown,'Reading properties.')
         if cmd in ('copy','copy selected','cut','cut selected'):
             paths=[i.path for i in self.targets()];cut=cmd.startswith('cut')
@@ -588,7 +589,7 @@ class FileManager:
                 paths,cut=self.backend.get_clipboard();self.backend.operate('cut' if cut else 'copy',paths,destination)
                 if cut and hasattr(self.backend,'finish_cut'):self.backend.finish_cut(paths)
                 return len(paths)
-            return self.start_job(work,lambda count:self.after_change(count_items(count)+' pasted.'),'Pasting files. You can say status.',mutating=True)
+            return self.start_job(work,lambda count:self.after_change(count_items(count)+' pasted.'),'Pasting files.'+hint(' You can say status.'),mutating=True)
         if cmd in ('delete','delete selected','remove','remove selected'):
             targets=self.targets();self.pending=('delete',[i.path for i in targets]);return 'Delete '+', '.join(i.name for i in targets)+('? Windows will use the Recycle Bin where supported. Say Yes or No. Escape cancels.')
         match=re.fullmatch(r'rename(?: (?:to )?(.+))?',text,re.I)

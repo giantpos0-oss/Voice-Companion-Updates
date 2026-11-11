@@ -1,4 +1,5 @@
 """Voice Word editor. Writes basic DOCX files using Python's standard library."""
+from hints import hint
 import html
 import os
 import re
@@ -1074,7 +1075,7 @@ class VoiceDocument:
             self.selection = None
             self.insertion_position = (selected.first_paragraph,selected.first_offset)
             self.changed()
-            return ('Cut: ' if action == 'cut' else 'Deleted: ') + closed(content) + ' Table cells remain. Say undo to restore the text.'
+            return ('Cut: ' if action == 'cut' else 'Deleted: ') + closed(content) + ' Table cells remain.' + hint(' Say undo to restore the text.')
         if action in ('copy', 'cut'):
             copy_to_clipboard(content)
             if action == 'copy':
@@ -1082,7 +1083,7 @@ class VoiceDocument:
         if action in ('cut', 'delete'):
             self.selection = self._with_one_space(selected)
             self._replace_selection('')
-            return ('Cut: ' if action == 'cut' else 'Deleted: ') + closed(content) + ' Say undo to restore it.'
+            return ('Cut: ' if action == 'cut' else 'Deleted: ') + closed(content) + hint(' Say undo to restore it.')
         style = {'bold': ('bold', True), 'underline': ('underline', True),
                  'italicize': ('italic', True), 'highlight': ('highlight', 'yellow')}[action]
         word_position = self.word_cursor
@@ -1459,7 +1460,7 @@ class VoiceDocument:
             line = p.text[start:end].strip('\n')
             self.selection = TextSelection(self.cursor, start, self.cursor, end)
             self._apply_selection_action(self.selection, 'delete')
-            return 'Deleted line: ' + closed(line or 'blank line') + ' Say undo to restore it.'
+            return 'Deleted line: ' + closed(line or 'blank line') + hint(' Say undo to restore it.')
         if command == 'delete current word':
             command = 'delete word'
         if command in ('copy', 'cut') and self.selection and self.selected_text():
@@ -1514,7 +1515,7 @@ class VoiceDocument:
             if self.crosses_table_cells(self.selection):
                 return TABLE_SELECTION_NOTICE
             self._replace_selection(pasted)
-            return 'Pasted: ' + closed(pasted) + ' Say undo to remove it.'
+            return 'Pasted: ' + closed(pasted) + hint(' Say undo to remove it.')
         request = reading_request(command)
         if request == ('paragraph', 0) and self.paragraphs:
             # The shared reading cursor skips blank paragraphs, which would move the
@@ -1575,7 +1576,7 @@ class VoiceDocument:
             return 'Saved the Word document as ' + self.path.name + '.'
         if command in ('start dictation', 'dictate', 'continue writing'):
             self.dictating = True
-            return 'Dictation is on. Say new paragraph for the next paragraph, or pause dictation.'
+            return 'Dictation is on.' + hint(' Say new paragraph for the next paragraph, or pause dictation.')
         if command in ('pause dictation', 'stop dictation'):
             self.dictating = False
             return 'Dictation paused.'
@@ -1710,7 +1711,7 @@ class VoiceDocument:
             self.reading.set_text('\n'.join(p.text for p in self.paragraphs))
             self.reading.position = self.reading.continuation = sum(len(p.text)+1 for p in self.paragraphs[:self.cursor])
             self.changed()
-            return ('Deleted paragraph: ' + closed(removed.text) + ' Say undo to restore it.') if removed.text.strip() else 'Deleted an empty paragraph. Say undo to restore it.'
+            return ('Deleted paragraph: ' + closed(removed.text) + hint(' Say undo to restore it.')) if removed.text.strip() else 'Deleted an empty paragraph.' + hint(' Say undo to restore it.')
         whole_paragraph = re.match(r'replace (?:the |current |this )?paragraph with (.+)$', text, re.I | re.S)
         if whole_paragraph:
             if not self.paragraphs:
@@ -1802,7 +1803,7 @@ class VoiceDocument:
             self.cursor = next(i for i,p in enumerate(self.paragraphs) if
                                (p.table_id,p.row,p.column) == (table_id,min(row,rows-1),column))
             self.changed()
-            return 'Deleted the row. Say undo to restore it. ' + self.describe_cell()
+            return 'Deleted the row.' + hint(' Say undo to restore it.') + ' ' + self.describe_cell()
         if command in ('delete column', 'remove column'):
             cell = self.table_cell()
             if cell is None:
@@ -1820,7 +1821,7 @@ class VoiceDocument:
             self.cursor = next(i for i,p in enumerate(self.paragraphs) if
                                (p.table_id,p.row,p.column) == (table_id,row,min(column,columns-1)))
             self.changed()
-            return 'Deleted the column. Say undo to restore it. ' + self.describe_cell()
+            return 'Deleted the column.' + hint(' Say undo to restore it.') + ' ' + self.describe_cell()
         if command in ('read cell', 'what cell', 'where in table'):
             return self.describe_cell()
         if command in ('next cell', 'move right a cell'):
@@ -1866,7 +1867,7 @@ class VoiceDocument:
             self.paragraphs = [p for p in self.paragraphs if p.table_id != cell.table_id]
             self.cursor = min(self.cursor, max(0, len(self.paragraphs)-1))
             self.changed()
-            return 'Deleted the table. Say undo to restore it.'
+            return 'Deleted the table.' + hint(' Say undo to restore it.')
         if command in ('leave table', 'after table'):
             cell = self.table_cell()
             if cell is None:

@@ -15,10 +15,10 @@ class ReadingResponsivenessTests(unittest.TestCase):
         with patch.object(app,'APP_WINDOW',window),patch.object(app,'apply_keyboard_edit') as edit,patch.object(app,'interrupt_speech') as stop,patch.object(app,'KEYBOARD_BATCH_TEXT',None):
             self.assertEqual(app.process_keyboard_batch('help'),'help');edit.assert_called_once();stop.assert_not_called();window.feedback.assert_not_called()
     def test_rapid_arrows_apply_all_moves_but_speak_final_item_only(self):
-        # Four presses reach Web browser (File manager, Office tools and Organizer come first, November 6, 2026).
+        # Four presses reach Web tools (File manager, Office tools and Organizer come first, November 6 and 10, 2026).
         window=self.window([('keyboard','Down')]*4)
         with patch.object(app,'APP_WINDOW',window),patch.object(app,'MAIN_MENU_INDEX',None),patch.object(app,'SYNTH_PICK_INDEX',None),patch.object(app,'VOICE_PICK_INDEX',None),patch.object(app,'account_setup',False),patch.object(app,'interrupt_speech'),patch.object(app,'sync_app_context'),patch.object(app,'KEYBOARD_BATCH_TEXT',None):
-            self.assertEqual(app.process_keyboard_batch('awake'),'awake');self.assertEqual(app.MAIN_MENU_INDEX,3);window.feedback.assert_called_once_with('Web browser (W), 4 of 10.')
+            self.assertEqual(app.process_keyboard_batch('awake'),'awake');self.assertEqual(app.MAIN_MENU_INDEX,3);window.feedback.assert_called_once_with('Web tools (W), 4 of 10.')
     def test_voice_navigation_fast_in_every_reading_context(self):
         with patch.object(app,'INPUT_MODE','mixed'):
             for mode in ('document','email_draft','mailbox','help','web','note'):
@@ -59,10 +59,12 @@ class ReadingResponsivenessTests(unittest.TestCase):
             for mode in ('document','email_draft','note'):self.assertFalse(app.navigation_feedback_control('next',mode))
         self.assertFalse(app.navigation_feedback_control('The next item is blue','document'))
 
-    def test_partial_navigation_interrupts_without_executing_or_resetting(self):
+    def test_partial_navigation_stops_speech_without_executing_or_resetting(self):
+        # One place stops speech for every partial result now (speech_stop.py, test_speech_stop.py).
         recognizer=Mock();recognizer.PartialResult.return_value='{"partial":"next"}'
-        with patch.object(app,'speech_busy',return_value=True),patch.object(app,'interrupt_speech') as stop,patch.object(app,'handle') as handle,patch.object(app,'INPUT_MODE','mixed'):
-            self.assertTrue(app.interrupt_partial_navigation(recognizer,'awake'))
-            stop.assert_called_once();handle.assert_not_called();recognizer.Reset.assert_not_called()
+        from speech_stop import SpeechStop
+        with patch.object(app,'SPEECH_STOP',SpeechStop()),patch.object(app,'SPEECH_PAUSED',False),patch.object(app,'speech_busy',return_value=True),patch.object(app,'control_speech') as stop,patch.object(app,'handle') as handle,patch.object(app,'INPUT_MODE','mixed'):
+            self.assertTrue(app.user_started_speaking(recognizer,'awake'))
+            stop.assert_called_once_with('pause');handle.assert_not_called();recognizer.Reset.assert_not_called()
 
 if __name__=='__main__':unittest.main()

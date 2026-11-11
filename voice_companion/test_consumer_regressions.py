@@ -48,11 +48,12 @@ class ConsumerRegressionTests(unittest.TestCase):
             app.handle('previous','awake');speak.assert_called_with('Start of list.')
 
     def test_all_options_categories_are_named_options(self):
-        # My menu is the one section with its own name (Will, November 6, 2026): it holds Favorite apps.
+        # Favorite apps is the one section with its own name (Will, November 10, 2026; My menu before):
+        # it is named like the menu Control+F1 opens.
         for name in CATEGORIES:
             self.assertTrue(fields(name,{}))
-            if name!='My menu':self.assertTrue(name.endswith(' options'),name)
-        self.assertEqual([name for name in CATEGORIES if not name.endswith(' options')],['My menu'])
+            if name!='Favorite apps':self.assertTrue(name.endswith(' options'),name)
+        self.assertEqual([name for name in CATEGORIES if not name.endswith(' options')],['Favorite apps'])
 
     def test_refresh_is_available_while_keyboard_only_and_asleep(self):
         session=Mock(page_revision=1,refresh_changed=Mock(return_value=''))
@@ -61,7 +62,7 @@ class ConsumerRegressionTests(unittest.TestCase):
             self.assertEqual(session.refresh_changed.call_count,2);sync.assert_called_with('sleep')
 
     def test_main_menu_order_is_identical_for_voice_and_keyboard(self):
-        expected=['File manager','Office tools','Organizer','Web browser','Media','Options','Check for updates','Help','Shut down or restart','Exit Voice Companion']
+        expected=['File manager','Office tools','Organizer','Web tools','Media','Options','Check for updates','Help','Shut down or restart','Exit Voice Companion']
         self.assertEqual([label for label,_ in app.MAIN_MENU_CHOICES],expected)
         with patch.object(app,'MAIN_MENU_INDEX',None),patch.object(app,'SYNTH_PICK_INDEX',None),patch.object(app,'VOICE_PICK_INDEX',None),patch.object(app,'speak') as speak:
             for label in expected:app.handle('next','awake');self.assertTrue(speak.call_args.args[0].startswith(label))

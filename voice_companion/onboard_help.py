@@ -1,4 +1,5 @@
 """Spoken, hierarchical access to the same guide shipped in accessible file formats."""
+from hints import hint as marked_hint
 from list_announcements import name_first
 
 import re
@@ -66,12 +67,12 @@ class HelpSession:
         """The item as every list says it; how to choose only when a list opens, not on each move."""
         if self.level == 'topics':
             return (name_first('Topic ' + str(self.topic_index + 1) + ' of ' + str(len(self.topics)) +
-                    ': ' + self.topics[self.topic_index]['name'] +
-                    ('. Say next or previous, then that one. Say help with followed by a topic name to jump there.' if hint else '.')))
+                    ': ' + self.topics[self.topic_index]['name'] + '.') +
+                    (marked_hint(' Say next or previous, then that one. Say help with followed by a topic name to jump there.') if hint else ''))
         subs = self._subtopics()
         from menu_navigation import announce_item
         return (announce_item(subs[self.subtopic_index][0],self.subtopic_index,len(subs))+
-                (' Say next or previous, then that one to read it. Say back to topics for all chapters.' if hint else ''))
+                (marked_hint(' Say next or previous, then that one to read it. Say back to topics for all chapters.') if hint else ''))
 
     def start(self):
         return 'User guide. ' + self._item()
@@ -80,7 +81,9 @@ class HelpSession:
         # Recognizers add punctuation and write "e-mail": compare words only, on both sides.
         wanted = plain_words(name).replace('e mail', 'email')
         # "Help with the microphone": people say the, my or a before the name.
-        wanted = re.sub(r'^(?:the|my|a|an) ', '', wanted)
+        # Not when the whole name is a topic word, such as "My menu", the old name of Favorite apps in Options.
+        if wanted not in ('my menu', 'my menu options'):
+            wanted = re.sub(r'^(?:the|my|a|an) ', '', wanted)
         aliases = {
             'files':'file manager','file manager':'file manager','file commands':'file manager','reader':'document reader','document reader':'document reader',
             'what is new':"what's new", 'whats new':"what's new", 'what s new':"what's new", 'release notes':"what's new",
@@ -100,11 +103,12 @@ class HelpSession:
             'calendar':'schedule manager', 'events':'schedule manager', 'appointments':'schedule manager',
             'schedule':'schedule manager', 'schedule manager':'schedule manager',
             'organizer':'getting started', 'office tools':'getting started', 'favorite apps':'getting started',
-            'favourite apps':'getting started', 'my menu':'change your options',
+            'favourite apps':'getting started', 'my menu':'change your options', 'my menu options':'change your options',
+            'favorite apps options':'change your options', 'favourite apps options':'change your options',
             'presets':'saved radio stations', 'radio presets':'saved radio stations',
             'settings':'change your options', 'options':'change your options', 'verbosity':'change your options',
             'keyboard':'using voice commands', 'email lists':'read and organize email', 'station database':'listen to radio',
-            'notepad':'write a note', 'notes':'write a note', 'updates':'check for updates', 'tutorial':'using help and lessons',
+            'notepad':'write a note', 'notes':'write a note', 'updates':'check for updates', 'tutorial':'using help and lessons', 'practice':'using help and lessons',
             'downloads':'download files', 'download manager':'download files', 'download':'download files', 'download folder':'download files',
             'attachments':'read and organize email', 'attachment':'read and organize email', 'email attachments':'read and organize email',
             'display':'large text and colors', 'display options':'large text and colors', 'large text':'large text and colors',
@@ -128,11 +132,14 @@ class HelpSession:
                 'email attachments': 'open and save attachments',
                 'main menu': 'use the main menu', 'organizer': 'use the main menu', 'office tools': 'use the main menu',
                 'favorite apps': 'use the main menu', 'favourite apps': 'use the main menu', 'keys': 'keys that work everywhere',
+                'my menu': 'favorite apps in options', 'my menu options': 'favorite apps in options',
+                'favorite apps options': 'favorite apps in options', 'favourite apps options': 'favorite apps in options',
                 'keyboard shortcuts': 'keys that work everywhere', 'shortcuts': 'keys that work everywhere',
                 'shortcut keys': 'keys that work everywhere', 'microphone': 'set up your microphone',
                 'mic': 'set up your microphone', 'time': 'check the time and date', 'date': 'check the time and date',
                 'time and date': 'check the time and date', 'date and time': 'check the time and date',
-                'clock': 'check the time and date', 'yes or no': 'answer yes or no', 'lessons': 'start the audio tutorial',
+                'clock': 'check the time and date', 'yes or no': 'answer yes or no', 'lessons': 'start the tutorial',
+                'tutorial': 'start the tutorial', 'practice': 'start the tutorial',
                 'transcript': 'keep a transcript of what companion says',
                 'speech transcript': 'keep a transcript of what companion says'}.get(wanted)
         wanted = plain_words(aliases.get(wanted, wanted))

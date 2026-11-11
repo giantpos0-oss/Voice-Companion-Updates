@@ -27,7 +27,7 @@ from email_delivery import DeliveryError, delivery_note, message_parts, submit
 from mail_accounts import AccountError, ProtectedStore, account_token, connect, yahoo_connect, PROVIDERS as MAIL_PROVIDERS, REMOVED_PROVIDERS as REMOVED_MAIL_PROVIDERS
 from mail_voice import MailSession
 from mailbox_access import MailboxError
-from practice_tutorial import PracticeTutorial
+import tutorial_engine
 from privacy_controls import narration_allowed
 from parakeet_recognition import ParakeetRecognition
 from browser_navigation import prepare_address
@@ -44,13 +44,15 @@ from onboard_help import HelpSession
 from speech_controls import request as speech_setting_request
 from file_manager import FileManager
 from settings_model import DEFAULTS, SettingsSession, prompt_text, keyboard_request
+import hints as hints_module
+from hints import hint, toggle_request as hints_toggle_request
 from keyboard_text import document_text,replace_keyboard_text,absolute
 from menu_navigation import boundary_notice, bounded_index, next_match, menu_label, announce_item
 
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.210-test'
+APP_VERSION = '0.2.211-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -121,6 +123,7 @@ def load_preferences(folder):
 PREFERENCES, PREFERENCES_DAMAGED = load_preferences(APP)
 PREFERENCES_DAMAGED_NOTICE = 'Your saved options could not be read, so Voice Companion is using the usual options. To set them again, press Alt+O.'
 VERBOSITY = PREFERENCES.get('verbosity','high')
+hints_module.PREFERENCES_SOURCE = lambda: PREFERENCES   # the window's key feedback follows Hints and help messages
 # Options, Web browser, "Guided Chrome window" (see web_assistant.CHROME_IN_BACKGROUND).
 __import__('web_assistant').CHROME_IN_BACKGROUND = PREFERENCES.get('browser_window') == 'Run the browser in the background'
 __import__('own_chrome_window').ENABLED = PREFERENCES.get('own_chrome_window') == 'Hide it while Companion uses it'
@@ -360,7 +363,7 @@ def create_named_document(value):
     checkpoint_document()
     apply_document_defaults(document)
     document.dictating=INPUT_MODE!='commands'
-    speak('New document, '+name+'. Speak or type to write. For help, say help with documents, or press F1 twice.')
+    speak('New document, '+name+'.'+hint(' Speak or type to write. For help, say help with documents, or press F1 twice.'))
     return 'document'
 
 def start_save_as(name_text=None):
@@ -383,7 +386,7 @@ def ask_save_as_folder(name,lead=''):
     PENDING_DOCUMENT_NAME=(time.monotonic_ns(),str(default))
     text=lead+'Now choose a folder. Press Enter or say confirm to save in '+folder_words(default)+'. Or say or type another folder, such as Desktop.'
     if document is not None and not same_file(document.folder,default):
-        text+=' Say same folder to save it next to the file you opened.'
+        text+=hint(' Say same folder to save it next to the file you opened.')
     speak(text);return 'document_name'
 
 def choose_save_as_folder(value):
@@ -456,6 +459,9 @@ def app_context(mode):
     logical=SLEEP_RETURN_MODE if mode=='sleep' else mode
     context={'mode':logical,'source':None,'text':'','caret':0,'selection':None,'echo':PREFERENCES.get('typing_echo','characters'),'phonetic':PREFERENCES.get('phonetic_enabled',True),'delay':float(PREFERENCES.get('phonetic_delay','0.5')),'ack':0}
     if logical=='task_input':context['task_input']=True
+    if logical=='tutorial' and tutorial_engine.intercepts_key(sys.modules[__name__],'Enter'):
+        # The window sends every key to the tutorial (app_window.shortcut, tutorial_engine.window_key).
+        context['tutorial_keys']=True
     if THUNDERBIRD_SETUP is not None:context['confirmation']=CONFIRM_CHOICE
     if ACCOUNT_ENTRY is not None:
         context['account_entry']=ACCOUNT_ENTRY['step']
@@ -744,7 +750,8 @@ def process_keyboard_batch(mode):
                     if key=='Control':KEYBOARD_BATCH_TEXT=None
                     # Control+F12 wakes the microphone; other keys work in the screen behind sleep.
                     asleep=mode=='sleep' and key in __import__('input_parity').SCREEN_KEYS['sleep']
-                    try:command='open options' if key=='settings' else navigation_key(key,'sleep' if asleep else SLEEP_RETURN_MODE if mode=='sleep' else mode)
+                    # Alt+O in the tutorial is practice, like every other key there.
+                    try:command='@alt_o' if key=='settings' and mode!='tutorial' else navigation_key(key,'sleep' if asleep else SLEEP_RETURN_MODE if mode=='sleep' else mode)
                     except Exception as exc:
                         if isinstance(exc,user_stop.Stopped) or not safety_net_on():raise
                         command_failed(exc,mode);command=None
@@ -765,8 +772,7 @@ SLEEP_RETURN_MODE = 'awake'
 MAIN_MENU_HELP = ('help me', 'what can i say', 'what can i do', 'what do i say', 'i need help', 'please help',
                   'help me please', 'help please', 'what are my choices', 'what are my options')
 MAIN_MENU_FIRST = 'You are on the main menu. It is the first screen, so there is nothing to go back to. Say a choice, or say help.'
-MAIN_MENU_NOT_UNDERSTOOD = 'I did not understand that. You are on the main menu. Press F1 twice for help.'
-MAIN_MENU_PROMPT = 'Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open.'
+MAIN_MENU_NOT_UNDERSTOOD = 'I did not understand that. You are on the main menu.' + hint(' Press F1 twice for help.')
 
 # Said together with the next main menu announcement, in one message: a second
 # message would stop the first one (the keyboard voice interrupts itself).
@@ -774,13 +780,20 @@ MAIN_MENU_LEAD = ''
 # Counts main menu announcements, so handle() does not say it a second time.
 MAIN_MENU_ANNOUNCED = 0
 
-def announce_main_menu():
+def main_menu_item(index=0):
+    """One main menu item, as the arrows say it: File manager (F), 1 of 10."""
+    return announce_item(MAIN_MENU_CHOICES[index][0], index, len(MAIN_MENU_CHOICES))
+
+def announce_main_menu(index=0):
+    """Arriving on the main menu says only the item you are on, BrailleSense style (Will,
+    November 10, 2026): F1 and Main menu go to the first item; Escape from a group on the
+    main menu lands on that group (main_menu_parent). The arrows go on from there."""
     global MAIN_MENU_INDEX, MAIN_MENU_LEAD, MAIN_MENU_ANNOUNCED
-    MAIN_MENU_INDEX = None
+    index = index if 0 <= index < len(MAIN_MENU_CHOICES) else 0
+    MAIN_MENU_INDEX = index
     MAIN_MENU_ANNOUNCED += 1
-    lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD, ''
-    if lead.strip():speak(lead.strip() + ' ' + prompt_text(MAIN_MENU_PROMPT, VERBOSITY))
-    else:speak_prompt(MAIN_MENU_PROMPT)
+    lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD.strip(), ''
+    speak((lead + ' ' if lead else '') + main_menu_item(index))
 
 def startup_prompt():
     """The startup announcement for the microphone as it is now (startup_speech.py)."""
@@ -790,9 +803,22 @@ def startup_prompt():
 MAIN_MENU_INDEX = None
 # Grouped (Will, November 6, 2026): File manager first, on its own. Office tools holds Word
 # processor, Notepad, Email and Document reader. Organizer holds Address manager (contacts) and
-# Schedule manager (calendar). Shut down or restart holds the two power choices. Every app's own
-# command still works from here ("email", "contacts", "calendar").
-MAIN_MENU_CHOICES = (('File manager', 'file manager'), ('Office tools', 'office tools'), ('Organizer', 'organizer'), ('Web browser', 'web browser'), ('Media', 'media menu'), ('Options', 'options'), ('Check for updates', 'check for updates'), ('Help', 'help'), ('Shut down or restart', 'shut down or restart'), ('Exit Voice Companion', 'exit companion'))
+# Schedule manager (calendar). Web tools (November 10) holds Web browser, Web favorites, Web history,
+# Downloads and Set up Chrome. Shut down or restart holds the two power choices. Every app's own
+# command still works from here ("email", "contacts", "calendar", "web browser").
+MAIN_MENU_CHOICES = (('File manager', 'file manager'), ('Office tools', 'office tools'), ('Organizer', 'organizer'), ('Web tools', 'web tools'), ('Media', 'media menu'), ('Options', 'options'), ('Check for updates', 'check for updates'), ('Help', 'help'), ('Shut down or restart', 'shut down or restart'), ('Exit Voice Companion', 'exit companion'))
+# What arriving on the main menu says (F1, Main menu, a screen closing): its first item only.
+MAIN_MENU_PROMPT = main_menu_item(0)
+# The groups on the main menu. Escape from one lands on its own item, as on a BrailleSense.
+MAIN_MENU_GROUPS = {'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'web_tools_menu': 'Web tools',
+                    'media_menu': 'Media', 'power_menu': 'Shut down or restart'}
+
+
+def main_menu_parent(text, mode):
+    """The main menu item to land on when `text` left `mode` for the main menu."""
+    if mode not in MAIN_MENU_GROUPS or text == '@main_menu' or normalized_command(text) in OFFICE_LEAVE_TO_MAIN:return 0
+    names = [name for name, _ in MAIN_MENU_CHOICES]
+    return names.index(MAIN_MENU_GROUPS[mode]) if MAIN_MENU_GROUPS[mode] in names else 0
 
 
 def resume_from_sleep():
@@ -1095,6 +1121,10 @@ def poll_media_stream(now=None,hearing=None):
 
 def navigation_key(key,mode):
     global KEYBOARD_NAVIGATION
+    if mode=='tutorial' and tutorial_engine.intercepts_key(sys.modules[__name__],key):
+        # The tutorial checks every key itself (tutorial_engine.py); none reaches a real screen.
+        interrupt_speech()
+        return tutorial_engine.KEY_PREFIX+key
     if key=='F3':
         # F3 says what plays now, on every screen; it changes nothing (Will, October 2026).
         previous=KEYBOARD_NAVIGATION;KEYBOARD_NAVIGATION=True
@@ -1139,6 +1169,18 @@ def navigation_key(key,mode):
     previous=KEYBOARD_NAVIGATION;KEYBOARD_NAVIGATION=True
     try:return _navigation_key(key,mode)
     finally:KEYBOARD_NAVIGATION=previous
+
+def key_text_box_open(mode):
+    """True while this screen has a box that takes typed words as they are: a search, a name,
+    a folder or an answer. A shortcut key's command words must never be typed there."""
+    if mode in ('task_input','document_name'):return True
+    if mode=='youtube':return __import__('youtube_screen').typing(sys.modules[__name__])
+    if mode=='browser_menu':return bool(web_session is not None and getattr(web_session.menu,'level',None)=='name')
+    if mode=='files':return bool(FILE_MANAGER and FILE_MANAGER.pending and FILE_MANAGER.pending[0] in FILE_TEXT_STEPS)
+    if mode=='attachments':
+        pending=__import__('attachment_screen').PENDING
+        return pending is not None and pending[0]=='folder'
+    return False
 
 def yes_no_open(mode):
     """True while a yes or no question waits for its answer on this screen."""
@@ -1196,6 +1238,9 @@ def _navigation_key(key,mode):
         speak(LAST_YES_NO);return None
     if key=='Ctrl+P':return 'toggle audio'
     if key=='Control':return None
+    # Alt+F4 and the window's Close button close Companion from every screen. Screens with keys
+    # of their own (YouTube, Contacts, Calendar, File manager) used to swallow it.
+    if key=='Alt+F4':return 'exit companion'
     menu_key=screen_menu().keyboard(key,mode)
     if menu_key is not None:return menu_key
     # "Add account" asks Thunderbird or Yahoo: Escape cancels it on every screen, as it says.
@@ -1253,14 +1298,14 @@ def _navigation_key(key,mode):
                 'Alt+N':'sort by name','Alt+C':'sort by date created','Alt+M':'sort by date modified','Alt+D':'sort by date added','Alt+A':'sort ascending','Ctrl+Shift+F':'search subfolders','Ctrl+Shift+X':'clear search','Alt+S':'sort files','Alt+Home':'main menu','Ctrl+Shift+1':'sort by name','Ctrl+Shift+2':'sort by date created','Ctrl+Shift+3':'sort by date modified','Ctrl+Shift+4':'sort by date added','Ctrl+Shift+Up':'sort ascending','Ctrl+Shift+Down':'sort descending','BackSpace':'file backspace'}.get(key) if not key.startswith('Letter:') else ('file letter '+key[7:])
     if mode=='file_reader' and key=='Escape':return 'back to files'
     if mode=='file_reader':
-        return {'Insert+F':'what formatting','CapsLock+F':'what formatting','Insert+Shift+Down':'what is selected','CapsLock+Shift+Down':'what is selected','Insert+Down':'say all','CapsLock+Down':'say all','H':'next heading','Shift+H':'previous heading','T':'next table','Shift+T':'previous table','K':'next link','Shift+K':'previous link','L':'next list','Shift+L':'previous list','B':'next bookmark','Shift+B':'previous bookmark','N':'next footnote','Shift+N':'previous footnote','Enter':'follow link'}.get(key)
+        # The reader's own keys, in one list the tutorial also uses (document_reader.READER_KEYS).
+        return __import__('document_reader').READER_KEYS.get(key)
     if mode=='web' and web_session and web_session.list_focus in ('links','headings') and key in ('Up','Down','Left','Right','Home','End','Enter','Escape'):
         web_session.list_prefix='';web_session.list_prefix_time=0
     if NAMED_LIST and key in ('Up','Down','Left','Right','Enter','Escape'):return {'Up':'previous','Left':'previous','Down':'next','Right':'next','Enter':'okay','Escape':'close list'}[key]
     # The Contacts screen (contacts_screen.py); a list opened over it keeps its own keys.
     if mode=='contacts' and not NAMED_LIST:return __import__('contacts_screen').navigation_key(sys.modules[__name__],key)
     if mode=='calendar' and not NAMED_LIST:return __import__('calendar_screen').navigation_key(sys.modules[__name__],key)
-    if key=='Alt+F4':return 'exit companion'
     if mode=='chrome_setup' and not chrome_confirming(mode):
         return {'Escape':'cancel','F5':'status','F1':'status'}.get(key)
     confirming=yes_no_open(mode)
@@ -1326,11 +1371,6 @@ def _navigation_key(key,mode):
         if ACCOUNT_MENU_INDEX is not None and not 0<=ACCOUNT_MENU_INDEX+step<len(ACCOUNT_TYPES):speak('Start of list.' if step<0 else 'End of list.');return None
         ACCOUNT_MENU_INDEX=bounded_index(ACCOUNT_MENU_INDEX,step,len(ACCOUNT_TYPES))
         speak(announce_item(ACCOUNT_TYPES[ACCOUNT_MENU_INDEX][0],ACCOUNT_MENU_INDEX,len(ACCOUNT_TYPES)));return None
-    if mode=='tutorial' and tutorial_session:
-        if key=='Escape':return 'go back'
-        if key=='Enter':return 'that one' if tutorial_session.menu() else 'next lesson'
-        if key in ('Down','Right'):return 'next' if tutorial_session.menu() else 'next lesson'
-        if key in ('Up','Left'):return 'previous' if tutorial_session.menu() else 'previous lesson'
     if mode=='email_draft' and key in ('Tab','ShiftTab') and email_draft:
         order=('recipient','cc','bcc','subject','body')
         current=email_draft.compose_step or 'body'
@@ -1393,7 +1433,7 @@ def task_navigation():
 
 def options_return_notice(mode):
     logical=SLEEP_RETURN_MODE if mode=='sleep' else mode
-    return {'awake':'Main menu.','document':'Back to document.','email_draft':'Back to email draft.','mailbox':'Back to email.','web':'Back to web page.','browser_menu':'Back to web browser menu.','note':'Back to your note.','notepad_menu':'Back to Notepad menu.','reader_menu':'Back to Document reader menu.','files':'Back to file manager.','word_processor':'Back to Word processor menu.','document_menu':'Back to document menu.','media_menu':'Back to Media menu.','office_menu':'Back to Office tools.','organizer_menu':'Back to Organizer.','favorites_menu':'Back to Favorite apps.','contacts':'Back to Address manager.','calendar':'Back to Schedule manager.','power_menu':'Back to Shut down or restart.','local_media':'Back to Media player.','recent_documents':'Back to recent documents list.','reader_recent':'Back to recent documents list.','file_reader':'Back to document reader.','help':'Back to help.','media':'Back to media.','attachments':'Back to attachments.','draft_leave':'Back to the question about your email.','youtube':'Back to YouTube.'}.get(logical,'Back to '+logical.replace('_',' ')+'.')
+    return {'awake':'Main menu.','document':'Back to document.','email_draft':'Back to email draft.','mailbox':'Back to email.','web':'Back to web page.','browser_menu':'Back to web browser menu.','note':'Back to your note.','notepad_menu':'Back to Notepad menu.','reader_menu':'Back to Document reader menu.','files':'Back to file manager.','word_processor':'Back to Word processor menu.','document_menu':'Back to document menu.','media_menu':'Back to Media menu.','office_menu':'Back to Office tools.','organizer_menu':'Back to Organizer.','web_tools_menu':'Back to Web tools.','favorites_menu':'Back to Favorite apps.','contacts':'Back to Address manager.','calendar':'Back to Schedule manager.','power_menu':'Back to Shut down or restart.','local_media':'Back to Media player.','recent_documents':'Back to recent documents list.','reader_recent':'Back to recent documents list.','file_reader':'Back to document reader.','help':'Back to help.','media':'Back to media.','attachments':'Back to attachments.','draft_leave':'Back to the question about your email.','youtube':'Back to YouTube.'}.get(logical,'Back to '+logical.replace('_',' ')+'.')
 
 def poll_file_manager(mode):
     global FILE_READER,SLEEP_RETURN_MODE
@@ -1550,6 +1590,13 @@ def writing_dictation(mode, typed=False):
     return not typed and INPUT_MODE != 'commands' and editor_open
 
 
+def website_words(text):
+    """The address part of "Open website VA dot gov" or "Go to website VA dot gov".
+    "Go to website" is three words: taking the words after the first two left "website"
+    on the front ("websiteexample.com", November 2026)."""
+    return re.sub(r'^\W*(?:open|go\W+to)\W+(?:the\W+)?(?:website|web\W+site)\W+', '', str(text).strip(), flags=re.I)
+
+
 def spoken_website(text):
     """"Go to VA dot gov." or "VA dot gov." said outside a text box: ask to open the site,
     as "Open website" does, instead of a dead end. Returns True when it asked."""
@@ -1630,11 +1677,95 @@ def navigation_feedback_control(value,mode):
     if re.fullmatch(r'(?:next|previous|prior)(?: (?:item|option|voice|synthesizer|message|folder|preset|station|episode|podcast|lesson|topic|paragraph|line|word|sentence|character|heading|link|button|field|list|list item|region|frame))?',command):return True
     return mode=='web' and web_feedback_control(command,mode)
 
-def interrupt_partial_navigation(recognizer,mode):
+from speech_stop import SpeechStop
+SPEECH_STOP=SpeechStop()
+
+
+def user_started_speaking(recognizer,mode):
+    """The one place where the user's voice stops Companion's speech (speech_stop.py).
+
+    The recognizer loop calls this with every partial result, on every screen. The first
+    real word of an utterance pauses speech at once; user_finished_speaking() decides at the
+    end of the utterance whether the old speech ends or goes on. True when speech paused now."""
     try:partial=json.loads(recognizer.PartialResult()).get('partial','')
-    except (ValueError,AttributeError):return False
-    if not navigation_feedback_control(partial,mode):return False
-    if speech_busy():interrupt_speech()
+    except (ValueError,AttributeError,TypeError):return False
+    if mode=='sleep' or not isinstance(partial,str):return False
+    speaking=not SPEECH_PAUSED and speech_busy()
+    # While the words so far are a run of what Companion is saying, only a navigation word or a
+    # command Companion just suggested stops it now. Others wait for the end of the utterance
+    # (user_finished_speaking), so Companion's own "Main menu..." never stops itself.
+    command=lambda:navigation_feedback_control(partial,mode) or SPEECH_STOP.suggested(partial)
+    if not SPEECH_STOP.heard(partial,speaking,command=command,writing=writing_here(mode)):return False
+    control_speech('pause')
+    SPEECH_STOP.pausing()
+    return True
+
+
+def writing_here(mode):
+    """True where spoken words may be text to keep (a document, email, note, web text box, or
+    Dictation only mode), and in every box that waits for a typed or spoken answer: a day, a
+    name, a folder, an address (review, November 11, 2026: "Friday", said over "Type or say a
+    day, such as Friday", was taken for echo and dropped). The echo rule is strict there:
+    when in doubt, keep the user's words."""
+    if INPUT_MODE=='dictation' or writing_dictation(mode):return True
+    try:return key_text_box_open(mode) or ACCOUNT_ENTRY is not None or mode in ('account_entry','task_input','document_name')
+    except Exception:return True
+
+
+def command_here(text,mode):
+    """True when these words are a complete command the router acts on, on this screen. Such
+    words are never taken for Companion's own echo, even right after a prompt said them
+    ("Say check email to open it").
+
+    There is no way to run the router without its effects, so this asks the router's own
+    checks: the controls and navigation words, the fast commands of this screen, Help's words,
+    the voice names of this screen's keys and list items, and the commands Companion's own
+    speech just told the user to say."""
+    command=normalized_command(text)
+    if not command:return False
+    try:
+        if spoken_control(text) or speech_control(text) or navigation_feedback_control(text,mode):return True
+        if command in OFFICE_LEAVE_TO_MAIN or command in HELP_OPENERS or command.startswith(('help with ','help for ')):return True
+        if mode=='help' and HelpSession.accepts(text):return True
+        # Some screens send every word to the fast path; there that says nothing about these words.
+        if fast_command_request(command,mode) and not fast_command_request('zebra quilt marmalade',mode):return True
+        if yes_no_open(mode) and command in ('yes','yes please','no','no thanks','cancel','okay','ok'):return True
+        keys=__import__('input_parity').SCREEN_KEYS.get(mode,{})
+        if command in {normalized_command(value) for value in keys.values() if isinstance(value,str)}:return True
+        def names(menu):
+            state=menu_state(menu)
+            return {normalized_command(re.sub(r'\s*\([^)]*\)$','',str(name))) for name in state[0]} if state else set()
+        if command in names(mode):return True
+        # The apps inside the main menu's groups (Web tools, Office tools...) open from any screen.
+        if any(command in names(group) for group in GROUP_MENU_MODES+('media_menu',)):return True
+    except Exception:
+        pass   # a screen in an odd state: fall back to what Companion suggested
+    return SPEECH_STOP.suggested(text)
+
+
+def resume_for_user():
+    """Speech paused for words that came to nothing goes on from where it paused."""
+    if SPEECH_PAUSED:control_speech('resume')
+
+
+def user_finished_speaking(text,mode,stopped,overheard=False):
+    """The end of an utterance. stopped: it paused Companion's speech (SPEECH_STOP.finish()).
+    overheard: it came while Companion talked, and no word of it stopped Companion (each one
+    sounded like its echo). False when the words must be ignored; then the old speech goes on."""
+    if mode=='sleep':return True
+    if speech_control(text):return True   # Stop talking keeps the pause; Resume goes on
+    if not normalized_command(text):
+        if stopped:resume_for_user()
+        return not overheard
+    if (stopped or overheard) and not command_here(text,mode) and SPEECH_STOP.echo(text,writing_here(mode)):
+        if stopped:resume_for_user()   # Companion's own words, heard back through the microphone
+        return False
+    if mode=='help' and not (HelpSession.accepts(text) or spoken_control(text)):
+        # Talk in the room never cuts a Help topic off (October 2026): it goes on where it paused.
+        if stopped:resume_for_user()
+        return True
+    # Any other words: the old speech ends. An unfinished dictated sentence is kept.
+    if speech_busy():interrupt_for_dictation()
     return True
 
 
@@ -1647,6 +1778,7 @@ def fast_offline_silence(recognizer, utterance):
     if partial not in FAST_SILENCE:
         return False
     control_speech('pause')
+    SPEECH_STOP.finish()
     recognizer.Reset()
     utterance.clear()
     return True
@@ -1673,6 +1805,7 @@ def interrupt_for_dictation():
 
 def interrupt_speech():
     global SPEECH_PAUSED
+    SPEECH_STOP.released()
     DICTATION_ECHO.clear()
     if APP_WINDOW is not None:APP_WINDOW.ui_actions.put(('cancel_phonetic',None))
     if KEYBOARD_SPEECH is not None:KEYBOARD_SPEECH.interrupt(notify=False)
@@ -1693,6 +1826,7 @@ def interrupt_speech():
 
 def control_speech(action):
     global SPEECH_PAUSED
+    SPEECH_STOP.released()
     if action=='pause' and APP_WINDOW is not None:APP_WINDOW.ui_actions.put(('cancel_phonetic',None))
     if KEYBOARD_SPEECH is not None:KEYBOARD_SPEECH.control(action)
     if ESPEAK_SPEECH is not None:
@@ -2054,7 +2188,7 @@ def voice_menu(command):
     choices = synthesizers()
     prompt = announce_item(choices[SYNTH_PICK_INDEX][1],SYNTH_PICK_INDEX,len(choices))
     if command in VOICE_LIST_COMMANDS or command == 'back':
-        prompt = 'Select synthesizer. ' + prompt + ' Say next, previous, okay, or cancel voice.'
+        prompt = 'Select synthesizer. ' + prompt + hint(' Say next, previous, okay, or cancel voice.')
     speak(prompt)
     return True
 
@@ -2128,7 +2262,8 @@ def dictation_feedback(result):
 
 def poll_dictation_echo():
     if DICTATION_ECHO.choice is not None and DICTATION_ECHO.choice!=PREFERENCES.get('dictation_echo','phrase by phrase'):DICTATION_ECHO.clear()
-    text=DICTATION_ECHO.take(busy=speech_busy())
+    # Never read dictation back while the user is still talking.
+    text=DICTATION_ECHO.take(busy=speech_busy() or SPEECH_STOP.listening)
     if text:speak(text)
 
 
@@ -2143,6 +2278,11 @@ def remember_question(text):
 
 def speak(text):
     global KEYBOARD_BATCH_TEXT
+    # Verbosity options, Hints and help messages: marked hints only (hints.py).
+    import hints
+    if hints.has_hint(text):
+        text=hints.spoken(text,hints.enabled(PREFERENCES))
+        if not text:return
     remember_question(text)
     if KEYBOARD_BATCH:
         KEYBOARD_BATCH_TEXT=text;return
@@ -2153,6 +2293,7 @@ def speak(text):
         APP_WINDOW.show(text)
     if TEXT_MODE:
         return
+    SPEECH_STOP.said(text)   # its words may come back through the microphone
     update_audio_ducking(True)
     if KEYBOARD_NAVIGATION and KEYBOARD_SPEECH and not KEYBOARD_SPEECH.problem:
         KEYBOARD_SPEECH.speak(punctuation_for_speech(text));return
@@ -2174,9 +2315,14 @@ def speak(text):
 
 def speak_keyboard_feedback(text):
     # Character echo must be immediate and must not wait for an API request.
+    import hints
+    if hints.has_hint(text):
+        text=hints.spoken(text,hints.enabled(PREFERENCES))
+        if not text:return
     TRANSCRIPT.said(text)
     if APP_WINDOW is not None: APP_WINDOW.show(text)
     if not TEXT_MODE:
+        SPEECH_STOP.said(text)
         update_audio_ducking(True)
         if KEYBOARD_SPEECH and not KEYBOARD_SPEECH.problem:
             KEYBOARD_SPEECH.speak(text);return
@@ -2430,6 +2576,7 @@ def recover_audio_overflow(recognizer, utterance):
     if not AUDIO_OVERFLOW:
         return False
     AUDIO_OVERFLOW = False
+    if SPEECH_STOP.finish():interrupt_speech()   # paused speech would hold back the message below
     while True:
         try:
             AUDIO.get_nowait()
@@ -2439,6 +2586,10 @@ def recover_audio_overflow(recognizer, utterance):
     utterance.clear()
     speak('I fell behind and missed some words. Please repeat your last request.')
     return True
+
+
+NOTE_SAVED = 'Saved your note.'
+NEW_NOTE_PROMPT = 'Dictation started.' + hint(' Speak naturally. Say save note when finished. Say list notes to open a saved note.')
 
 
 def save_note(text, say=None):
@@ -2453,14 +2604,14 @@ def save_note(text, say=None):
             return True
         if opened is not None and notepad.replace(APP, opened, text):
             OPEN_NOTE = None
-            say('Saved your note.')
+            say(NOTE_SAVED)
             return True
         notepad.add(APP, text)
     except OSError:
         say('Your note could not be saved. Your words are still here. Close any program using your notes file, then say save note again.')
         return False
     OPEN_NOTE = None
-    say('Your notes file changed, so this was saved as a new note.' if opened is not None else 'Saved your note.')
+    say('Your notes file changed, so this was saved as a new note.' if opened is not None else NOTE_SAVED)
     return True
 
 
@@ -2516,7 +2667,7 @@ def open_saved_note(spoken, mode):
     if isinstance(note_buffer, NoteBuffer): note_buffer.forget()   # opening is not a change to undo
     note_selection.text = None
     speak('Opened the note from ' + notepad.spoken_date(note.stamp) + '. ' + (note.text.strip() or 'It is empty.'))
-    speak_prompt('Speak to add to it. Say save note when finished.')
+    speak_prompt(hint('Speak to add to it. Say save note when finished.'))
     return 'note'
 
 
@@ -2621,7 +2772,7 @@ def thunderbird_connect_ready(setup):
     else:
         message = (str(len(added)) + ' Thunderbird accounts are connected: ' + ', '.join(added) + '. ' +
                    account_picker.label(selected) + ' is selected.')
-    return Step(message + ' Say check email to open it. To add another email account to Thunderbird, say add Thunderbird account.', None)
+    return Step(message + hint(' Say check email to open it. To add another email account to Thunderbird, say add Thunderbird account.'), None)
 
 
 def thunderbird_add_ready(setup):
@@ -2839,7 +2990,7 @@ def set_transcript(on, mode):
     PREFERENCES['speech_transcript'] = bool(on)
     unsaved = remembered(save_preferences)   # it still works now; it is only not remembered
     apply_transcript()
-    speak(('Transcript on. I will write everything I say, and every key you press, to a file named speech-transcript in the Voice Companion data folder. Say stop transcript to turn it off.'
+    speak(('Transcript on. I will write everything I say, and every key you press, to a file named speech-transcript in the Voice Companion data folder.' + hint(' Say stop transcript to turn it off.')
            if on else 'Transcript off.') + unsaved)
     return mode
 
@@ -2890,8 +3041,8 @@ def set_microphone(on, mode):
             # Never "Voice commands are on" when the microphone could not open.
             speak('Microphone on. It could not start yet, so use the keys. Voice commands start by themselves when it works.' + unsaved)
         else:
-            speak('Microphone on. ' + ('Say wake up, or press Control+F12, to give voice commands.' if mode == 'sleep'
-                                       else 'Voice commands are on.') + unsaved)
+            speak('Microphone on.' + (hint(' Say wake up, or press Control+F12, to give voice commands.') if mode == 'sleep'
+                                       else ' Voice commands are on.') + unsaved)
     else:
         speak('Microphone off. Voice Companion is not listening at all. Press F9 to turn it back on.' + unsaved)
     return mode
@@ -3179,7 +3330,7 @@ def add_thunderbird_address(address, version, mode):
         if mode not in ('mailbox', 'email_draft'):
             mail_session = None; pending_send = None
         speak('Thunderbird already has ' + has[0] + '. ' + account_picker.label(account) +
-              ' is now connected and selected. Say check email to open it.')
+              ' is now connected and selected.' + hint(' Say check email to open it.'))
         return mode
     # The name people see: the one already used in Thunderbird, or asked once.
     name = next((identity.get('name') for _, identity in pairs if identity.get('name')), '')
@@ -3553,7 +3704,7 @@ def poll_thunderbird_watch(mode):
         speak_status('Thunderbird added ' + ' and '.join(new) + ', but Voice Companion could not save it. '
                      'Say add account and choose Thunderbird to try again.')
         return mode
-    speak_status(words.ready_message(new, chosen) + ' To add another, say add Thunderbird account.')
+    speak_status(words.ready_message(new, chosen) + hint(' To add another, say add Thunderbird account.'))
     if THUNDERBIRD_SIGN_IN_OUTSIDE:
         # The person signed in in their own browser: Voice Companion comes back to the front, with the keyboard.
         THUNDERBIRD_SIGN_IN_OUTSIDE = False
@@ -3802,7 +3953,7 @@ def finish_account_secret(value, mode):
         sync_app_context(mode, True)
         return mode
     ACCOUNT_ENTRY = None
-    speak('Yahoo account ' + address + ' is connected and selected. Say check email to open it.')
+    speak('Yahoo account ' + address + ' is connected and selected.' + hint(' Say check email to open it.'))
     sync_app_context(mode, True)
     return mode
 
@@ -4079,7 +4230,7 @@ def remove_mail_account(account, mode):
     if not remaining:
         message += ' No email account is connected now. Say add account to connect one.'
     elif now is None:
-        message += ' Say switch account to choose the account to use.'
+        message += hint(' Say switch account to choose the account to use.')
     elif before == account:
         message += ' Now using the ' + words.name(now[0]) + ' account ' + now[1] + '.'
     else:
@@ -4096,7 +4247,7 @@ def remove_mail_account(account, mode):
         return mode
     mail_session = None
     if now is not None:
-        message += ' Say email to open it.'
+        message += hint(' Say email to open it.')
     speak(message)
     return 'awake' if mode == 'mailbox' else mode
 
@@ -4232,6 +4383,15 @@ def _handle(text, mode, typed=False):
     command=normalized_command(text)
     if text=='@microphone':
         return set_microphone(MICROPHONE_OFF, mode)
+    if mode=='tutorial':
+        # Every word and key goes to the tutorial first (tutorial_engine.route).
+        return tutorial_engine.route(sys.modules[__name__],text,typed)
+    if text in ('@favorites','@main_menu') and ACCOUNT_ENTRY is None and key_text_box_open(mode):
+        # F1 or Control+F1 in a box that takes typed words: close the box first, as Escape does,
+        # so the words "main menu" never become a name, a search or an answer.
+        escape=navigation_key('Escape',mode)
+        if escape:mode=handle_keyboard(escape,mode)
+        if mode=='exit' or key_text_box_open(mode):return mode
     if text=='@favorites':
         # Control+F1: Favorite apps. Other screens close first, as for the main menu, so a
         # document still asks to save; then Favorite apps opens.
@@ -4240,6 +4400,14 @@ def _handle(text, mode, typed=False):
             return open_favorites()
         FAVORITES_AFTER=True
         return handle('main menu', mode, typed=True)
+    if text=='@alt_o':
+        # Alt+O is a key, not words. In a box that takes typed words (a YouTube search, a name,
+        # an answer) the words "open options" were typed there and searched (Will, November 10, 2026).
+        if ACCOUNT_ENTRY is not None:return account_entry_step('account entry busy','account entry busy',mode)
+        if key_text_box_open(mode):
+            SETTINGS_RETURN_MODE=mode
+            return open_settings(mode)
+        text=command='open options'
     if text=='@main_menu':
         # F1: the same as saying Main menu, so each screen saves or asks first.
         if mode=='awake' and ACCOUNT_ENTRY is None and THUNDERBIRD_SETUP is None and not account_setup:
@@ -4371,31 +4539,6 @@ def _handle(text, mode, typed=False):
         return close_browser_window()
     if command in SHOW_BROWSER_COMMANDS+HIDE_BROWSER_COMMANDS and web_session and (mode in ('web','browser_menu','youtube') or mode=='awake' and web_session.snapshot):
         speak(web_session.browser_window(command in SHOW_BROWSER_COMMANDS))
-        return mode
-    if mode == 'tutorial':
-        if change_speech_setting(text) or use_synthesizer(text) or voice_menu(command):return mode
-        control=speech_control(text)
-        if control:
-            control_speech(control);return mode
-        if spoken_control(command)=='exit':
-            tutorial_session=None
-            return handle(text,'awake',typed)
-        if spoken_control(command)=='sleep':
-            SLEEP_RETURN_MODE=mode
-            speak(sleep_message())
-            return 'sleep'
-        if tutorial_session is None:
-            tutorial_session=PracticeTutorial(GUIDE)
-            speak(tutorial_session.start());return mode
-        if command in ('start of list','beginning of list','first item','end of list','last item') and tutorial_session.menu():
-            navigation_key('End' if command in ('end of list','last item') else 'Home',mode);return mode
-        interrupt_speech()
-        result,closed=tutorial_session.process(text)
-        if closed:
-            # Said with Main menu in one message (handle() says it); two would cut each other off.
-            tutorial_session=None;MAIN_MENU_LEAD='Tutorial closed.'
-            return 'awake'
-        speak(result)
         return mode
     if mode=='browser_menu' and pending_website is None and not command.startswith(('open website ','go to website ')) and command not in ('help','options','open options','main menu','back to main menu','exit companion','go to sleep') and not command.startswith(('help with ', 'help for ')) and (command=='resume' or not speech_control(command)) and speech_setting_request(text) is None and command not in VOICE_LIST_COMMANDS and command not in ('use sapi','use sapi voice','use windows voice','use ai voice','use espeak','document help','email help','web help','radio help','podcast help','commands help') and not spoken_control(command):
         return handle_browser_menu(text)
@@ -4554,6 +4697,15 @@ def _handle(text, mode, typed=False):
     if keep_open_request:
         PREFERENCES['web_keep_open']=keep_open_request[1]=='on'
         speak('Keep browser window open '+keep_open_request[1]+'.'+remembered(save_preferences));return mode
+    # Like the microphone and transcript switches, not while dictating: "Turn off the hints."
+    # in a document is a sentence (review, November 11, 2026). Typed, it is still a command.
+    hints_request=None if writing_dictation(mode,typed) else hints_toggle_request(command)
+    if hints_request is not None:
+        # Verbosity options, Hints and help messages (Will, November 10, 2026).
+        PREFERENCES['speak_hints']=hints_request
+        speak(('Hints and help messages on. You hear tips on what you can say next.' if hints_request else
+               'Hints and help messages off. You hear just the result. To hear tips again, say hints on.')+remembered(save_preferences))
+        return mode
     auto_read_request=re.fullmatch(r'(?:(?:set|turn) )?(?:automatic page reading|automatically read (?:web )?pages|read pages automatically)(?: to)? (on|off)',command)
     toggle_read=re.fullmatch(r'(?:turn|switch) (on|off) automatic page reading',command)
     enable_read=re.fullmatch(r'(enable|disable) automatic page reading',command)
@@ -4648,7 +4800,7 @@ def _handle(text, mode, typed=False):
                 return return_from_update('I could not save your work. The update will wait.')
             UPDATE_LAST_PERCENT = 0
             if UPDATES.download():
-                speak(' '.join(said + ['Downloading the update. Say cancel update to stop.']))
+                speak(' '.join(said + ['Downloading the update.']) + hint(' Say cancel update to stop.'))
                 return 'update_download'
             return return_from_update('The updater is busy. Please try again shortly.')
         if spoken_control(update_command) != 'exit':
@@ -4709,22 +4861,14 @@ def _handle(text, mode, typed=False):
             speak('The user guide folder could not open or update. Say help for onboard instructions and ask your helper to check the installation.')
         return mode
     if voice_menu(command): return mode
-    # "Tutorial" or "Lessons" alone only where words are commands; in a document they are text.
-    if command in ('start tutorial', 'audio tutorial', 'practice tutorial', 'open tutorial', 'start the tutorial',
-                   'open the tutorial', 'start lessons') or command in ('tutorial', 'lessons') and mode in ('awake', 'help'):
+    # "Tutorial", "Lessons" or "Practice" alone only where words are commands; in a document they are text.
+    if command in tutorial_engine.START_PHRASES or command in tutorial_engine.ALONE_PHRASES and mode in ('awake', 'help'):
         if mode not in ('awake', 'help'):
             speak('Say main menu first, then start tutorial. This protects what you are working on.')
             return mode
-        try:tutorial = PracticeTutorial(GUIDE)
-        except (OSError, ValueError):
-            # The tutorial is built from the bundled user guide (missing or damaged).
-            speak('The tutorial could not open. Ask your helper to reinstall Voice Companion.')
-            return mode
         help_session = None
         MAIN_MENU_INDEX=None
-        tutorial_session = tutorial
-        speak(tutorial_session.start())
-        return 'tutorial'
+        return tutorial_engine.start(sys.modules[__name__])
     power_commands=POWER_COMMANDS
     if mode!='sleep' and command in power_commands:
         action=power_commands[command]
@@ -4922,36 +5066,9 @@ def _handle(text, mode, typed=False):
         if command in ('main menu','back to main menu'):
             # handle() announces the main menu once when the screen changes.
             return 'awake'
-        request=reading_request(command)
-        structure_request=re.fullmatch(r'(next|previous) (heading|table|row|cell|list|list item|link|footnote|bookmark)',command)
-        if structure_request:
-            speak(FILE_READER.navigate(structure_request[2],1 if structure_request[1]=='next' else -1));return mode
-        if command in ('what formatting','say formatting','describe formatting'):
-            speak(FILE_READER.describe_formatting());return mode
-        if command in ('what is selected','say selection','read selection'):
-            selected=FILE_READER.selection
-            speak(FILE_READER.text[slice(*selected)] if selected else 'No text selected.');return mode
-        if command in ('follow link','open link'):
-            speak(FILE_READER.follow_link());return mode
-        if request:
-            unit,direction=request
-            result=FILE_READER.reading.read(direction) if unit=='read' else FILE_READER.reading.move(unit,direction)
-            if unit!='read':result=__import__('reading_navigation').edge_notice(FILE_READER.reading,'document')+result
-            speak(result)
-        elif command in ('beginning of document','top of document','go to beginning of document'):
-            FILE_READER.reading.position=0;speak(FILE_READER.reading.move('line',0))
-        elif command in ('end of document','go to end of document'):
-            FILE_READER.reading.position=max(0,len(FILE_READER.text)-1);speak(FILE_READER.reading.move('line',0))
-            # The place is the very end, as Control+End: Next word then says End of document.
-            FILE_READER.reading.position=max(0,len(FILE_READER.text)-1)
-        elif command=='find' or command.startswith(('find ','find,')):
-            # "Find milk." spoken: the recognizer's comma and closing period are not part of the words.
-            term=re.sub(r'^\s*find\b[\s,:]*','',text,flags=re.I).strip().rstrip('.!?,').strip()
-            if not term:speak('Please say the words to find after find.');return mode
-            position=FILE_READER.text.casefold().find(term.casefold(),FILE_READER.reading.position+1)
-            if position<0:position=FILE_READER.text.casefold().find(term.casefold())
-            if position<0:speak('Text not found.')
-            else:FILE_READER.reading.position=position;speak(FILE_READER.reading.move('line',0))
+        # Reading and moving by part: document_reader.reader_command, which the tutorial uses too.
+        said=__import__('document_reader').reader_command(FILE_READER,text,command)
+        if said is not None:speak(said)
         else:speak('Document reader. Use arrows to read, or say read document, next word, next sentence, next paragraph, find followed by text, or back to files. This document is read-only.')
         return mode
     help_topic = re.fullmatch(r'(?:help with|help for|open help topic|go to help topic) (.+)', command)
@@ -5408,8 +5525,9 @@ def _handle(text, mode, typed=False):
         if MAIN_MENU_INDEX is None:
             speak('Say next or previous to choose an option.')
             return mode
+        # The place is kept: a choice that answers and stays here (Check for updates) leaves you on it.
+        # Leaving for another screen and coming back says the item again (announce_main_menu).
         request = MAIN_MENU_CHOICES[MAIN_MENU_INDEX][1]
-        MAIN_MENU_INDEX = None
         return handle(request, mode)
     document_request = command in ('create a document', 'new document', 'write a document', 'create document')
     note_request = command in ('write a note', 'new note', 'take a note')
@@ -5449,7 +5567,7 @@ def _handle(text, mode, typed=False):
         note_buffer.clear()
         note_selection.text = None
         OPEN_NOTE = None
-        speak_prompt('Dictation started. Speak naturally. Say save note when finished. Say list notes to open a saved note.')
+        speak_prompt(NEW_NOTE_PROMPT)
         return 'note'
     if pending_website is not None:
         address, host = pending_website
@@ -5489,7 +5607,7 @@ def _handle(text, mode, typed=False):
             return 'awake'
         if command.startswith(('open website ', 'go to website ')):
             try:
-                pending_website = prepare_address(text.split(' ', 2)[2])
+                pending_website = prepare_address(website_words(text))
                 speak('I heard website ' + pending_website[1] + '. Is that right? Say yes or no.')
             except ValueError as exc:
                 speak(str(exc))
@@ -5849,13 +5967,13 @@ def _handle(text, mode, typed=False):
         if document is None:
             speak_prompt('There is no document open. Say create a document.')
             return mode
-        speak('Continuing ' + document.title + '. Say read paragraph to hear your place.')
+        speak('Continuing ' + document.title + '.' + hint(' Say read paragraph to hear your place.'))
         return 'document'
     if command in ('resume email', 'continue email', 'resume draft'):
         if email_draft is None:
             speak_prompt('There is no email open. Say write an email.')
             return 'awake'
-        speak('Continuing email draft ' + email_draft.title + '. Say read paragraph to hear the body.')
+        speak('Continuing email draft ' + email_draft.title + '.' + hint(' Say read paragraph to hear the body.'))
         return 'email_draft'
     if re.search(r'\b(document|word file|word document)\b', command):
         # Only asking for a document makes a new one. "Close document" or "Beginning of
@@ -5868,7 +5986,7 @@ def _handle(text, mode, typed=False):
         note_buffer.clear()
         note_selection.text = None
         OPEN_NOTE = None
-        speak_prompt('Dictation started. Speak naturally. Say save note when finished. Say list notes to open a saved note.')
+        speak_prompt(NEW_NOTE_PROMPT)
         return 'note'
     provider_websites = {'gmail': 'https://mail.google.com/',
                          'outlook': 'https://outlook.live.com/mail/',
@@ -5885,7 +6003,7 @@ def _handle(text, mode, typed=False):
         speak(web_session.command(text))
         return mode
     if command.startswith(('open website ', 'go to website ')):
-        value = text.split(' ', 2)[2]
+        value = website_words(text)
         try:
             pending_website = prepare_address(value)
         except ValueError as exc:
@@ -5969,11 +6087,11 @@ def _handle(text, mode, typed=False):
         SEARCH_RETURN_MODE='awake'
         speak('Web address or search. Say or type an address or a search, then press Enter. Addresses do not need www or https. Escape cancels.')
         return 'search'
-    if mode in ('word_processor','notepad_menu','reader_menu','media_menu','office_menu','organizer_menu','favorites_menu','power_menu','local_media','recent_documents','reader_recent'):
+    if mode in ('word_processor','notepad_menu','reader_menu','media_menu','office_menu','organizer_menu','web_tools_menu','favorites_menu','power_menu','local_media','recent_documents','reader_recent'):
         # Nothing above understood the words. A misheard word must not throw you out of
         # this menu (or stop the file playing): stay, and say where you are.
         if command in ('main menu','back to main menu','go to main menu'):return 'awake'   # handle() says Main menu
-        speak('I did not understand that. You are on the '+options_return_notice(mode)[len('Back to '):].rstrip('.')+'. Press F1 twice for help.')
+        speak('I did not understand that. You are on the '+options_return_notice(mode)[len('Back to '):].rstrip('.')+'.'+hint(' Press F1 twice for help.'))
         return mode
     if mode == 'awake' and spoken_website(text):return 'awake'
     if mode == 'awake':
@@ -6158,17 +6276,31 @@ def command_failed(exc, mode):
 # the main menu. Saying Main menu, or F1, still goes to the main menu (Will, November 5 and 6, 2026).
 OFFICE_RETURN = False
 OFFICE_LEAVE_TO_MAIN = ('main menu', 'back to main menu', 'go to main menu', 'go back to main menu', 'return to main menu')
-GROUP_MENU_MODES = ('office_menu', 'organizer_menu', 'favorites_menu')
+GROUP_MENU_MODES = ('office_menu', 'organizer_menu', 'web_tools_menu', 'favorites_menu')
 # Places that are not part of Office tools or Organizer: going there ends the way back.
 # Favorite apps holds the web browser and media too, so only Shut down or restart ends its way back.
 OFFICE_ELSEWHERE = ('web', 'browser_menu', 'search', 'media', 'media_menu', 'local_media', 'podcast', 'youtube', 'power_menu')
+# Web tools holds the web pages, search and Downloads: media, Shut down or restart and the
+# Office tools and Organizer apps end its way back. (A document or draft can be opened from a
+# download or a link, so those keep it.)
+WEB_TOOLS_ELSEWHERE = ('media', 'media_menu', 'podcast', 'youtube', 'power_menu', 'word_processor', 'notepad_menu',
+                       'reader_menu', 'mailbox', 'contacts', 'calendar')
+
+
+def way_back_ends(result):
+    """True when going to `result` ends the way back to the group menu in OFFICE_RETURN."""
+    if OFFICE_RETURN == 'favorites_menu':return False
+    if OFFICE_RETURN == 'web_tools_menu':return result in WEB_TOOLS_ELSEWHERE
+    return result in OFFICE_ELSEWHERE
 # Control+F1 opens Favorite apps once the screen you were on is closed (a document may ask
 # to save first). These questions keep that request waiting for their answer.
 FAVORITES_AFTER = False
 LEAVE_QUESTIONS = ('document_save', 'document_name', 'document_replace', 'draft_leave')
 
 
-def office_return(text, mode, result):
+def office_return(text, mode, result, announced=None):
+    """announced: MAIN_MENU_ANNOUNCED before the command. If the command already said the main
+    menu (Close browser), it stays there: going on to a group menu would talk over it."""
     global OFFICE_RETURN, MAIN_MENU_LEAD, FAVORITES_AFTER
     if FAVORITES_AFTER:
         if result == 'awake':
@@ -6183,14 +6315,15 @@ def office_return(text, mode, result):
         # Email with no account yet starts adding one on the main menu screen.
         OFFICE_RETURN = mode
         return result
-    leaving_to_main = text == '@main_menu' or normalized_command(text) in OFFICE_LEAVE_TO_MAIN
+    leaving_to_main = (text == '@main_menu' or normalized_command(text) in OFFICE_LEAVE_TO_MAIN
+                       or announced is not None and MAIN_MENU_ANNOUNCED != announced and result == 'awake')
     if mode in GROUP_MENU_MODES and result == 'awake' and not leaving_to_main and normalized_command(text) not in (
             'escape', 'go back', 'back', 'exit', 'leave', 'close'):
         # The app could not open (Schedule manager before Thunderbird is set up) and said why: stay here.
         lead, MAIN_MENU_LEAD = MAIN_MENU_LEAD.strip(), ''
         if lead:speak(lead)
         return mode
-    if (result == 'power_menu' or result in OFFICE_ELSEWHERE and OFFICE_RETURN != 'favorites_menu'
+    if (result == 'power_menu' or way_back_ends(result)
             or result in GROUP_MENU_MODES or mode in GROUP_MENU_MODES and result == 'awake' and not setting_up):
         # Back in a group menu (Help closed there), or left it for the main menu: the way back
         # is used up. Kept, the next main menu key would jump into that menu.
@@ -6210,12 +6343,12 @@ def office_return(text, mode, result):
     return group_menu(back, (lead + ' ' if lead else '') + GROUP_TITLES[back] + '.')
 
 
-GROUP_TITLES = {'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'favorites_menu': 'Favorite apps',
+GROUP_TITLES = {'office_menu': 'Office tools', 'organizer_menu': 'Organizer', 'web_tools_menu': 'Web tools', 'favorites_menu': 'Favorite apps',
                 'power_menu': 'Shut down or restart'}
 
 
 def open_favorites(lead=''):
-    """Favorite apps (Control+F1): the apps chosen in Options, My menu, then Change favorite apps."""
+    """Favorite apps (Control+F1): the apps chosen in Options, Favorite apps, then Change favorite apps."""
     navigation = task_navigation()
     items = navigation.items('favorites_menu')
     navigation.indices['favorites_menu'] = 0
@@ -6238,6 +6371,9 @@ def group_menu(menu, words):
     return menu
 
 
+HELP_OPENERS=('help','user guide','open user guide','manual','open manual','document help','email help','web help','radio help','podcast help','commands help','release notes')
+
+
 def handle(text, mode, typed=False):
     global _HANDLE_DEPTH, CONFIRM_CHOICE, KEYBOARD_NAVIGATION, POWER_RETURN_MODE, account_setup
     asking_account_type = account_setup
@@ -6248,7 +6384,7 @@ def handle(text, mode, typed=False):
         if mode=='exit':return mode
     previous_navigation=KEYBOARD_NAVIGATION
     quick_read=mode in ('document','email_draft','mailbox','help','web','note','file_reader') and reading_request(text) is not None and not (mode in ('document','email_draft') and INPUT_MODE=='dictation')
-    help_navigation=(mode=='help' and HelpSession.accepts(text)) or normalized_command(text) in ('help','user guide','open user guide','manual','open manual','document help','email help','web help','radio help','podcast help','commands help','release notes') or normalized_command(text).startswith(('help with ','help for '))
+    help_navigation=(mode=='help' and HelpSession.accepts(text)) or normalized_command(text) in HELP_OPENERS or normalized_command(text).startswith(('help with ','help for '))
     if help_navigation and not speech_control(text):
         interrupt_speech()
         KEYBOARD_NAVIGATION=True
@@ -6284,7 +6420,7 @@ def handle(text, mode, typed=False):
         # A link or button chosen in an email (any key or voice path) opens here.
         mail_session.link_request=None
         result=open_email_link(url)
-    if _HANDLE_DEPTH == 0:result=office_return(text,mode,result)
+    if _HANDLE_DEPTH == 0:result=office_return(text,mode,result,announced)
     if _HANDLE_DEPTH == 0 and asking_account_type and account_setup and result not in (mode, 'sleep'):
         # A key or command that opened another screen (Control+T, Options) ends the account type
         # question; left on, its arrows would move through account types on that screen.
@@ -6297,7 +6433,7 @@ def handle(text, mode, typed=False):
         __import__('youtube_screen').main_menu(sys.modules[__name__])
         # Email with no account asks which account type: the main menu words would cut that off.
         setting_up=account_setup or ACCOUNT_ENTRY is not None or THUNDERBIRD_SETUP is not None
-        if MAIN_MENU_ANNOUNCED==announced and not setting_up:announce_main_menu()
+        if MAIN_MENU_ANNOUNCED==announced and not setting_up:announce_main_menu(main_menu_parent(text,mode))
     if result!=mode:DICTATION_ECHO.clear()
     if _HANDLE_DEPTH==0 and result!='exit':sync_app_context(result,result!=mode)
     return result
@@ -6431,6 +6567,11 @@ def main():
                 raise RuntimeError('The onboard user guide is missing.')
             from guide_files import guide_sources
             guide_sources(expected_version=APP_VERSION)
+            # Every tutorial lesson's practice screens load in the packed app (0.2.211).
+            import tutorial_engine
+            broken = tutorial_engine.self_check(sys.modules[__name__])
+            if broken:
+                raise RuntimeError('Tutorial lessons could not start: ' + '; '.join(broken[:5]))
             update_root = Path(getattr(sys, '_MEIPASS', Path(__file__).parent))
             if getattr(sys, 'frozen', False):
                 for name in ('VoiceCompanion-WebView2.exe', 'Microsoft.Web.WebView2.Core.dll',
@@ -6578,6 +6719,10 @@ def main():
             if input_stream is not None and (MICROPHONE_OFF or not microphone_active(input_stream)):
                 close_microphone(input_stream)
                 input_stream=None;recognizer.Reset();utterance.clear()
+                if SPEECH_STOP.finish():resume_for_user()
+            if SPEECH_STOP.stale():
+                # Words that never ended (no end of the utterance came): speech goes on.
+                SPEECH_STOP.finish();resume_for_user()
             if input_stream is None and not MICROPHONE_OFF and time.monotonic()>=microphone_retry_at:
                 microphone_retry_at=time.monotonic()+2
                 input_stream=open_microphone(sd,attempts=1)
@@ -6659,7 +6804,7 @@ def main():
                             __import__('app_settings').save_preferences(sys.modules[__name__])
                             configure_ai_speech()
                         save_speech_settings()
-                        speak('AI voice settings saved. Say Use AI voice to test it.' if settings_result == 'saved'
+                        speak('AI voice settings saved.' + hint(' Say Use AI voice to test it.') if settings_result == 'saved'
                               else 'Saved AI voice settings removed. Using SAPI.')
                     except Exception:
                         speak('AI settings could not be loaded. Using SAPI.')
@@ -6690,40 +6835,58 @@ def main():
                 if time.monotonic()<startup_quiet_until:recognizer.Reset();utterance.clear();continue
                 startup_speaking=False
             narration_busy=not SPEECH_PAUSED and speech_busy()
-            if mode=='settings' or narration_busy or settings_audio_blocked:
+            overheard=None
+            if SPEECH_STOP.listening:
+                # The user is talking: their words are theirs, not Companion's echo.
+                settings_audio_blocked=False;settings_quiet_until=0
+            elif mode=='settings' or narration_busy or settings_audio_blocked:
                 # No synthesizer's readback may become another command or
                 # dictated paragraph, including while the app is in background.
                 # Keep local silence/sleep/exit controls available during feedback.
                 if narration_busy:settings_quiet_until=time.monotonic()+0.3
                 if time.monotonic()<settings_quiet_until:
                     settings_audio_blocked=True
-                    utterance.clear()
+                    # Keep the sound for Parakeet: if the user starts to talk now, it needs the first word too.
+                    if mode!='sleep' and parakeet:
+                        utterance.extend(audio)
+                        del utterance[:-20*sample_rate*2]   # under the 25-second limit below
+                    else:utterance.clear()
                     if not recognizer.AcceptWaveform(audio):
-                        interrupt_partial_navigation(recognizer,mode)
-                    else:
-                        control=json.loads(recognizer.Result()).get('text','').lower()
-                        if spoken_control(control) or speech_control(control) or navigation_feedback_control(control,mode) or mode=='help' and HelpSession.accepts(control):
-                            interrupt_speech()
-                            mode=handle(control,mode)
-                            if mode=='exit':return 0
-                    continue
-                if settings_audio_blocked:
+                        if user_started_speaking(recognizer,mode):
+                            settings_audio_blocked=False;settings_quiet_until=0
+                        continue
+                    # Words heard over Companion's speech: a command, or words to write, are acted
+                    # on below; Companion's own words heard back are dropped (speech_stop.py).
+                    overheard=json.loads(recognizer.Result()).get('text','').strip()
+                    if not user_finished_speaking(overheard.lower(),mode,SPEECH_STOP.finish(),overheard=True):
+                        utterance.clear();continue
+                    settings_audio_blocked=False;settings_quiet_until=0
+                elif settings_audio_blocked:
                     recognizer.Reset();utterance.clear();settings_audio_blocked=False
                     continue
-            if mode != 'sleep' and parakeet:
-                utterance.extend(audio)
-                # Never send more than 25 seconds as one model request.
-                if len(utterance) > 25 * sample_rate * 2:
+            if overheard is not None:
+                heard=overheard
+            else:
+                if mode != 'sleep' and parakeet:
+                    utterance.extend(audio)
+                    # Never send more than 25 seconds as one model request.
+                    if len(utterance) > 25 * sample_rate * 2:
+                        utterance.clear()
+                        recognizer.Reset()
+                        if SPEECH_STOP.finish():interrupt_speech()
+                        speak('That was too long. Please speak in shorter passages.')
+                        continue
+                if not recognizer.AcceptWaveform(audio):
+                    user_started_speaking(recognizer,mode)
+                    if mode != 'sleep' and fast_offline_silence(recognizer, utterance):
+                        continue
+                    continue
+                heard = json.loads(recognizer.Result()).get('text', '').strip()
+                local_control = heard.lower()
+                # Stop talking, go on, or end the old speech (speech_stop.py).
+                if not user_finished_speaking(local_control, mode, SPEECH_STOP.finish()):
                     utterance.clear()
-                    recognizer.Reset()
-                    speak('That was too long. Please speak in shorter passages.')
                     continue
-            if not recognizer.AcceptWaveform(audio):
-                if mode!='sleep':interrupt_partial_navigation(recognizer,mode)
-                if mode != 'sleep' and fast_offline_silence(recognizer, utterance):
-                    continue
-                continue
-            heard = json.loads(recognizer.Result()).get('text', '').strip()
             local_control = heard.lower()
             if mode != 'sleep' and (spoken_control(local_control) or speech_control(local_control)):
                 utterance.clear()
@@ -6731,11 +6894,6 @@ def main():
                 if mode == 'exit':
                     return 0
                 continue
-            if mode != 'sleep' and speech_busy() and local_control and (mode!='help' or HelpSession.accepts(local_control)):
-                # Stop the current readback as soon as the offline recognizer
-                # recognizes a new utterance. Its words can still be refined
-                # by Parakeet before executing the requested action.
-                interrupt_for_dictation()
             if mode != 'sleep' and fast_command_request(local_control, mode):
                 utterance.clear()
                 mode = handle(local_control, mode)

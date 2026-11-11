@@ -28,6 +28,7 @@ companion.py calls into this module from a few small hooks. `m` is the
 companion module.
 """
 import os
+from hints import hint
 import re
 import time
 from pathlib import Path
@@ -793,7 +794,7 @@ def command_here(m, raw, command):
         INDEX = matches[0]
         m.speak(describe())
         return MODE
-    m.speak('Attachments. Press Enter to open, Control+S to save, or Escape to go back. Press F1 twice for help.')
+    m.speak('Attachments.' + hint(' Press Enter to open, Control+S to save, or Escape to go back. Press F1 twice for help.', instead=' I did not understand that.'))
     return MODE
 
 

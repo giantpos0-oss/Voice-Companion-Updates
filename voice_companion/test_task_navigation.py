@@ -49,7 +49,7 @@ class TaskMenuTests(unittest.TestCase):
         self.assertEqual(app.handle('Menu letter','document_name',typed=True),'document')
         self.assertIsNotNone(app.document)
 
-    def test_keyboard_open_and_number_letter_menu_accelerators_dispatch_end_to_end(self):
+    def test_keyboard_open_and_letter_menu_accelerators_dispatch_end_to_end(self):
         manager=FileManager(FakeFiles(self.root))
         with patch('file_manager.FileManager',return_value=manager):
             self.assertEqual(app.handle(app.navigation_key('Ctrl+O','word_processor'),'word_processor'),'files')
@@ -58,9 +58,12 @@ class TaskMenuTests(unittest.TestCase):
         app.document.append_text('Keep this text.')
         mode=app.handle(app.navigation_key('Alt','document'),'document')
         self.assertEqual(mode,'document_menu')
-        mode=app.handle(app.navigation_key('MenuPick:3',mode),mode)
-        self.assertEqual(app.task_navigation().group,'Format')
-        self.assertEqual(app.handle(app.navigation_key('MenuPick:A',mode),mode),'document')
+        # Letters, not numbers (Will, November 10, 2026): T for Text style, then B for Bold.
+        self.assertEqual(app.handle(app.navigation_key('MenuPick:3',mode),mode),'document_menu')
+        self.assertIsNone(app.task_navigation().group)
+        mode=app.handle(app.navigation_key('MenuPick:t',mode),mode)
+        self.assertEqual(app.task_navigation().group,'Text style')
+        self.assertEqual(app.handle(app.navigation_key('MenuPick:b',mode),mode),'document')
         self.assertTrue(app.document.paragraphs[app.document.cursor].bold)
 
     def test_open_starts_at_drives_and_escape_returns_to_word_processor(self):

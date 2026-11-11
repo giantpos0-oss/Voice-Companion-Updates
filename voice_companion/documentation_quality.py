@@ -46,6 +46,17 @@ def reading_level(text):
     return round(max(0,.39*len(words)/count+11.8*sum(syllables(w) for w in words)/len(words)-15.59),2)
 
 
+def tutorial_texts():
+    """What the tutorial says: its own messages, and each lesson's introduction and steps."""
+    import companion, tutorial_engine
+    from tutorial_lessons import build
+    texts=[('Tutorial start',tutorial_engine.INTRO),('Tutorial help',tutorial_engine.HELP_TEXT)]
+    for course in build(companion):
+        for lesson in course.lessons:
+            texts.append((course.name+' '+lesson.title,' '.join([lesson.intro]+[step.say for step in lesson.steps])))
+    return texts
+
+
 def report(root):
     root=Path(root)
     _,front,chapters=read_guide(root/'START HERE - Veteran.txt')
@@ -59,11 +70,7 @@ def report(root):
     note_parts=[{'part':topic['title']+' detail '+str(index),'estimated_grade':reading_level(detail)}
                 for section in notes['sections'] for topic in section['topics']
                 for index,detail in enumerate(topic['details'],1)]
-    from tutorial_curriculum import COURSES,option_explanation
-    from settings_model import CATEGORIES,fields
-    lessons=[{'part':name+' '+title,'estimated_grade':reading_level(text)} for _,name,_,intro,_ in COURSES for title,text in intro]
-    lessons.extend({'part':category+' '+field.label,'estimated_grade':reading_level(option_explanation(field))}
-                   for category in CATEGORIES for field in fields(category,{}))
+    lessons=[{'part':name,'estimated_grade':reading_level(text)} for name,text in tutorial_texts()]
     all_text=' '.join(front+[p for c in chapters for p in c['paragraphs']])
     setup_parts=[]
     for name in ('README.txt','AI VOICE SETUP - Trainer.txt','EMAIL SETUP - Helper.txt',

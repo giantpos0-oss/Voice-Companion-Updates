@@ -108,9 +108,6 @@ class ScreenMenuTests(unittest.TestCase):
         elif mode == 'help':
             app.help_return_mode = 'awake'
             app.help_session = app.HelpSession(app.GUIDE, release_notes_path=app.GUIDE.parent / 'Voice Companion Release Notes.txt')
-        elif mode == 'tutorial':
-            app.tutorial_session = None
-            self.assertEqual(app.handle('start tutorial', 'awake'), 'tutorial')
         elif mode == 'attachments':
             import attachment_screen
             from email_draft import VoiceEmail
@@ -151,7 +148,7 @@ class ScreenMenuTests(unittest.TestCase):
 
     # Tests ---------------------------------------------------------------
     def test_every_main_screen_answers_alt(self):
-        for mode in ('mailbox', 'email_draft', 'note', 'web', 'help', 'tutorial', 'file_reader'):
+        for mode in ('mailbox', 'email_draft', 'note', 'web', 'help', 'file_reader'):
             with self.subTest(mode=mode):
                 self.screen(mode)
                 self.assertIn(mode, MENUS)
@@ -253,27 +250,26 @@ class ScreenMenuTests(unittest.TestCase):
     def test_menu_keys_move_jump_go_back_and_close(self):
         mode = self.screen('mailbox')
         self.press('Alt', mode)
-        self.assertEqual(self.said[-1], 'Email menu. Messages (M), 1 of 9.')
+        self.assertEqual(self.said[-1], 'Email menu. Message (M), 1 of 9.')
         self.press('Up', mode)
-        self.assertEqual(self.said[-1], 'Start of list. Messages (M), 1 of 9.')
+        self.assertEqual(self.said[-1], 'Start of list. Message (M), 1 of 9.')
         self.press('End', mode)
-        self.assertEqual(self.said[-1], 'Header and attachments (H), 9 of 9.')
+        self.assertEqual(self.said[-1], 'Tools (T), 9 of 9.')
         self.press('Up', mode)
-        self.assertEqual(self.said[-1], 'Options and help (O), 8 of 9.')
-        self.press('Letter:a', mode)
-        self.assertEqual(self.said[-1], 'Accounts (A), 6 of 9.')
-        self.press('Enter', mode)
-        self.assertEqual(self.said[-1], 'Accounts menu. Add account (A), 1 of 5. Alt, 6, 1. Say add account.')
+        self.assertEqual(self.said[-1], 'View (V), 8 of 9.')
+        # A group's letter opens it (Will, November 10, 2026).
+        self.press('Letter:t', mode)
+        self.assertEqual(self.said[-1], 'Tools menu. Add account (A), 1 of 9. Say add account.')
         self.press('Down', mode)
-        self.assertEqual(self.said[-1], 'Switch account (S), 2 of 5. Alt, 6, 2. Say switch account.')
+        self.assertEqual(self.said[-1], 'Switch account (S), 2 of 9. Say switch account.')
         self.press('Escape', mode)
-        self.assertEqual(self.said[-1], 'Email menu. Accounts (A), 6 of 9.')
+        self.assertEqual(self.said[-1], 'Email menu. Tools (T), 9 of 9.')
         self.press('Letter:1', mode)
-        self.assertEqual(self.said[-1], 'Messages menu. Check for new mail (C), 1 of 9. F5. Say list messages.')
-        self.press('Letter:r', mode)
-        self.assertTrue(self.said[-1].startswith('Read message (R), 2 of 9. Enter.'))
-        self.press('Letter:r', mode)
-        self.assertTrue(self.said[-1].startswith('Reply (R), 3 of 9. R.'))
+        self.assertEqual(self.said[-1], 'No item uses 1.')
+        self.press('Letter:m', mode)
+        self.assertEqual(self.said[-1], 'Message menu. New email (N), 1 of 9. N. Say new email.')
+        self.press('Down', mode)
+        self.assertTrue(self.said[-1].startswith('Open message (O), 2 of 9. Enter.'))
         self.press('Alt', mode)
         self.assertEqual(self.said[-1], 'Menu closed. Back to email.')
         self.assertIsNone(app.SCREEN_MENU.mode)
@@ -291,11 +287,11 @@ class ScreenMenuTests(unittest.TestCase):
         self.assertEqual(app.handle('Email menu.', mode), mode)
         self.assertTrue(self.said[-1].startswith('Email menu. '))
         app.handle('Next.', mode)
-        self.assertTrue(self.said[-1].startswith('Select (S), 2 of 9.'))
+        self.assertTrue(self.said[-1].startswith('Header (H), 2 of 9.'))
         app.handle('That one.', mode)
-        self.assertTrue(self.said[-1].startswith('Select menu. '))
+        self.assertTrue(self.said[-1].startswith('Header menu. '))
         app.handle('Go back.', mode)
-        self.assertEqual(self.said[-1], 'Email menu. Select (S), 2 of 9.')
+        self.assertEqual(self.said[-1], 'Email menu. Header (H), 2 of 9.')
         app.handle('Select.', mode)
         self.assertTrue(self.said[-1].startswith('Select menu. '))
         app.handle('Select all messages', mode)
@@ -319,7 +315,7 @@ class ScreenMenuTests(unittest.TestCase):
     def test_reader_main_menu_is_announced_once(self):
         mode = self.screen('file_reader')
         self.assertEqual(app.handle('Main menu.', mode), 'awake')
-        self.assertEqual(sum(text.startswith('Main menu. What would you like') for text in self.said), 1, self.said)
+        self.assertEqual(sum(text.endswith(app.MAIN_MENU_PROMPT) for text in self.said), 1, self.said)
 
     def test_menu_waits_for_a_question_or_picker(self):
         mode = self.screen('mailbox')
@@ -330,8 +326,8 @@ class ScreenMenuTests(unittest.TestCase):
 
     def test_draft_menu_send_without_account_keeps_draft(self):
         mode = self.screen('email_draft')
-        self.press('Alt', mode); self.press('Letter:1', mode)
-        self.assertEqual(self.press('Letter:1', mode), 'email_draft')
+        self.press('Alt', mode); self.press('Letter:m', mode)   # Message, then S for Send
+        self.assertEqual(self.press('Letter:s', mode), 'email_draft')
         self.assertIn('No email account is set up yet', ' '.join(self.said))
         self.assertIn('Thank you.', str(app.email_draft.paragraphs))
 

@@ -32,6 +32,7 @@ its profile, closed, given the add-on, and started again.
 
 Everything that touches Windows goes through WindowsSystem, so tests use a fake.
 """
+from hints import hint
 import configparser
 import json
 import os
@@ -863,7 +864,7 @@ class Setup:
             address = self.connect()
         except (AccountError, OSError, ValueError) as exc:
             return Step(str(exc), None)
-        return Step('Thunderbird account ' + address + ' is connected and selected. Say check email to open it.', None)
+        return Step('Thunderbird account ' + address + ' is connected and selected.' + hint(' Say check email to open it.'), None)
 
     def _wait(self, first):
         relay = self._relay()

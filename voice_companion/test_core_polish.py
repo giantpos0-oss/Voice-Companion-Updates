@@ -252,7 +252,7 @@ class HelpAndTutorialReturnTests(CompanionTestCase):
         mode = companion.handle('start tutorial', 'awake')
         self.said.clear()
         self.assertEqual(self.key('Escape', mode), 'awake')
-        self.assertEqual(self.said, ['Tutorial closed. ' + companion.MAIN_MENU_PROMPT])
+        self.assertEqual(self.said, ['Tutorial stopped. ' + companion.MAIN_MENU_PROMPT])
 
 
 class ExitKeepsWorkTests(CompanionTestCase):
@@ -301,13 +301,13 @@ class SpokenKeyNamesTests(CompanionTestCase):
         from menu_navigation import spoken_key
         for key, words in (('Ctrl+O', 'Control+O'), ('Ctrl+Shift+S', 'Control+Shift+S'), ('Up', 'Up Arrow'),
                            ('Ctrl+Shift+Down', 'Control+Shift+Down Arrow'), ('PgDn', 'Page Down'), ('Esc', 'Escape'),
-                           ('ShiftTab', 'Shift+Tab'), ('Alt, 3, 2', 'Alt, 3, 2'), ('F1', 'F1'), ('Double:F1', 'F1 twice'), ('Enter', 'Enter'),
+                           ('ShiftTab', 'Shift+Tab'), ('Alt, M, R', 'Alt, M, R'), ('F1', 'F1'), ('Double:F1', 'F1 twice'), ('Enter', 'Enter'),
                            ('Insert+Shift+Down', 'Insert+Shift+Down Arrow'), ('Ctrl+Alt+1', 'Control+Alt+1'), ('', '')):
             self.assertEqual(spoken_key(key), words)
 
     def spoken_menu_text(self):
         """Everything a menu can say about its items, on every screen."""
-        import file_manager, screen_menus, task_navigation, tutorial_curriculum
+        import file_manager, screen_menus, task_navigation, tutorial_lessons
         texts = []
         nav = companion.task_navigation()
         for mode in ('word_processor', 'reader_menu', 'notepad_menu', 'media_menu', 'local_media'):
@@ -330,8 +330,8 @@ class SpokenKeyNamesTests(CompanionTestCase):
             manager.menu = kind
             texts += manager.labels()
         texts.append(file_manager.HELP)
-        texts += [text for course in tutorial_curriculum.__dict__.values() if isinstance(course, (list, tuple))
-                  for entry in course if isinstance(entry, tuple) for text in entry if isinstance(text, str)]
+        texts += [text for course in tutorial_lessons.build(companion) for lesson in course.lessons
+                  for step in lesson.steps for text in (step.say, step.instruction()) + ((step.reply,) if isinstance(step.reply, str) else ())]
         return texts
 
     def test_no_spoken_menu_text_says_ctrl(self):

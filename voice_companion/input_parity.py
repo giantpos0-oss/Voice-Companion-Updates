@@ -68,6 +68,7 @@ SCREEN_KEYS = {
     # Office tools and Shut down or restart are parts of the main menu: its Help topic.
     'office_menu': {'F1': 'help with main menu'},
     'organizer_menu': {'F1': 'help with main menu'},
+    'web_tools_menu': {'F1': 'help with main menu'},
     'favorites_menu': {'F1': 'help with main menu'},
     'power_menu': {'F1': 'help with main menu'},
     'notepad_menu': {'F1': 'help with notepad'},
@@ -76,9 +77,6 @@ SCREEN_KEYS = {
     'local_media': {'F1': 'help with media player'},
     # YouTube (youtube_screen.py): one key per action, most as on YouTube itself (K, J, L, M, C, F).
     'youtube': dict(__import__('youtube_screen').KEYS),
-    'tutorial': {'Ctrl+R': 'repeat', 'F1': 'list commands', 'Ctrl+L': 'lesson list',
-                 'Ctrl+F': 'find lesson {value}', 'Ctrl+E': 'explain command {value}',
-                 'Ctrl+Down': 'continue reading'},
     'sleep': {'Ctrl+F12': 'wake up'},
 }
 # Email: Alt and a number says one line of the message's header, as screen reader users know
@@ -99,7 +97,6 @@ OLD_KEYS = {
     'attachments': {'Ctrl+T': 'attach a file'},
     'files': {'Ctrl+T': 'attach to draft'},
     'file_reader': {'Ctrl+Shift+R': 'read document'},
-    'tutorial': {'Ctrl+Shift+R': 'repeat', 'Ctrl+Shift+F': 'explain command {value}'},
     'mailbox': {'Ctrl+I': 'message details', 'Ctrl+Shift+I': 'which folder', 'Ctrl+O': 'open email draft',
                 'Ctrl+K': 'list contacts', 'Ctrl+Shift+K': 'add contact {value}', 'Ctrl+Shift+A': 'clear selection',
                 'Ctrl+Shift+S': 'what is selected', 'Ctrl+Shift+M': 'move folder'},
@@ -107,7 +104,7 @@ OLD_KEYS = {
 # Control+F12 puts the microphone to sleep from any main screen; while asleep it wakes it.
 # F12 alone, or Insert+F12, says the time (twice quickly, the date) on every screen; see time_date.py.
 for _mode in ('awake', 'note', 'email_draft', 'mailbox', 'file_reader', 'web', 'browser_menu', 'media', 'word_processor',
-              'recent_documents', 'media_menu', 'office_menu', 'organizer_menu', 'favorites_menu', 'power_menu', 'local_media', 'notepad_menu', 'reader_menu', 'reader_recent', 'help', 'tutorial', 'document', 'files', 'document_menu', 'downloads',
+              'recent_documents', 'media_menu', 'office_menu', 'organizer_menu', 'web_tools_menu', 'favorites_menu', 'power_menu', 'local_media', 'notepad_menu', 'reader_menu', 'reader_recent', 'help', 'tutorial', 'document', 'files', 'document_menu', 'downloads',
               'contacts', 'calendar', 'attachments', 'youtube'):
     SCREEN_KEYS.setdefault(_mode, {})['Ctrl+F12'] = 'go to sleep'
 NOTE_READING_KEYS = {'Up', 'Down', 'Left', 'Right', 'Ctrl+Left', 'Ctrl+Right', 'Ctrl+Up', 'Ctrl+Down'}
@@ -209,12 +206,17 @@ def catalog():
     for group,items in DOCUMENT_ACTIONS.items():
         for name,key,voice in items:add('Document: '+group,name,voice,key or 'Alt, group number, item key')
     nav=app.task_navigation()
-    for mode in ('office_menu','organizer_menu','favorites_menu','power_menu','word_processor','notepad_menu','reader_menu','media_menu','local_media'):
+    for mode in ('office_menu','organizer_menu','web_tools_menu','favorites_menu','power_menu','word_processor','notepad_menu','reader_menu','media_menu','local_media'):
         for name,key,voice in nav.items(mode):add(mode.replace('_',' ').title(),name,name if voice.startswith('@') else voice,key or 'First letter, arrows, Enter')
     from app_settings import ACTIONS
     for category in CATEGORIES:
         for field in fields(category,{}):
             if field.kind=='action':add(category,field.label,ACTIONS[field.key],'Alt+O, arrows to '+category+', Tab to the button, Enter')
+            elif field.kind=='apps':
+                for name,voice,key in (('Select an app','select','Space'),('Unselect an app','unselect','Space'),('Move an app up','move up','Control+Up'),
+                                       ('Move an app down','move down','Control+Down'),('Move an app to the top','move to top','Control+Home'),
+                                       ('Move an app to the bottom','move to bottom','Control+End')):
+                    add(category,name,voice,'Alt+O, arrows to '+category+', Enter, '+key)
             else:add(category,field.label.split(';')[0],settings_phrase(field)+' ...','Alt+O, arrows to '+category+', Tab to the field, arrows or Space, Enter to save')
     from media_navigation import RADIO,RADIO_STATION,PODCASTS
     for area,actions in (('Radio',RADIO),('Radio station actions',RADIO_STATION),('Podcasts',PODCASTS)):

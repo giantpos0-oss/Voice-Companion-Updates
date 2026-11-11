@@ -1,29 +1,48 @@
 {
-  "version": "0.2.210-test",
+  "version": "0.2.211-test",
   "status": "Testing build",
-  "date": "November 9, 2026",
-  "baseline": "0.2.209-test",
-  "scope": "Adding a Thunderbird email account now happens in one go, and Chrome setup is on by default.",
+  "date": "November 11, 2026",
+  "baseline": "0.2.210-test",
+  "scope": "Simpler menus with letter shortcuts, speech that stops when you talk, a hints setting, Favorite apps in any order, and a new hands-on tutorial.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "Chrome setup is on by default",
+          "title": "A new hands-on tutorial",
           "details": [
-            "The installer now checks the box to set up Chrome and the Voice Companion extension.",
-            "Updates check it too.",
-            "If Chrome is already set up, nothing happens and you hear nothing.",
-            "If it is not set up yet, Companion asks you when it opens."
+            "The old tutorial is gone. The new one asks you to press a key or say a command.",
+            "It checks what you did and tells you if it was right.",
+            "If you miss twice, it offers to show you or to skip.",
+            "It has lessons for every app on the main menu.",
+            "Nothing in the tutorial sends mail, changes files or changes settings.",
+            "Say Tutorial or press Control+T to start. It remembers where you stopped."
           ]
         },
         {
-          "title": "Sign in to Gmail in your own browser",
+          "title": "Hints and help messages",
           "details": [
-            "When you add Gmail or Outlook, you sign in with your own web browser, such as Firefox or Chrome.",
-            "Companion tells you which browser it opened.",
-            "Google no longer stops you after you type your email address.",
-            "When the account is ready, Companion comes back to the front by itself."
+            "A new choice in Verbosity options turns tips on or off.",
+            "Say Hints off or Hints on from any screen.",
+            "With hints off, you hear what happened, without the extra tips.",
+            "Questions, how to answer them, and steps to fix a problem are always said."
+          ]
+        },
+        {
+          "title": "Web tools on the main menu",
+          "details": [
+            "Web tools has the web browser and its tools. These are favorites, history, downloads and Chrome setup.",
+            "Saying Web browser still opens it from anywhere."
+          ]
+        },
+        {
+          "title": "Favorite apps in any order",
+          "details": [
+            "In Options, My menu is now called Favorite apps.",
+            "It is one list. Press Space to pick or unpick an app.",
+            "Press Control+Up or Control+Down to move an app. Control+F1 uses your order.",
+            "You can also say select, unselect, move up, move down, move to top or move to bottom.",
+            "The apps you picked before stay picked."
           ]
         }
       ]
@@ -32,21 +51,48 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Adding a Thunderbird account",
+          "title": "Menus",
           "details": [
-            "Say Add account once. Companion goes through every step with you.",
-            "You no longer have to say Add account again after each step.",
-            "If Thunderbird must close and open again, Companion does it for you.",
-            "If Thunderbird is slow to connect, Companion restarts it once by itself.",
-            "If the link to Thunderbird needs an update, Companion does it and goes on."
+            "The main menu now says just the first item, like File manager (F), 1 of 10.",
+            "Every menu now opens on its first item and says its letter.",
+            "Alt menus now use letters. Press Alt, then the group's letter, then the item's letter.",
+            "The old number paths, like Alt 2 4, are gone.",
+            "The same action has the same letter in every app.",
+            "Alt menu groups have clearer names, such as Message, Edit, Go to, View and Tools.",
+            "In the word processor menu, the letter you heard now runs that item."
           ]
         },
         {
-          "title": "Yes or no questions",
+          "title": "Speech stops when you talk",
           "details": [
-            "Every Thunderbird question now tells you all the ways to answer.",
-            "Say yes or no, or press Y or N.",
-            "You can also use the arrows to choose, then press Enter."
+            "Companion now goes quiet as soon as you start a command or start to dictate.",
+            "This works the same on every screen.",
+            "Stop talking and Resume work as before.",
+            "Noise in the room does not cut Companion off."
+          ]
+        },
+        {
+          "title": "Keys in text boxes",
+          "details": [
+            "In YouTube, Alt+O no longer types into the search box and searches.",
+            "Alt+O, F1 and Control+F1 never type their words into a name or answer box.",
+            "Alt+F4 now closes the window from every screen."
+          ]
+        },
+        {
+          "title": "Tab key",
+          "details": [
+            "Tab no longer stops on buttons like Options when you do not need them.",
+            "In Options, Tab moves between the settings, OK and Cancel."
+          ]
+        },
+        {
+          "title": "Other fixes",
+          "details": [
+            "Go to website example dot com now opens example dot com.",
+            "Low and Medium verbosity no longer cut off the steps to fix a problem.",
+            "Help with my menu now opens the right topic.",
+            "The browser no longer talks over itself when it closes."
           ]
         }
       ]

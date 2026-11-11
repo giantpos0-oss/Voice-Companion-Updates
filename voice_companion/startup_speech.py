@@ -12,6 +12,7 @@ speech starts, so separate startup messages used to cut each other off: after an
 update, people heard only "Voice Companion was updated successfully." and never
 the version or how to start.
 """
+from hints import hint, join
 
 READY = 'Voice Companion {version} is ready.'
 
@@ -34,9 +35,10 @@ MICROPHONE = {
 # Never "say wake up" when nothing is listening. Start tutorial works only after waking: asleep, only
 # "wake up" is heard.
 HOW_TO = {
+    # How to wake the app is never a hint: it starts asleep (review, November 11, 2026).
     'on': 'The microphone is on. Say wake up to control the app by voice, or use your Up and Down arrow keys, '
-          'Enter and Escape to move through the menus. After you wake it, say start tutorial for spoken lessons that wait for you. '
-          'Help is available.',
+          'Enter and Escape to move through the menus.' + hint(' After you wake it, say start tutorial to practice with the real keys and commands. '
+          'Help is available.'),
     'off': MICROPHONE['off'] + ' ' + KEYS + ' Press F1 twice for help.',
     'failed': MICROPHONE['failed'] + ' ' + KEYS + ' Press F1 twice for help. Check that a microphone is plugged in '
               'and allowed in Windows privacy settings. Voice commands start by themselves when it works.',
@@ -105,4 +107,4 @@ def announcement(version, microphone='on', result=None, notices=(), question=Non
         parts.append(str(question).strip())
     else:
         parts.append(followup(microphone))
-    return ' '.join(parts)
+    return join(' ', parts)   # keeps hint marks (hints.py)

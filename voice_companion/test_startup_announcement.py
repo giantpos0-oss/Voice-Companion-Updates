@@ -181,14 +181,14 @@ class StartupAnnouncementTests(CompanionTestCase):
             self.assertEqual(companion.SLEEP_RETURN_MODE, 'awake')
             # One message: the second one would stop the first.
             self.assertEqual(len(self.said), 1, self.said)
-            self.assert_in_order(self.said[0], startup_speech.MICROPHONE[microphone], 'Main menu.')
+            self.assert_in_order(self.said[0], startup_speech.MICROPHONE[microphone], companion.MAIN_MENU_PROMPT)
             self.assertNotIn('wake up', self.said[0].lower())
 
     def test_a_later_update_answer_is_said_together_with_the_main_menu(self):
         companion.UPDATE_RETURN_MODE = 'awake'
         self.assertEqual(companion.handle('no', 'update_offer'), 'awake')
         self.assertEqual(len(self.said), 1, self.said)
-        self.assertTrue(self.said[0].startswith('Okay. You can keep using this version. Main menu.'), self.said)
+        self.assertEqual(self.said[0], 'Okay. You can keep using this version. ' + companion.MAIN_MENU_PROMPT)
 
     # Chrome setup asked for by the installer.
 

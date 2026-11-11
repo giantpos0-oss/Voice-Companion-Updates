@@ -37,6 +37,7 @@ guided browser to Chrome. Nothing here types or sees a password.
 companion.py calls into this module from a few small hooks. `m` is the
 companion module.
 """
+from hints import hint
 import re
 import time
 from pathlib import Path
@@ -1113,7 +1114,7 @@ class YouTubeScreen:
         current = self.player.state().get('quality')
         self.push({'kind': 'quality', 'name': 'quality', 'title': 'Video quality', 'items': levels, 'current': current,
                    'index': levels.index(current) if current in levels else 0})
-        return 'Video quality. Now ' + yp.quality_name(current) + '. ' + self.describe() + ' Press Enter to choose.'
+        return 'Video quality. Now ' + yp.quality_name(current) + '. ' + self.describe() + hint(' Press Enter to choose.')
 
     def set_quality(self, code):
         problem = self.need_video()
@@ -1216,7 +1217,7 @@ class YouTubeScreen:
         now = self.player.state().get('time') or 0
         index = max([i for i, c in enumerate(items) if c['time'] <= now + 1] or [0])
         self.push({'kind': 'chapters', 'name': 'chapters', 'title': 'Chapters', 'items': items, 'index': index})
-        return 'Chapters. ' + self.describe() + ' Press Enter to go there.'
+        return 'Chapters. ' + self.describe() + hint(' Press Enter to go there.')
 
     def chapter_step(self, step):
         problem = self.need_video()
@@ -1330,7 +1331,7 @@ class YouTubeScreen:
             return problem
         details = self.player.details()
         if details.get('liked'):
-            return 'You already like this video. To take your like back, say remove like.'
+            return 'You already like this video.' + hint(' To take your like back, say remove like.')
         return self.ask(('like', True), 'Like ' + self.video['title'] + '? Say Yes or No.')
 
     def unlike(self):
@@ -1360,7 +1361,7 @@ class YouTubeScreen:
             return problem
         options = self.player.save_options()
         self.push({'kind': 'save', 'name': 'save', 'title': 'Save to', 'items': options})
-        return 'Save to. ' + self.describe() + ' Press Enter to save to the list you hear, or to remove it.'
+        return 'Save to. ' + self.describe() + hint(' Press Enter to save to the list you hear, or to remove it.')
 
     def watch_later(self):
         problem = self.account_check('save')
@@ -2166,7 +2167,7 @@ def here(m, s, raw, command, typed=False):
         if command in OPEN:
             m.speak(s.where())
             return MODE
-        m.speak('YouTube. Say search for and words to search, or press Alt for the YouTube menu. Press F1 twice for help.')
+        m.speak('YouTube.' + hint(' Say search for and words to search, or press Alt for the YouTube menu. Press F1 twice for help.', instead=' I did not understand that.'))
         return MODE
     if action == 'leave':
         return leave(m, s)
@@ -2336,7 +2337,7 @@ def run(m, s, action, raw, command):
         result = s.open_in_browser()
         if result is None:
             return 'YouTube is not open in the browser yet.'
-        return ('@web', 'Web page. ' + result + ' Say back to YouTube to return.')
+        return ('@web', 'Web page. ' + result + hint(' Say back to YouTube to return.'))
     return None
 
 

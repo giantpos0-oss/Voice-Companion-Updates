@@ -70,12 +70,12 @@ class KeyboardOnlyStartupTests(CompanionTestCase):
         # Main menu at the question still goes to the main menu.
         mode = self.key('Enter', mode)
         self.assertEqual(companion.handle('main menu', mode), 'awake')
-        self.assertIn('Main menu', self.said[-1])
+        self.assertEqual(self.said[-1], 'Canceled. ' + companion.MAIN_MENU_PROMPT)   # only the first item (November 10, 2026)
 
     def test_power_choice_from_the_main_menu_by_voice_still_cancels_to_the_main_menu(self):
         mode = companion.handle('restart computer', 'awake')
         self.assertEqual(self.key('Escape', mode), 'awake')
-        self.assertTrue(self.said[-1].startswith('Canceled. Main menu.'), self.said[-1])
+        self.assertEqual(self.said[-1], 'Canceled. ' + companion.MAIN_MENU_PROMPT)
 
     # Email with no account from Office tools: the account question is the last thing said.
     def test_email_with_no_account_question_is_not_cut_off_by_main_menu(self):
@@ -98,9 +98,9 @@ class KeyboardOnlyStartupTests(CompanionTestCase):
             mode = self.key(leave, mode) if leave == 'F1' else companion.handle(leave, mode)
             self.assertEqual(mode, 'awake', leave)
             self.assertFalse(companion.account_setup, leave)
-            self.assertTrue(self.said[-1].startswith('Account setup canceled. Main menu.'), self.said[-1])
-            self.key('Down', mode)
-            self.assertEqual(self.said[-1], 'File manager (F), 1 of 10.')
+            self.assertEqual(self.said[-1], 'Account setup canceled. File manager (F), 1 of 10.')
+            self.key('Down', mode)   # The main menu starts on its first item (November 10, 2026).
+            self.assertEqual(self.said[-1], 'Office tools (O), 2 of 10.')
 
     def test_f1_at_the_account_question_says_the_question_again(self):
         # F1 twice quickly says it again; F1 once is the main menu.
@@ -129,7 +129,7 @@ class KeyboardOnlyStartupTests(CompanionTestCase):
         self.assertFalse(companion.account_setup)
         self.key('Down', mode)
         self.assertNotIn('Thunderbird', self.said[-1])
-        self.assertTrue(self.said[-1].startswith('Getting started'), self.said[-1])
+        self.assertTrue(self.said[-1].startswith('Getting around'), self.said[-1])
 
     def test_sleep_keeps_the_account_question(self):
         with self.no_account():
@@ -165,9 +165,10 @@ class KeyboardOnlyStartupTests(CompanionTestCase):
                 mode = 'office_menu'                       # Options closed (poll_settings).
             mode = self.key('Escape', mode)
             self.assertEqual(mode, 'awake', detour)
+            self.assertEqual(self.said[-1], 'Office tools (O), 2 of 10.')   # Escape lands on its group
             mode = self.key('Down', mode)
             self.assertEqual(mode, 'awake', detour)
-            self.assertEqual(self.said[-1], 'File manager (F), 1 of 10.')
+            self.assertEqual(self.said[-1], 'Organizer (O), 3 of 10.')
             # An app opened from the main menu by name goes back to the main menu.
             mode = companion.handle('notepad', mode)
             self.assertEqual(self.key('Escape', mode), 'awake', detour)

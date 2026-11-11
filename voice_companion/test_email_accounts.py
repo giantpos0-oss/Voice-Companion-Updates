@@ -239,11 +239,8 @@ class FolderAccountTests(AccountScreenTestCase):
     def test_folder_menu_item_lists_accounts(self):
         self.open_inbox()
         self.key('Alt')
-        companion.handle('3', 'mailbox')  # Go to folder group
-        self.key('End')
-        self.key('Up')     # the last two items are Choose a folder and Which folder
-        self.assertIn('Choose a folder', self.last())
-        self.key('Enter')
+        self.key('Letter:g')   # Go to (November 10, 2026)
+        self.key('Letter:c')   # Choose a folder
         self.assertTrue(self.last().startswith('Choose an account.'), self.last())
         self.assertIn('Close this list first', companion.screen_menu().available('mailbox'))
 
@@ -285,15 +282,15 @@ class SwitchAccountTests(AccountScreenTestCase):
 
     def test_email_menu_switch_and_remove_items(self):
         from screen_menus import MENUS
-        accounts = dict(MENUS['mailbox'][1])['Accounts']
+        accounts = dict(MENUS['mailbox'][1])['Tools'][:5]   # Accounts joined Tools (November 10, 2026)
         self.assertEqual([(label, command) for label, _, command in accounts],
                          [('Add account', 'add account'), ('Switch account', 'switch account'),
                           ('Which account', 'which email account'), ('Remove account', 'remove email account'),
                           ('Add Thunderbird account', 'add thunderbird account')])
         self.open_inbox()
         companion.handle('email menu', 'mailbox')
-        companion.handle('6', 'mailbox')
-        companion.handle('2', 'mailbox')
+        self.key('Letter:t')   # Tools, then S for Switch account
+        self.key('Letter:s')
         self.assertTrue(self.last().startswith('Choose an account to open.'), self.last())
         self.key('Down')
         self.key('Enter')
@@ -374,8 +371,8 @@ class RemoveAccountTests(AccountScreenTestCase):
     def test_alt_menu_remove_account(self):
         self.open_inbox()
         companion.handle('email menu', 'mailbox')
-        companion.handle('6', 'mailbox')
-        companion.handle('4', 'mailbox')
+        self.key('Letter:t')   # Tools, then R for Remove account
+        self.key('Letter:r')
         self.assertTrue(self.last().startswith('Choose the account to remove.'), self.last())
 
 

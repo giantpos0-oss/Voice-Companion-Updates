@@ -481,7 +481,8 @@ class ScreenTests(unittest.TestCase):
         self.assertEqual(self.app.handle('enter', 'browser_menu'), 'downloads')
         self.assertEqual(self.app.handle('close downloads', 'downloads'), 'browser_menu')
         self.assertEqual(self.app.handle('downloads', 'browser_menu'), 'downloads')
-        self.assertIn('Downloads', self.web.menu.start())
+        self.web.menu.start()   # says only its first item now (November 10, 2026)
+        self.assertIn('Downloads', [name for name, _ in self.web.menu.choices(self.web, False)])
         # A favorite named Downloads is a name, not a command.
         self.web.menu.level = 'name'
         self.assertIsNone(self.screen.handle(self.app, 'downloads', 'browser_menu'))

@@ -45,6 +45,29 @@ class PackagingTests(unittest.TestCase):
                 if i==0 or not items[i-1].startswith('--'):problems.append((item,line.strip()[:80]))
         self.assertEqual(problems,[])
 
+    def test_every_module_loaded_by_name_is_packaged(self):
+        # PyInstaller only finds modules from import statements. A module loaded only by name,
+        # with __import__('x'), import_module('x') or the tutorial's private('x'), is left out of
+        # the installed app unless it is a hidden import (November 2026: display_screen was
+        # missing, so the low-vision screen details failed in every installed copy).
+        import ast, re
+        here = Path(__file__).parent
+        sources = [p for p in here.glob('*.py') if not p.name.startswith('test_')]
+        local = {p.stem for p in sources}
+        build = (here / 'build-windows.ps1').read_text(encoding='utf-8')
+        hidden = set(re.findall(r"'--hidden-import',\s*'([\w.]+)'", build))
+        static, by_name = set(), set()
+        for path in sources:
+            text = path.read_text(encoding='utf-8', errors='ignore')
+            by_name |= set(re.findall(r"(?:__import__|import_module|private)\('([A-Za-z_]\w*)'", text))
+            for node in ast.walk(ast.parse(text)):
+                if isinstance(node, ast.Import):
+                    static |= {alias.name.split('.')[0] for alias in node.names}
+                elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+                    static.add(node.module.split('.')[0])
+        missing = sorted(name for name in by_name & local if name not in static | hidden)
+        self.assertEqual(missing, [], 'Add these as hidden imports in build-windows.ps1')
+
     def test_builder_uses_launcher_and_current_data_syntax(self):
         s=Path(__file__).with_name('build-windows.ps1').read_text()
         self.assertIn("'build_packaging.py'",s)

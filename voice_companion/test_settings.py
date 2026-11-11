@@ -69,7 +69,8 @@ class SettingsTests(unittest.TestCase):
         for level in ('high','medium','low'):
             with patch.object(companion,'VERBOSITY',level),patch.object(companion,'TEXT_MODE',True),patch.object(companion,'APP_WINDOW') as window:
                 companion.speak(text);window.show.assert_called_once_with(text)
-        high='Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open.'
+        from hints import hint
+        high='Downloads.'+hint(' Say pause download to pause. Say cancel download to stop it.')
         self.assertGreater(len(prompt_text(high,'high')),len(prompt_text(high,'medium')))
         self.assertGreater(len(prompt_text(high,'medium')),len(prompt_text(high,'low')))
     def test_verbosity_and_most_punctuation_commands_persist(self):

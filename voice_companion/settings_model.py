@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import copy
 import re
 import display_options
-from task_navigation import FAVORITE_APPS, favorite_key
+from task_navigation import FAVORITE_APPS, FAVORITE_ORDER, FAVORITES_CATEGORY, favorite_key, favorite_order
 from audio_ducking import LEVEL_CHOICES as DUCK_LEVELS, spoken_level
 
 @dataclass(frozen=True)
@@ -13,12 +13,15 @@ class Field:
     kind: str = 'choice'
     choices: tuple = ()
 
-CATEGORIES = tuple(name+' options' for name in ('Verbosity', 'Voice', 'Synthesizer', 'Display', 'Input', 'Email', 'Word processor', 'Notepad', 'Document reader', 'File manager', 'Web browser', 'Radio', 'Podcasts', 'Auto-update'))+('Startup and exit options', 'My menu')
-DEFAULTS = {'dictation_echo':'phrase by phrase','dictation_type':'old school','web_search_engine':'google','web_keep_open':False,'keep_audio_playing':False,'duck_while_keys':True,'web_auto_read':True,'download_folder':'','email_format':'html','pitch':'0','verbosity':'high','capital_letters':'do nothing','typing_echo':'characters','phonetic_enabled':True,'phonetic_delay':'0.5','duck_audio':True,'duck_level':'strong, 75 percent quieter','duck_other_apps':False,'check_updates':True,'start_with_windows':False,'ask_before_exit':True,'ask_before_shutdown':True,'ask_before_restart':True,'email_header_names':False,'email_status_words':True,'email_header_order':'from, subject, date','document_font':'Calibri','document_size':'11','document_spacing':'single','document_alignment':'left','file_manager_start':'drive list','reader_auto_read':True,'speech_transcript':False,
+CATEGORIES = tuple(name+' options' for name in ('Verbosity', 'Voice', 'Synthesizer', 'Display', 'Input', 'Email', 'Word processor', 'Notepad', 'Document reader', 'File manager', 'Web browser', 'Radio', 'Podcasts', 'Auto-update'))+('Startup and exit options', FAVORITES_CATEGORY)
+DEFAULTS = {'dictation_echo':'phrase by phrase','dictation_type':'old school','web_search_engine':'google','web_keep_open':False,'keep_audio_playing':False,'duck_while_keys':True,'web_auto_read':True,'download_folder':'','email_format':'html','pitch':'0','verbosity':'high','capital_letters':'do nothing','typing_echo':'characters','phonetic_enabled':True,'phonetic_delay':'0.5','duck_audio':True,'duck_level':'strong, 75 percent quieter','duck_other_apps':False,'check_updates':True,'start_with_windows':False,'ask_before_exit':True,'ask_before_shutdown':True,'ask_before_restart':True,'email_header_names':False,'email_status_words':True,'email_header_order':'from, subject, date','document_font':'Calibri','document_size':'11','document_spacing':'single','document_alignment':'left','file_manager_start':'drive list','reader_auto_read':True,'speech_transcript':False,'speak_hints':True,
             'thunderbird_window':'Minimized, as before','browser_window':'Show the browser window, as before',
             'own_chrome_window':'Show it, as before'}
-# Favorite apps start empty; you choose them in Options, My menu.
+# Favorite apps start empty; you choose them in Options, Favorite apps. Each app is still saved
+# on or off, as before 0.2.211, and the order of the list is saved as well (favorite_order).
+# A tuple, so a copy of these defaults can never change the defaults themselves.
 DEFAULTS.update({favorite_key(name): False for name, _ in FAVORITE_APPS})
+DEFAULTS[FAVORITE_ORDER] = tuple(name for name, _ in FAVORITE_APPS)
 # Display options (display_options.py): large, high-contrast text by default.
 DEFAULTS.update(display_options.DEFAULTS)
 
@@ -90,10 +93,10 @@ def all_fields(context):
 
 
 def fields(category, context):
-    if category not in ('Startup and exit options','My menu'):category=category.removesuffix(' options')
+    if category not in ('Startup and exit options',FAVORITES_CATEGORY):category=category.removesuffix(' options')
     category={'Word processor':'Documents','Auto-update':'Updates','Notes':'Notepad'}.get(category,category)
     definitions = {
-        'Verbosity':[Field('verbosity','Verbosity','choice',('high','medium','low')),Field('punctuation','Spoken punctuation','choice',('none','some','most','all')),Field('dictation_echo','Echo dictated text','choice',('phrase by phrase','at the end of a sentence','do not echo dictated text')),Field('typing_echo','Typing echo','choice',('words','characters','characters and words','none')),Field('phonetic_enabled','Delayed phonetic pronunciation','check'),Field('phonetic_delay','Phonetic delay in seconds','choice',('0.5','1','2')),Field('capital_letters','When encountering capital letters','choice',('raise pitch','lower pitch','play a sound','say cap','do nothing'))],
+        'Verbosity':[Field('verbosity','Verbosity','choice',('high','medium','low')),Field('speak_hints','Hints and help messages','check'),Field('punctuation','Spoken punctuation','choice',('none','some','most','all')),Field('dictation_echo','Echo dictated text','choice',('phrase by phrase','at the end of a sentence','do not echo dictated text')),Field('typing_echo','Typing echo','choice',('words','characters','characters and words','none')),Field('phonetic_enabled','Delayed phonetic pronunciation','check'),Field('phonetic_delay','Phonetic delay in seconds','choice',('0.5','1','2')),Field('capital_letters','When encountering capital letters','choice',('raise pitch','lower pitch','play a sound','say cap','do nothing'))],
         # Will, November 4, 2026: the voice is chosen here, as in a screen reader's voice settings, and
         # Up Arrow raises rate, pitch and volume, so the highest value is listed first.
         'Voice':[voice_field(context),Field('rate','Speech rate','choice',tuple(str(x) for x in range(10,-11,-1))),Field('pitch','Voice pitch','choice',tuple(str(x) for x in range(10,-11,-1))),Field('volume','Speech volume','choice',tuple(str(x) for x in range(100,-1,-1))),Field('duck_audio','Audio ducking','check'),Field('duck_level','Ducking level','choice',DUCK_LEVELS),Field('duck_other_apps','Also lower other apps while Companion speaks','check')],
@@ -110,8 +113,9 @@ def fields(category, context):
         'Podcasts':[Field('keep_audio_playing','Keep audio playing in the background','check'),Field('duck_while_keys','Lower the volume while I use the keyboard','check'),Field('podcast_feed','Podcast subscription','choice',tuple(context.get('podcasts',()))),Field('podcast_limit','Automatic downloads for this subscription','combo',('manual','all','1','2','3','5','10','20','50','100','1000')),Field('podcast_subscriptions','List subscriptions','action')],
         'Startup and exit options':[Field('start_with_windows','Start with Windows','check'),Field('ask_before_exit','Ask before exiting Voice Companion','check'),Field('ask_before_shutdown','Ask before shutting down the computer','check'),Field('ask_before_restart','Ask before restarting the computer','check'),Field('speech_transcript','Keep a transcript of everything Voice Companion says','check')],
         'Updates':[Field('check_updates','Check automatically at startup','check'),Field('check_now','Check for updates now','action')],
-        # My menu (Will, November 6, 2026): the apps in Favorite apps, which Control+F1 opens.
-        'My menu':[Field(favorite_key(name),name+' in Favorite apps','check') for name,_ in FAVORITE_APPS],
+        # Favorite apps (Will, November 10, 2026; called My menu before): the apps in the menu that
+        # Control+F1 opens. One list: Space selects an app, Control+Up and Control+Down move it.
+        FAVORITES_CATEGORY:[Field(FAVORITE_ORDER,'Apps; Space selects or unselects; Control+Up or Control+Down moves','apps',tuple(name for name,_ in FAVORITE_APPS))],
     }
     return definitions[category]
 
@@ -131,6 +135,10 @@ class SettingsSession:
         if self.values.get('engine')=='windows' and 'SAPI' in context.get('engines',('SAPI',)):self.values['engine']='SAPI'
         self.context['engine']=self.values.get('engine') or 'SAPI'
         self.values.setdefault('podcast_limits',copy.deepcopy(context.get('podcast_limits',{})))
+        # Every app once, also from older or damaged saves; Cancel goes back to this list.
+        order=favorite_order(self.values)
+        saved=self.values.get(FAVORITE_ORDER)
+        if not isinstance(saved,(list,tuple)) or list(saved)!=order:self.values[FAVORITE_ORDER]=order;self.original[FAVORITE_ORDER]=list(order)
         self.category = 0
         self.closed = False
     def category_name(self): return CATEGORIES[self.category]
@@ -158,6 +166,11 @@ class SettingsSession:
             value={'half':'0.5','half a':'0.5','point five':'0.5','one':'1','two':'2','.5':'0.5'}.get(value,value)
         field=next((f for f in all_fields(self.context) if f.key==key),None)
         if field is None or field.kind=='action': raise ValueError('Unknown setting.')
+        if field.kind=='apps':
+            # The order of Favorite apps: a list of app names, or names separated by commas.
+            names=[x for x in (value.split(',') if isinstance(value,str) else value if isinstance(value,(list,tuple)) else ())]
+            self.values[key]=favorite_order({FAVORITE_ORDER:names})
+            return 'Favorite apps order changed.'
         if field.kind=='check':
             if isinstance(value,str):
                 if value.lower() not in ('on','off','yes','no','true','false'): raise ValueError('Say on or off.')
@@ -219,7 +232,7 @@ class SettingsSession:
         match=re.fullmatch(r'(?:set )?(?:verbosity|punctuation)(?: to)? (.+)',command,re.I)
         if match: return ('verbosity' if 'verbosity' in command.lower() else 'punctuation',match[1].lower())
         for field in all_fields(self.context):
-            if field.kind=='action': continue
+            if field.kind in ('action','apps'): continue   # the apps list has its own words (favorite_list.py)
             for label in (field.label,field.key.replace('_',' ')):
                 match=re.fullmatch(r'(?:(?:set|use|choose|select) )?'+re.escape(label)+r'[,:;]?(?: to)?[,:;]? (.+)',command,re.I)
                 if match:return field.key,match[1].strip(' ,;:')
@@ -228,15 +241,13 @@ class SettingsSession:
 
 
 def prompt_text(text,verbosity):
+    """Verbosity shortens only the parts marked as hints (hints.py). Before November 10, 2026,
+    medium and low cut everything after " Say ", which also cut recovery steps such as
+    "Say help to try again" and the answer words of a question."""
     if verbosity=='high':return text
-    if text.startswith('Main menu.'):
-        return 'Main menu.' if verbosity=='low' else 'Main menu. What would you like to do? Say next or previous, and OK to open.'
-    # Only explicitly marked application guidance uses this function; read text never does.
-    main,marker,hint=text.partition(' Say ')
-    if verbosity=='low':return main
-    if marker:
-        return main+' Say '+hint.split('. ')[0]
-    return text
+    # The main menu now says only its item (0.2.211), so it needs no special case here.
+    from hints import brief
+    return brief(text,verbosity)
 
 
 def keyboard_request(key,mode):

@@ -11,7 +11,6 @@ from keyboard_text import document_text
 from media_hub import MediaHub
 from media_navigation import MediaNavigation
 from onboard_help import HelpSession
-from practice_tutorial import PracticeTutorial
 from reading_navigation import ReadingCursor
 
 class ConsumerWorkflowTests(unittest.TestCase):
@@ -103,15 +102,17 @@ class ConsumerWorkflowTests(unittest.TestCase):
         app.navigation_key('Home','help');self.assertEqual(help.topic_index,0)
 
     def test_all_tutorial_lessons_remain_isolated(self):
-        tutorial=PracticeTutorial();before=list(self.root.rglob('*'))
-        lessons={'radio':['practice radio','search radio','jazz','save preset','main menu'],
-                 'email':['practice email','email','next message','mark message','delete message','no','main menu'],
-                 'documents':['practice documents','write a document','hello world','read from top','main menu']}
+        # Each course, done with the words a person would try, leaves no file behind.
+        before=list(self.root.rglob('*'))
+        lessons={'radio':['radio','down','search stations','skip','main menu'],
+                 'email':['email','down','who is it from','skip','skip','reply','main menu'],
+                 'word processor':['word processor','skip','My letter','confirm','main menu']}
         for commands in lessons.values():
+            mode=app.handle('start tutorial','awake')
             for command in commands:
-                result,finished=tutorial.process(command);self.assertTrue(result)
-            self.assertTrue(finished)
-        self.assertEqual(list(self.root.rglob('*')),before)
+                mode=app.handle(command,mode) if command!='down' else app.handle_keyboard(app.navigation_key('Down',mode),mode)
+            self.assertEqual(mode,'awake')
+        self.assertEqual([p for p in self.root.rglob('*') if p.name!='tutorial-progress.json'],before)
 
 class CatalogPlayer:
     def __init__(self):self.kind=None;self.calls=[]

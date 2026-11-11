@@ -170,7 +170,7 @@ class CompanionWindow:
                 try:self.ui_actions.get_nowait()
                 except queue.Empty:break
             self.root=self.typed=self.editor=self.current=self.file_list=None
-            self.file_toolbar=self.hint_label=None;self.file_buttons=[];self.update_buttons=[]
+            self.file_toolbar=self.hint_label=None;self.file_buttons=[];self.update_buttons=[];self.row_buttons=[]
             import gc
             gc.collect()
 
@@ -212,6 +212,7 @@ class CompanionWindow:
         done=threading.Event();self.ui_actions.put(('ui_call',done.set));done.wait(1)
 
     def feedback(self,text):
+        text=__import__('hints').for_speech(text)   # Hints and help messages (hints.py)
         if text:
             self.show(text)
             if getattr(self,'keyboard_output',None) and not self.keyboard_output.problem:
@@ -363,8 +364,10 @@ class CompanionWindow:
             arrangers=[]
             update_toolbar=tk.Frame(root)
             self.update_buttons=[]
+            # While an update downloads, Tab moves between these two buttons only (update_tab below).
+            # They are never in the window's own Tab order, so Tab elsewhere cannot reach them.
             for label,request,hint in (('Status','update status','Alt+S or F5'),('Cancel update','cancel update','Alt+C or Escape')):
-                button=tk.Button(update_toolbar,text=label,command=lambda command=request:self.commands.put(command),takefocus=True)
+                button=tk.Button(update_toolbar,text=label,command=lambda command=request:self.commands.put(command),takefocus=0)
                 button.pack(side='left',padx=3);self.update_buttons.append(button)
                 button.bind('<FocusIn>',lambda event,name=label,key=hint:self.feedback(name+' button. '+key+'. Enter activates.'))
                 button.bind('<Return>',lambda event,command=request:(self.commands.put(command),'break')[1])
@@ -505,6 +508,16 @@ class CompanionWindow:
                 self.last_navigation=time.monotonic()
                 control=bool(event.state&4);shift=bool(event.state&1)
                 watch_alt(event)
+                if self.context.get('tutorial_keys') and not self.command_entry_active:
+                    # The tutorial checks every key itself, by its name (tutorial_engine.window_key).
+                    # Alt alone is sent when it is let go (alt_release); Alt+T still opens the command box.
+                    from tutorial_engine import window_key
+                    tutorial_key=window_key(key,event.char,event.state)
+                    if tutorial_key is None:return
+                    if tutorial_key=='Alt+T':
+                        self.command_entry_active=True;typed.focus_set()
+                    if self.keyboard_output:self.keyboard_output.interrupt()
+                    cancel_phonetic();self.commands.put(('keyboard',tutorial_key));return 'break'
                 if self.context.get('screen_menu') and not self.command_entry_active:
                     # An Alt menu is open: arrows, Enter, Escape, letters and numbers belong to it.
                     from screen_menus import overlay_key
@@ -574,7 +587,7 @@ class CompanionWindow:
                             # Add the typed words to the note first, as Enter would.
                             self.commands.put(typed.get().strip());typed.delete(0,'end')
                         self.commands.put(('keyboard',direct));return 'break'
-                if mode in ('document','word_processor','document_menu','recent_documents','media_menu','office_menu','organizer_menu','favorites_menu','power_menu','local_media','notepad_menu','reader_menu','reader_recent','task_input'):
+                if mode in ('document','word_processor','document_menu','recent_documents','media_menu','office_menu','organizer_menu','web_tools_menu','favorites_menu','power_menu','local_media','notepad_menu','reader_menu','reader_recent','task_input'):
                     from task_navigation import SHORTCUTS
                     if mode=='document' and self.context.get('document_table') and key in ('Tab','ISO_Left_Tab'):
                         flush_pending_edit();cancel_phonetic()
@@ -768,6 +781,8 @@ class CompanionWindow:
                 self.report_entry_key(previous[0], typed.get(), previous[1], typed.index('insert'), event.keysym, event.char)
             typed.bind('<KeyPress>', before_key)
             def command_entry(event):
+                # In the tutorial, pressing Alt+T is also a step to check (tutorial_engine.py).
+                if self.context.get('tutorial_keys') and not self.command_entry_active:self.commands.put(('keyboard','Alt+T'))
                 self.command_entry_active=True;typed.focus_set();return 'break'
             root.bind_all('<Alt-t>',command_entry)
             root.after_idle(lambda:typed.focus_set() if self.context.get('source') is None and self.context.get('mode')!='settings' else None)
@@ -811,13 +826,13 @@ class CompanionWindow:
             root.bind_all('<Alt-O>',settings_shortcut)
             route_alt_keys(root)
             button_row=tk.Frame(root)
-            row_buttons=[tk.Button(button_row,text='Options (Alt+O)',command=lambda:self.commands.put(('keyboard','settings'))),
-                         tk.Button(button_row, text='Enter typed command', command=submit_typed),
-                         tk.Button(button_row, text='AI voice setup (trainer)', command=self.setup_ai_voice)]
-            for button in row_buttons:
-                # Tab can reach these buttons from the command box. Say where the keyboard went, so
-                # Enter never opens Options or a dialog by surprise.
-                button.bind('<FocusIn>',lambda event,name=button.cget('text'):self.feedback(name+' button. Enter activates. Shift+Tab goes back.'))
+            # Buttons for a helper with a mouse. Tab never stops on them (Will, November 10, 2026): each
+            # has a key and a spoken command. Options is Alt+O or "Options"; Enter typed command is
+            # Enter in the command box; AI voice setup is "Set up AI voice", said or typed with Alt+T.
+            row_buttons=[tk.Button(button_row,text='Options (Alt+O)',command=lambda:self.commands.put(('keyboard','settings')),takefocus=0),
+                         tk.Button(button_row, text='Enter typed command', command=submit_typed,takefocus=0),
+                         tk.Button(button_row, text='AI voice setup (trainer)', command=self.setup_ai_voice,takefocus=0)]
+            self.row_buttons=row_buttons
             flow(button_row,row_buttons)
             self.current = tk.StringVar(root, value='Starting speech and microphone...')
             # The last thing spoken, in large text under the screen name. A few lines at most,

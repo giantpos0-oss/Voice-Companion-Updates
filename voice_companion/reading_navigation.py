@@ -1,4 +1,5 @@
 """Shared spoken reading position for documents, mail, and web pages."""
+from hints import hint
 import re
 from bisect import bisect_right
 
@@ -74,7 +75,7 @@ class ReadingCursor:
         piece = self.text[self.continuation:end].strip()
         self.position = self.continuation
         self.continuation = end
-        return piece + (' Say continue reading for more.' if end < len(self.text) else ' End of text.')
+        return piece + (hint(' Say continue reading for more.') if end < len(self.text) else ' End of text.')
 
 
 def edge_notice(cursor, name):

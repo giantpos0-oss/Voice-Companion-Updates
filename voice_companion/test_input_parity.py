@@ -248,14 +248,13 @@ class ScreenKeyEffectTests(unittest.TestCase):
         self.press('Ctrl+F','file_reader');self.assertEqual(app.handle_keyboard('escape','task_input'),'file_reader')
         self.assertEqual(app.handle('Help.','file_reader'),'help')
 
-    def test_audio_tutorial_has_a_main_menu_key(self):
-        # The main menu keeps its 12 items; Control+Shift+T starts the tutorial like the spoken command.
-        self.assertNotIn('Audio tutorial',[name for name,_ in app.MAIN_MENU_CHOICES])
-        with patch.object(app,'PracticeTutorial') as tutorial:
-            tutorial.return_value.start.return_value='Tutorial courses.'
-            self.assertEqual(self.press('Ctrl+Shift+T','awake'),'tutorial')
+    def test_tutorial_has_a_main_menu_key(self):
+        # The main menu keeps its items; Control+T (and the older Control+Shift+T) starts the tutorial like the spoken command.
+        self.assertNotIn('Tutorial',[name for name,_ in app.MAIN_MENU_CHOICES])
+        for start in (lambda:self.press('Ctrl+T','awake'),lambda:self.press('Ctrl+Shift+T','awake'),lambda:app.handle('Start tutorial.','awake')):
             app.tutorial_session=None
-            self.assertEqual(app.handle('Start tutorial.','awake'),'tutorial')
+            self.assertEqual(start(),'tutorial')
+            self.assertIsInstance(app.tutorial_session,__import__('tutorial_engine').TutorialSession)
 
     def test_line_start_and_end_by_voice_match_home_and_end(self):
         from document_editor import VoiceDocument,Paragraph
@@ -434,17 +433,10 @@ class NewKeyEffectTests(ScreenKeyEffectTests):
 
     def test_tutorial_keys_match_voice(self):
         def fresh():
-            app.tutorial_session=None;app.handle('start tutorial','awake');app.handle('that one','tutorial');app.handle('that one','tutorial')
-        state=lambda:(app.tutorial_session.level,app.tutorial_session.index)
-        for key,voice in (('Ctrl+Shift+R','Repeat.'),('Double:F1','list commands'),('Ctrl+L','Lesson list.'),('Ctrl+Down','continue reading')):
+            app.tutorial_session=None;app.handle('start tutorial','awake');app.handle('email','tutorial')
+        state=lambda:(app.tutorial_session.state,app.tutorial_session.step_index) if app.tutorial_session else None
+        for key,voice in (('Double:F1','What can I say?'),('Escape','Stop tutorial.'),('F1','Main menu.')):
             with self.subTest(key=key):self.both('tutorial',key,voice,setup=fresh,state=state)
-        fresh();app.handle('find lesson email','tutorial');expected=(self.last(),state())
-        fresh()
-        self.assertEqual(self.press('Ctrl+F','tutorial'),'task_input')
-        self.assertEqual(app.handle_keyboard('email','task_input'),'tutorial')
-        self.assertEqual((self.last(),state()),expected)
-        fresh();self.press('Ctrl+Shift+F','tutorial');self.assertEqual(app.handle_keyboard('next message','task_input'),'tutorial')
-        said=self.last();fresh();app.handle('explain command next message','tutorial');self.assertEqual(self.last(),said)
 
     def test_radio_station_actions_can_be_spoken_by_name(self):
         from media_navigation import MediaNavigation,RADIO_STATION
@@ -480,7 +472,8 @@ class CatalogParityTests(unittest.TestCase):
         session=SettingsSession({}, {})
         for category in CATEGORIES:
             for field in fields(category,{}):
-                if field.kind=='action':continue
+                # The Favorite apps list has its own words, such as "select" and "move up" (test_favorite_apps).
+                if field.kind in ('action','apps'):continue
                 with self.subTest(field=field.key):
                     request=session.voice_setting((settings_phrase(field)+' on').capitalize()+'.')
                     self.assertIsNotNone(request,field.label);self.assertEqual(request[0],field.key)
