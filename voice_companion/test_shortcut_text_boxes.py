@@ -115,6 +115,28 @@ class ShortcutTests(unittest.TestCase):
         manager.process.assert_not_called()
         self.options.assert_called_once_with('files')
 
+    def test_f1_in_an_answer_box_closes_it_and_never_answers_main_menu(self):
+        # F1 made a contact named "main menu": the box took the words as its answer.
+        for key in ('F1', 'Ctrl+F1'):
+            with self.subTest(key=key):
+                nav = self.app.task_navigation()
+                with patch.object(nav, 'prompt', ('@contacts:add-name {value}', 'contacts')), \
+                        patch.object(self.app, 'handle', wraps=self.app.handle) as handle:
+                    self.keys('task_input', key)
+                    handled = [str(call.args[0]) for call in handle.call_args_list]
+                    self.assertIsNone(nav.prompt)
+                self.assertFalse(any('@contacts:' in text for text in handled), handled)
+                self.assertIn('main menu', handled)
+
+    def test_f1_in_the_document_name_box_never_names_the_document_main_menu(self):
+        with patch.object(self.app, 'PENDING_DOCUMENT_NAME', None), \
+                patch.object(self.app, 'DOCUMENT_NAMING_ACTION', 'new document'), \
+                patch.object(self.app, 'NEW_DOCUMENT_RETURN', 'word_processor'), \
+                patch.object(self.app, 'create_named_document') as created:
+            self.assertEqual(self.keys('document_name', 'F1'), 'awake')
+        created.assert_not_called()
+        self.assertTrue(self.said[-1].startswith('Main menu'), self.said)
+
     def test_alt_f4_closes_companion_from_every_screen(self):
         # Alt+F4 (and the window's Close button) did nothing on YouTube, Contacts, Calendar,
         # Downloads, Attachments, File manager and the document reader.

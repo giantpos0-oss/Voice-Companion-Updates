@@ -4246,6 +4246,12 @@ def _handle(text, mode, typed=False):
     command=normalized_command(text)
     if text=='@microphone':
         return set_microphone(MICROPHONE_OFF, mode)
+    if text in ('@favorites','@main_menu') and ACCOUNT_ENTRY is None and key_text_box_open(mode):
+        # F1 or Control+F1 in a box that takes typed words: close the box first, as Escape does,
+        # so the words "main menu" never become a name, a search or an answer.
+        escape=navigation_key('Escape',mode)
+        if escape:mode=handle_keyboard(escape,mode)
+        if mode=='exit' or key_text_box_open(mode):return mode
     if text=='@favorites':
         # Control+F1: Favorite apps. Other screens close first, as for the main menu, so a
         # document still asks to save; then Favorite apps opens.
