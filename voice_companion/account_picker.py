@@ -10,6 +10,7 @@ such as "Thunderbird, will@gmail.com". The kinds are Thunderbird and Yahoo.
 Gmail, Outlook and Microsoft 365 addresses work through Thunderbird, so saying
 "Gmail" or "Outlook" finds the Thunderbird account at that company.
 """
+from hints import hint, join
 import re
 
 PROVIDER_NAMES = {'yahoo': 'Yahoo', 'thunderbird': 'Thunderbird'}
@@ -211,5 +212,5 @@ def retired_message(result):
     if not result.remaining:
         words.append('Say add account to set it up in Thunderbird.')
     elif missing:
-        words.append('To use ' + ' and '.join(dict.fromkeys(missing)) + ' again, say add account and choose Thunderbird.')
-    return ' '.join(words)
+        words.append(hint('To use ' + ' and '.join(dict.fromkeys(missing)) + ' again, say add account and choose Thunderbird.'))
+    return join(' ', words)   # keeps hint marks (hints.py)

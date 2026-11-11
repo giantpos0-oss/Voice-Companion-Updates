@@ -1,4 +1,5 @@
 """Passive local document reading. Never launch file associations or run content."""
+from hints import hint
 from dataclasses import dataclass,field
 from pathlib import Path
 from reading_navigation import ReadingCursor
@@ -49,7 +50,7 @@ class DocumentReader:
                 self.reading.position=self.reading.continuation=bookmark.start
                 return self.reading.move('line',0)
             return 'The link target is not in this document.'
-        return 'Link: '+target+'. Say open website followed by the address to browse.'
+        return 'Link: '+target+'.'+hint(' Say open website followed by the address to browse.')
 
 def decode(data):
     if data.startswith((b'\xff\xfe',b'\xfe\xff')):return data.decode('utf-16')

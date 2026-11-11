@@ -14,7 +14,7 @@ class Field:
     choices: tuple = ()
 
 CATEGORIES = tuple(name+' options' for name in ('Verbosity', 'Voice', 'Synthesizer', 'Display', 'Input', 'Email', 'Word processor', 'Notepad', 'Document reader', 'File manager', 'Web browser', 'Radio', 'Podcasts', 'Auto-update'))+('Startup and exit options', 'My menu')
-DEFAULTS = {'dictation_echo':'phrase by phrase','dictation_type':'old school','web_search_engine':'google','web_keep_open':False,'keep_audio_playing':False,'duck_while_keys':True,'web_auto_read':True,'download_folder':'','email_format':'html','pitch':'0','verbosity':'high','capital_letters':'do nothing','typing_echo':'characters','phonetic_enabled':True,'phonetic_delay':'0.5','duck_audio':True,'duck_level':'strong, 75 percent quieter','duck_other_apps':False,'check_updates':True,'start_with_windows':False,'ask_before_exit':True,'ask_before_shutdown':True,'ask_before_restart':True,'email_header_names':False,'email_status_words':True,'email_header_order':'from, subject, date','document_font':'Calibri','document_size':'11','document_spacing':'single','document_alignment':'left','file_manager_start':'drive list','reader_auto_read':True,'speech_transcript':False,
+DEFAULTS = {'dictation_echo':'phrase by phrase','dictation_type':'old school','web_search_engine':'google','web_keep_open':False,'keep_audio_playing':False,'duck_while_keys':True,'web_auto_read':True,'download_folder':'','email_format':'html','pitch':'0','verbosity':'high','capital_letters':'do nothing','typing_echo':'characters','phonetic_enabled':True,'phonetic_delay':'0.5','duck_audio':True,'duck_level':'strong, 75 percent quieter','duck_other_apps':False,'check_updates':True,'start_with_windows':False,'ask_before_exit':True,'ask_before_shutdown':True,'ask_before_restart':True,'email_header_names':False,'email_status_words':True,'email_header_order':'from, subject, date','document_font':'Calibri','document_size':'11','document_spacing':'single','document_alignment':'left','file_manager_start':'drive list','reader_auto_read':True,'speech_transcript':False,'speak_hints':True,
             'thunderbird_window':'Minimized, as before','browser_window':'Show the browser window, as before',
             'own_chrome_window':'Show it, as before'}
 # Favorite apps start empty; you choose them in Options, My menu.
@@ -93,7 +93,7 @@ def fields(category, context):
     if category not in ('Startup and exit options','My menu'):category=category.removesuffix(' options')
     category={'Word processor':'Documents','Auto-update':'Updates','Notes':'Notepad'}.get(category,category)
     definitions = {
-        'Verbosity':[Field('verbosity','Verbosity','choice',('high','medium','low')),Field('punctuation','Spoken punctuation','choice',('none','some','most','all')),Field('dictation_echo','Echo dictated text','choice',('phrase by phrase','at the end of a sentence','do not echo dictated text')),Field('typing_echo','Typing echo','choice',('words','characters','characters and words','none')),Field('phonetic_enabled','Delayed phonetic pronunciation','check'),Field('phonetic_delay','Phonetic delay in seconds','choice',('0.5','1','2')),Field('capital_letters','When encountering capital letters','choice',('raise pitch','lower pitch','play a sound','say cap','do nothing'))],
+        'Verbosity':[Field('verbosity','Verbosity','choice',('high','medium','low')),Field('speak_hints','Hints and help messages','check'),Field('punctuation','Spoken punctuation','choice',('none','some','most','all')),Field('dictation_echo','Echo dictated text','choice',('phrase by phrase','at the end of a sentence','do not echo dictated text')),Field('typing_echo','Typing echo','choice',('words','characters','characters and words','none')),Field('phonetic_enabled','Delayed phonetic pronunciation','check'),Field('phonetic_delay','Phonetic delay in seconds','choice',('0.5','1','2')),Field('capital_letters','When encountering capital letters','choice',('raise pitch','lower pitch','play a sound','say cap','do nothing'))],
         # Will, November 4, 2026: the voice is chosen here, as in a screen reader's voice settings, and
         # Up Arrow raises rate, pitch and volume, so the highest value is listed first.
         'Voice':[voice_field(context),Field('rate','Speech rate','choice',tuple(str(x) for x in range(10,-11,-1))),Field('pitch','Voice pitch','choice',tuple(str(x) for x in range(10,-11,-1))),Field('volume','Speech volume','choice',tuple(str(x) for x in range(100,-1,-1))),Field('duck_audio','Audio ducking','check'),Field('duck_level','Ducking level','choice',DUCK_LEVELS),Field('duck_other_apps','Also lower other apps while Companion speaks','check')],
@@ -228,15 +228,15 @@ class SettingsSession:
 
 
 def prompt_text(text,verbosity):
+    """Verbosity shortens only the parts marked as hints (hints.py). Before November 10, 2026,
+    medium and low cut everything after " Say ", which also cut recovery steps such as
+    "Say help to try again" and the answer words of a question."""
     if verbosity=='high':return text
     if text.startswith('Main menu.'):
-        return 'Main menu.' if verbosity=='low' else 'Main menu. What would you like to do? Say next or previous, and OK to open.'
-    # Only explicitly marked application guidance uses this function; read text never does.
-    main,marker,hint=text.partition(' Say ')
-    if verbosity=='low':return main
-    if marker:
-        return main+' Say '+hint.split('. ')[0]
-    return text
+        from hints import hint
+        return 'Main menu.' if verbosity=='low' else 'Main menu.'+hint(' What would you like to do? Say next or previous, and OK to open.')
+    from hints import brief
+    return brief(text,verbosity)
 
 
 def keyboard_request(key,mode):

@@ -1,4 +1,5 @@
 """Spoken, hierarchical access to the same guide shipped in accessible file formats."""
+from hints import hint as marked_hint
 from list_announcements import name_first
 
 import re
@@ -66,12 +67,12 @@ class HelpSession:
         """The item as every list says it; how to choose only when a list opens, not on each move."""
         if self.level == 'topics':
             return (name_first('Topic ' + str(self.topic_index + 1) + ' of ' + str(len(self.topics)) +
-                    ': ' + self.topics[self.topic_index]['name'] +
-                    ('. Say next or previous, then that one. Say help with followed by a topic name to jump there.' if hint else '.')))
+                    ': ' + self.topics[self.topic_index]['name'] + '.') +
+                    (marked_hint(' Say next or previous, then that one. Say help with followed by a topic name to jump there.') if hint else ''))
         subs = self._subtopics()
         from menu_navigation import announce_item
         return (announce_item(subs[self.subtopic_index][0],self.subtopic_index,len(subs))+
-                (' Say next or previous, then that one to read it. Say back to topics for all chapters.' if hint else ''))
+                (marked_hint(' Say next or previous, then that one to read it. Say back to topics for all chapters.') if hint else ''))
 
     def start(self):
         return 'User guide. ' + self._item()

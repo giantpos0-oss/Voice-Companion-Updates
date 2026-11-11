@@ -178,6 +178,30 @@
 ],
 "screen_after": "awake"
 },
+"awake | Hints and help messages off": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "awake"
+},
+"awake | Hints off.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "awake"
+},
+"awake | Hints on": {
+"said": [
+"Hints and help messages on. You hear tips on what you can say next."
+],
+"screen_after": "awake"
+},
+"awake | Hints on the wall are faded.": {
+"said": [
+"I did not understand that. You are on the main menu. Press F1 twice for help."
+],
+"screen_after": "awake"
+},
 "awake | Importance": {
 "said": [
 "I did not understand that. You are on the main menu. Press F1 twice for help."
@@ -415,6 +439,12 @@
 "awake | Turn audio ducking off.": {
 "said": [
 "Audio ducking off. Browser and media sound stays at full volume."
+],
+"screen_after": "awake"
+},
+"awake | Turn off the hints.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
 ],
 "screen_after": "awake"
 },
@@ -5442,6 +5472,42 @@
 "Hello world. Second sentence. High importance."
 ]
 },
+"document | Hints and help messages off": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "document",
+"text": [
+"Hello world. Second sentence."
+]
+},
+"document | Hints off.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "document",
+"text": [
+"Hello world. Second sentence."
+]
+},
+"document | Hints on": {
+"said": [
+"Hints and help messages on. You hear tips on what you can say next."
+],
+"screen_after": "document",
+"text": [
+"Hello world. Second sentence."
+]
+},
+"document | Hints on the wall are faded.": {
+"said": [
+"Hints on the wall are faded."
+],
+"screen_after": "document",
+"text": [
+"Hello world. Second sentence. Hints on the wall are faded."
+]
+},
 "document | Importance": {
 "said": [
 "Importance"
@@ -5796,6 +5862,15 @@
 "document | Turn audio ducking off.": {
 "said": [
 "Audio ducking off. Browser and media sound stays at full volume."
+],
+"screen_after": "document",
+"text": [
+"Hello world. Second sentence."
+]
+},
+"document | Turn off the hints.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
 ],
 "screen_after": "document",
 "text": [
@@ -13023,6 +13098,42 @@
 "Hello world."
 ]
 },
+"email_draft | Hints and help messages off": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "email_draft",
+"text": [
+"Hello world."
+]
+},
+"email_draft | Hints off.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "email_draft",
+"text": [
+"Hello world."
+]
+},
+"email_draft | Hints on": {
+"said": [
+"Hints and help messages on. You hear tips on what you can say next."
+],
+"screen_after": "email_draft",
+"text": [
+"Hello world."
+]
+},
+"email_draft | Hints on the wall are faded.": {
+"said": [
+"Hints on the wall are faded."
+],
+"screen_after": "email_draft",
+"text": [
+"Hello world. Hints on the wall are faded."
+]
+},
 "email_draft | Importance": {
 "said": [
 "Normal importance. No read receipt."
@@ -13377,6 +13488,15 @@
 "email_draft | Turn audio ducking off.": {
 "said": [
 "Audio ducking off. Browser and media sound stays at full volume."
+],
+"screen_after": "email_draft",
+"text": [
+"Hello world."
+]
+},
+"email_draft | Turn off the hints.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -13809,7 +13929,7 @@
 },
 "email_draft | back to main menu": {
 "said": [
-"Email draft saved locally as Routing check 91. It has not been sent.",
+"Email draft saved locally as Routing check 92. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",
@@ -14497,7 +14617,7 @@
 },
 "email_draft | close email": {
 "said": [
-"Email draft saved locally as Routing check 137. It has not been sent.",
+"Email draft saved locally as Routing check 138. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",
@@ -15307,7 +15427,7 @@
 },
 "email_draft | exit": {
 "said": [
-"Email draft saved locally as Routing check 186. It has not been sent.",
+"Email draft saved locally as Routing check 187. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",
@@ -15353,7 +15473,7 @@
 },
 "email_draft | exit email": {
 "said": [
-"Email draft saved locally as Routing check 190. It has not been sent.",
+"Email draft saved locally as Routing check 191. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",
@@ -16126,7 +16246,7 @@
 },
 "email_draft | leave email": {
 "said": [
-"Email draft saved locally as Routing check 257. It has not been sent.",
+"Email draft saved locally as Routing check 258. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",
@@ -16451,7 +16571,7 @@
 },
 "email_draft | main menu": {
 "said": [
-"Email draft saved locally as Routing check 283. It has not been sent.",
+"Email draft saved locally as Routing check 284. It has not been sent.",
 "Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open."
 ],
 "screen_after": "awake",
@@ -18465,7 +18585,7 @@
 },
 "email_draft | save": {
 "said": [
-"Email draft saved locally as Routing check 450. It has not been sent."
+"Email draft saved locally as Routing check 451. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18483,7 +18603,7 @@
 },
 "email_draft | save document": {
 "said": [
-"Email draft saved locally as Routing check 451. It has not been sent."
+"Email draft saved locally as Routing check 452. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18501,7 +18621,7 @@
 },
 "email_draft | save draft": {
 "said": [
-"Email draft saved locally as Routing check 452. It has not been sent."
+"Email draft saved locally as Routing check 453. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18528,7 +18648,7 @@
 },
 "email_draft | save it": {
 "said": [
-"Email draft saved locally as Routing check 454. It has not been sent."
+"Email draft saved locally as Routing check 455. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -18537,7 +18657,7 @@
 },
 "email_draft | save my document": {
 "said": [
-"Email draft saved locally as Routing check 455. It has not been sent."
+"Email draft saved locally as Routing check 456. It has not been sent."
 ],
 "screen_after": "email_draft",
 "text": [
@@ -20681,6 +20801,30 @@
 ],
 "screen_after": "help"
 },
+"help | Hints and help messages off": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "help"
+},
+"help | Hints off.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "help"
+},
+"help | Hints on": {
+"said": [
+"Hints and help messages on. You hear tips on what you can say next."
+],
+"screen_after": "help"
+},
+"help | Hints on the wall are faded.": {
+"said": [
+"I did not understand that. Say next to hear a topic, or press Escape to leave Help."
+],
+"screen_after": "help"
+},
 "help | Importance": {
 "said": [
 "I did not understand that. Say next to hear a topic, or press Escape to leave Help."
@@ -20918,6 +21062,12 @@
 "help | Turn audio ducking off.": {
 "said": [
 "Audio ducking off. Browser and media sound stays at full volume."
+],
+"screen_after": "help"
+},
+"help | Turn off the hints.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
 ],
 "screen_after": "help"
 },
@@ -25806,6 +25956,33 @@
 ],
 "screen_after": "mailbox"
 },
+"mailbox | Hints and help messages off": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "mailbox"
+},
+"mailbox | Hints off.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "mailbox"
+},
+"mailbox | Hints on": {
+"said": [
+"Hints and help messages on. You hear tips on what you can say next."
+],
+"screen_after": "mailbox"
+},
+"mailbox | Hints on the wall are faded.": {
+"calls": [
+"call.process('Hints on the wall are faded.')"
+],
+"said": [
+"session handled: Hints on the wall are faded."
+],
+"screen_after": "mailbox"
+},
 "mailbox | Importance": {
 "calls": [
 "call.process('Importance')"
@@ -26142,6 +26319,12 @@
 "mailbox | Turn audio ducking off.": {
 "said": [
 "Audio ducking off. Browser and media sound stays at full volume."
+],
+"screen_after": "mailbox"
+},
+"mailbox | Turn off the hints.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
 ],
 "screen_after": "mailbox"
 },
@@ -32559,6 +32742,30 @@
 ],
 "screen_after": "note"
 },
+"note | Hints and help messages off": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "note"
+},
+"note | Hints off.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "note"
+},
+"note | Hints on": {
+"said": [
+"Hints and help messages on. You hear tips on what you can say next."
+],
+"screen_after": "note"
+},
+"note | Hints on the wall are faded.": {
+"said": [
+"Hints on the wall are faded."
+],
+"screen_after": "note"
+},
 "note | Importance": {
 "said": [
 "Importance"
@@ -32796,6 +33003,12 @@
 "note | Turn audio ducking off.": {
 "said": [
 "Audio ducking off. Browser and media sound stays at full volume."
+],
+"screen_after": "note"
+},
+"note | Turn off the hints.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
 ],
 "screen_after": "note"
 },
@@ -37707,6 +37920,34 @@
 ],
 "screen_after": "web"
 },
+"web | Hints and help messages off": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "web"
+},
+"web | Hints off.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
+],
+"screen_after": "web"
+},
+"web | Hints on": {
+"said": [
+"Hints and help messages on. You hear tips on what you can say next."
+],
+"screen_after": "web"
+},
+"web | Hints on the wall are faded.": {
+"calls": [
+"call.command('Hints on the wall are faded.')",
+"call.page_revision.__ne__(<mock>)"
+],
+"said": [
+"session handled: Hints on the wall are faded."
+],
+"screen_after": "web"
+},
 "web | Importance": {
 "calls": [
 "call.command('Importance')",
@@ -38076,6 +38317,12 @@
 "web | Turn audio ducking off.": {
 "said": [
 "Audio ducking off. Browser and media sound stays at full volume."
+],
+"screen_after": "web"
+},
+"web | Turn off the hints.": {
+"said": [
+"Hints and help messages off. You hear just the result. To hear tips again, say hints on."
 ],
 "screen_after": "web"
 },

@@ -4,6 +4,7 @@ The browser is opened only after a user command. Page text is untrusted and is
 never treated as an instruction to the assistant. No credentials are stored by
 this module; the browser retains its own session in its dedicated profile.
 """
+from hints import hint
 from list_announcements import name_first
 from menu_navigation import announce_item
 from field_selection import FieldSelection, selection_command
@@ -336,8 +337,8 @@ WINDOW_SHOWN = {
     'payment': 'This page asks for a card or payment, so Chrome now shows its window in case a helper needs to look.',
     'file': 'This page has a box for choosing a file, and that needs a window, so Chrome now shows its window.',
     'asked': 'Chrome now shows its window.'}
-WINDOW_BACK = (' It is in front. Press Alt+Tab to come back to Voice Companion. '
-               'To run Chrome in the background again, say hide browser window.')
+WINDOW_BACK = (' It is in front. Press Alt+Tab to come back to Voice Companion.' +
+               hint(' To run Chrome in the background again, say hide browser window.'))
 WINDOW_HIDDEN = 'Chrome runs in the background again, with no window.'
 WINDOW_ALREADY_SHOWN = 'Chrome is in front. Press Alt+Tab to come back to Voice Companion.'
 WINDOW_ALREADY_HIDDEN = 'Chrome is already running in the background.'
@@ -1408,7 +1409,7 @@ def skip_ad_button(snapshot):
     return None
 
 
-SKIP_AD_READY='Skip ad button ready. Say skip ad to press it.'
+SKIP_AD_READY='Skip ad button ready.'+hint(' Say skip ad to press it.')
 
 
 class RefreshPacer:
@@ -1647,8 +1648,8 @@ class WebSession:
         try:options=tuple(self.backend.combo_state(self.keyboard_field,wait=True).get('options') or ())
         except Exception:options=()
         self.combo_seen=options;count=len(options)
-        if not count:return 'Text entered. Press Enter to submit, or Tab to move on.'
-        return 'Text entered. '+str(count)+(' suggestion' if count==1 else ' suggestions')+'. Press Down arrow or say next suggestion to hear them. Press Enter to submit.'
+        if not count:return 'Text entered.'+hint(' Press Enter to submit, or Tab to move on.')
+        return 'Text entered. '+str(count)+(' suggestion' if count==1 else ' suggestions')+'.'+hint(' Press Down arrow or say next suggestion to hear them. Press Enter to submit.')
 
     def combo_key(self,key):
         """Up and Down move through the suggestions of an editable combo box."""
@@ -2103,7 +2104,7 @@ class WebSession:
             self._insert_field_text(value)
             self.last_dictated_text='' if self.keyboard_field.get('type')=='password' else value.strip()
             if editable_combo(self.keyboard_field):return self.combo_typed() or self._combo_entered()
-            return 'Text entered. Say save field or next control.'
+            return 'Text entered.'+hint(' Say save field or next control.')
         try: return self.backend.dictate_focused(spoken,literal=True) if literal else self.backend.dictate_focused(spoken)
         except Exception: return 'I could not enter that text. Check the browser field before trying again.'
 
@@ -2268,7 +2269,7 @@ class WebSession:
             write_text_atomic(self.folder / 'browser-choice.txt', name)
             self.saved_choice=name
         if getattr(self.backend,'regular',False):return 'Browser preference saved. Your connected tab stays in its current browser. To switch browsers, connect a tab in '+browser_name(name)+'.'
-        return 'Selected ' + browser_name(name) + '. Say open website followed by the address. This uses a separate browser profile.'
+        return 'Selected ' + browser_name(name) + '.' + hint(' Say open website followed by the address.') + ' This uses a separate browser profile.'
 
     def _stamp(self):
         state=self.backend.document_stamp() if hasattr(self.backend,'document_stamp') else None
@@ -3021,7 +3022,7 @@ class WebSession:
         self.field_list_index=0
         self.pending=None
         return ('Found '+str(len(self.choices))+(' field. ' if len(self.choices)==1 else ' fields. ')+announce_item(_label(self.choices[0]),0,len(self.choices),hotkey=False)+
-                ' Use the arrows or say next, then press Enter or say that one to answer it. Escape returns to the page.')
+                hint(' Use the arrows or say next, then press Enter or say that one to answer it. Escape returns to the page.'))
 
     def _ask_field(self):
         while self.form_index is not None and self.form_index < len(self.form_fields):
@@ -3370,7 +3371,7 @@ class WebSession:
             except ValueError as exc:return str(exc)
             self.keyboard_field['value']=value;self.web_edit_caret=len(value);self.selection=None
             if editable_combo(self.keyboard_field):return self.combo_typed() or self._combo_entered()
-            return 'Text entered. Say save field, next control, or cancel field editing.'
+            return 'Text entered.'+hint(' Say save field, next control, or cancel field editing.')
         if not self.keyboard_field and command.startswith(('type ', 'enter text ')) and self.snapshot:
             # Not in a text box: say so, rather than searching the page for "type hello".
             try:focused=self.backend.focused_control()
@@ -3429,7 +3430,7 @@ class WebSession:
             # The preference is kept after a fallback; say which browser is really showing the page.
             return ('Guided websites use ' + browser_name(self.browser) + '.' +
                     (' This page is open in ' + browser_name(running) + ' because ' + browser_name(self.browser) + ' could not start.' if running != self.browser else '') +
-                    ' Say use Chrome or use embedded Edge to change it.')
+                    hint(' Say use Chrome or use embedded Edge to change it.'))
         if command=='where am i' and not self.keyboard_field and self.snapshot and self.browse and self.browse.current():
             # In page view, the page and the place on it, as a screen reader says.
             return 'Page: '+_plain(self.snapshot.get('title') or self._host())+'. '+describe(self.browse.current(),self.browse.elements)
@@ -3477,7 +3478,7 @@ class WebSession:
                 index=self.favorite_index+step
                 if not 0<=index<len(self.favorite_items): return ('Start of list. ' if step<0 else 'End of list. ')+'That is the '+('first' if step<0 else 'last')+' favorite.'
                 self.favorite_index=index
-                return name_first('Favorite '+str(index+1)+' of '+str(len(self.favorite_items))+': '+self.favorite_items[index][1]['name']+'. Say that one to open it.')
+                return name_first('Favorite '+str(index+1)+' of '+str(len(self.favorite_items))+': '+self.favorite_items[index][1]['name']+'.')+hint(' Say that one to open it.')
             if self.list_focus=='fields' and self.choices:
                 index=self.field_list_index+step
                 if not 0<=index<len(self.choices): return ('Start of list. ' if step<0 else 'End of list. ')+'That is the '+('first' if step<0 else 'last')+' field.'
@@ -3526,7 +3527,7 @@ class WebSession:
             if not self.snapshot: return 'Open a website first.'
             # A page with no title is saved under its site's name.
             name = _plain(self.snapshot.get('title') or '')[:60].strip() or (urlsplit(self.snapshot.get('url','')).hostname or '').removeprefix('www.')
-            return self._save_favorite(name, ' Say list favorites to hear it.')
+            return self._save_favorite(name, hint(' Say list favorites to hear it.'))
         match = re.fullmatch(r'(?:save|add) favorite (?:as |called )?(.+)', _plain(spoken).rstrip('.!?,'), re.I)
         if match:
             if not self.snapshot: return 'Open a website first.'
@@ -3538,7 +3539,7 @@ class WebSession:
             self.list_focus='favorites'
             self.pending=None
             return ('Found '+str(len(self.favorite_items))+(' favorite. ' if len(self.favorite_items)==1 else ' favorites. ')+announce_item(self.favorite_items[0][1]['name'],0,len(self.favorite_items))+
-                    ' Say next or previous, then that one to open it.' if self.favorite_items else 'No favorites saved yet.')
+                    hint(' Say next or previous, then that one to open it.') if self.favorite_items else 'No favorites saved yet.')
         if command.startswith('go to '):
             item=self.favorites.get(spoken.strip()[6:])
             if item:return self.open(item['url'])

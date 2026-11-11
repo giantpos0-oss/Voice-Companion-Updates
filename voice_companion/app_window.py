@@ -212,6 +212,7 @@ class CompanionWindow:
         done=threading.Event();self.ui_actions.put(('ui_call',done.set));done.wait(1)
 
     def feedback(self,text):
+        text=__import__('hints').for_speech(text)   # Hints and help messages (hints.py)
         if text:
             self.show(text)
             if getattr(self,'keyboard_output',None) and not self.keyboard_output.problem:

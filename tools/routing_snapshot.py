@@ -64,6 +64,8 @@ SENTENCES = (
     # Headings in documents (Will, October 30, 2026).
     'Heading 1', 'Heading level two.', 'Next heading', 'Previous heading', 'Read paragraph.', 'Toggle bold',
     'The heading of the letter is short.',
+    # Verbosity options, Hints and help messages (Will, November 10, 2026); the last one is text.
+    'Hints off.', 'Hints on', 'Turn off the hints.', 'Hints and help messages off', 'Hints on the wall are faded.',
 )
 
 

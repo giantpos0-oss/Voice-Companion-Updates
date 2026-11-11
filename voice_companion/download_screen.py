@@ -10,6 +10,7 @@ to the page or menu you came from, where you were.
 companion.py calls into this module from a few small hooks; the model itself
 is downloads.py. `m` is the companion module.
 """
+from hints import hint
 import os
 import queue
 import time
@@ -367,7 +368,7 @@ def command_here(m, raw, command):
             select(records, matches[0])
             m.speak(describe(m))
             return MODE
-    m.speak('Downloads. Say pause download, cancel download, open download, or move to next. Press F1 twice for help, or Escape to go back.')
+    m.speak('Downloads.' + hint(' Say pause download, cancel download, open download, or move to next. Press F1 twice for help, or Escape to go back.', instead=' I did not understand that.'))
     return MODE
 
 

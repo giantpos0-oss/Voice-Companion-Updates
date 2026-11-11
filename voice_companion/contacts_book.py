@@ -8,6 +8,7 @@ saved in both places is said once (matched by email address).
 The merged list is kept in memory for a few minutes, so "email John" in a draft
 does not ask Thunderbird every time. Nothing is written to disk here.
 """
+from hints import hint
 import re
 import time
 from dataclasses import dataclass, field
@@ -133,7 +134,7 @@ class ContactBook:
                 self.unread = True
                 found = []
         elif use_thunderbird:
-            self.notice = 'Only contacts saved on this computer are here. To use your Google or Outlook contacts, say add Thunderbird account.'
+            self.notice = 'Only contacts saved on this computer are here.' + hint(' To use your Google or Outlook contacts, say add Thunderbird account.')
         self.thunderbird = found
         return merge(found, self.local_contacts())
 

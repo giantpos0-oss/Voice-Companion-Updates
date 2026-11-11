@@ -44,6 +44,8 @@ from onboard_help import HelpSession
 from speech_controls import request as speech_setting_request
 from file_manager import FileManager
 from settings_model import DEFAULTS, SettingsSession, prompt_text, keyboard_request
+import hints as hints_module
+from hints import hint, toggle_request as hints_toggle_request
 from keyboard_text import document_text,replace_keyboard_text,absolute
 from menu_navigation import boundary_notice, bounded_index, next_match, menu_label, announce_item
 
@@ -121,6 +123,7 @@ def load_preferences(folder):
 PREFERENCES, PREFERENCES_DAMAGED = load_preferences(APP)
 PREFERENCES_DAMAGED_NOTICE = 'Your saved options could not be read, so Voice Companion is using the usual options. To set them again, press Alt+O.'
 VERBOSITY = PREFERENCES.get('verbosity','high')
+hints_module.PREFERENCES_SOURCE = lambda: PREFERENCES   # the window's key feedback follows Hints and help messages
 # Options, Web browser, "Guided Chrome window" (see web_assistant.CHROME_IN_BACKGROUND).
 __import__('web_assistant').CHROME_IN_BACKGROUND = PREFERENCES.get('browser_window') == 'Run the browser in the background'
 __import__('own_chrome_window').ENABLED = PREFERENCES.get('own_chrome_window') == 'Hide it while Companion uses it'
@@ -360,7 +363,7 @@ def create_named_document(value):
     checkpoint_document()
     apply_document_defaults(document)
     document.dictating=INPUT_MODE!='commands'
-    speak('New document, '+name+'. Speak or type to write. For help, say help with documents, or press F1 twice.')
+    speak('New document, '+name+'.'+hint(' Speak or type to write. For help, say help with documents, or press F1 twice.'))
     return 'document'
 
 def start_save_as(name_text=None):
@@ -383,7 +386,7 @@ def ask_save_as_folder(name,lead=''):
     PENDING_DOCUMENT_NAME=(time.monotonic_ns(),str(default))
     text=lead+'Now choose a folder. Press Enter or say confirm to save in '+folder_words(default)+'. Or say or type another folder, such as Desktop.'
     if document is not None and not same_file(document.folder,default):
-        text+=' Say same folder to save it next to the file you opened.'
+        text+=hint(' Say same folder to save it next to the file you opened.')
     speak(text);return 'document_name'
 
 def choose_save_as_folder(value):
@@ -765,8 +768,8 @@ SLEEP_RETURN_MODE = 'awake'
 MAIN_MENU_HELP = ('help me', 'what can i say', 'what can i do', 'what do i say', 'i need help', 'please help',
                   'help me please', 'help please', 'what are my choices', 'what are my options')
 MAIN_MENU_FIRST = 'You are on the main menu. It is the first screen, so there is nothing to go back to. Say a choice, or say help.'
-MAIN_MENU_NOT_UNDERSTOOD = 'I did not understand that. You are on the main menu. Press F1 twice for help.'
-MAIN_MENU_PROMPT = 'Main menu. What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open.'
+MAIN_MENU_NOT_UNDERSTOOD = 'I did not understand that. You are on the main menu.' + hint(' Press F1 twice for help.')
+MAIN_MENU_PROMPT = 'Main menu.' + hint(' What would you like to do? Say next or previous to move through the items, and okay, confirm, confirm that, or that one to open.')
 
 # Said together with the next main menu announcement, in one message: a second
 # message would stop the first one (the keyboard voice interrupts itself).
@@ -2146,7 +2149,7 @@ def voice_menu(command):
     choices = synthesizers()
     prompt = announce_item(choices[SYNTH_PICK_INDEX][1],SYNTH_PICK_INDEX,len(choices))
     if command in VOICE_LIST_COMMANDS or command == 'back':
-        prompt = 'Select synthesizer. ' + prompt + ' Say next, previous, okay, or cancel voice.'
+        prompt = 'Select synthesizer. ' + prompt + hint(' Say next, previous, okay, or cancel voice.')
     speak(prompt)
     return True
 
@@ -2236,6 +2239,11 @@ def remember_question(text):
 
 def speak(text):
     global KEYBOARD_BATCH_TEXT
+    # Verbosity options, Hints and help messages: marked hints only (hints.py).
+    import hints
+    if hints.has_hint(text):
+        text=hints.spoken(text,hints.enabled(PREFERENCES))
+        if not text:return
     remember_question(text)
     if KEYBOARD_BATCH:
         KEYBOARD_BATCH_TEXT=text;return
@@ -2268,6 +2276,10 @@ def speak(text):
 
 def speak_keyboard_feedback(text):
     # Character echo must be immediate and must not wait for an API request.
+    import hints
+    if hints.has_hint(text):
+        text=hints.spoken(text,hints.enabled(PREFERENCES))
+        if not text:return
     TRANSCRIPT.said(text)
     if APP_WINDOW is not None: APP_WINDOW.show(text)
     if not TEXT_MODE:
@@ -2612,7 +2624,7 @@ def open_saved_note(spoken, mode):
     if isinstance(note_buffer, NoteBuffer): note_buffer.forget()   # opening is not a change to undo
     note_selection.text = None
     speak('Opened the note from ' + notepad.spoken_date(note.stamp) + '. ' + (note.text.strip() or 'It is empty.'))
-    speak_prompt('Speak to add to it. Say save note when finished.')
+    speak_prompt(hint('Speak to add to it. Say save note when finished.'))
     return 'note'
 
 
@@ -2717,7 +2729,7 @@ def thunderbird_connect_ready(setup):
     else:
         message = (str(len(added)) + ' Thunderbird accounts are connected: ' + ', '.join(added) + '. ' +
                    account_picker.label(selected) + ' is selected.')
-    return Step(message + ' Say check email to open it. To add another email account to Thunderbird, say add Thunderbird account.', None)
+    return Step(message + hint(' Say check email to open it. To add another email account to Thunderbird, say add Thunderbird account.'), None)
 
 
 def thunderbird_add_ready(setup):
@@ -2935,7 +2947,7 @@ def set_transcript(on, mode):
     PREFERENCES['speech_transcript'] = bool(on)
     unsaved = remembered(save_preferences)   # it still works now; it is only not remembered
     apply_transcript()
-    speak(('Transcript on. I will write everything I say, and every key you press, to a file named speech-transcript in the Voice Companion data folder. Say stop transcript to turn it off.'
+    speak(('Transcript on. I will write everything I say, and every key you press, to a file named speech-transcript in the Voice Companion data folder.' + hint(' Say stop transcript to turn it off.')
            if on else 'Transcript off.') + unsaved)
     return mode
 
@@ -2986,8 +2998,8 @@ def set_microphone(on, mode):
             # Never "Voice commands are on" when the microphone could not open.
             speak('Microphone on. It could not start yet, so use the keys. Voice commands start by themselves when it works.' + unsaved)
         else:
-            speak('Microphone on. ' + ('Say wake up, or press Control+F12, to give voice commands.' if mode == 'sleep'
-                                       else 'Voice commands are on.') + unsaved)
+            speak('Microphone on.' + (hint(' Say wake up, or press Control+F12, to give voice commands.') if mode == 'sleep'
+                                       else ' Voice commands are on.') + unsaved)
     else:
         speak('Microphone off. Voice Companion is not listening at all. Press F9 to turn it back on.' + unsaved)
     return mode
@@ -3275,7 +3287,7 @@ def add_thunderbird_address(address, version, mode):
         if mode not in ('mailbox', 'email_draft'):
             mail_session = None; pending_send = None
         speak('Thunderbird already has ' + has[0] + '. ' + account_picker.label(account) +
-              ' is now connected and selected. Say check email to open it.')
+              ' is now connected and selected.' + hint(' Say check email to open it.'))
         return mode
     # The name people see: the one already used in Thunderbird, or asked once.
     name = next((identity.get('name') for _, identity in pairs if identity.get('name')), '')
@@ -3649,7 +3661,7 @@ def poll_thunderbird_watch(mode):
         speak_status('Thunderbird added ' + ' and '.join(new) + ', but Voice Companion could not save it. '
                      'Say add account and choose Thunderbird to try again.')
         return mode
-    speak_status(words.ready_message(new, chosen) + ' To add another, say add Thunderbird account.')
+    speak_status(words.ready_message(new, chosen) + hint(' To add another, say add Thunderbird account.'))
     if THUNDERBIRD_SIGN_IN_OUTSIDE:
         # The person signed in in their own browser: Voice Companion comes back to the front, with the keyboard.
         THUNDERBIRD_SIGN_IN_OUTSIDE = False
@@ -3898,7 +3910,7 @@ def finish_account_secret(value, mode):
         sync_app_context(mode, True)
         return mode
     ACCOUNT_ENTRY = None
-    speak('Yahoo account ' + address + ' is connected and selected. Say check email to open it.')
+    speak('Yahoo account ' + address + ' is connected and selected.' + hint(' Say check email to open it.'))
     sync_app_context(mode, True)
     return mode
 
@@ -4175,7 +4187,7 @@ def remove_mail_account(account, mode):
     if not remaining:
         message += ' No email account is connected now. Say add account to connect one.'
     elif now is None:
-        message += ' Say switch account to choose the account to use.'
+        message += hint(' Say switch account to choose the account to use.')
     elif before == account:
         message += ' Now using the ' + words.name(now[0]) + ' account ' + now[1] + '.'
     else:
@@ -4192,7 +4204,7 @@ def remove_mail_account(account, mode):
         return mode
     mail_session = None
     if now is not None:
-        message += ' Say email to open it.'
+        message += hint(' Say email to open it.')
     speak(message)
     return 'awake' if mode == 'mailbox' else mode
 
@@ -4664,6 +4676,13 @@ def _handle(text, mode, typed=False):
     if keep_open_request:
         PREFERENCES['web_keep_open']=keep_open_request[1]=='on'
         speak('Keep browser window open '+keep_open_request[1]+'.'+remembered(save_preferences));return mode
+    hints_request=hints_toggle_request(command)
+    if hints_request is not None:
+        # Verbosity options, Hints and help messages (Will, November 10, 2026).
+        PREFERENCES['speak_hints']=hints_request
+        speak(('Hints and help messages on. You hear tips on what you can say next.' if hints_request else
+               'Hints and help messages off. You hear just the result. To hear tips again, say hints on.')+remembered(save_preferences))
+        return mode
     auto_read_request=re.fullmatch(r'(?:(?:set|turn) )?(?:automatic page reading|automatically read (?:web )?pages|read pages automatically)(?: to)? (on|off)',command)
     toggle_read=re.fullmatch(r'(?:turn|switch) (on|off) automatic page reading',command)
     enable_read=re.fullmatch(r'(enable|disable) automatic page reading',command)
@@ -4758,7 +4777,7 @@ def _handle(text, mode, typed=False):
                 return return_from_update('I could not save your work. The update will wait.')
             UPDATE_LAST_PERCENT = 0
             if UPDATES.download():
-                speak(' '.join(said + ['Downloading the update. Say cancel update to stop.']))
+                speak(' '.join(said + ['Downloading the update.']) + hint(' Say cancel update to stop.'))
                 return 'update_download'
             return return_from_update('The updater is busy. Please try again shortly.')
         if spoken_control(update_command) != 'exit':
@@ -5559,7 +5578,7 @@ def _handle(text, mode, typed=False):
         note_buffer.clear()
         note_selection.text = None
         OPEN_NOTE = None
-        speak_prompt('Dictation started. Speak naturally. Say save note when finished. Say list notes to open a saved note.')
+        speak_prompt('Dictation started.' + hint(' Speak naturally. Say save note when finished. Say list notes to open a saved note.'))
         return 'note'
     if pending_website is not None:
         address, host = pending_website
@@ -5959,13 +5978,13 @@ def _handle(text, mode, typed=False):
         if document is None:
             speak_prompt('There is no document open. Say create a document.')
             return mode
-        speak('Continuing ' + document.title + '. Say read paragraph to hear your place.')
+        speak('Continuing ' + document.title + '.' + hint(' Say read paragraph to hear your place.'))
         return 'document'
     if command in ('resume email', 'continue email', 'resume draft'):
         if email_draft is None:
             speak_prompt('There is no email open. Say write an email.')
             return 'awake'
-        speak('Continuing email draft ' + email_draft.title + '. Say read paragraph to hear the body.')
+        speak('Continuing email draft ' + email_draft.title + '.' + hint(' Say read paragraph to hear the body.'))
         return 'email_draft'
     if re.search(r'\b(document|word file|word document)\b', command):
         # Only asking for a document makes a new one. "Close document" or "Beginning of
@@ -5978,7 +5997,7 @@ def _handle(text, mode, typed=False):
         note_buffer.clear()
         note_selection.text = None
         OPEN_NOTE = None
-        speak_prompt('Dictation started. Speak naturally. Say save note when finished. Say list notes to open a saved note.')
+        speak_prompt('Dictation started.' + hint(' Speak naturally. Say save note when finished. Say list notes to open a saved note.'))
         return 'note'
     provider_websites = {'gmail': 'https://mail.google.com/',
                          'outlook': 'https://outlook.live.com/mail/',
@@ -6083,7 +6102,7 @@ def _handle(text, mode, typed=False):
         # Nothing above understood the words. A misheard word must not throw you out of
         # this menu (or stop the file playing): stay, and say where you are.
         if command in ('main menu','back to main menu','go to main menu'):return 'awake'   # handle() says Main menu
-        speak('I did not understand that. You are on the '+options_return_notice(mode)[len('Back to '):].rstrip('.')+'. Press F1 twice for help.')
+        speak('I did not understand that. You are on the '+options_return_notice(mode)[len('Back to '):].rstrip('.')+'.'+hint(' Press F1 twice for help.'))
         return mode
     if mode == 'awake' and spoken_website(text):return 'awake'
     if mode == 'awake':
@@ -6776,7 +6795,7 @@ def main():
                             __import__('app_settings').save_preferences(sys.modules[__name__])
                             configure_ai_speech()
                         save_speech_settings()
-                        speak('AI voice settings saved. Say Use AI voice to test it.' if settings_result == 'saved'
+                        speak('AI voice settings saved.' + hint(' Say Use AI voice to test it.') if settings_result == 'saved'
                               else 'Saved AI voice settings removed. Using SAPI.')
                     except Exception:
                         speak('AI settings could not be loaded. Using SAPI.')

@@ -23,6 +23,7 @@ all from Voice Companion's own screen:
 
 Passwords are never spoken, kept or logged.
 """
+from hints import hint
 import queue
 import threading
 import time
@@ -195,7 +196,7 @@ def also_connected_message(added):
     """Addresses Thunderbird has that Voice Companion just connected by itself."""
     names = ' and '.join(added)
     return ('Thunderbird also has ' + names + '. ' + ('It is' if len(added) == 1 else 'They are') +
-            ' connected to Voice Companion now. Say switch account to use ' + ('it.' if len(added) == 1 else 'one.'))
+            ' connected to Voice Companion now.' + hint(' Say switch account to use ' + ('it.' if len(added) == 1 else 'one.')))
 
 
 def ready_message(added, selected):
@@ -205,9 +206,9 @@ def ready_message(added, selected):
     names = ' and '.join(added)
     text = 'Thunderbird finished adding ' + names + '. '
     if selected:
-        return text + label(('thunderbird', selected)) + ' is connected and selected. Say check email to open it.'
-    return text + ('It is' if len(added) == 1 else 'They are') + ' connected. Say switch account to use ' + \
-        ('it.' if len(added) == 1 else 'one.')
+        return text + label(('thunderbird', selected)) + ' is connected and selected.' + hint(' Say check email to open it.')
+    return text + ('It is' if len(added) == 1 else 'They are') + ' connected.' + hint(' Say switch account to use ' +
+        ('it.' if len(added) == 1 else 'one.'))
 
 
 class Watch:
