@@ -62,7 +62,8 @@ class EntryTests(AppHarness):
         self.assertEqual(self.press('Ctrl+T', 'awake'), 'tutorial')
         self.assertIsInstance(companion.tutorial_session, TutorialSession)
         from screen_menus import items
-        self.assertIn(('Help', 'Tutorial', 'Alt, 4', 'start tutorial'), items('help'))
+        # The Help menu has a Tutorial item; its letters come from the menu itself.
+        self.assertIn(('Help', 'Tutorial', 'start tutorial'), [(g, label, c) for g, label, _, c in items('help')])
 
     def test_writing_keeps_tutorial_words_and_other_screens_protect_your_work(self):
         self.assertEqual(self.say('start tutorial', 'note'), 'note')
@@ -83,7 +84,7 @@ class LessonFlowTests(AppHarness):
         self.assertIn('Press Down Arrow', self.last())
         self.press('Down')
         self.assertTrue(self.last().startswith(tutorial_engine.PRAISE[0]), self.last())
-        self.assertIn('File manager (F), 1 of', self.last())
+        self.assertIn('Office tools (O), 2 of', self.last())     # the main menu opens on its first item
         # A wrong key: what was pressed, what to do, and try again. Nothing else happens.
         self.press('Right')
         self.assertNotIn('Not quite', self.last())     # Right moves on the main menu too; it is the screen's answer
@@ -104,10 +105,12 @@ class LessonFlowTests(AppHarness):
         self.start()
         self.say('Getting around.')
         session = companion.tutorial_session
-        session.step_index = 6          # "Say next."
+        steps = session.lesson()[1].steps
+        at = next(i for i, step in enumerate(steps) if step.say.endswith('Say next.'))
+        session.step_index = at
         self.say('Next.')
-        self.assertTrue(self.last().startswith(tutorial_engine.PRAISE[(6 + 0) % 5]), self.last())
-        self.assertEqual(session.step_index, 7)
+        self.assertTrue(self.last().startswith(tutorial_engine.PRAISE[at % 5]), self.last())
+        self.assertEqual(session.step_index, at + 1)
         # "please" is not understood on the real main menu: no pass, and no miss either.
         self.say('Previous, please.')
         self.assertIn('without words like please. Say just: previous.', self.last())
@@ -115,7 +118,7 @@ class LessonFlowTests(AppHarness):
         self.say('Hello there.')
         self.assertIn('Not quite. I heard: Hello there.', self.last())
         self.say('previous', typed=True)
-        self.assertEqual(session.step_index, 8)
+        self.assertEqual(session.step_index, at + 2)
 
     def test_escape_stop_tutorial_and_f1_leave_with_the_place_saved(self):
         for leave in ('Escape', 'F1', 'stop tutorial', 'Main menu.'):
@@ -126,7 +129,7 @@ class LessonFlowTests(AppHarness):
                 self.assertEqual(mode, 'awake')
                 self.assertIsNone(companion.tutorial_session)
                 self.assertIn('Tutorial stopped. Your place is saved.', self.last())
-                self.assertIn('Main menu.', self.last())
+                self.assertIn(companion.MAIN_MENU_PROMPT, self.last())   # the main menu's first item
                 self.assertTrue((self.root / tutorial_engine.PROGRESS_FILE).exists())
 
     def test_a_step_that_asks_for_escape_gets_it(self):
@@ -200,6 +203,7 @@ class SimulationParityTests(AppHarness):
         inputs = [('key', 'Down'), ('key', 'Down'), ('key', 'Up'), ('key', 'Home'), ('key', 'Home'), ('key', 'End'),
                   ('key', 'Down'), ('key', 'O'), ('key', 'W'), ('key', 'Q'), ('voice', 'next'), ('voice', 'previous')]
         sim = MainMenuSim(companion)
+        companion.MAIN_MENU_INDEX = 0      # arriving on the main menu: its first item
         for kind, value in inputs:
             with self.subTest(input=value):
                 expected = self.press(value, 'awake') if kind == 'key' else self.say(value, 'awake')
@@ -247,7 +251,7 @@ class WindowTests(unittest.TestCase):
 
     def test_alt_o_goes_to_the_tutorial_not_to_options(self):
         source = Path(companion.__file__).read_text(encoding='utf-8')
-        self.assertIn("'open options' if key=='settings' and mode!='tutorial'", source)
+        self.assertIn("if key=='settings' and mode!='tutorial' else navigation_key(", source)
         self.assertEqual(tutorial_engine.canonical_key('settings'), 'Alt+O')
 
 

@@ -139,7 +139,7 @@ class Sandbox:
         self.APP = Path(tempfile.gettempdir())
 
     def speak(self, text):
-        self.said.append(str(text))
+        self.said.append(text if isinstance(text, str) else str(text))
 
     def handle(self, command, mode, typed=False):
         self.requests.append(command)
@@ -169,8 +169,9 @@ class Sandbox:
         return SimpleNamespace(player=SimpleNamespace(kind=None))
 
     def take(self):
-        """What was said since the last call, as one message."""
-        text = ' '.join(self.said)
+        """What was said since the last call, as one message, with its hint marks kept (hints.py)."""
+        from hints import join
+        text = join(' ', self.said)
         self.said.clear()
         return text
 
@@ -197,7 +198,7 @@ class MainMenuSim(Sim):
     def __init__(self, app):
         self.app = app
         self.choices = app.MAIN_MENU_CHOICES
-        self.index = None
+        self.index = 0      # the main menu opens on its first item (companion.announce_main_menu)
 
     def names(self):
         return [name for name, _ in self.choices]

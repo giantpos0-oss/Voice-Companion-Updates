@@ -99,10 +99,13 @@ class ScreenSim(Sim):
         if result is None:
             self.chosen = command
             return self.screen
+        if result not in (self.screen, 'task_input'):
+            self.chosen = result        # the screen was left (Escape): here it stays open
         return result
 
     def open(self):
-        self.module.open_screen(self.box, 'awake')
+        opener = getattr(self.module, 'open_screen', None) or self.module.open_manager
+        opener(self.box, 'awake')
         self.opening = self.box.take()
         return self.opening
 
@@ -157,6 +160,35 @@ def contacts_sim(app):
     book = private('contacts_book', thunderbird_pim=pim)
     screen = private('contacts_screen', contacts_book=book, thunderbird_pim=pim)
     sim = ScreenSim(app, screen, 'contacts', 'Address manager')
+    sim.open()
+    return sim
+
+
+def downloads_sim(app):
+    """Downloads with three practice downloads, in a temporary folder. No browser is asked."""
+    import json
+    model = private('downloads')
+    folder = Path(tempfile.mkdtemp(prefix='vc-tutorial-downloads-'))
+    files = folder / 'Downloads'
+    files.mkdir()
+    records = []
+    for n, (name, state) in enumerate((('Bus schedule.pdf', 'finished'), ('Recipes.docx', 'finished'),
+                                       ('Family photos.zip', 'finished'))):
+        path = files / name
+        if state == 'finished':
+            path.write_bytes(b'practice')
+        records.append({'id': 'practice-' + str(n), 'source': 'chrome', 'ref': str(n), 'name': name, 'path': str(path),
+                        'url': 'https://www.example.com/' + name.replace(' ', '-'), 'state': state, 'received': 2048,
+                        'total': 2048 if state == 'finished' else 8192, 'created': 1000.0 - n})
+    (folder / 'download-history.json').write_text(json.dumps(records), encoding='utf-8')
+    manager = model.DownloadManager(folder, folder_setting=lambda: str(files), background=False)
+    model.manager = lambda data_folder=None: manager
+    screen = private('download_screen', downloads=model)
+    sim = ScreenSim(app, screen, 'downloads', 'Downloads')
+    sim.box.APP = folder
+    sim.box.FILE_MANAGER = None
+    sim.box.SLEEP_RETURN_MODE = 'awake'
+    sim.box.PREFERENCES = {'download_folder': str(files)}
     sim.open()
     return sim
 
@@ -745,3 +777,84 @@ class NoteSim(Sim):
 
     def close(self):
         shutil.rmtree(self.folder, ignore_errors=True)
+
+
+# Set up Chrome -----------------------------------------------------------------------------
+class PracticeChrome:
+    """Windows and Chrome, as chrome_setup.WindowsChrome answers: Chrome is installed and the
+    extension is not added yet. Nothing is installed, added or opened."""
+
+    def __init__(self):
+        self.extension = 'missing'
+        self.opened = []
+
+    def supported(self):
+        return True
+
+    def find_chrome(self):
+        return 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+
+    def extension_state(self):
+        return self.extension
+
+    def add_extension(self):
+        self.extension = 'added'
+
+    def remove_extension(self):
+        self.extension = 'missing'
+
+    def install_chrome(self):
+        return True
+
+    def open_chrome(self, address):
+        self.opened.append(address)
+        return True
+
+
+class ChromeSim(Sim):
+    """Set up Chrome, run by the real ChromeSetup conversation on a practice computer."""
+    title = 'Chrome setup'
+
+    def __init__(self, app):
+        self.app = app
+        self.setup = None
+
+    def feed(self, kind, value):
+        import chrome_setup
+        if kind == 'key':
+            value = {'Y': 'yes', 'N': 'no', 'Escape': 'cancel'}.get(canonical_key(value))
+            if value is None:
+                return None
+        command = self.app.normalized_command(value)
+        if self.setup is None or self.setup.finished:
+            if command not in ('set up chrome', 'setup chrome', 'chrome setup'):
+                return None
+            self.setup = chrome_setup.ChromeSetup(PracticeChrome(), lambda: False)
+            return self.setup.start()
+        return self.setup.respond(command)
+
+    def close(self):
+        if self.setup is not None:
+            self.setup.close()
+
+
+# Options, Favorite apps --------------------------------------------------------------------
+class FavoritesSim(Sim):
+    """The Favorite apps list in Options, run by the real FavoriteList. Nothing is saved."""
+    title = 'Favorite apps'
+
+    def __init__(self):
+        from favorite_list import FavoriteList
+        from settings_model import SettingsSession
+        # A staged Options session, as the dialog has: OK would save it, and here nothing ever does.
+        self.list = FavoriteList(SettingsSession({}, {}))
+
+    def menu(self):
+        return [self.list.line(i) for i in range(len(self.list))], self.list.index, lambda i: None
+
+    def feed(self, kind, value):
+        if kind == 'key':
+            key = canonical_key(value)
+            control = key.startswith('Ctrl+')
+            return self.list.keyboard(key[len('Ctrl+'):] if control else key, control=control)
+        return self.list.voice(value)

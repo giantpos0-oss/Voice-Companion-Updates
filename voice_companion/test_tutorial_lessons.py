@@ -87,12 +87,15 @@ class LessonTests(unittest.TestCase):
                         answers = {}
                         for name, sim in session.sims.items():
                             def watched(kind, value, sim=sim, real=sim.feed, name=name):
-                                answers[name] = real(kind, value)
-                                return answers[name]
+                                said = real(kind, value)
+                                answers[name] = said or sim.chosen     # an answer, or a choice the screen made
+                                return said
                             sim.feed = watched
                         for number, step in enumerate(lesson.steps):
                             said = ''
                             answers.clear()
+                            for sim in session.sims.values():
+                                sim.chosen = None
                             for kind, value in solution(step):
                                 said, leave = give(session, kind, value)
                                 self.assertIsNone(leave, step.say)
@@ -115,18 +118,55 @@ class LessonTests(unittest.TestCase):
                 session.begin(position)
                 answers = {}
                 for name, sim in session.sims.items():
-                    def watched(kind, value, real=sim.feed, name=name):
-                        answers[name] = real(kind, value)
-                        return answers[name]
+                    def watched(kind, value, sim=sim, real=sim.feed, name=name):
+                        said = real(kind, value)
+                        answers[name] = said or sim.chosen
+                        return said
                     sim.feed = watched
                 for number, step in enumerate(lesson.steps):
                     answers.clear()
+                    for sim in session.sims.values():
+                        sim.chosen = None
                     for kind, value in solution(step, words_first=True):
                         said, _ = give(session, kind, value)
                     self.assertTrue(session.step_index > number or session.state == 'between', step.say + ' Said: ' + said)
                     if step.sim and (step.feed or step.text) and not callable(step.reply):
                         self.assertTrue(answers.get(step.sim), lesson.title + ': the screen did not answer ' + step.say)
         session.close_sims()
+
+    def test_with_hints_off_every_step_still_says_what_to_do(self):
+        """Hints and help messages off (hints.py) drops marked hints, such as those in a screen's own
+        words quoted after "Listen:". A step's own instruction is never a hint."""
+        import hints
+        session = self.session()
+        for position, (course, lesson) in enumerate(session.order):
+            session.begin(position)
+            for number in range(len(lesson.steps)):
+                session.step_index = number
+                text = session.step_text()
+                instruction = str(lesson.steps[number].say).split('. ')[-1]
+                self.assertIn(instruction, hints.spoken(text, False), lesson.title)
+        session.close_sims()
+
+    def test_menu_letters_a_step_offers_reach_its_item(self):
+        """'Or press Alt, then S, then E.' The letters come from the menus and choose the same item."""
+        import re
+        session = self.session()
+        checked = 0
+        for position, (course, lesson) in enumerate(session.order):
+            for number, step in enumerate(lesson.steps):
+                found = re.search(r'Or press (Alt(?:, then [A-Z0-9])+)\.', step.say)
+                if not found or step.goal is None:
+                    continue
+                with self.subTest(step=step.say):
+                    session.begin(position, number, resumed=True)
+                    sim = session.sims[step.sim]
+                    for key in found[1].split(', then '):
+                        sim.feed('key', key)
+                    self.assertTrue(step.goal(session.sims), step.say)
+                    checked += 1
+        session.close_sims()
+        self.assertGreater(checked, 10)
 
     def test_resuming_rebuilds_the_simulated_screen(self):
         # Stop after any step, start again: the step continues on the same simulated screen.

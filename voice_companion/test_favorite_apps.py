@@ -513,9 +513,12 @@ class FavoriteAppsOptionsWordsTests(unittest.TestCase):
     def test_help_and_lessons_name_the_list(self):
         import onboard_help
         from pathlib import Path
-        from tutorial_curriculum import option_explanation
-        field = settings_model.fields('Favorite apps', {})[0]
-        self.assertIn('Control+Up and Control+Down move it', option_explanation(field))
+        # The tutorial's Options course teaches the list: Space selects, Control+Up and Control+Down move.
+        from tutorial_lessons import build
+        lesson = next(l for c in build(companion) if c.key == 'options' for l in c.lessons if l.key == 'favorites')
+        words = ' '.join(step.say for step in lesson.steps)
+        self.assertIn('Control+Up and Control+Down move it', words)
+        self.assertIn(settings_model.FAVORITES_CATEGORY, words)
         guide = Path(companion.__file__).with_name('START HERE - Veteran.txt')
         # "Help with my menu" said it found no topic: "my" was taken off as in "help with my email".
         for wanted in ('favorite apps options', 'Favourite apps options.', 'my menu', 'My menu.'):

@@ -23,7 +23,7 @@ from menu_navigation import announce_item, bounded_index, next_match, spoken_key
 from tutorial_engine import (AltMenuSim, Course, EditorSim, Lesson, MainMenuSim, MemoSim, Sim, Step, TaskMenuSim,
                              canonical_key, plain)
 
-# Keys that are a real key press (not a menu path such as "Alt, 1, 3").
+# Keys that are a real key press (not a menu path such as "Alt, E, U").
 REAL_KEY = re.compile(r'^(?:Double:)?(?:(?:Ctrl|Alt|Shift|Insert|CapsLock)\+)*(?:F\d{1,2}|[A-Z0-9]|Enter|Escape|Space|Tab|'
                       r'Delete|Home|End|Up|Down|Left|Right|Next|Prior|Page Up|Page Down|comma|period|BackSpace)$')
 PAGE_KEYS = {'Page Up': 'Prior', 'Page Down': 'Next'}
@@ -105,15 +105,26 @@ class ListSim(Sim):
 
 
 class BrowserMenuSim(Sim):
-    """The Web browser menu, run by the real BrowserMenu with a stand-in page and no history."""
+    """The Web browser menu, run by the real BrowserMenu, with real favorites and history kept in a
+    temporary folder: two practice favorites, two practice pages in Web history, and a practice page open."""
     title = 'Web browser menu'
+    FAVORITES = (('VA', 'https://www.va.gov/'), ('Weather', 'https://www.weather.gov/'))
+    HISTORY = (('Veterans Crisis Line', 'https://www.veteranscrisisline.net/'), ('My HealtheVet', 'https://www.myhealth.va.gov/'))
 
     def __init__(self):
+        import json
         from browser_menu import BrowserMenu
         from types import SimpleNamespace
+        from web_assistant import Favorites
         self.folder = Path(tempfile.mkdtemp(prefix='vc-tutorial-web-'))
+        favorites = Favorites(self.folder)
+        for name, url in self.FAVORITES:
+            favorites.add(name, url)
+        (self.folder / 'web-history.json').write_text(json.dumps([{'name': n, 'url': u} for n, u in self.HISTORY]),
+                                                      encoding='utf-8')
         self.menu_object = BrowserMenu(self.folder)
-        self.session = SimpleNamespace(snapshot=None, backend=None, favorites=None)
+        self.session = SimpleNamespace(snapshot={'url': 'https://www.va.gov/health-care/', 'title': 'VA health care'},
+                                       backend=None, favorites=favorites)
         self.opening = self.menu_object.start()
 
     def menu(self):
@@ -122,17 +133,21 @@ class BrowserMenuSim(Sim):
     def feed(self, kind, value):
         if kind == 'key':
             key = canonical_key(value)
-            command = {'Up': 'previous', 'Left': 'previous', 'Down': 'next', 'Right': 'next', 'Home': 'home', 'End': 'end',
-                       'Enter': 'enter', 'Escape': 'escape'}.get(key)
-            if command is None and len(key) == 1 and key.isalpha():
-                command = 'letter:' + key.lower()
+            if self.menu_object.level == 'confirm':
+                # A Yes or No question: Y, N and Escape answer it, as on every screen.
+                command = {'Y': 'yes', 'N': 'no', 'Escape': 'escape', 'Enter': 'no'}.get(key)
+            else:
+                command = {'Up': 'previous', 'Left': 'previous', 'Down': 'next', 'Right': 'next', 'Home': 'home',
+                           'End': 'end', 'Enter': 'enter', 'Escape': 'escape'}.get(key)
+                if command is None and len(key) == 1 and key.isalpha():
+                    command = 'letter:' + key.lower()
             if command is None:
                 return None
         else:
             command = value
         text, action = self.menu_object.process(command, self.session, False)
-        if action:
-            self.chosen = action
+        if action and action not in ('ask', 'confirm'):     # a question is not a choice
+            self.chosen = action[0] if isinstance(action, tuple) else action
         return text or None
 
     def close(self):
@@ -491,10 +506,9 @@ def build(app):
     unique = next(i for i, n in enumerate(names) if i >= 2 and [x[0].lower() for x in names].count(n[0].lower()) == 1)
     office = next((i for i, (_, c) in enumerate(choices) if c == 'office tools'), 1)
     menu_steps = [
-        Step('You are on the main menu. Press Down Arrow to hear the first item.', keys=(), sim='menu',
-             goal=index_goal('menu', 0), how='Press the Down Arrow key once.', screen='awake', replay=(('key', 'Down'),)),
-        Step('Press Down Arrow again to hear the next item.', sim='menu', goal=index_goal('menu', 1),
-             how='Press the Down Arrow key once more.', screen='awake', replay=(('key', 'Down'),)),
+        Step('You are on the main menu, on its first item: ' + app.main_menu_item(0) + ' Press Down Arrow to hear the '
+             'next item.', sim='menu', goal=index_goal('menu', 1), how='Press the Down Arrow key once.', screen='awake',
+             replay=(('key', 'Down'),)),
         Step('Press Up Arrow to go back to ' + names[0] + '.', sim='menu', goal=index_goal('menu', 0),
              how='Press the Up Arrow key once.', screen='awake', replay=(('key', 'Up'),)),
         Step('Press End to hear the last item.', sim='menu', goal=index_goal('menu', len(names) - 1),
@@ -527,8 +541,9 @@ def build(app):
                                 phrases=(command,), reply=words, screen='awake', command=command))
     first_group = groups[0] if groups else None
     if first_group:
-        group_steps.append(Step('In a group, Escape goes back to the main menu. Press Escape.', keys=('Escape',),
-                                reply=app.MAIN_MENU_PROMPT, screen=first_group[2], command='escape'))
+        group_steps.append(Step('In a group, Escape goes back to the main menu, on that group. Press Escape.',
+                                keys=('Escape',), reply=app.main_menu_item(names.index(first_group[0])),
+                                screen=first_group[2], command='escape'))
     basics = [
         Lesson('main-menu', 'Move and choose on the main menu',
                'Every task starts on the main menu. You move with the arrows or your voice, and open the item you hear. '
@@ -738,10 +753,8 @@ def build(app):
     browser_opening = browser.opening
     browser.close()
     web_menu = [
-        Step('Listen: ' + browser_opening + ' Press Down Arrow to hear the first choice.', sim='menu',
-             goal=lambda s: s['menu'].menu_object.index == 0, how='Press the Down Arrow key once.', screen='browser_menu',
-             replay=(('key', 'Down'),)),
-        Step('Press Enter to choose Search or enter address.', sim='menu', goal=menu_goal('menu', 'search'),
+        Step('Listen: ' + browser_opening + ' The menu opens on its first item. Press Enter to choose it.',
+             sim='menu', goal=menu_goal('menu', 'search'),
              how='Press Enter while you hear Search or enter address.', screen='browser_menu',
              replay=(('key', 'Enter'),)),
         Step('Companion says: Web address or search. Say or type an address or a search, then press Enter. '
@@ -779,10 +792,50 @@ def build(app):
         Lesson('page', 'Read a page', 'Page keys move by line, heading, link, and text box.', page,
                sims=lambda: {'page': PageSim()}),
     ]
+    from tutorial_sims import ChromeSim, downloads_sim
+    web_intro = 'These are practice favorites and pages. Here, no website opens and nothing is saved.'
+    web += [
+        Lesson('favorites', 'Web favorites', web_intro + ' A favorite is a saved page.', [
+            act('Say go to favorite, to hear your saved pages.', 'menu', phrases=('go to favorite', 'list favorites')),
+            act('Press Down Arrow for the next favorite.', 'menu', keys=('Down',), phrases=('next',)),
+            act('Press Enter to open it.', 'menu', keys=('Enter',), reply='That opens the page. Here, no website opens.'),
+            act('A page is open. Say new favorite, to save it.', 'menu', phrases=('new favorite',)),
+            own_words('Say a name for it, such as Health care.', 'menu', 'Health care'),
+            act('Say rename favorite.', 'menu', phrases=('rename favorite',)),
+            own_words('Say the name of the favorite to rename, such as Health care.', 'menu', 'Health care'),
+            own_words('Say the new name, such as VA health.', 'menu', 'VA health'),
+            act('Say delete favorite.', 'menu', phrases=('delete favorite',)),
+            own_words('Say the name of the favorite to delete, such as VA health.', 'menu', 'VA health'),
+            act('Listen to the question. Press N, for No, to keep it.', 'menu', keys=('N',), phrases=('no',)),
+        ], sims=lambda: {'menu': BrowserMenuSim()}),
+        Lesson('history', 'Web history', web_intro + ' Web history lists the pages you opened lately.', [
+            act('Say web history.', 'menu', phrases=('web history', 'history')),
+            act('Press Down Arrow for the next page.', 'menu', keys=('Down',), phrases=('next',)),
+            act('Press Enter to open it.', 'menu', keys=('Enter',), reply='That opens the page. Here, no website opens.'),
+        ], sims=lambda: {'menu': BrowserMenuSim()}),
+        Lesson('downloads', 'Downloads', 'These are practice downloads. Your own downloads are not touched.', [
+            act('Listen: ' + downloads_sim(app).opening + ' Press Down Arrow for the next download.', 'files',
+                keys=('Down',)),
+            act('Say download details, to hear its size and folder.', 'files', phrases=('download details',)),
+            act('Press Delete to take a finished download off the list. The file stays in its folder.', 'files',
+                keys=('Delete',), phrases=('delete download',)),
+            act('Press Escape to go back to where you were.', 'files', keys=('Escape',), reply='That goes back.'),
+        ], sims=lambda: {'files': downloads_sim(app)}),
+        Lesson('chrome', 'Set up Chrome', 'Chrome setup adds the Voice Companion extension to Chrome. '
+               'Here, nothing is installed or added.', [
+            act('Say set up Chrome.', 'chrome', phrases=('set up chrome',)),
+            act('Listen to the question. Press Y, for Yes, to add the extension.', 'chrome', keys=('Y',), phrases=('yes',)),
+            act('Say status, to hear the steps again.', 'chrome', phrases=('status',)),
+            act('Say cancel to stop setup.', 'chrome', phrases=('cancel',)),
+            act('Say set up Chrome again.', 'chrome', phrases=('set up chrome',)),
+            act('This time, press N, for No.', 'chrome', keys=('N',), phrases=('no',)),
+        ], sims=lambda: {'chrome': ChromeSim(app)}),
+    ]
     web += [l for l in (screen_key_lesson(app, 'web', 'Web page', 'Keys while you read a page.', skip=('F1',)),) if l]
     web += alt_menu_lessons(app, 'web', 'Every page action is in this menu. Here, no website opens.')
-    courses.append(Course('web', 'Web browser', ('web browser', 'web', 'browser', 'internet'), web,
-                          apps=('web browser',)))
+    from task_navigation import WEB_TOOLS
+    courses.append(Course('web', 'Web tools', ('web tools', 'web browser', 'web', 'browser', 'internet'), web,
+                          apps=tuple(command for _, _, command in WEB_TOOLS)))
 
     # File manager ---------------------------------------------------------------------------------
     from file_manager import GROUPS
@@ -1049,16 +1102,41 @@ def build(app):
         Step('Press Down Arrow to hear the next category.', sim='cats', goal=index_goal('cats', 1),
              how='Press the Down Arrow key once.', screen='settings', replay=(('key', 'Down'),)),
         Step('Press Enter to open that category.', keys=('Enter',),
-             reply=lambda s, v: s['cats'].items[s['cats'].index][0] + ' options dialog. Here, no setting changes.', screen='settings'),
+             reply=lambda s, v: s['cats'].items[s['cats'].index][0] + ' dialog. Here, no setting changes.', screen='settings'),
         Step('Press Tab to reach a control. In a choice, the arrows change it. On a checkbox, Space changes it.',
              keys=('Tab',), reply='Each control says its name and its value.', screen='settings'),
         Step('Press Escape to close Options without saving. Choose OK to save.', keys=('Escape',),
-             reply='Options closed. Main menu. Pressing Enter in a setting, or choosing OK, saves instead.', screen='settings', command='cancel settings'),
+             reply='Options closed. ' + app.options_return_notice('awake') + ' Pressing Enter in a setting, or '
+                   'choosing OK, saves instead.', screen='settings', command='cancel settings'),
     ]
-    courses.append(Course('options', 'Options', ('options', 'settings'), [
+    from settings_model import FAVORITES_CATEGORY
+    from tutorial_sims import FavoritesSim
+    favorites_steps = [
+        Step('Press Alt+O to open Options.', keys=('Alt+O',), phrases=('options', 'open options'),
+             reply=announce_item(CATEGORIES[0], 0, len(CATEGORIES)), screen='awake', command='open options'),
+        Step('Press End to reach the last category, ' + FAVORITES_CATEGORY + '.', sim='cats',
+             goal=index_goal('cats', CATEGORIES.index(FAVORITES_CATEGORY)), how='Press the End key.', screen='settings',
+             replay=(('key', 'End'),)),
+        Step('Press Tab to reach the list of apps.', keys=('Tab',), reply=lambda s, v: s['apps'].list.label(),
+             screen='settings'),
+        act('Press Space to select the app you are on.', 'apps', keys=('Space',), phrases=('select',)),
+        act('Press Down Arrow to move to the next app.', 'apps', keys=('Down',), phrases=('next app',)),
+        act('Press Space to select it too.', 'apps', keys=('Space',), phrases=('select',)),
+        act('Favorite apps lists them in this order. Control+Up and Control+Down move it. Press Control+Up to move this '
+            'app up.', 'apps', keys=('Ctrl+Up',), phrases=('move up',)),
+        Step('Press Escape to close Options. Here, nothing is saved. In the real app, Enter or OK saves your list.',
+             keys=('Escape',), reply='Options closed. ' + app.options_return_notice('awake'), screen='settings',
+             command='cancel settings'),
+    ]
+    options_lessons = [
         Lesson('use', 'Change an option', 'Options has a category for each part of the app. Here, no setting changes.',
-               options_steps, sims=lambda: {'cats': ListSim('Options', [(c, c) for c in CATEGORIES])})],
-        apps=('options',)))
+               options_steps, sims=lambda: {'cats': ListSim('Options', [(c, c) for c in CATEGORIES])}),
+        Lesson('favorites', 'Choose your favorite apps', 'Favorite apps, on Control+F1, is your own short list of apps. '
+               'You choose it in Options. Here, nothing is saved.', favorites_steps,
+               sims=lambda: {'cats': ListSim('Options', [(c, c) for c in CATEGORIES]), 'apps': FavoritesSim()}),
+    ]
+    courses.append(Course('options', 'Options', ('options', 'settings', 'favorite apps'), options_lessons,
+                          apps=('options',)))
 
     # Help and updates -------------------------------------------------------------------------------------------
     try:
@@ -1100,7 +1178,7 @@ def build(app):
         Step('Say exit Companion. It asks first.', phrases=('exit companion', 'exit voice companion', 'close companion'),
              keys=('Alt+F4',), reply='Exit Voice Companion? Are you sure? Yes or no. Use arrows or Tab to choose, '
                                      'then Enter. Escape cancels.', screen='awake', command='exit companion'),
-        Step('Press N, for No, to stay.', keys=('N',), phrases=('no',), reply='Canceled. Main menu. Companion stays open.',
+        Step('Press N, for No, to stay.', keys=('N',), phrases=('no',), reply='Canceled. ' + app.MAIN_MENU_PROMPT,
              screen='exit_confirm', command='no'),
     ]
     power = [Lesson('sleep', 'Sleep and exit', 'Here, nothing closes or shuts down.', power_steps)]

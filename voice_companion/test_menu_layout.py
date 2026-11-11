@@ -210,7 +210,6 @@ ALT_MENU_COMMANDS = {
     'contacts': [('', 'call details'), ('', 'main menu'), ('', 'read contact'), ('', 'refresh contacts'), ('Ctrl+E', 'email contact'), ('Ctrl+F', 'find contact {value}'), ('Ctrl+L', 'choose address book'), ('Ctrl+N', 'add contact'), ('Delete', 'delete contact'), ('Double:F1', 'help with contacts'), ('Enter', 'open contact'), ('F2', 'edit contact')],
     'calendar': [('', 'main menu'), ('', 'refresh calendar'), ('Ctrl+G', 'go to date'), ('Ctrl+L', 'choose calendar'), ('Ctrl+N', 'add event'), ('Delete', 'delete event'), ('Double:F1', 'help with calendar'), ('Down', 'next event'), ('Enter', 'read event'), ('F2', 'edit event'), ('Home', 'today'), ('Left', 'previous day'), ('Page Down', 'next week'), ('Page Up', 'previous week'), ('Right', 'next day'), ('Up', 'previous event')],
     'help': [('', 'close help'), ('', 'help topics'), ('', 'list subsections'), ('', 'main menu'), ('', 'open user guides'), ('', 'release notes'), ('', 'start tutorial')],
-    'tutorial': [('', 'main menu'), ('', 'next lesson'), ('', 'previous lesson'), ('Ctrl+Down', 'continue reading'), ('Ctrl+E', 'explain command {value}'), ('Ctrl+F', 'find lesson {value}'), ('Ctrl+L', 'lesson list'), ('Ctrl+R', 'repeat'), ('Double:F1', 'list commands')],
     'attachments': [('Ctrl+A', 'tag all attachments'), ('Ctrl+D', 'save attachment to folder'), ('Ctrl+I', 'read attachment details'), ('Ctrl+O', 'attach a file'), ('Ctrl+S', 'save attachment'), ('Ctrl+Shift+A', 'clear attachment tags'), ('Ctrl+Shift+S', 'save all attachments'), ('Ctrl+Shift+T', 'what attachments are tagged'), ('Delete', 'remove attachment'), ('Double:F1', 'help with attachments'), ('Enter', 'open attachment'), ('Escape', 'close attachments'), ('Space', 'tag attachment')],
     'file_reader': [('', 'go to beginning of document'), ('', 'go to end of document'), ('', 'main menu'), ('B', 'next bookmark'), ('Ctrl+F', 'find {value}'), ('Ctrl+R', 'read document'), ('Double:F1', 'help with document reader'), ('Enter', 'follow link'), ('Escape', 'back to files'), ('H', 'next heading'), ('Insert+Down', 'say all'), ('Insert+F', 'what formatting'), ('Insert+Shift+Down', 'what is selected'), ('K', 'next link'), ('L', 'next list'), ('N', 'next footnote'), ('Shift+H', 'previous heading'), ('T', 'next table')],
     'youtube': [('', 'clear filters'), ('', 'history'), ('', 'liked videos'), ('', 'main menu'), ('', 'media menu'), ('', 'my playlists'), ('', 'my subscriptions'), ('', 'normal speed'), ('', 'open in browser'), ('', 'post comment {value}'), ('', 'save to watch later'), ('', 'sign in'), ('', 'sign out'), ('', 'skip amount {value}'), ('', 'stop video'), ('', 'subscriptions'), ('', 'watch later'), ('', 'youtube home'), ('', 'youtube menu'), ('0', 'restart video'), ('A', 'autoplay on or off'), ('C', 'captions on or off'), ('Ctrl+Down', 'video volume down'), ('Ctrl+F', 'search youtube'), ('Ctrl+Left', 'previous chapter'), ('Ctrl+Right', 'next chapter'), ('Ctrl+Shift+F', 'search filters'), ('Ctrl+Up', 'video volume up'), ('D', 'read description'), ('Double:F1', 'help with youtube'), ('Escape', 'go back'), ('F', 'video full screen'), ('F5', 'refresh youtube'), ('G', 'go to channel'), ('H', 'list chapters'), ('I', 'video details'), ('Left', 'skip back'), ('M', 'mute or unmute'), ('N', 'next video'), ('O', 'read comments'), ('P', 'previous video'), ('Q', 'video quality'), ('R', 'read caption'), ('Right', 'skip forward'), ('S', 'skip ad'), ('Space', 'play or pause video'), ('T', 'like video'), ('U', 'subscribe or unsubscribe'), ('W', 'save video'), ('X', 'up next'), ('comma', 'slower video'), ('period', 'faster video')],
@@ -226,7 +225,6 @@ ALT_MENU_GROUPS = {
     'contacts': ['Contact', 'Address book', 'Leave and help'],
     'calendar': ['Event', 'Go to', 'Calendar', 'Leave and help'],
     'help': ['Help'],
-    'tutorial': ['Lessons'],
     'attachments': ['Attachment', 'Tags', 'Leave and help'],
     'file_reader': ['Read', 'Go to', 'Leave and help'],
     'youtube': ['Play', 'Volume and speed', 'Captions and picture', 'This video', 'Your account', 'Search', 'Go to',
@@ -385,9 +383,15 @@ class AltMenuLetterTests(unittest.TestCase):
                     self.assertNotRegex(menu.describe(i), r'Alt, \d', mode)
             menu.close()
         for name in ('START HERE - Veteran.txt', 'START HERE - Veteran.html', 'TRAINER TEST CHECKLIST.txt',
-                     'tutorial_curriculum.py'):
+                     'tutorial_lessons.py'):
             text = re.sub(r'</?kbd>', '', (here / name).read_text(encoding='utf-8'))
             self.assertIsNone(re.search(r'Alt, \d', text), name)
+        # Nor does any tutorial step, as it is built from the menus.
+        from tutorial_lessons import build
+        for course in build(companion):
+            for lesson in course.lessons:
+                for step in lesson.steps:
+                    self.assertNotRegex(step.say + ' ' + step.instruction(), r'Alt(, | then )\d', lesson.title)
 
 
 class AltMenuKeyTests(MenuLayoutCase):
