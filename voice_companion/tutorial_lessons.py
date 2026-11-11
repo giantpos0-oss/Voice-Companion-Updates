@@ -504,6 +504,12 @@ def task_menu_lesson(app, mode, title, key, name, intro):
             # Main menu and F1 are the app's own, on every screen.
             steps.append(Step('Choose ' + label + '. Press F1, or say main menu.', keys=('F1',), phrases=('main menu',),
                               reply=app.MAIN_MENU_PROMPT, screen=mode, command='main menu'))
+        elif keys and mode == 'local_media' and keys[0] in ('Space', 'Left', 'Right', 'Up', 'Down', 'Home'):
+            # With the menu open, the arrows move in it; with it closed, they control the file.
+            spoken = phrase_of(command)
+            steps.append(Step(label + '. While a file plays and the menu is closed, press ' + spoken_key(keys[0]) +
+                              '. Or say ' + label.lower() + '.', keys=keys, phrases=(spoken,) if spoken else (),
+                              reply='Here, nothing plays.', screen=mode, command=command))
         elif keys:
             spoken = phrase_of(command)
             steps.append(Step('Choose ' + label + '. Press ' + spoken_key(keys[0]) + '.', keys=keys,

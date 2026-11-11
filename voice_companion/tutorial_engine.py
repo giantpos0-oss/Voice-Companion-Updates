@@ -790,6 +790,8 @@ class TutorialSession:
         self.state = 'closed'
         if not saved:
             return 'Tutorial stopped. Your place could not be saved.'
+        if not self.progress['current']:
+            return 'Tutorial stopped.'
         return 'Tutorial stopped. Your place is saved. Say start tutorial to continue.'
 
     def close(self):

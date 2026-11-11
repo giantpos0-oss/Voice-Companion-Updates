@@ -252,8 +252,7 @@ class HelpAndTutorialReturnTests(CompanionTestCase):
         mode = companion.handle('start tutorial', 'awake')
         self.said.clear()
         self.assertEqual(self.key('Escape', mode), 'awake')
-        self.assertEqual(self.said, ['Tutorial stopped. Your place is saved. Say start tutorial to continue. ' +
-                                     companion.MAIN_MENU_PROMPT])
+        self.assertEqual(self.said, ['Tutorial stopped. ' + companion.MAIN_MENU_PROMPT])
 
 
 class ExitKeepsWorkTests(CompanionTestCase):
