@@ -744,7 +744,7 @@ def process_keyboard_batch(mode):
                     if key=='Control':KEYBOARD_BATCH_TEXT=None
                     # Control+F12 wakes the microphone; other keys work in the screen behind sleep.
                     asleep=mode=='sleep' and key in __import__('input_parity').SCREEN_KEYS['sleep']
-                    try:command='open options' if key=='settings' else navigation_key(key,'sleep' if asleep else SLEEP_RETURN_MODE if mode=='sleep' else mode)
+                    try:command='@alt_o' if key=='settings' else navigation_key(key,'sleep' if asleep else SLEEP_RETURN_MODE if mode=='sleep' else mode)
                     except Exception as exc:
                         if isinstance(exc,user_stop.Stopped) or not safety_net_on():raise
                         command_failed(exc,mode);command=None
@@ -1140,6 +1140,18 @@ def navigation_key(key,mode):
     try:return _navigation_key(key,mode)
     finally:KEYBOARD_NAVIGATION=previous
 
+def key_text_box_open(mode):
+    """True while this screen has a box that takes typed words as they are: a search, a name,
+    a folder or an answer. A shortcut key's command words must never be typed there."""
+    if mode in ('task_input','document_name'):return True
+    if mode=='youtube':return __import__('youtube_screen').typing(sys.modules[__name__])
+    if mode=='browser_menu':return bool(web_session is not None and getattr(web_session.menu,'level',None)=='name')
+    if mode=='files':return bool(FILE_MANAGER and FILE_MANAGER.pending and FILE_MANAGER.pending[0] in FILE_TEXT_STEPS)
+    if mode=='attachments':
+        pending=__import__('attachment_screen').PENDING
+        return pending is not None and pending[0]=='folder'
+    return False
+
 def yes_no_open(mode):
     """True while a yes or no question waits for its answer on this screen."""
     return bool(THUNDERBIRD_SETUP is not None or ACCOUNT_PICKER is not None and ACCOUNT_PICKER.get('confirm') or mode=='browser_menu' and web_session is not None and web_session.menu.level=='confirm' or pending_website is not None or chrome_confirming(mode) or mode in ('document_save','document_replace','power_confirm','exit_confirm','update_offer') or mode=='files' and FILE_MANAGER is not None and bool(FILE_MANAGER.pending) and FILE_MANAGER.pending[0]=='delete' or mode=='email_draft' and pending_send is not None or (mode=='mailbox' and mail_session and mail_session.pending) or (mode=='web' and web_session and (web_session.pending or web_session.submit_pending)))
@@ -1196,6 +1208,9 @@ def _navigation_key(key,mode):
         speak(LAST_YES_NO);return None
     if key=='Ctrl+P':return 'toggle audio'
     if key=='Control':return None
+    # Alt+F4 and the window's Close button close Companion from every screen. Screens with keys
+    # of their own (YouTube, Contacts, Calendar, File manager) used to swallow it.
+    if key=='Alt+F4':return 'exit companion'
     menu_key=screen_menu().keyboard(key,mode)
     if menu_key is not None:return menu_key
     # "Add account" asks Thunderbird or Yahoo: Escape cancels it on every screen, as it says.
@@ -1260,7 +1275,6 @@ def _navigation_key(key,mode):
     # The Contacts screen (contacts_screen.py); a list opened over it keeps its own keys.
     if mode=='contacts' and not NAMED_LIST:return __import__('contacts_screen').navigation_key(sys.modules[__name__],key)
     if mode=='calendar' and not NAMED_LIST:return __import__('calendar_screen').navigation_key(sys.modules[__name__],key)
-    if key=='Alt+F4':return 'exit companion'
     if mode=='chrome_setup' and not chrome_confirming(mode):
         return {'Escape':'cancel','F5':'status','F1':'status'}.get(key)
     confirming=yes_no_open(mode)
@@ -4240,6 +4254,14 @@ def _handle(text, mode, typed=False):
             return open_favorites()
         FAVORITES_AFTER=True
         return handle('main menu', mode, typed=True)
+    if text=='@alt_o':
+        # Alt+O is a key, not words. In a box that takes typed words (a YouTube search, a name,
+        # an answer) the words "open options" were typed there and searched (Will, November 10, 2026).
+        if ACCOUNT_ENTRY is not None:return account_entry_step('account entry busy','account entry busy',mode)
+        if key_text_box_open(mode):
+            SETTINGS_RETURN_MODE=mode
+            return open_settings(mode)
+        text=command='open options'
     if text=='@main_menu':
         # F1: the same as saying Main menu, so each screen saves or asks first.
         if mode=='awake' and ACCOUNT_ENTRY is None and THUNDERBIRD_SETUP is None and not account_setup:
