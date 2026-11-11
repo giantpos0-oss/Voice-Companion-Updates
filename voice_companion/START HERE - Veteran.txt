@@ -426,7 +426,7 @@ Press Alt to open the lessons menu. It has the lesson list, Repeat, Find lesson,
 To silence Companion, press Control. This works while the microphone is asleep too.
 Control stops speech. It does not pause it. To hear the text again, use a reading key, such as Down Arrow.
 By voice, say "Be quiet", "Stop talking", or "Shut up". When nothing is playing, the word Pause stops speech too. Say "Resume" or "Keep talking" to go on with paused speech.
-A new command stops the old speech and does the new task. For example, say "Next" or "Previous" to move while a menu item is read. Or say "Next message" while mail is read.
+Companion goes quiet as soon as you start to speak, on every screen. This works for commands and for dictation. If it hears no words it knows, it goes on from where it stopped. A new command stops the old speech and does the new task. For example, say "Next" or "Previous" to move while a menu item is read. Or say "Next message" while mail is read.
 For radio or podcasts, say "Pause audio" or "Stop audio" to make clear you mean the sound. Or press Control+P to pause or resume.
 
 4.2 Change speed, volume, or pitch

@@ -744,7 +744,7 @@ def process_keyboard_batch(mode):
                     if key=='Control':KEYBOARD_BATCH_TEXT=None
                     # Control+F12 wakes the microphone; other keys work in the screen behind sleep.
                     asleep=mode=='sleep' and key in __import__('input_parity').SCREEN_KEYS['sleep']
-                    try:command='open options' if key=='settings' else navigation_key(key,'sleep' if asleep else SLEEP_RETURN_MODE if mode=='sleep' else mode)
+                    try:command='@alt_o' if key=='settings' else navigation_key(key,'sleep' if asleep else SLEEP_RETURN_MODE if mode=='sleep' else mode)
                     except Exception as exc:
                         if isinstance(exc,user_stop.Stopped) or not safety_net_on():raise
                         command_failed(exc,mode);command=None
@@ -1140,6 +1140,18 @@ def navigation_key(key,mode):
     try:return _navigation_key(key,mode)
     finally:KEYBOARD_NAVIGATION=previous
 
+def key_text_box_open(mode):
+    """True while this screen has a box that takes typed words as they are: a search, a name,
+    a folder or an answer. A shortcut key's command words must never be typed there."""
+    if mode in ('task_input','document_name'):return True
+    if mode=='youtube':return __import__('youtube_screen').typing(sys.modules[__name__])
+    if mode=='browser_menu':return bool(web_session is not None and getattr(web_session.menu,'level',None)=='name')
+    if mode=='files':return bool(FILE_MANAGER and FILE_MANAGER.pending and FILE_MANAGER.pending[0] in FILE_TEXT_STEPS)
+    if mode=='attachments':
+        pending=__import__('attachment_screen').PENDING
+        return pending is not None and pending[0]=='folder'
+    return False
+
 def yes_no_open(mode):
     """True while a yes or no question waits for its answer on this screen."""
     return bool(THUNDERBIRD_SETUP is not None or ACCOUNT_PICKER is not None and ACCOUNT_PICKER.get('confirm') or mode=='browser_menu' and web_session is not None and web_session.menu.level=='confirm' or pending_website is not None or chrome_confirming(mode) or mode in ('document_save','document_replace','power_confirm','exit_confirm','update_offer') or mode=='files' and FILE_MANAGER is not None and bool(FILE_MANAGER.pending) and FILE_MANAGER.pending[0]=='delete' or mode=='email_draft' and pending_send is not None or (mode=='mailbox' and mail_session and mail_session.pending) or (mode=='web' and web_session and (web_session.pending or web_session.submit_pending)))
@@ -1196,6 +1208,9 @@ def _navigation_key(key,mode):
         speak(LAST_YES_NO);return None
     if key=='Ctrl+P':return 'toggle audio'
     if key=='Control':return None
+    # Alt+F4 and the window's Close button close Companion from every screen. Screens with keys
+    # of their own (YouTube, Contacts, Calendar, File manager) used to swallow it.
+    if key=='Alt+F4':return 'exit companion'
     menu_key=screen_menu().keyboard(key,mode)
     if menu_key is not None:return menu_key
     # "Add account" asks Thunderbird or Yahoo: Escape cancels it on every screen, as it says.
@@ -1260,7 +1275,6 @@ def _navigation_key(key,mode):
     # The Contacts screen (contacts_screen.py); a list opened over it keeps its own keys.
     if mode=='contacts' and not NAMED_LIST:return __import__('contacts_screen').navigation_key(sys.modules[__name__],key)
     if mode=='calendar' and not NAMED_LIST:return __import__('calendar_screen').navigation_key(sys.modules[__name__],key)
-    if key=='Alt+F4':return 'exit companion'
     if mode=='chrome_setup' and not chrome_confirming(mode):
         return {'Escape':'cancel','F5':'status','F1':'status'}.get(key)
     confirming=yes_no_open(mode)
@@ -1630,11 +1644,86 @@ def navigation_feedback_control(value,mode):
     if re.fullmatch(r'(?:next|previous|prior)(?: (?:item|option|voice|synthesizer|message|folder|preset|station|episode|podcast|lesson|topic|paragraph|line|word|sentence|character|heading|link|button|field|list|list item|region|frame))?',command):return True
     return mode=='web' and web_feedback_control(command,mode)
 
-def interrupt_partial_navigation(recognizer,mode):
+from speech_stop import SpeechStop
+SPEECH_STOP=SpeechStop()
+
+
+def user_started_speaking(recognizer,mode):
+    """The one place where the user's voice stops Companion's speech (speech_stop.py).
+
+    The recognizer loop calls this with every partial result, on every screen. The first
+    real word of an utterance pauses speech at once; user_finished_speaking() decides at the
+    end of the utterance whether the old speech ends or goes on. True when speech paused now."""
     try:partial=json.loads(recognizer.PartialResult()).get('partial','')
-    except (ValueError,AttributeError):return False
-    if not navigation_feedback_control(partial,mode):return False
-    if speech_busy():interrupt_speech()
+    except (ValueError,AttributeError,TypeError):return False
+    if mode=='sleep' or not isinstance(partial,str):return False
+    speaking=not SPEECH_PAUSED and speech_busy()
+    # While the words so far are a run of what Companion is saying, only a navigation word or a
+    # command Companion just suggested stops it now. Others wait for the end of the utterance
+    # (user_finished_speaking), so Companion's own "Main menu..." never stops itself.
+    command=lambda:navigation_feedback_control(partial,mode) or SPEECH_STOP.suggested(partial)
+    if not SPEECH_STOP.heard(partial,speaking,command=command,writing=writing_here(mode)):return False
+    control_speech('pause')
+    SPEECH_STOP.pausing()
+    return True
+
+
+def writing_here(mode):
+    """True where spoken words may be text to keep (a document, email, note, web text box, or
+    Dictation only mode). The echo rule is strict there: when in doubt, keep the user's words."""
+    return INPUT_MODE=='dictation' or writing_dictation(mode)
+
+
+def command_here(text,mode):
+    """True when these words are a complete command the router acts on, on this screen. Such
+    words are never taken for Companion's own echo, even right after a prompt said them
+    ("Say check email to open it").
+
+    There is no way to run the router without its effects, so this asks the router's own
+    checks: the controls and navigation words, the fast commands of this screen, Help's words,
+    the voice names of this screen's keys and list items, and the commands Companion's own
+    speech just told the user to say."""
+    command=normalized_command(text)
+    if not command:return False
+    try:
+        if spoken_control(text) or speech_control(text) or navigation_feedback_control(text,mode):return True
+        if command in OFFICE_LEAVE_TO_MAIN or command in HELP_OPENERS or command.startswith(('help with ','help for ')):return True
+        if mode=='help' and HelpSession.accepts(text):return True
+        # Some screens send every word to the fast path; there that says nothing about these words.
+        if fast_command_request(command,mode) and not fast_command_request('zebra quilt marmalade',mode):return True
+        if yes_no_open(mode) and command in ('yes','yes please','no','no thanks','cancel','okay','ok'):return True
+        keys=__import__('input_parity').SCREEN_KEYS.get(mode,{})
+        if command in {normalized_command(value) for value in keys.values() if isinstance(value,str)}:return True
+        state=menu_state(mode)
+        if state and command in {normalized_command(re.sub(r'\s*\([^)]*\)$','',str(name))) for name in state[0]}:return True
+    except Exception:
+        pass   # a screen in an odd state: fall back to what Companion suggested
+    return SPEECH_STOP.suggested(text)
+
+
+def resume_for_user():
+    """Speech paused for words that came to nothing goes on from where it paused."""
+    if SPEECH_PAUSED:control_speech('resume')
+
+
+def user_finished_speaking(text,mode,stopped,overheard=False):
+    """The end of an utterance. stopped: it paused Companion's speech (SPEECH_STOP.finish()).
+    overheard: it came while Companion talked, and no word of it stopped Companion (each one
+    sounded like its echo). False when the words must be ignored; then the old speech goes on."""
+    if mode=='sleep':return True
+    if speech_control(text):return True   # Stop talking keeps the pause; Resume goes on
+    if not normalized_command(text):
+        if stopped:resume_for_user()
+        return not overheard
+    if (stopped or overheard) and not command_here(text,mode) and SPEECH_STOP.echo(text,writing_here(mode)):
+        if stopped:resume_for_user()   # Companion's own words, heard back through the microphone
+        return False
+    if mode=='help' and not (HelpSession.accepts(text) or spoken_control(text)):
+        # Talk in the room never cuts a Help topic off (October 2026): it goes on where it paused.
+        if stopped:resume_for_user()
+        return True
+    # Any other words: the old speech ends. An unfinished dictated sentence is kept.
+    if speech_busy():interrupt_for_dictation()
     return True
 
 
@@ -1647,6 +1736,7 @@ def fast_offline_silence(recognizer, utterance):
     if partial not in FAST_SILENCE:
         return False
     control_speech('pause')
+    SPEECH_STOP.finish()
     recognizer.Reset()
     utterance.clear()
     return True
@@ -1673,6 +1763,7 @@ def interrupt_for_dictation():
 
 def interrupt_speech():
     global SPEECH_PAUSED
+    SPEECH_STOP.released()
     DICTATION_ECHO.clear()
     if APP_WINDOW is not None:APP_WINDOW.ui_actions.put(('cancel_phonetic',None))
     if KEYBOARD_SPEECH is not None:KEYBOARD_SPEECH.interrupt(notify=False)
@@ -1693,6 +1784,7 @@ def interrupt_speech():
 
 def control_speech(action):
     global SPEECH_PAUSED
+    SPEECH_STOP.released()
     if action=='pause' and APP_WINDOW is not None:APP_WINDOW.ui_actions.put(('cancel_phonetic',None))
     if KEYBOARD_SPEECH is not None:KEYBOARD_SPEECH.control(action)
     if ESPEAK_SPEECH is not None:
@@ -2128,7 +2220,8 @@ def dictation_feedback(result):
 
 def poll_dictation_echo():
     if DICTATION_ECHO.choice is not None and DICTATION_ECHO.choice!=PREFERENCES.get('dictation_echo','phrase by phrase'):DICTATION_ECHO.clear()
-    text=DICTATION_ECHO.take(busy=speech_busy())
+    # Never read dictation back while the user is still talking.
+    text=DICTATION_ECHO.take(busy=speech_busy() or SPEECH_STOP.listening)
     if text:speak(text)
 
 
@@ -2153,6 +2246,7 @@ def speak(text):
         APP_WINDOW.show(text)
     if TEXT_MODE:
         return
+    SPEECH_STOP.said(text)   # its words may come back through the microphone
     update_audio_ducking(True)
     if KEYBOARD_NAVIGATION and KEYBOARD_SPEECH and not KEYBOARD_SPEECH.problem:
         KEYBOARD_SPEECH.speak(punctuation_for_speech(text));return
@@ -2177,6 +2271,7 @@ def speak_keyboard_feedback(text):
     TRANSCRIPT.said(text)
     if APP_WINDOW is not None: APP_WINDOW.show(text)
     if not TEXT_MODE:
+        SPEECH_STOP.said(text)
         update_audio_ducking(True)
         if KEYBOARD_SPEECH and not KEYBOARD_SPEECH.problem:
             KEYBOARD_SPEECH.speak(text);return
@@ -2430,6 +2525,7 @@ def recover_audio_overflow(recognizer, utterance):
     if not AUDIO_OVERFLOW:
         return False
     AUDIO_OVERFLOW = False
+    if SPEECH_STOP.finish():interrupt_speech()   # paused speech would hold back the message below
     while True:
         try:
             AUDIO.get_nowait()
@@ -4232,6 +4328,12 @@ def _handle(text, mode, typed=False):
     command=normalized_command(text)
     if text=='@microphone':
         return set_microphone(MICROPHONE_OFF, mode)
+    if text in ('@favorites','@main_menu') and ACCOUNT_ENTRY is None and key_text_box_open(mode):
+        # F1 or Control+F1 in a box that takes typed words: close the box first, as Escape does,
+        # so the words "main menu" never become a name, a search or an answer.
+        escape=navigation_key('Escape',mode)
+        if escape:mode=handle_keyboard(escape,mode)
+        if mode=='exit' or key_text_box_open(mode):return mode
     if text=='@favorites':
         # Control+F1: Favorite apps. Other screens close first, as for the main menu, so a
         # document still asks to save; then Favorite apps opens.
@@ -4240,6 +4342,14 @@ def _handle(text, mode, typed=False):
             return open_favorites()
         FAVORITES_AFTER=True
         return handle('main menu', mode, typed=True)
+    if text=='@alt_o':
+        # Alt+O is a key, not words. In a box that takes typed words (a YouTube search, a name,
+        # an answer) the words "open options" were typed there and searched (Will, November 10, 2026).
+        if ACCOUNT_ENTRY is not None:return account_entry_step('account entry busy','account entry busy',mode)
+        if key_text_box_open(mode):
+            SETTINGS_RETURN_MODE=mode
+            return open_settings(mode)
+        text=command='open options'
     if text=='@main_menu':
         # F1: the same as saying Main menu, so each screen saves or asks first.
         if mode=='awake' and ACCOUNT_ENTRY is None and THUNDERBIRD_SETUP is None and not account_setup:
@@ -6238,6 +6348,9 @@ def group_menu(menu, words):
     return menu
 
 
+HELP_OPENERS=('help','user guide','open user guide','manual','open manual','document help','email help','web help','radio help','podcast help','commands help','release notes')
+
+
 def handle(text, mode, typed=False):
     global _HANDLE_DEPTH, CONFIRM_CHOICE, KEYBOARD_NAVIGATION, POWER_RETURN_MODE, account_setup
     asking_account_type = account_setup
@@ -6248,7 +6361,7 @@ def handle(text, mode, typed=False):
         if mode=='exit':return mode
     previous_navigation=KEYBOARD_NAVIGATION
     quick_read=mode in ('document','email_draft','mailbox','help','web','note','file_reader') and reading_request(text) is not None and not (mode in ('document','email_draft') and INPUT_MODE=='dictation')
-    help_navigation=(mode=='help' and HelpSession.accepts(text)) or normalized_command(text) in ('help','user guide','open user guide','manual','open manual','document help','email help','web help','radio help','podcast help','commands help','release notes') or normalized_command(text).startswith(('help with ','help for '))
+    help_navigation=(mode=='help' and HelpSession.accepts(text)) or normalized_command(text) in HELP_OPENERS or normalized_command(text).startswith(('help with ','help for '))
     if help_navigation and not speech_control(text):
         interrupt_speech()
         KEYBOARD_NAVIGATION=True
@@ -6578,6 +6691,10 @@ def main():
             if input_stream is not None and (MICROPHONE_OFF or not microphone_active(input_stream)):
                 close_microphone(input_stream)
                 input_stream=None;recognizer.Reset();utterance.clear()
+                if SPEECH_STOP.finish():resume_for_user()
+            if SPEECH_STOP.stale():
+                # Words that never ended (no end of the utterance came): speech goes on.
+                SPEECH_STOP.finish();resume_for_user()
             if input_stream is None and not MICROPHONE_OFF and time.monotonic()>=microphone_retry_at:
                 microphone_retry_at=time.monotonic()+2
                 input_stream=open_microphone(sd,attempts=1)
@@ -6690,40 +6807,58 @@ def main():
                 if time.monotonic()<startup_quiet_until:recognizer.Reset();utterance.clear();continue
                 startup_speaking=False
             narration_busy=not SPEECH_PAUSED and speech_busy()
-            if mode=='settings' or narration_busy or settings_audio_blocked:
+            overheard=None
+            if SPEECH_STOP.listening:
+                # The user is talking: their words are theirs, not Companion's echo.
+                settings_audio_blocked=False;settings_quiet_until=0
+            elif mode=='settings' or narration_busy or settings_audio_blocked:
                 # No synthesizer's readback may become another command or
                 # dictated paragraph, including while the app is in background.
                 # Keep local silence/sleep/exit controls available during feedback.
                 if narration_busy:settings_quiet_until=time.monotonic()+0.3
                 if time.monotonic()<settings_quiet_until:
                     settings_audio_blocked=True
-                    utterance.clear()
+                    # Keep the sound for Parakeet: if the user starts to talk now, it needs the first word too.
+                    if mode!='sleep' and parakeet:
+                        utterance.extend(audio)
+                        del utterance[:-20*sample_rate*2]   # under the 25-second limit below
+                    else:utterance.clear()
                     if not recognizer.AcceptWaveform(audio):
-                        interrupt_partial_navigation(recognizer,mode)
-                    else:
-                        control=json.loads(recognizer.Result()).get('text','').lower()
-                        if spoken_control(control) or speech_control(control) or navigation_feedback_control(control,mode) or mode=='help' and HelpSession.accepts(control):
-                            interrupt_speech()
-                            mode=handle(control,mode)
-                            if mode=='exit':return 0
-                    continue
-                if settings_audio_blocked:
+                        if user_started_speaking(recognizer,mode):
+                            settings_audio_blocked=False;settings_quiet_until=0
+                        continue
+                    # Words heard over Companion's speech: a command, or words to write, are acted
+                    # on below; Companion's own words heard back are dropped (speech_stop.py).
+                    overheard=json.loads(recognizer.Result()).get('text','').strip()
+                    if not user_finished_speaking(overheard.lower(),mode,SPEECH_STOP.finish(),overheard=True):
+                        utterance.clear();continue
+                    settings_audio_blocked=False;settings_quiet_until=0
+                elif settings_audio_blocked:
                     recognizer.Reset();utterance.clear();settings_audio_blocked=False
                     continue
-            if mode != 'sleep' and parakeet:
-                utterance.extend(audio)
-                # Never send more than 25 seconds as one model request.
-                if len(utterance) > 25 * sample_rate * 2:
+            if overheard is not None:
+                heard=overheard
+            else:
+                if mode != 'sleep' and parakeet:
+                    utterance.extend(audio)
+                    # Never send more than 25 seconds as one model request.
+                    if len(utterance) > 25 * sample_rate * 2:
+                        utterance.clear()
+                        recognizer.Reset()
+                        if SPEECH_STOP.finish():interrupt_speech()
+                        speak('That was too long. Please speak in shorter passages.')
+                        continue
+                if not recognizer.AcceptWaveform(audio):
+                    user_started_speaking(recognizer,mode)
+                    if mode != 'sleep' and fast_offline_silence(recognizer, utterance):
+                        continue
+                    continue
+                heard = json.loads(recognizer.Result()).get('text', '').strip()
+                local_control = heard.lower()
+                # Stop talking, go on, or end the old speech (speech_stop.py).
+                if not user_finished_speaking(local_control, mode, SPEECH_STOP.finish()):
                     utterance.clear()
-                    recognizer.Reset()
-                    speak('That was too long. Please speak in shorter passages.')
                     continue
-            if not recognizer.AcceptWaveform(audio):
-                if mode!='sleep':interrupt_partial_navigation(recognizer,mode)
-                if mode != 'sleep' and fast_offline_silence(recognizer, utterance):
-                    continue
-                continue
-            heard = json.loads(recognizer.Result()).get('text', '').strip()
             local_control = heard.lower()
             if mode != 'sleep' and (spoken_control(local_control) or speech_control(local_control)):
                 utterance.clear()
@@ -6731,11 +6866,6 @@ def main():
                 if mode == 'exit':
                     return 0
                 continue
-            if mode != 'sleep' and speech_busy() and local_control and (mode!='help' or HelpSession.accepts(local_control)):
-                # Stop the current readback as soon as the offline recognizer
-                # recognizes a new utterance. Its words can still be refined
-                # by Parakeet before executing the requested action.
-                interrupt_for_dictation()
             if mode != 'sleep' and fast_command_request(local_control, mode):
                 utterance.clear()
                 mode = handle(local_control, mode)
