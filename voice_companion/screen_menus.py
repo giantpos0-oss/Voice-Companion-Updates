@@ -1,5 +1,5 @@
 """Alt menus for the main screens: Email, email drafts, Notepad, the web page,
-Help, lessons and Document reader.
+Help and Document reader.
 
 Each menu is built like the Word processor's document menu: Alt opens it,
 groups are numbered, arrows move, Enter chooses, Escape goes back one level,
@@ -230,21 +230,9 @@ MENUS = {
             ('Help topics', '', 'help topics'),
             ('Subsections', '', 'list subsections'),
             ('Release notes', '', 'release notes'),
-            ('Lessons', '', 'start tutorial'),
+            ('Tutorial', '', 'start tutorial'),
             ('Open the guide folder', '', 'open user guides'),
             ('Close help', '', 'close help'),
-            ('Main menu', '', 'main menu')]),
-    ]),
-    'tutorial': ('Lessons menu', [
-        ('Lessons', [
-            ('Lesson list', 'Ctrl+L', 'lesson list'),
-            ('Repeat', 'Ctrl+R', 'repeat'),
-            ('Continue reading', 'Ctrl+Down', 'continue reading'),
-            ('Next lesson', '', 'next lesson'),
-            ('Previous lesson', '', 'previous lesson'),
-            ('Find lesson', 'Ctrl+F', 'find lesson {value}'),
-            ('Explain a command', 'Ctrl+E', 'explain command {value}'),
-            ('List commands', 'Double:F1', 'list commands'),
             ('Main menu', '', 'main menu')]),
     ]),
     'attachments': ('Attachments menu', [
@@ -361,7 +349,7 @@ ALT_SCREENS = frozenset(MENUS) | {'awake', 'browser_menu', 'media', 'podcast'}
 # Spoken ways to open a menu, besides its name ("email menu").
 OPEN_PHRASES = {'mailbox': ('menu', 'open menu', 'mail menu'), 'file_reader': ('menu', 'open menu', 'reader menu', 'document reader menu'),
                 'email_draft': ('draft menu',), 'web': ('page menu',), 'help': (), 'note': ('notepad menu',),
-                'tutorial': ('tutorial menu', 'lesson menu'), 'downloads': ('menu', 'open menu', 'download menu'),
+                'downloads': ('menu', 'open menu', 'download menu'),
                 'contacts': ('menu', 'open menu', 'contact menu', 'contacts menu'), 'calendar': ('menu', 'open menu', 'calendar menu'),
                 'attachments': ('menu', 'open menu', 'attachment menu'), 'youtube': ('menu', 'open menu', 'actions menu')}
 NUMBER_WORDS = {'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5', 'six': '6', 'seven': '7', 'eight': '8', 'nine': '9'}
@@ -392,6 +380,8 @@ def alt_menu_key(context, command_entry_active=False, typed_text=''):
         return None
     if context.get('screen_menu'):
         return 'Alt'
+    if context.get('tutorial_keys'):
+        return 'Alt'   # the tutorial checks Alt itself (tutorial_engine.py)
     if mode not in ALT_SCREENS or context.get('confirmation') is not None:
         return None
     if any(context.get(name) for name in BUSY_CONTEXT):
@@ -524,8 +514,6 @@ class ScreenMenu:
             if web is None or getattr(web, 'pending', None) or getattr(web, 'submit_pending', None) or getattr(web, 'list_focus', None) or getattr(web, 'keyboard_field', None):
                 return busy
         if mode == 'help' and m.help_session is None:
-            return busy
-        if mode == 'tutorial' and m.tutorial_session is None:
             return busy
         if mode == 'file_reader' and m.FILE_READER is None:
             return busy

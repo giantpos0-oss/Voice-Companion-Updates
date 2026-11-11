@@ -407,24 +407,25 @@ class AddEventFromMainMenuTests(__import__('test_calendar_screen').CalendarHarne
 
 class TutorialQuestionsTests(unittest.TestCase):
     def setUp(self):
-        from practice_tutorial import PracticeTutorial
-        self.tutorial = PracticeTutorial(); self.tutorial.start()
+        from tutorial_engine import TutorialSession
+        self.tutorial = TutorialSession(companion); self.tutorial.start()
 
-    def test_what_can_i_say_lists_the_lesson_commands(self):
-        # Heard: "No explanation found for what can i say. Say lesson list, ..."
-        for phrase in ('What can I say?', 'what can I do', 'What do I say?'):
+    def test_what_can_i_say_gives_tutorial_help_and_the_step(self):
+        # In the old tutorial "What can I say?" was searched as a lesson name.
+        for phrase in ('What can I say?', 'what can I do', 'What are my choices?'):
             with self.subTest(phrase=phrase):
-                said, finished = self.tutorial.process(phrase)
-                self.assertFalse(finished)
-                self.assertTrue(said.startswith('Use Up and Down to choose, and Enter to open. Say next lesson,'), said)
-        self.tutorial.process('word processor')
-        said, _ = self.tutorial.process('What can I say?')
-        self.assertIn('Say next lesson,', said)
-        self.assertEqual(self.tutorial.process('repeat')[0], said)
+                said, leave = self.tutorial.words(phrase)
+                self.assertIsNone(leave)
+                self.assertTrue(said.startswith('Tutorial help. Say repeat'), said)
+        self.tutorial.words('word processor')
+        said, _ = self.tutorial.words('What can I say?')
+        self.assertIn('Now: ', said)
+        self.assertEqual(self.tutorial.words('repeat')[0], said)
 
-    def test_a_search_that_finds_nothing_repeats_the_words_as_said(self):
-        said, _ = self.tutorial.process('explain command Zebra Crossing')
-        self.assertTrue(said.startswith('No explanation found for Zebra Crossing.'), said)
+    def test_a_name_that_is_no_lesson_says_so_and_how_to_choose(self):
+        said, leave = self.tutorial.words('Zebra Crossing')
+        self.assertIsNone(leave)
+        self.assertTrue(said.startswith('That is not a lesson name.'), said)
 
 
 class FirstTimeEmailTests(CompanionTestCase):

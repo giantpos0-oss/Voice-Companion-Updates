@@ -149,7 +149,7 @@ class MenuTests(CompanionTestCase):
         cases = {'awake': 'help', 'note': 'help with notepad', 'mailbox': 'help with email', 'web': 'help with web',
                  'contacts': 'help with contacts', 'calendar': 'help with calendar', 'files': 'file manager help',
                  'office_menu': 'help with main menu', 'organizer_menu': 'help with main menu',
-                 'favorites_menu': 'help with main menu', 'tutorial': 'list commands'}
+                 'favorites_menu': 'help with main menu'}
         for mode, request in cases.items():
             with self.subTest(mode=mode):
                 self.assertEqual(companion.navigation_key('Double:F1', mode), request)

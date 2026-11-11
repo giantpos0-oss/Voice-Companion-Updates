@@ -129,7 +129,7 @@ class KeyboardOnlyStartupTests(CompanionTestCase):
         self.assertFalse(companion.account_setup)
         self.key('Down', mode)
         self.assertNotIn('Thunderbird', self.said[-1])
-        self.assertTrue(self.said[-1].startswith('Getting started'), self.said[-1])
+        self.assertTrue(self.said[-1].startswith('Getting around'), self.said[-1])
 
     def test_sleep_keeps_the_account_question(self):
         with self.no_account():

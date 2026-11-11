@@ -634,7 +634,7 @@
 },
 "awake | audio tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -2229,7 +2229,7 @@
 },
 "awake | lessons": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -3090,13 +3090,13 @@
 },
 "awake | open the tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
 "awake | open tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -3302,7 +3302,7 @@
 },
 "awake | practice tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -4283,7 +4283,7 @@
 },
 "awake | start lessons": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -4295,13 +4295,13 @@
 },
 "awake | start the tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
 "awake | start tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -4539,7 +4539,7 @@
 },
 "awake | tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -21133,7 +21133,7 @@
 },
 "help | audio tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -22692,7 +22692,7 @@
 },
 "help | lessons": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -23532,13 +23532,13 @@
 },
 "help | open the tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
 "help | open tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -23736,7 +23736,7 @@
 },
 "help | practice tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -24700,7 +24700,7 @@
 },
 "help | start lessons": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -24712,13 +24712,13 @@
 },
 "help | start the tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
 "help | start tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },
@@ -24956,7 +24956,7 @@
 },
 "help | tutorial": {
 "said": [
-"Audio tutorial. Courses cover Getting started, Word processor, Notepad, Email, Address manager and Schedule manager, Web browser, Radio, Podcasts, YouTube, Options, Help and updates, and File manager. These are lessons. Commands given here are explained and do not change your work. Use Up and Down to select a course and Enter to open it, or say its name. Lessons wait for you. Say next lesson, previous lesson, repeat, lesson list, list commands, find lesson followed by a topic, or explain command followed by its words. Control stops speech. If needed, say stop talking before your next voice request. Main menu leaves the tutorial."
+"Tutorial. You practice each step with the real keys and commands. Nothing here sends mail, changes your files, changes your settings, or opens websites. At any time, say repeat, skip, show me, or stop tutorial. Escape stops the tutorial. Choose where to start. Use Up and Down Arrow and Enter, or say a name, such as email. Go in order (G), 1 of 18."
 ],
 "screen_after": "tutorial"
 },

@@ -7,10 +7,10 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 774
-- Already had both ways: 612
-- Gaps found: 162
-- Gaps fixed (Added): 154
+- Actions inventoried: 763
+- Already had both ways: 611
+- Gaps found: 152
+- Gaps fixed (Added): 144
 - Not applicable (N/A, with reason): 8
 
 ## Main menu
@@ -3013,7 +3013,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Alt, 3
 - Status: Added: Alt menu path
 
-### Lessons
+### Tutorial
 
 - Voice: "Start tutorial"
 - Keyboard: Alt, 4
@@ -3035,62 +3035,6 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 - Voice: "Main menu"
 - Keyboard: Alt, 7
-- Status: Added: Alt menu path
-
-## Alt menu, Lessons: Lessons
-
-### Lesson list
-
-- Voice: "Lesson list"
-- Keyboard: Ctrl+L
-- Status: Both
-
-### Repeat
-
-- Voice: "Repeat"
-- Keyboard: Ctrl+R
-- Status: Both
-
-### Continue reading
-
-- Voice: "Continue reading"
-- Keyboard: Ctrl+Down
-- Status: Both
-
-### Next lesson
-
-- Voice: "Next lesson"
-- Keyboard: Alt, 4
-- Status: Added: Alt menu path
-
-### Previous lesson
-
-- Voice: "Previous lesson"
-- Keyboard: Alt, 5
-- Status: Added: Alt menu path
-
-### Find lesson
-
-- Voice: "Find lesson ..."
-- Keyboard: Ctrl+F
-- Status: Both
-
-### Explain a command
-
-- Voice: "Explain command ..."
-- Keyboard: Ctrl+E
-- Status: Both
-
-### List commands
-
-- Voice: "List commands"
-- Keyboard: F1 twice
-- Status: Both
-
-### Main menu
-
-- Voice: "Main menu"
-- Keyboard: Alt, 9
 - Status: Added: Alt menu path
 
 ## Alt menu, Attachments: Attachment
@@ -3865,64 +3809,52 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Help, End (last topic), Enter
 - Status: Both
 
-### Start the audio tutorial
+### Start the tutorial
 
 - Voice: "Start tutorial"
-- Keyboard: Ctrl+T on the main menu
-- Status: Added: Ctrl+T
+- Keyboard: Ctrl+T on the main menu, or Tutorial in the Help Alt menu
+- Status: Both
 
-### Choose a course or lesson
+### Choose where to start
 
-- Voice: Course name, "Next lesson", "Previous lesson"
+- Voice: Course name, "Go in order", "Continue where I stopped"
 - Keyboard: Arrows, Enter
 - Status: Both
 
-### Repeat a lesson
+### Do a step
 
-- Voice: "Repeat"
-- Keyboard: Ctrl+Shift+R
-- Status: Added: Ctrl+Shift+R
-
-### Lesson list
-
-- Voice: "Lesson list"
-- Keyboard: Ctrl+L
-- Status: Added: Ctrl+L
-
-### Command list for a course
-
-- Voice: "List commands"
-- Keyboard: F1 in the tutorial
-- Status: Added: F1
-
-### Find a lesson
-
-- Voice: "Find lesson ..."
-- Keyboard: Ctrl+F, type, Enter
-- Status: Added: Ctrl+F
-
-### Explain a command
-
-- Voice: "Explain command ..."
-- Keyboard: Ctrl+Shift+F, type, Enter
-- Status: Added: Ctrl+Shift+F
-
-### Continue a long explanation
-
-- Voice: "Continue reading"
-- Keyboard: Ctrl+Down Arrow
-- Status: Added: Ctrl+Down
-
-### Back one level / course list
-
-- Voice: "Go back", "Courses"
-- Keyboard: Escape
+- Voice: The command the step asks for
+- Keyboard: The key the step asks for
 - Status: Both
 
-### Leave the tutorial
+### Hear the step again
 
-- Voice: "Close tutorial", "Main menu"
-- Keyboard: Escape from the course list
+- Voice: "Repeat"
+- Keyboard: F1 twice quickly (tutorial help ends with the step)
+- Status: Both
+
+### Hear how, or skip a step
+
+- Voice: "Show me", "Skip"
+- Keyboard: Y or N after two tries
+- Status: Both
+
+### Tutorial help
+
+- Voice: "What can I say?"
+- Keyboard: F1 twice quickly
+- Status: Both
+
+### Next lesson or lesson list
+
+- Voice: "Next lesson", "Lesson list"
+- Keyboard: Enter at the end of a lesson
+- Status: Both
+
+### Stop the tutorial
+
+- Voice: "Stop tutorial", "Main menu"
+- Keyboard: Escape, F1
 - Status: Both
 
 ## Speech and voices
