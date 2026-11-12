@@ -471,6 +471,7 @@ The speech systems are:
 - eSpeak: a small voice with US and UK English choices.
 - AI voice: an online voice. It needs a separate setup and an internet connection.
 The voices you can choose depend on what is set up on your computer.
+Older 32-bit voices, such as NeoSpeech voices, now show in the SAPI list too. If one of them cannot start, Companion tells you and uses a Windows voice.
 
 4.4 Use an AI voice
 An AI voice reads some app text through an online service. A helper must set it up first.
