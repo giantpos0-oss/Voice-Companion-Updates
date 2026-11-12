@@ -578,9 +578,18 @@ class HybridVoice:
         if self._client is not None and self._client.failure() is None:
             self._client.send('volume', value=self._volume)
 
-    def close(self):
-        if self._client is not None:
-            self._client.close()
+    def close(self, wait=True):
+        """Ends the helper: asks it first when wait is true; at once otherwise."""
+        client, self._client = self._client, None
+        if client is not None:
+            client.close() if wait else client.kill()
+
+
+def release(voice):
+    """For a voice that is dropped: a HybridVoice ends its helper at once; others need nothing.
+    Safe from any thread, even while the voice's own thread is stuck inside it."""
+    if isinstance(voice, HybridVoice):
+        voice.close(wait=False)
 
 
 def with_32bit_voices(native, registry=None, **options):

@@ -86,6 +86,7 @@ class SpeechWorker:
         self.restarts = 0
         self.problem = None
         self.ready = threading.Event()
+        self.made = {}          # generation -> the voice made for it, so a dropped one can be closed
         self._start()
         self.ready.wait(self.READY_SECONDS)
 
@@ -103,7 +104,9 @@ class SpeechWorker:
         try:
             self.busy_since = self.clock()
             voice = self.factory()
+            self.made[generation] = voice
             if generation != self.generation:
+                self._drop(generation)
                 return
             tokens = voice.GetVoices()
             found = [VoiceToken(tokens.Item(i).Id, tokens.Item(i).GetDescription()) for i in range(tokens.Count)]
@@ -122,12 +125,27 @@ class SpeechWorker:
             self.ready.set()
         except Exception as exc:
             self.problem = type(exc).__name__
+            self._drop(generation)
             if generation == self.generation:
                 # No voice thread is left: count it as stuck from now, so a later call after
                 # STUCK_SECONDS tries to make a voice again instead of staying silent for good.
                 self.busy_since = self.clock()
             self.ready.set()
             return
+        try:
+            self._serve(voice, generation)
+        finally:
+            self._drop(generation)
+
+    def _drop(self, generation):
+        """A voice that is given up closes its 32-bit helper at once (speech32.release):
+        no VoiceCompanion-Speech32.exe may be left running for a voice no one uses."""
+        voice = self.made.pop(generation, None)
+        if voice is not None:
+            from speech32 import release
+            release(voice)
+
+    def _serve(self, voice, generation):
         while generation == self.generation:
             with self.lock:
                 if not self.jobs:
@@ -182,7 +200,9 @@ class SpeechWorker:
         if since is None or self.clock() - since < self.STUCK_SECONDS:
             return False
         self.restarts += 1
+        old = self.generation
         self._start()
+        self._drop(old)   # its thread is stuck inside the old voice; its helper is closed now
         return True
 
     def _put(self, job, purge=False):
@@ -251,3 +271,11 @@ class SpeechWorker:
 
     def GetVoices(self):
         return VoiceList(self.voices or [self.current])
+
+    def close(self):
+        """Stops the worker and closes its voice's helper."""
+        with self.lock:
+            old = self.generation
+            self.generation += 1
+            self.lock.notify()
+        self._drop(old)

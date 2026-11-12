@@ -635,6 +635,63 @@ class AppVoiceTests(HelperFixture):
         self.assertTrue(wait_for(lambda: not companion.speech_busy(), 3))
 
 
+class DroppedVoiceTests(HelperFixture):
+    """A stand-in voice that is dropped must close its helper at once: no orphan
+    VoiceCompanion-Speech32.exe processes may pile up."""
+
+    def alive(self):
+        return sum(1 for client in self.clients if client.process is not None and client.process.poll() is None)
+
+    def test_frozen_main_voice_is_replaced_and_its_helper_closed(self):
+        from speech_worker import SpeechWorker
+        release = threading.Event()
+        self.addCleanup(release.set)
+        natives = []
+
+        def factory():
+            native = NativeVoice()
+            native.hang_word = 'freeze'
+            original = native.Speak
+            def speak(text, flags):
+                if 'freeze' in text:
+                    release.wait(30)
+                return original(text, flags)
+            native.Speak = speak
+            natives.append(native)
+            return HybridVoice(native, registry_voices(), client_factory=self.client, log=lambda text: None)
+
+        worker = SpeechWorker(factory=factory, pump=lambda: None)
+        worker.STUCK_SECONDS = 0.3
+        self.addCleanup(setattr, worker, 'generation', -1)
+        import companion
+        companion.restore_windows_voice(worker, 'VW Paul')
+        self.assertTrue(wait_for(lambda: self.alive() == 1 and self.clients[0].ready))
+        companion.restore_windows_voice(worker, 'Microsoft Zira Desktop - English (United States)')
+        worker.Speak('This will freeze.', 1)      # the 64-bit voice stops answering
+        self.assertTrue(wait_for(lambda: worker.busy_since is not None, 3))
+        time.sleep(0.4)
+        worker.Speak('Hello again.', 1)            # stuck: a new voice is made
+        self.assertEqual(worker.restarts, 1)
+        self.assertTrue(wait_for(lambda: len(natives) == 2, 3))
+        self.assertTrue(wait_for(lambda: self.alive() == 0, 3), 'helpers still running: %d' % self.alive())
+        self.assertTrue(wait_for(lambda: ('Speak', 'Hello again.', 1) in natives[1].calls, 3))
+
+    def test_speech_worker_close_and_a_voice_made_too_late_close_their_helpers(self):
+        from speech_worker import SpeechWorker
+        worker = SpeechWorker(factory=lambda: HybridVoice(NativeVoice(), registry_voices(), client_factory=self.client,
+                                                           log=lambda text: None), pump=lambda: None)
+        import companion
+        companion.restore_windows_voice(worker, 'VW Kate')
+        self.assertTrue(wait_for(lambda: self.alive() == 1))
+        worker.close()
+        self.assertTrue(wait_for(lambda: self.alive() == 0, 3))
+        made = HybridVoice(NativeVoice(), registry_voices(), client_factory=self.client)
+        made.Voice = registry_voices()[1]
+        speech32.release(made)
+        self.assertTrue(wait_for(lambda: self.alive() == 0, 3))
+        speech32.release(NativeVoice())           # a plain voice: nothing to close
+
+
 class PackagingTests(unittest.TestCase):
     def test_build_makes_installs_and_checks_the_32bit_helper(self):
         build = (HERE / 'build-windows.ps1').read_text(encoding='utf-8')
