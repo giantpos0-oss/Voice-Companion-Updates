@@ -723,3 +723,48 @@ class PackagingTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class NoticeSurvivesPurgeTests(HelperFixture):
+    """Review, November 11, 2026: with the helper missing, the "could not start" notice was
+    purged by the very next speech (keyboard echo speaks with purge), so Will heard only
+    "Using VW Paul." in David's voice, with no reason."""
+
+    def test_the_notice_is_heard_even_when_the_next_speech_purges(self):
+        native = NativeVoice()
+        voice = speech32.HybridVoice(native, registry_voices(), log=lambda text: None,
+                                     client_factory=lambda: self.client([str(self.folder / 'missing-Speech32.exe')]))
+        voice.Speak('', 3)                               # keyboard speech interrupts first
+        tokens = voice.GetVoices()
+        voice.Voice = next(tokens.Item(i) for i in range(tokens.Count) if 'Paul' in tokens.Item(i).GetDescription())
+        voice.Rate, voice.Volume = 0, 100
+        voice.Speak('', 3)                               # the app-wide speech stop
+        voice.Speak('Using VW Paul.', 3)
+        heard = ' '.join(native.waiting)
+        self.assertIn('Paul could not start, so Companion is using David.', heard)
+        self.assertIn('Using VW Paul.', heard)
+        # Once heard safely, it is not said again.
+        voice.Speak('Next thing.', 3)
+        self.assertNotIn('could not start', ' '.join(native.waiting))
+
+    def test_without_a_purge_the_notice_is_not_doubled(self):
+        native = NativeVoice()
+        voice = speech32.HybridVoice(native, registry_voices(), log=lambda text: None,
+                                     client_factory=lambda: self.client([str(self.folder / 'missing-Speech32.exe')]))
+        tokens = voice.GetVoices()
+        voice.Voice = next(tokens.Item(i) for i in range(tokens.Count) if 'Paul' in tokens.Item(i).GetDescription())
+        voice.Speak('Hello.', 1)
+        self.assertEqual(' '.join(native.waiting).count('could not start'), 1)
+
+
+class GentleCloseTests(HelperFixture):
+    """kill() lets the helper exit by itself (so its one-file launcher can clean up) and never waits."""
+
+    def test_kill_returns_at_once_and_the_helper_ends(self):
+        client = self.client()
+        self.assertTrue(client.wait_ready(15) if hasattr(client, 'wait_ready') else True)
+        started = time.monotonic()
+        client.kill()
+        self.assertLess(time.monotonic() - started, 0.5)
+        client.process.wait(10)          # ends by itself after its input closes
+        self.assertIsNotNone(client.process.returncode)

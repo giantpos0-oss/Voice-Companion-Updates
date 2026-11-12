@@ -147,6 +147,9 @@ _announced = {}
 _announced_lock = threading.Lock()
 
 
+KILL_GRACE_SECONDS = 3.0   # the helper exits by itself within 2 seconds of its input closing
+
+
 def first_notice(message, clock=time.monotonic):
     """True the first time a message is due. The window's voice and the keyboard voice
     each have a helper; when both fail together, the user hears it once."""
@@ -314,11 +317,29 @@ class Speech32Client:
         self.outbox.put(None)
         if self.process is None:
             return
-        for action in (self.process.kill, self.process.stdin.close, self.process.stdout.close):
+        process = self.process
+        # Close its input first: the helper then exits by itself, and its one-file launcher
+        # deletes the folder it unpacked in %TEMP%. A hard kill ends only the launcher and
+        # leaves that folder behind (review, November 11, 2026). Kill only if it has not
+        # gone after a moment, on a thread of its own, so nothing here waits.
+        try:
+            process.stdin.close()
+        except Exception:
+            pass
+
+        def finish():
             try:
-                action()
+                process.wait(KILL_GRACE_SECONDS)
+            except Exception:
+                try:
+                    process.kill()
+                except Exception:
+                    pass
+            try:
+                process.stdout.close()
             except Exception:
                 pass
+        threading.Thread(target=finish, name='speech32-close', daemon=True).start()
 
 
 def helper_voices(client_factory=None, wait=None):
@@ -376,6 +397,7 @@ class HybridVoice:
         self._extra = list(extra)
         self._client_factory = client_factory or (lambda: Speech32Client())
         self._notify = notify
+        self._notice = None   # a fallback notice not yet safely heard
         self._log = log
         self._client = None
         self._chosen = None          # the 32-bit Token32 chosen, or None for a 64-bit voice
@@ -497,6 +519,10 @@ class HybridVoice:
         try:
             if first_notice(message):
                 self._native.Speak(message, SPEAK_ASYNC | SPEAK_PURGE)
+                # The very next speech often purges (keyboard echo, the app-wide speech
+                # stop), which would cut this off unheard (review, November 11, 2026).
+                # Keep it until something is spoken that cannot cut it off.
+                self._notice = message
                 if self._notify:
                     self._notify(message)
             for text in replay:
@@ -512,6 +538,12 @@ class HybridVoice:
             if self._fallen and not was_fallen:
                 # The helper failed just now: do not cut off the notice that says so.
                 flags = int(flags) & ~SPEAK_PURGE
+            notice = getattr(self, '_notice', None)
+            if notice and str(text):
+                self._notice = None
+                if int(flags) & SPEAK_PURGE:
+                    # This would purge the notice: say it first, in the same speech.
+                    text = notice + ' ' + str(text)
             return self._native.Speak(text, flags)
         flags = int(flags)
         if flags & SPEAK_PURGE:

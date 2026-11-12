@@ -106,7 +106,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Could not update the package installer securel
 # launcher shared by every PyInstaller program. Antivirus tools learn the stock
 # launcher from malware that also uses it, and then flag Voice Companion too.
 $env:PYINSTALLER_COMPILE_BOOTLOADER = '1'
-& $python -m pip install --disable-pip-version-check --force-reinstall --no-deps --no-binary pyinstaller 'pyinstaller==6.22.3'
+& $python -m pip install --disable-pip-version-check --no-cache-dir --force-reinstall --no-deps --no-binary pyinstaller 'pyinstaller==6.22.3'
 $bootloaderExit = $LASTEXITCODE
 Remove-Item Env:PYINSTALLER_COMPILE_BOOTLOADER
 if ($bootloaderExit -ne 0) { throw 'PyInstaller could not build its own launcher from source. Check that the Visual Studio C++ build tools are installed.' }
@@ -312,13 +312,19 @@ $pywin32Pin = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'requirements.t
 & $python32 -m pip install --disable-pip-version-check $pywin32Pin 'pyinstaller==6.22.3' 'pyinstaller-hooks-contrib==2026.7'
 if ($LASTEXITCODE -ne 0) { throw 'Could not install pywin32 and PyInstaller for the 32-bit voice helper.' }
 # Its own launcher too, built from source like the main program's (antivirus false alarms).
+# --no-cache-dir: pip otherwise reuses the wheel the 64-bit step just built, whose 32-bit
+# launcher is PyInstaller's stock one, and compiles nothing (review, November 11, 2026).
+$bootloader32Start = Get-Date
 $env:PYINSTALLER_COMPILE_BOOTLOADER = '1'
-& $python32 -m pip install --disable-pip-version-check --force-reinstall --no-deps --no-binary pyinstaller 'pyinstaller==6.22.3'
+& $python32 -m pip install --disable-pip-version-check --no-cache-dir --force-reinstall --no-deps --no-binary pyinstaller 'pyinstaller==6.22.3'
 $bootloader32Exit = $LASTEXITCODE
 Remove-Item Env:PYINSTALLER_COMPILE_BOOTLOADER
 if ($bootloader32Exit -ne 0) { throw 'PyInstaller could not build its own 32-bit launcher from source. Check that the Visual Studio C++ x86 build tools are installed.' }
 $bootloader32 = & $python32 -c "import pathlib, PyInstaller; print(pathlib.Path(PyInstaller.__file__).parent / 'bootloader' / 'Windows-32bit-intel' / 'run.exe')"
 if (-not (Test-Path -LiteralPath $bootloader32)) { throw "PyInstaller's 32-bit launcher was not built: $bootloader32" }
+# The stock launcher keeps PyInstaller's release date; one built here is new.
+if ((Get-Item -LiteralPath $bootloader32).LastWriteTime -lt $bootloader32Start.AddMinutes(-2)) { throw "PyInstaller's 32-bit launcher is the stock one, not built here: $bootloader32" }
+Write-Output ('PyInstaller 32-bit launcher built here: ' + (Get-FileHash -LiteralPath $bootloader32 -Algorithm SHA256).Hash)
 $speech32Arguments = @('--clean','--noconfirm','--onefile','--console','--name','VoiceCompanion-Speech32','--hidden-import','win32com.client','--hidden-import','pythoncom')
 Invoke-PyInstaller 'Speech32' $speech32Arguments 'speech32_host.py' $python32
 Copy-Item (Join-Path $PSScriptRoot 'dist\VoiceCompanion-Speech32.exe') (Join-Path $PSScriptRoot 'dist\VoiceCompanion\VoiceCompanion-Speech32.exe') -Force
