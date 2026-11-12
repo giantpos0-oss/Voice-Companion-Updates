@@ -59,3 +59,45 @@ class VoiceChoicesTests(unittest.TestCase):
         self.ai.enabled=True
         companion.handle('use voice Windows voice','awake')
         self.assertFalse(self.ai.enabled)
+
+
+class VoiceCheckTests(unittest.TestCase):
+    """"Voice check" starts the 32-bit voice helper, which can take seconds. It must never
+    hold Companion's window or keys: the report runs in the background."""
+    def test_voice_check_answers_at_once_and_says_the_result_when_ready(self):
+        import queue,threading,time,tempfile
+        from pathlib import Path
+        release=threading.Event();self.addCleanup(release.set)
+        def slow_report(voice,path):
+            release.wait(10);return ['Microsoft David','VW Paul'],path
+        notices=queue.Queue()
+        with tempfile.TemporaryDirectory() as folder,patch.object(companion,'TEXT_MODE',False),patch.object(companion,'voice',Mock(),create=True),\
+                patch.object(companion,'APP',Path(folder)),patch.object(companion,'MEDIA_NOTICES',notices),\
+                patch.object(companion,'VOICE_CHECK',None),patch.object(companion,'speak') as speech,patch('voice_inventory.report',slow_report):
+            started=time.monotonic()
+            companion.handle('voice check','awake')
+            self.assertLess(time.monotonic()-started,1)
+            self.assertEqual(speech.call_args.args[0],'Checking voices. This can take a few seconds.')
+            companion.handle('voice check','awake')
+            self.assertEqual(speech.call_args.args[0],'The voice check is still running.')
+            self.assertTrue(notices.empty())
+            release.set()
+            result=notices.get(timeout=5)
+            self.assertEqual(result,'2 usable SAPI 5 voices found. A voice check was saved in your Voice Companion data folder. '
+                             'Ask your helper to open voice-check.txt there for details.')
+            companion.VOICE_CHECK.join(5)
+            companion.handle('voice check','awake')
+            self.assertEqual(speech.call_args.args[0],'Checking voices. This can take a few seconds.')
+            release.set();notices.get(timeout=5);companion.VOICE_CHECK.join(5)
+
+    def test_voice_check_that_cannot_save_says_why(self):
+        import queue,tempfile
+        from pathlib import Path
+        notices=queue.Queue()
+        with tempfile.TemporaryDirectory() as folder,patch.object(companion,'TEXT_MODE',False),patch.object(companion,'voice',Mock(),create=True),\
+                patch.object(companion,'APP',Path(folder)),patch.object(companion,'MEDIA_NOTICES',notices),\
+                patch.object(companion,'VOICE_CHECK',None),patch.object(companion,'speak'),\
+                patch('voice_inventory.report',side_effect=OSError('Access is denied')):
+            companion.handle('voice check','awake')
+            self.assertEqual(notices.get(timeout=5),'Voice check could not be saved: Access is denied')
+

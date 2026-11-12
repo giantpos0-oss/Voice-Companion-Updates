@@ -2058,6 +2058,26 @@ def voice_choices(engine=None):
     return [choice for choice in choices if engine is None or choice[0] == engine]
 
 
+VOICE_CHECK = None   # the background thread of "Voice check"
+
+
+def start_voice_check():
+    """Writes voice-check.txt on a thread of its own; the main loop says the result (MEDIA_NOTICES)."""
+    global VOICE_CHECK
+    speech, folder, notices = voice, APP, MEDIA_NOTICES
+    def run():
+        try:
+            from voice_inventory import report
+            names, path = report(speech, folder / 'voice-check.txt')
+            notices.put(str(len(names)) + ' usable SAPI 5 voices found. A voice check was saved in your Voice Companion data folder. ' +
+                        'Ask your helper to open voice-check.txt there for details.')
+        except Exception as exc:
+            notices.put('Voice check could not be saved: ' + str(exc))
+    VOICE_CHECK = threading.Thread(target=run, name='Voice check', daemon=True)
+    VOICE_CHECK.start()
+    return VOICE_CHECK
+
+
 def restore_windows_voice(speech, name):
     """At start: the saved Windows voice, by its name; 32-bit voices too (speech32.py)."""
     voices = speech.GetVoices()
@@ -4929,14 +4949,12 @@ def _handle(text, mode, typed=False):
     if command in ('check voices', 'voice check', 'voice diagnostics'):
         if TEXT_MODE:
             speak('Voice checking requires Windows speech output.')
+        elif VOICE_CHECK is not None and VOICE_CHECK.is_alive():
+            speak('The voice check is still running.')
         else:
-            from voice_inventory import report
-            try:
-                names, path = report(voice, APP / 'voice-check.txt')
-                speak(str(len(names)) + ' usable SAPI 5 voices found. A voice check was saved in your Voice Companion data folder. ' +
-                      'Ask your helper to open voice-check.txt there for details.')
-            except (OSError, AttributeError) as exc:
-                speak('Voice check could not be saved: ' + str(exc))
+            # It starts the 32-bit voice helper, which can take seconds: never hold the keys.
+            start_voice_check()
+            speak('Checking voices. This can take a few seconds.')
         return mode
     voice_request = command.startswith(('use voice ', 'change voice to ', 'set voice to '))
     if voice_request:
@@ -7016,6 +7034,7 @@ if __name__ == '__main__':
             voice = SpeechWorker()
             if voice.problem and not voice.voices:
                 # The helper could not make a voice at all: speak as before, so Companion is never silent.
+                voice.close()
                 import win32com.client
                 voice = win32com.client.Dispatch('SAPI.SpVoice')
             try:
