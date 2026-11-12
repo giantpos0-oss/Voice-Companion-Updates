@@ -106,7 +106,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Could not update the package installer securel
 # launcher shared by every PyInstaller program. Antivirus tools learn the stock
 # launcher from malware that also uses it, and then flag Voice Companion too.
 $env:PYINSTALLER_COMPILE_BOOTLOADER = '1'
-& $python -m pip install --disable-pip-version-check --force-reinstall --no-deps --no-binary pyinstaller 'pyinstaller==6.22.3'
+& $python -m pip install --disable-pip-version-check --no-cache-dir --force-reinstall --no-deps --no-binary pyinstaller 'pyinstaller==6.22.3'
 $bootloaderExit = $LASTEXITCODE
 Remove-Item Env:PYINSTALLER_COMPILE_BOOTLOADER
 if ($bootloaderExit -ne 0) { throw 'PyInstaller could not build its own launcher from source. Check that the Visual Studio C++ build tools are installed.' }
@@ -145,7 +145,7 @@ $env:VOICE_COMPANION_WINDOW_TESTS_APART = '1'
 $releaseTests = Start-Process -FilePath $python -NoNewWindow -Wait -PassThru `
   -ArgumentList @('-m','unittest','-q','smoke_tests','test_email_delivery','test_mailbox','test_chrome_setup',
     'test_media_update_fixes','test_web_fixes','test_document_fixes','test_core_email_fixes','test_storage','test_embedded_edge_default','test_thunderbird_mail','test_thunderbird_setup','test_sign_in_browser','test_web_performance',
-    'test_web_assistant','test_browser_recovery','test_web_browse','test_browser_accessibility','test_browser_media_polish','test_virtual_browser','test_document_formatting','test_text_selection','test_contacts_and_composing','test_media_hub','test_onboard_help','test_ai_speech','test_ai_voice_settings','test_voice_choices','test_build_packaging','test_dictation_text','test_ai_dictation','test_dictation_echo','test_file_manager','test_file_explorer','test_input_parity','test_task_navigation','test_media_player_menu','test_document_reader','test_rich_documents','test_workflow_regressions','test_draft_cancel','test_structural_selection','test_cross_area_selection','test_email_rich_formatting','test_document_controls','test_formatting_navigation','test_espeak_speech','test_command_latency','test_speech_controls','test_guide_files','test_app_updates','test_release_publishing','test_fetch_espeak_source','test_menu_prompts','test_sapi_build_check','test_settings', 'test_windows_actions','test_native_settings','test_keyboard_text','test_release_documents','test_menu_keyboard','test_list_boundaries','test_accessibility_fixes','test_browser_menu','test_documentation_quality','test_reading_responsiveness','test_email_reader','test_email_status_startup','test_consumer_workflows','test_consumer_regressions','test_browser_bridge','test_regular_browser','test_browser_cdp_relay','test_launch_review_fixes','test_notepad_and_document_options','test_removed_mail_accounts','test_yahoo_setup','test_yahoo_mail','test_screen_menus','test_web_modes','test_web_history','test_web_fields','test_email_accounts','test_audio_ducking','test_time_date','test_time_date_windows','test_thunderbird_accounts','test_user_stop','test_key_state','test_microphone_switch','test_microphone_off_startup','test_shared_playwright','test_document_reader_menu','test_guide_html_accessibility','test_main_menu_key','test_notepad_menu','test_heading_links','test_email_links_open_in_guided_browser','test_downloads','test_spoken_dates','test_contacts_screen','test_calendar_screen','test_email_attachments','test_attachment_flows','test_email_docs_audit','test_attachment_voice','test_display_options','test_startup_announcement','test_core_polish','test_speech_transcript','test_web_media_audit','test_site_audit_report','test_update_close','test_document_save_as','test_consumer_walkthrough','test_consumer_journeys','test_main_menu_document_words','test_calendar_contacts_sources','test_undo_redo','test_message_headers','test_hint_line','test_window_widget_release','test_media_web_answers','test_window_hiding','test_browser_window','test_chrome_window','test_thunderbird_host_reconnect','test_podcast_start','test_youtube','test_options_layout','test_new_veteran_start','test_email_new_veteran','test_editor_sweep','test_media_new_veteran','test_update_install','test_thunderbird_upgrade','test_extension_update','test_podcast_browsing','test_podcast_player','test_expert_startup','test_email_expert_sweep','test_expert_editing','test_media_expert_user','test_heading_feedback','test_options_control_words','test_thunderbird_addon_refresh','test_document_error_handling','test_media_error_handling','test_email_error_handling','test_sweep_decisions','test_mail_sync','test_text_navigation','test_speech_worker','test_own_chrome_open','test_text_navigation_window','test_first_time_chrome','test_search_focus_window','test_own_chrome_window','test_startup_edge_states','test_email_edge_states','test_calendar_edge_states','test_document_edge_states','test_web_edge_states','test_media_edge_states','test_voice_options_layout','test_file_manager_tags','test_zip_passwords','test_file_start_places','test_attachment_tags','test_office_tools_menu','test_favorite_apps','test_keyboard_only_startup','test_email_keyboard_only','test_keyboard_documents_sweep','test_web_keyboard_only','test_media_keyboard_only','test_shortcut_text_boxes','test_speech_stop','test_website_words','test_hints_setting','test_tab_order_window','test_favorite_apps_windows','test_menu_layout','test_tutorial_engine','test_tutorial_lessons','test_tutorial_window','test_tutorial_sims') `
+    'test_web_assistant','test_browser_recovery','test_web_browse','test_browser_accessibility','test_browser_media_polish','test_virtual_browser','test_document_formatting','test_text_selection','test_contacts_and_composing','test_media_hub','test_onboard_help','test_ai_speech','test_ai_voice_settings','test_voice_choices','test_build_packaging','test_dictation_text','test_ai_dictation','test_dictation_echo','test_file_manager','test_file_explorer','test_input_parity','test_task_navigation','test_media_player_menu','test_document_reader','test_rich_documents','test_workflow_regressions','test_draft_cancel','test_structural_selection','test_cross_area_selection','test_email_rich_formatting','test_document_controls','test_formatting_navigation','test_espeak_speech','test_command_latency','test_speech_controls','test_guide_files','test_app_updates','test_release_publishing','test_fetch_espeak_source','test_menu_prompts','test_sapi_build_check','test_settings', 'test_windows_actions','test_native_settings','test_keyboard_text','test_release_documents','test_menu_keyboard','test_list_boundaries','test_accessibility_fixes','test_browser_menu','test_documentation_quality','test_reading_responsiveness','test_email_reader','test_email_status_startup','test_consumer_workflows','test_consumer_regressions','test_browser_bridge','test_regular_browser','test_browser_cdp_relay','test_launch_review_fixes','test_notepad_and_document_options','test_removed_mail_accounts','test_yahoo_setup','test_yahoo_mail','test_screen_menus','test_web_modes','test_web_history','test_web_fields','test_email_accounts','test_audio_ducking','test_time_date','test_time_date_windows','test_thunderbird_accounts','test_user_stop','test_key_state','test_microphone_switch','test_microphone_off_startup','test_shared_playwright','test_document_reader_menu','test_guide_html_accessibility','test_main_menu_key','test_notepad_menu','test_heading_links','test_email_links_open_in_guided_browser','test_downloads','test_spoken_dates','test_contacts_screen','test_calendar_screen','test_email_attachments','test_attachment_flows','test_email_docs_audit','test_attachment_voice','test_display_options','test_startup_announcement','test_core_polish','test_speech_transcript','test_web_media_audit','test_site_audit_report','test_update_close','test_document_save_as','test_consumer_walkthrough','test_consumer_journeys','test_main_menu_document_words','test_calendar_contacts_sources','test_undo_redo','test_message_headers','test_hint_line','test_window_widget_release','test_media_web_answers','test_window_hiding','test_browser_window','test_chrome_window','test_thunderbird_host_reconnect','test_podcast_start','test_youtube','test_options_layout','test_new_veteran_start','test_email_new_veteran','test_editor_sweep','test_media_new_veteran','test_update_install','test_thunderbird_upgrade','test_extension_update','test_podcast_browsing','test_podcast_player','test_expert_startup','test_email_expert_sweep','test_expert_editing','test_media_expert_user','test_heading_feedback','test_options_control_words','test_thunderbird_addon_refresh','test_document_error_handling','test_media_error_handling','test_email_error_handling','test_sweep_decisions','test_mail_sync','test_text_navigation','test_speech_worker','test_own_chrome_open','test_text_navigation_window','test_first_time_chrome','test_search_focus_window','test_own_chrome_window','test_startup_edge_states','test_email_edge_states','test_calendar_edge_states','test_document_edge_states','test_web_edge_states','test_media_edge_states','test_voice_options_layout','test_file_manager_tags','test_zip_passwords','test_file_start_places','test_attachment_tags','test_office_tools_menu','test_favorite_apps','test_keyboard_only_startup','test_email_keyboard_only','test_keyboard_documents_sweep','test_web_keyboard_only','test_media_keyboard_only','test_shortcut_text_boxes','test_speech_stop','test_website_words','test_hints_setting','test_tab_order_window','test_favorite_apps_windows','test_menu_layout','test_tutorial_engine','test_tutorial_lessons','test_tutorial_window','test_tutorial_sims','test_speech32') `
   -RedirectStandardOutput $releaseOutput -RedirectStandardError $releaseErrors
 if (Test-Path $releaseErrors) { Get-Content $releaseErrors | Out-Host }
 if ($releaseTests.ExitCode -ne 0) {
@@ -257,14 +257,14 @@ foreach ($oldBuild in @('dist\VoiceCompanion', 'dist\VoiceCompanion-Diagnostics'
 }
 $oldInstaller = Join-Path $PSScriptRoot 'dist\installer\VoiceCompanion-Setup.exe'
 if (Test-Path $oldInstaller) { Remove-Item $oldInstaller -Force }
-function Invoke-PyInstaller([string]$name, [string[]]$options, [string]$entry = 'companion.py') {
+function Invoke-PyInstaller([string]$name, [string[]]$options, [string]$entry = 'companion.py', [string]$builder = $python) {
   $outputLog = Join-Path $PSScriptRoot "VoiceCompanion-$name-PyInstaller-Output.txt"
   $errorLog = Join-Path $PSScriptRoot "VoiceCompanion-$name-PyInstaller-Errors.txt"
   Write-Output "Packaging $name. Detailed logs: $outputLog and $errorLog"
   $optionsFile = Join-Path $PSScriptRoot "VoiceCompanion-$name-Packaging-Options.json"
   try {
     ConvertTo-Json -InputObject @($options) -Compress | Set-Content -LiteralPath $optionsFile -Encoding UTF8
-    & $python (Join-Path $PSScriptRoot 'build_packaging.py') $optionsFile $outputLog $errorLog $entry
+    & $builder (Join-Path $PSScriptRoot 'build_packaging.py') $optionsFile $outputLog $errorLog $entry
     $packagingExitCode = $LASTEXITCODE
   } finally {
     Remove-Item -LiteralPath $optionsFile -Force -ErrorAction SilentlyContinue
@@ -286,6 +286,48 @@ Invoke-PyInstaller 'Application' $windowArguments
 $browserHostArguments = @('--clean','--noconfirm','--onefile','--console','--name','VoiceCompanion-BrowserHost','--hidden-import','win32com.client','--hidden-import','thunderbird_bridge')
 Invoke-PyInstaller 'BrowserHost' $browserHostArguments 'browser_bridge_host.py'
 Copy-Item (Join-Path $PSScriptRoot 'dist\VoiceCompanion-BrowserHost.exe') (Join-Path $PSScriptRoot 'dist\VoiceCompanion\VoiceCompanion-BrowserHost.exe') -Force
+# Older 32-bit-only voices (NeoSpeech "VW Paul" and others) speak through a small
+# 32-bit program (speech32_host.py), built with 32-bit Python 3.12 in its own
+# environment. It needs only pywin32 and PyInstaller.
+$speech32Env = Join-Path $env:LOCALAPPDATA 'VCBuild\py312-x86'
+$python32 = Join-Path $speech32Env 'Scripts\python.exe'
+$python32Check = "import struct, sys; assert sys.version_info[:2] == (3, 12) and struct.calcsize('P') == 4, 'A 32-bit Python 3.12 is required'"
+if (Test-Path $python32) {
+  & $python32 -c $python32Check
+  if ($LASTEXITCODE -ne 0) { Remove-Item $speech32Env -Recurse -Force }
+}
+if (-not (Test-Path $python32)) {
+  if ($env:VOICE_COMPANION_BUILD_PYTHON32) {
+    & $env:VOICE_COMPANION_BUILD_PYTHON32 -m venv $speech32Env
+  } else {
+    py -3.12-32 -m venv $speech32Env
+  }
+  if ($LASTEXITCODE -ne 0) { throw '32-bit Python 3.12 could not create the speech helper build environment. Install Python 3.12 (32-bit, x86).' }
+}
+& $python32 -c $python32Check
+if ($LASTEXITCODE -ne 0) { throw 'The 32-bit voice helper must be built with 32-bit Python 3.12.' }
+& $python32 -m pip install --disable-pip-version-check --upgrade 'pip==26.2.1'
+if ($LASTEXITCODE -ne 0) { throw 'Could not update the 32-bit package installer.' }
+$pywin32Pin = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'requirements.txt') | Where-Object { $_ -match '^pywin32' } | Select-Object -First 1)
+& $python32 -m pip install --disable-pip-version-check $pywin32Pin 'pyinstaller==6.22.3' 'pyinstaller-hooks-contrib==2026.7'
+if ($LASTEXITCODE -ne 0) { throw 'Could not install pywin32 and PyInstaller for the 32-bit voice helper.' }
+# Its own launcher too, built from source like the main program's (antivirus false alarms).
+# --no-cache-dir: pip otherwise reuses the wheel the 64-bit step just built, whose 32-bit
+# launcher is PyInstaller's stock one, and compiles nothing (review, November 11, 2026).
+$bootloader32Start = Get-Date
+$env:PYINSTALLER_COMPILE_BOOTLOADER = '1'
+& $python32 -m pip install --disable-pip-version-check --no-cache-dir --force-reinstall --no-deps --no-binary pyinstaller 'pyinstaller==6.22.3'
+$bootloader32Exit = $LASTEXITCODE
+Remove-Item Env:PYINSTALLER_COMPILE_BOOTLOADER
+if ($bootloader32Exit -ne 0) { throw 'PyInstaller could not build its own 32-bit launcher from source. Check that the Visual Studio C++ x86 build tools are installed.' }
+$bootloader32 = & $python32 -c "import pathlib, PyInstaller; print(pathlib.Path(PyInstaller.__file__).parent / 'bootloader' / 'Windows-32bit-intel' / 'run.exe')"
+if (-not (Test-Path -LiteralPath $bootloader32)) { throw "PyInstaller's 32-bit launcher was not built: $bootloader32" }
+# The stock launcher keeps PyInstaller's release date; one built here is new.
+if ((Get-Item -LiteralPath $bootloader32).LastWriteTime -lt $bootloader32Start.AddMinutes(-2)) { throw "PyInstaller's 32-bit launcher is the stock one, not built here: $bootloader32" }
+Write-Output ('PyInstaller 32-bit launcher built here: ' + (Get-FileHash -LiteralPath $bootloader32 -Algorithm SHA256).Hash)
+$speech32Arguments = @('--clean','--noconfirm','--onefile','--console','--name','VoiceCompanion-Speech32','--hidden-import','win32com.client','--hidden-import','pythoncom')
+Invoke-PyInstaller 'Speech32' $speech32Arguments 'speech32_host.py' $python32
+Copy-Item (Join-Path $PSScriptRoot 'dist\VoiceCompanion-Speech32.exe') (Join-Path $PSScriptRoot 'dist\VoiceCompanion\VoiceCompanion-Speech32.exe') -Force
 Copy-Item (Join-Path $PSScriptRoot 'regular_browser_extension') (Join-Path $PSScriptRoot 'dist\VoiceCompanion\regular_browser_extension') -Recurse -Force
 # Thunderbird add-on: the helper installs this file once in Thunderbird (Add-ons, Install Add-on From File).
 & $python (Join-Path $PSScriptRoot 'build_thunderbird_addon.py') (Join-Path $PSScriptRoot 'dist\VoiceCompanion\Voice Companion Mail Connection.xpi')
@@ -301,6 +343,7 @@ Copy-Item (Join-Path $PSScriptRoot 'dist\VoiceCompanion-UpdateVoice') (Join-Path
 if ($LASTEXITCODE -ne 0) { throw 'The packaged offline updater Status listener or microphone handoff failed.' }
 $exe = Join-Path $PSScriptRoot 'dist\VoiceCompanion\VoiceCompanion.exe'
 if ((Invoke-PackagedCheck 'Packaged runtime check' $diagnosticTarget @('--check-runtime')) -ne 0) { throw 'A packaged runtime dependency is missing.' }
+if ((Invoke-PackagedCheck 'Packaged 32-bit voice helper check' $diagnosticTarget @('--check-speech32')) -ne 0) { throw 'The 32-bit voice helper did not start or list its voices. See the annotation.' }
 if ((Invoke-PackagedCheck 'Packaged bookmark check' $diagnosticTarget @('--check-browser-bookmarks')) -ne 0) { throw 'Saved bookmarks failed in the actual packaged browser. See the Packaged bookmark check annotation.' }
 & $exe --check-update-environment
 if ($LASTEXITCODE -ne 0) { throw 'The packaged updater inherited application files or its working directory.' }
@@ -439,14 +482,15 @@ if ($LASTEXITCODE -ne 0) { throw 'The installed native browser connection failed
 & $python (Join-Path $PSScriptRoot 'check_extension_browser.py') $installedFolder $extensionTestRuntime
 if ($LASTEXITCODE -ne 0) { throw 'The installed extension did not preserve the standard browser navigation and forms.' }
 $installedVersion = & $installedDiagnostics --version
-if ($LASTEXITCODE -ne 0 -or -not (($installedVersion -join ' ') -match '^Voice Companion 0\.2\.211-test$')) {
+if ($LASTEXITCODE -ne 0 -or -not (($installedVersion -join ' ') -match '^Voice Companion 0\.2\.212-test$')) {
   throw 'The installed program is not the current Voice Companion build.'
 }
 & $installedDiagnostics --refresh-guides
 if ($LASTEXITCODE -ne 0) { throw 'The installed documentation did not copy and verify in Documents.' }
 & $installedDiagnostics --check-runtime
 if ($LASTEXITCODE -ne 0) { throw 'The installed program is missing a runtime component.' }
-Write-Output 'INSTALL PASSED. Voice Companion 0.2.211-test is installed. Use the desktop icon or Start menu.'
+if ((Invoke-PackagedCheck 'Installed 32-bit voice helper check' $installedDiagnostics @('--check-speech32')) -ne 0) { throw 'The installed 32-bit voice helper did not start or list its voices. See the annotation.' }
+Write-Output 'INSTALL PASSED. Voice Companion 0.2.212-test is installed. Use the desktop icon or Start menu.'
 if ($Unattended) {
   & (Join-Path $PSScriptRoot 'test-update-audio.ps1')
   if ($LASTEXITCODE -ne 0) { throw 'Updater microphone release checks failed.' }
@@ -485,7 +529,7 @@ Write-Output "COPY THIS INSTALLER TO OTHER COMPUTERS: $portableSetup"
 Write-Output 'The temporary runnable EXEs have been removed to avoid confusing them with Setup.'
 
 # Record exactly the installer that passed all packaged and installed checks.
-@{ version = '0.2.211-test'; sha256 = (Get-FileHash -LiteralPath $portableSetup -Algorithm SHA256).Hash.ToLowerInvariant(); size = (Get-Item -LiteralPath $portableSetup).Length } |
+@{ version = '0.2.212-test'; sha256 = (Get-FileHash -LiteralPath $portableSetup -Algorithm SHA256).Hash.ToLowerInvariant(); size = (Get-Item -LiteralPath $portableSetup).Length } |
   ConvertTo-Json | Set-Content -LiteralPath $receiptPath -Encoding UTF8
 # Updates are published only by the GitHub build (.github/workflows/windows-installer.yml).
 # A build on your own computer is for testing. -NoPublish is still accepted.

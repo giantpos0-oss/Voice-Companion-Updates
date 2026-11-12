@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.211-test.
+Guide version: 0.2.212-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -471,6 +471,7 @@ The speech systems are:
 - eSpeak: a small voice with US and UK English choices.
 - AI voice: an online voice. It needs a separate setup and an internet connection.
 The voices you can choose depend on what is set up on your computer.
+Older 32-bit voices, such as NeoSpeech voices, now show in the SAPI list too. If one of them cannot start, Companion tells you and uses a Windows voice.
 
 4.4 Use an AI voice
 An AI voice reads some app text through an online service. A helper must set it up first.

@@ -1,48 +1,21 @@
 {
-  "version": "0.2.211-test",
+  "version": "0.2.212-test",
   "status": "Testing build",
   "date": "November 11, 2026",
-  "baseline": "0.2.210-test",
-  "scope": "Simpler menus with letter shortcuts, speech that stops when you talk, a hints setting, Favorite apps in any order, and a new hands-on tutorial.",
+  "baseline": "0.2.211-test",
+  "scope": "Older 32-bit Windows voices, such as NeoSpeech Paul, Kate and James, now work in Voice Companion.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "A new hands-on tutorial",
+          "title": "Older 32-bit voices",
           "details": [
-            "The old tutorial is gone. The new one asks you to press a key or say a command.",
-            "It checks what you did and tells you if it was right.",
-            "If you miss twice, it offers to show you or to skip.",
-            "It has lessons for every app on the main menu.",
-            "Nothing in the tutorial sends mail, changes files or changes settings.",
-            "Say Tutorial or press Control+T to start. It remembers where you stopped."
-          ]
-        },
-        {
-          "title": "Hints and help messages",
-          "details": [
-            "A new choice in Verbosity options turns tips on or off.",
-            "Say Hints off or Hints on from any screen.",
-            "With hints off, you hear what happened, without the extra tips.",
-            "Questions, how to answer them, and steps to fix a problem are always said."
-          ]
-        },
-        {
-          "title": "Web tools on the main menu",
-          "details": [
-            "Web tools has the web browser and its tools. These are favorites, history, downloads and Chrome setup.",
-            "Saying Web browser still opens it from anywhere."
-          ]
-        },
-        {
-          "title": "Favorite apps in any order",
-          "details": [
-            "In Options, My menu is now called Favorite apps.",
-            "It is one list. Press Space to pick or unpick an app.",
-            "Press Control+Up or Control+Down to move an app. Control+F1 uses your order.",
-            "You can also say select, unselect, move up, move down, move to top or move to bottom.",
-            "The apps you picked before stay picked."
+            "Some older voices only work in 32-bit programs. NeoSpeech Paul, Kate and James are examples.",
+            "Before, Companion could not see them. Now they are in the voice list with your other voices.",
+            "Choose one in Options, or say use voice Paul.",
+            "Speed, volume, pause and stop work the same as with any other voice.",
+            "If one of these voices cannot start, Companion uses another voice and tells you."
           ]
         }
       ]
@@ -51,48 +24,11 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Menus",
+          "title": "Voice check",
           "details": [
-            "The main menu now says just the first item, like File manager (F), 1 of 10.",
-            "Every menu now opens on its first item and says its letter.",
-            "Alt menus now use letters. Press Alt, then the group's letter, then the item's letter.",
-            "The old number paths, like Alt 2 4, are gone.",
-            "The same action has the same letter in every app.",
-            "Alt menu groups have clearer names, such as Message, Edit, Go to, View and Tools.",
-            "In the word processor menu, the letter you heard now runs that item."
-          ]
-        },
-        {
-          "title": "Speech stops when you talk",
-          "details": [
-            "Companion now goes quiet as soon as you start a command or start to dictate.",
-            "This works the same on every screen.",
-            "Stop talking and Resume work as before.",
-            "Noise in the room does not cut Companion off."
-          ]
-        },
-        {
-          "title": "Keys in text boxes",
-          "details": [
-            "In YouTube, Alt+O no longer types into the search box and searches.",
-            "Alt+O, F1 and Control+F1 never type their words into a name or answer box.",
-            "Alt+F4 now closes the window from every screen."
-          ]
-        },
-        {
-          "title": "Tab key",
-          "details": [
-            "Tab no longer stops on buttons like Options when you do not need them.",
-            "In Options, Tab moves between the settings, OK and Cancel."
-          ]
-        },
-        {
-          "title": "Other fixes",
-          "details": [
-            "Go to website example dot com now opens example dot com.",
-            "Low and Medium verbosity no longer cut off the steps to fix a problem.",
-            "Help with my menu now opens the right topic.",
-            "The browser no longer talks over itself when it closes."
+            "Say Voice check to hear how many voices Companion can use.",
+            "It now runs in the background, so Companion keeps listening while it checks.",
+            "The report also lists the older 32-bit voices."
           ]
         }
       ]
