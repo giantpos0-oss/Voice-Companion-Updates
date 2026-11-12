@@ -41,6 +41,9 @@ Name: "setupchrome"; Description: "Set up Chrome and the Voice Companion extensi
 [Files]
 ; The close step, run by PrepareToInstall before any file is changed.
 Source: "dist\VoiceCompanion\close-companion.ps1"; Flags: dontcopy
+; Every program in the build folder, with VoiceCompanion-Speech32.exe (the 32-bit voice helper,
+; speech32_host.py). Uninstall removes them all; close-companion.ps1 closes the helper before an update,
+; and --check-runtime below fails Setup when the helper is missing or not a 32-bit program.
 Source: "dist\VoiceCompanion\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "dist\VoiceCompanion\START HERE - Veteran.txt"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall
 Source: "dist\VoiceCompanion\START HERE - Veteran.html"; DestDir: "{userdocs}\Voice Companion\User Guides"; Flags: ignoreversion uninsneveruninstall

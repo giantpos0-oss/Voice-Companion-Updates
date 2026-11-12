@@ -37,6 +37,14 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v6
+      # 32-bit Python builds VoiceCompanion-Speech32.exe, which speaks with older
+      # 32-bit-only voices such as NeoSpeech (speech32_host.py). It is set up first,
+      # so the 64-bit Python below is the one on the path for everything else.
+      - uses: actions/setup-python@v6
+        id: python32
+        with:
+          python-version: '3.12'
+          architecture: x86
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
@@ -96,6 +104,7 @@ jobs:
         shell: powershell
         run: |
           $env:VOICE_COMPANION_BUILD_PYTHON = (Get-Command python.exe).Source
+          $env:VOICE_COMPANION_BUILD_PYTHON32 = '${{ steps.python32.outputs.python-path }}'
           $webviewRoots = @("${env:ProgramFiles(x86)}\Microsoft\EdgeWebView\Application", "$env:LOCALAPPDATA\Microsoft\EdgeWebView\Application")
           if (-not ($webviewRoots | Where-Object { Test-Path -LiteralPath $_ })) {
             $bootstrapper = Join-Path $env:RUNNER_TEMP 'MicrosoftEdgeWebview2Setup.exe'
