@@ -33,7 +33,21 @@ def report(sapi_voice, destination):
                           *(('  ' + token for token in sorted(set(found))) if found else ['  None'])))
     except ImportError:
         lines.extend(('', 'Windows registry inspection is unavailable on this system.'))
+    # 32-bit-only voices (NeoSpeech and other older voices) speak through
+    # VoiceCompanion-Speech32.exe; ask it what it can really use (speech32.py).
+    from speech32 import HELPER_NAME, helper_voices
+    try:
+        helper, problem = helper_voices(wait=10)
+    except Exception as exc:
+        helper, problem = [], type(exc).__name__ + ': ' + str(exc)
+    if problem:
+        lines.extend(('', 'The 32-bit speech helper did not answer: ' + problem,
+                      'Problems with it are also written to speech-helper-log.txt in the data folder.'))
+    else:
+        lines.extend(('', 'Voices from the 32-bit speech helper (' + HELPER_NAME + '):',
+                      *(('  ' + name for _, name in helper) if helper else ['  None'])))
     lines.extend(('', 'Registry tokens are clues, not proof that a voice can speak.',
+                  'A voice only in the 32-bit list speaks through the 32-bit speech helper.',
                   'SAPI 4 voices use a different engine and are not selectable in this build.',
                   'Windows Narrator natural voices may not be exposed to this SAPI 5 engine.'))
     destination = Path(destination)

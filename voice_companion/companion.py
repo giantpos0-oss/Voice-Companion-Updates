@@ -2058,6 +2058,14 @@ def voice_choices(engine=None):
     return [choice for choice in choices if engine is None or choice[0] == engine]
 
 
+def restore_windows_voice(speech, name):
+    """At start: the saved Windows voice, by its name; 32-bit voices too (speech32.py)."""
+    voices = speech.GetVoices()
+    named = [voices.Item(i) for i in range(voices.Count) if voices.Item(i).GetDescription() == name]
+    if named: speech.Voice = named[0]
+    return bool(named)
+
+
 def choose_voice(choice):
     global AI_VOICE_NAME, ESPEAK_VOICE_NAME
     interrupt_speech()
@@ -6580,6 +6588,11 @@ def main():
                         raise RuntimeError('An embedded Edge component is missing: ' + name)
             if not all((update_root / name).is_file() for name in ('update-settings.json','apply-update.ps1')):
                 raise RuntimeError('The updater components are missing.')
+            if getattr(sys, 'frozen', False):
+                # Older 32-bit voices speak through this program (speech32.py). Setup runs this
+                # check too, so the helper is only looked at here; --check-speech32 starts it.
+                from speech32 import check_helper
+                check_helper(start=False)
             print('Packaged Python, email, audio, browser, and private-entry components are available.', flush=True)
             return 0
         except Exception as exc:
@@ -6602,6 +6615,16 @@ def main():
             return 0
         except AccountError as exc:
             speak(str(exc))
+            return 3
+    if '--check-speech32' in sys.argv:
+        # The build runs this: the 32-bit voice helper starts and lists its voices (speech32.py).
+        try:
+            from speech32 import check_helper
+            voices = check_helper()
+            print('The 32-bit speech helper answered with %d voices: %s' % (len(voices), ', '.join(name for _, name in voices) or 'none'), flush=True)
+            return 0
+        except Exception as exc:
+            print('The 32-bit speech helper failed: ' + str(exc), file=sys.stderr, flush=True)
             return 3
     if '--check-speech-file' in sys.argv:
         from sapi_build_check import check_file_speech
@@ -7006,10 +7029,7 @@ if __name__ == '__main__':
                 INPUT_MODE = settings.get('input_mode','mixed')
                 if INPUT_MODE not in ('mixed','commands','dictation'): INPUT_MODE='mixed'
                 if PUNCTUATION_LEVEL not in ('none', 'some', 'most', 'all'): PUNCTUATION_LEVEL = 'some'
-                voices = voice.GetVoices()
-                named = [voices.Item(i) for i in range(voices.Count)
-                         if voices.Item(i).GetDescription() == settings.get('voice')]
-                if named: voice.Voice = named[0]
+                restore_windows_voice(voice, settings.get('voice'))
             except (OSError, ValueError, TypeError, KeyError):
                 pass
             voice.Rate = SPEECH_RATE
@@ -7045,7 +7065,7 @@ if __name__ == '__main__':
             startup_alert('Voice Companion could not start speech. Ask your trainer to run the setup check.')
             raise SystemExit(2)
     if windowed and not TEXT_MODE and not any(flag in sys.argv for flag in
-            ('--check-update-environment', '--check-speech-file', '--check-speech', '--check-speech-control', '--check-runtime', '--check-model', '--check-audio', '--record-test', '--version')):
+            ('--check-update-environment', '--check-speech-file', '--check-speech', '--check-speech-control', '--check-speech32', '--check-runtime', '--check-model', '--check-audio', '--record-test', '--version')):
         try:
             APP_WINDOW = CompanionWindow(APP_VERSION, APP)
             from keyboard_speech import KeyboardSpeech

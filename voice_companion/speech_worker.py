@@ -47,12 +47,18 @@ class VoiceList:
         return self.tokens[index]
 
 
-def sapi_voice():
-    """The real voice, made on the thread that uses it."""
+def sapi_dispatch():
     import pythoncom
     import win32com.client
     pythoncom.CoInitialize()
     return win32com.client.Dispatch('SAPI.SpVoice')
+
+
+def sapi_voice():
+    """The real voice, made on the thread that uses it. With 32-bit-only voices installed
+    (NeoSpeech and other older voices), it can speak with them too (speech32.py)."""
+    from speech32 import with_32bit_voices
+    return with_32bit_voices(sapi_dispatch())
 
 
 def pump():

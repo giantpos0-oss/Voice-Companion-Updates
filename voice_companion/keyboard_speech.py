@@ -41,7 +41,8 @@ class KeyboardSpeech:
         from win32com.client import Dispatch
         pythoncom.CoInitialize()
         try:
-            voice=Dispatch('SAPI.SpVoice');chosen=None
+            from speech32 import with_32bit_voices
+            voice=with_32bit_voices(Dispatch('SAPI.SpVoice'));chosen=None  # 32-bit voices too (speech32.py)
             while True:
                 if sys.platform=='win32':
                     import ctypes
@@ -88,5 +89,8 @@ class KeyboardSpeech:
                 except Exception as exc:self.problem=type(exc).__name__
         except Exception as exc:
             self.problem=type(exc).__name__;self.active=False
-        finally:pythoncom.CoUninitialize()
+        finally:
+            from speech32 import HybridVoice
+            if isinstance(locals().get('voice'),HybridVoice):locals()['voice'].close()  # the 32-bit helper ends with this thread
+            pythoncom.CoUninitialize()
     def close(self):self.queue.put(None)
