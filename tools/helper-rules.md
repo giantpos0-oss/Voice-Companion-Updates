@@ -16,10 +16,7 @@ Voice Companion is a Windows voice-and-keyboard app for blind users. It is meant
   - Do NOT edit release-notes.json.
   - Do NOT merge.
   - Do NOT open a pull request.
-- **Commits:** commit in small steps and push after each one (`git push -u origin <your branch>`), so nothing is lost if the machine restarts. End each commit message with:
-
-  Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-  Claude-Session: https://claude.ai/code/session_01LUwzrzXCWDR2utM1sQafPE
+- **Commits:** commit locally, in a few larger steps, on your own branch. Do not push and do not open a pull request: the lead pushes, opens the pull request and runs the release. End each commit message with the attribution lines given in the lead's brief for the current session. Never copy a session address from an older commit or from this file.
 
 ## Working alongside other helpers
 Four other helpers work in parallel on other branches. To keep the merge easy:
