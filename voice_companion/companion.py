@@ -682,6 +682,7 @@ def process_keyboard_batch(mode):
     previous=KEYBOARD_BATCH;KEYBOARD_BATCH=True
     if not previous:KEYBOARD_BATCH_STATUS=False
     batch_started=time.monotonic();last_label=None
+    if not previous:__import__('response_times').take()   # steps timed before this key are not its own
     # App mode page keys go to the page through the browser's own channel; they
     # do not move the window's keyboard focus. Unless another page opened, the
     # window is not refocused or given the page again after them.
@@ -765,8 +766,9 @@ def process_keyboard_batch(mode):
         if not previous and last_label:
             # A slow key is written down with its slow step (response_times.py); never the text.
             take=getattr(APP_WINDOW.commands,'take_oldest',None);arrived=take() if take else None
+            total=time.monotonic()-batch_started;steps=__import__('response_times').take()
             RESPONSE_LOG.slow('key '+last_label,SLEEP_RETURN_MODE if mode=='sleep' else mode,
-                              [('waiting',batch_started-arrived if arrived else 0),('handling',time.monotonic()-batch_started)])
+                              [('waiting',batch_started-arrived if arrived else 0)]+steps+[('other handling',max(0,total-sum(t for _,t in steps)))])
     if not previous and APP_WINDOW.commands.empty() and KEYBOARD_BATCH_TEXT:
         if KEYBOARD_BATCH_STATUS:finish_mail_announcement()
         text=KEYBOARD_BATCH_TEXT;KEYBOARD_BATCH_TEXT=None
@@ -1241,7 +1243,9 @@ TEXT_READING_KEYS={'Insert+Down':'say all','CapsLock+Down':'say all',
 
 def _navigation_key(key,mode):
     global CONFIRM_CHOICE, ACCOUNT_MENU_INDEX
-    interrupt_speech()
+    # process_keyboard_batch stopped the speech just before; stopping it twice made every key
+    # wait for the voice twice (Will, November 12, 2026: keys felt slow).
+    if not KEYBOARD_BATCH:interrupt_speech()
     if key=='F1' and LAST_YES_NO and yes_no_open(mode):
         # F1 in a yes or no question says the question again (Will, October 31, 2026).
         speak(LAST_YES_NO);return None
@@ -1863,7 +1867,9 @@ def interrupt_speech():
     if SPEECH_PAUSED:
         voice.Resume()
         SPEECH_PAUSED = False
+    started = time.monotonic()
     voice.Speak('', 3)  # SAPI async + purge: discard the old spoken request.
+    __import__('response_times').add('stopping the voice', time.monotonic() - started)
 
 
 def control_speech(action):
@@ -7219,6 +7225,9 @@ if __name__ == '__main__':
             APP_WINDOW = CompanionWindow(APP_VERSION, APP)
             from keyboard_speech import KeyboardSpeech
             KEYBOARD_SPEECH=KeyboardSpeech();KEYBOARD_SPEECH.configure(voice.Voice.Id,SPEECH_RATE,SPEECH_VOLUME,ESPEAK_SPEECH,SPEECH_PITCH,ai=AI_SPEECH,capital_letters=PREFERENCES.get('capital_letters','do nothing'));APP_WINDOW.keyboard_output=KEYBOARD_SPEECH
+            # The keyboard voice is timed too: from Companion asking for the words to the voice taking them.
+            KEYBOARD_SPEECH.on_timing=lambda waited,stop:RESPONSE_LOG.slow('keyboard voice',APP_WINDOW.context.get('mode') if APP_WINDOW else '',
+                                                                         [('stopping the keyboard voice',stop),('starting to speak',max(0,waited-stop))])
             APP_WINDOW.start()
             if os.name=='nt':
                 try:

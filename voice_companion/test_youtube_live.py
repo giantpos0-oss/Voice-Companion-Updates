@@ -391,14 +391,16 @@ class ScreenTests(LiveYouTube):
 
     def test_player_keys(self):
         self.playing()
-        steps = [('Space', 'Paused.'), ('Enter', 'Playing.'), ('Right', 'Forward 10 seconds. 10 seconds of 3 minutes 33 seconds.'),
-                 ('Right', 'Forward 10 seconds. 20 seconds of 3 minutes 33 seconds.'),
-                 ('Left', 'Back 10 seconds. 10 seconds of 3 minutes 33 seconds.'), ('Left', 'Start of the video.'),
+        # Will, November 12, 2026: skipping says only how far; E, T and R say the times.
+        steps = [('Space', 'Paused.'), ('Enter', 'Playing.'), ('Right', 'Forward 10 seconds.'),
+                 ('Right', 'Forward 10 seconds.'), ('E', '20 seconds elapsed.'), ('T', 'Total time 3 minutes 33 seconds.'),
+                 ('R', '3 minutes 13 seconds remaining.'),
+                 ('Left', 'Back 10 seconds.'), ('Left', 'Start of the video.'),
                  ('Down', 'Volume 90 percent.'), ('Up', 'Volume 100 percent.'),
                  ('5', '50 percent. Now at 1 minute 46 seconds of 3 minutes 33 seconds.'), ('0', 'Start of the video.'),
                  ('period', 'Speed 1.25.'), ('comma', 'Normal speed.'), ('Ctrl+Down', 'Volume 90 percent.'),
                  ('Ctrl+Up', 'Volume 100 percent.'), ('Ctrl+Up', 'Loudest. Volume 100 percent.'), ('M', 'Sound off.'), ('M', 'Sound on.'),
-                 ('C', 'Captions on. Press R to read the current caption.'), ('R', 'Hello and welcome to the show.'),
+                 ('C', 'Captions on. Press Shift+C to read the current caption.'), ('Shift+C', 'Hello and welcome to the show.'),
                  ('A', 'Autoplay off. Playback stops when the video ends.'), ('F', 'Video full screen on. Press F again to turn it off.'),
                  ('Ctrl+Right', 'Chapter: First verse. Now at 43 seconds of 3 minutes 33 seconds.'),
                  ('Ctrl+Left', 'Chapter: Intro. Now at 0 seconds of 3 minutes 33 seconds.'), ('S', 'No ad is playing.')]
@@ -409,9 +411,11 @@ class ScreenTests(LiveYouTube):
         self.say('skip amount 30 seconds')
         self.assertEqual(self.last(), 'Left and Right Arrow now skip 30 seconds.')
         self.press('Right')
-        self.assertEqual(self.last(), 'Forward 30 seconds. 30 seconds of 3 minutes 33 seconds.')
+        self.assertEqual(self.last(), 'Forward 30 seconds.')
         self.say('Forward 1 minute.')
-        self.assertEqual(self.last(), 'Forward 1 minute. 1 minute 30 seconds of 3 minutes 33 seconds.')
+        self.assertEqual(self.last(), 'Forward 1 minute.')
+        self.press('E')
+        self.assertEqual(self.last(), '1 minute 30 seconds elapsed.')
         self.say('Video speed 1.5.')
         self.assertEqual(self.last(), 'Speed 1.5.')
         self.press('Q')
@@ -426,8 +430,11 @@ class ScreenTests(LiveYouTube):
         self.assertTrue(self.last().startswith('Player. Never Gonna Give You Up.'), self.last())
         self.press('Escape')    # the player, back to the list
         self.assertTrue(self.last().startswith('Back to Home.'))
-        self.press('J'); self.press('L')   # J and L no longer do anything (Will, October 30, 2026)
+        self.press('J')   # J no longer does anything (Will, October 30, 2026)
         self.assertTrue(self.last().startswith('Back to Home.'))
+        self.press('L')   # L is Like now (Will, November 12, 2026); it asks first
+        self.assertTrue(self.last().startswith('Like Never Gonna Give You Up?'), self.last())
+        self.say('No')
 
     def test_details_description_comments_up_next_and_next_video(self):
         self.playing()
@@ -484,15 +491,15 @@ class ScreenTests(LiveYouTube):
     def test_account_actions_ask_first_and_then_change_the_account(self):
         screen = self.playing()
         page = screen.video_page
-        self.press('T')
+        self.press('L')   # L for Like (T says the total time, November 12, 2026)
         self.assertEqual(self.last(), 'Like Never Gonna Give You Up? Say Yes or No.')
         self.assertEqual(self.app.app_context('youtube').get('confirmation'), 'no')
         self.press('Enter')   # No is chosen first
         self.assertTrue(self.last().startswith('Nothing changed.'))
         self.assertEqual(page.evaluate('document.querySelector("like-button-view-model button").getAttribute("aria-pressed")'), 'false')
-        self.press('T'); self.press('Y')
+        self.press('L'); self.press('Y')
         self.assertEqual(self.last(), 'Liked.')
-        self.press('T')
+        self.press('L')
         self.assertEqual(self.last(), 'You already like this video. To take your like back, say remove like.')
         self.press('U')
         self.assertEqual(self.last(), 'Subscribe to Rick Astley? Say Yes or No.')
@@ -521,7 +528,7 @@ class ScreenTests(LiveYouTube):
         self.context.unroute('https://www.youtube.com/**')
         fixtures.routes(self.context, {'/watch': lambda: fixtures.watch(signed_in=False)})
         self.playing()
-        for key in ('T', 'U', 'W'):
+        for key in ('L', 'U', 'W'):
             self.press(key)
             self.assertTrue(self.last().startswith('You are not signed in to YouTube. To '), self.last())
             self.assertIn('say sign in', self.last())
@@ -532,7 +539,7 @@ class ScreenTests(LiveYouTube):
     def test_embedded_edge_offers_chrome_for_account_features_and_never_signs_in_itself(self):
         self.backend.browser = 'webview2'
         screen = self.playing()
-        self.press('T')
+        self.press('L')
         self.assertEqual(self.last(), 'Google does not allow signing in inside embedded Edge, so YouTube is signed out here. '
                                       'To like videos, switch to Chrome, where you can sign in. Web pages will also open in Chrome. '
                                       'Switch to Chrome now? Say Yes or No.')

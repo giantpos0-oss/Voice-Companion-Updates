@@ -131,3 +131,38 @@ class QuickVoiceCommandTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class OneStopPerKeyTests(unittest.TestCase):
+    """Every key stopped the voice twice: once when it arrived, then again while it was handled."""
+
+    def test_a_key_in_a_batch_does_not_stop_the_voice_again(self):
+        import companion
+        with patch.object(companion, 'interrupt_speech') as stop, patch.object(companion, 'KEYBOARD_BATCH', True):
+            companion.navigation_key('Down', 'awake')
+        stop.assert_not_called()
+        with patch.object(companion, 'interrupt_speech') as stop, patch.object(companion, 'KEYBOARD_BATCH', False):
+            companion.navigation_key('Down', 'awake')
+        stop.assert_called_once()
+
+    def test_steps_are_named_in_the_record(self):
+        response_times.take()
+        response_times.add('stopping the voice', 0.2); response_times.add('stopping the voice', 0.1)
+        self.assertEqual(response_times.take(), [('stopping the voice', 0.30000000000000004)])
+        self.assertEqual(response_times.take(), [])
+
+    def test_the_keyboard_voice_reports_how_long_the_words_waited(self):
+        from keyboard_speech import KeyboardSpeech
+        timings = []
+        voice = Mock(WaitUntilDone=Mock(return_value=True))
+        worker = KeyboardSpeech.__new__(KeyboardSpeech)
+        worker.settings = ('', 3, 100, None, 0); worker.problem = None; worker.paused = False
+        worker.active = False; worker.quiet_until = 0; worker.on_timing = lambda waited, stop: timings.append((waited, stop))
+        worker.requested_at = time.monotonic() - 0.5
+        worker.queue = Mock(get=Mock(side_effect=[('interrupt',), 'Down', None]))
+        with patch.dict(sys.modules, {'pythoncom': Mock(), 'win32com': Mock(),
+                                      'win32com.client': Mock(Dispatch=Mock(return_value=voice))}), \
+             patch('speech32.with_32bit_voices', lambda native: native):
+            worker.run()
+        self.assertEqual(len(timings), 1)
+        self.assertGreaterEqual(timings[0][0], 0.5)

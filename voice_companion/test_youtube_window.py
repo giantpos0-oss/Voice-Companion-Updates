@@ -73,7 +73,7 @@ class YouTubeWindowKeyTests(unittest.TestCase):
         self.screen()
         keys = (('m', 0, 'M'), ('space', 0, 'Space'), ('5', 0, '5'), ('0', 0, '0'),
                 ('comma', 0, 'comma'), ('period', 0, 'period'), ('Up', 4, 'Ctrl+Up'), ('Down', 4, 'Ctrl+Down'),
-                ('Right', 4, 'Ctrl+Right'), ('c', 0, 'C'), ('s', 0, 'S'), ('t', 0, 'T'), ('f', 4, 'Ctrl+F'),
+                ('Right', 4, 'Ctrl+Right'), ('c', 0, 'C'), ('C', 1, 'Shift+C'), ('s', 0, 'S'), ('t', 0, 'T'), ('l', 0, 'L'), ('e', 0, 'E'), ('f', 4, 'Ctrl+F'),
                 ('F5', 0, 'F5'), ('F1', 0, 'F1'), ('Left', 0, 'Left'), ('Right', 0, 'Right'), ('Down', 0, 'Down'),
                 ('Up', 0, 'Up'), ('Home', 0, 'Home'), ('End', 0, 'End'), ('Return', 0, 'Enter'), ('Escape', 0, 'Escape'),
                 # Page Down and Page Up move ten at a time in a list (the guide says so).

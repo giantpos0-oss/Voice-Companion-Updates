@@ -55,12 +55,31 @@ def key_label(command):
     return 'typed command'
 
 
+_STAGES = {}
+_STAGES_LOCK = threading.Lock()
+
+
+def add(stage, seconds):
+    """Time spent in one step of the key being answered now (such as stopping the voice)."""
+    with _STAGES_LOCK:
+        _STAGES[stage] = _STAGES.get(stage, 0.0) + max(0.0, seconds)
+
+
+def take():
+    """The steps timed since the last take(), as [(name, seconds)], and start again."""
+    with _STAGES_LOCK:
+        steps = list(_STAGES.items())
+        _STAGES.clear()
+    return steps
+
+
 class Log:
-    """response-times.txt in Voice Companion's data folder. Never raises."""
+    """response-times.txt in Voice Companion's data folder. Never raises. Safe from any thread."""
 
     def __init__(self, folder=None, clock=time.monotonic, wall=time.strftime):
         self.folder, self.clock, self.wall = folder, clock, wall
         self.lines = None
+        self.lock = threading.Lock()
 
     def slow(self, what, screen, steps):
         """steps: [(name, seconds)]. Written when they add up to more than SLOW_SECONDS."""
@@ -69,6 +88,10 @@ class Log:
             return False
         parts = ', '.join('%s %.2f' % (name, seconds) for name, seconds in steps if seconds and seconds >= 0.01)
         line = '%s %s on %s: %.2f seconds (%s)' % (self.wall('%Y-%m-%d %H:%M:%S'), what, screen or 'unknown screen', total, parts)
+        with self.lock:
+            return self._write(line)
+
+    def _write(self, line):
         try:
             from pathlib import Path
             path = Path(self.folder) / FILE_NAME

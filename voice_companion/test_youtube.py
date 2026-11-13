@@ -142,8 +142,8 @@ class ScreenWordTests(NoBrowser):
         self.started.assert_not_called()
 
     def test_video_keys_without_a_video_say_what_to_do(self):
-        for key in ('Space', 'Right', '5', 'C', 'R', 'Q', 'N', 'P', 'A', 'F', 'H', 'S', 'I', 'D', 'O', 'T', 'U', 'W',
-                    'Ctrl+Up', 'comma', 'M'):
+        for key in ('Space', 'Right', '5', 'C', 'Shift+C', 'E', 'T', 'R', 'Q', 'N', 'P', 'A', 'F', 'H', 'S', 'I', 'D', 'O', 'L',
+                    'U', 'W', 'Ctrl+Up', 'comma', 'M'):
             with self.subTest(key=key):
                 self.said.clear()
                 self.assertEqual(self.press(key), 'youtube')

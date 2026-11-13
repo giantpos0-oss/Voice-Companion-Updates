@@ -2441,7 +2441,8 @@ YouTube no longer has a Last hour filter. It no longer sorts by upload date or b
 31.3 Play and control a video
 When you press Enter on a video, you hear "Loading video". Then the video plays and you are in the player. In the player, the keys control the video:
 - Up Arrow and Down Arrow change the volume.
-- Left Arrow and Right Arrow skip back and forward.
+- Left Arrow and Right Arrow skip back and forward. You hear only how far, such as "Back 10 seconds".
+- E says the time played so far, T the total time, and R the time left.
 - Space or Enter plays and pauses.
 - N plays the next video, and P the one before.
 - Home starts the video again.
@@ -2462,13 +2463,16 @@ The letter keys below also work in a YouTube list while a video plays. In the Yo
 - To play the next video, say "Next video", or press N.
 - To play the video before it, say "Previous video", or press P.
 - To hear what is playing and where you are, say "What's playing?", or press F3.
+- To hear the time played so far, say "Elapsed time", or press E.
+- To hear how long the video is, say "Total time", or press T.
+- To hear how much is left, say "Time remaining", or press R.
 - To stop the video, say "Stop". To start it again, say "Resume".
 "Faster", "Slower", and "Volume up" alone change Companion's voice, not the video.
 In a list, Up Arrow and Down Arrow move through the list, even while a video plays.
 
 31.4 Captions, quality, and chapters
 - To turn captions on or off, say "Captions on or off", or press C.
-- To hear the caption that is showing now, say "Read caption", or press R.
+- To hear the caption that is showing now, say "Read caption", or press Shift+C.
 - To choose the picture quality, say "Video quality", or press Q. Choose with the arrows, then press Enter.
 - To turn autoplay on or off, say "Autoplay on or off", or press A. With autoplay on, the next video starts by itself.
 - To make the video fill the screen, say "Video full screen", or press F. Press F again to go back. F11 still changes Companion's own window.
@@ -2498,7 +2502,7 @@ Your likes, subscriptions, playlists, and history come from your own YouTube acc
 - To sign in, choose Sign in in the YouTube menu, or say "Sign in". Google's sign-in page opens on the web screen. Type your email and password there. Then say "Back to YouTube".
 - To sign out, choose Sign out in the YouTube menu, or say "Sign out". Companion asks first. This signs the browser out of Google too.
 - Each change to your account asks first. Say Yes or No, or press Y or N.
-- To like the video, say "Like video", or press T. To take a like back, say "Remove like".
+- To like the video, say "Like video", or press L. To take a like back, say "Remove like".
 - To subscribe to the channel, or to stop, say "Subscribe or unsubscribe", or press U.
 - To save the video, say "Save video", or press W. Choose Watch later or a playlist, then press Enter.
 - To save it straight to Watch later, say "Save to Watch later".

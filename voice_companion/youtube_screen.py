@@ -73,11 +73,13 @@ KEYS = {
     'F1': 'help with youtube', 'Ctrl+F': 'search youtube', 'Ctrl+Shift+F': 'search filters', 'F5': 'refresh youtube',
     'Space': 'play or pause video',
     '0': 'restart video', 'M': 'mute or unmute', 'Ctrl+Up': 'video volume up', 'Ctrl+Down': 'video volume down',
-    'comma': 'slower video', 'period': 'faster video', 'C': 'captions on or off', 'R': 'read caption', 'Q': 'video quality',
+    'comma': 'slower video', 'period': 'faster video', 'C': 'captions on or off', 'Shift+C': 'read caption', 'Q': 'video quality',
+    # Will, November 12, 2026: skipping says only how far it moved; these keys say the times.
+    'E': 'elapsed time', 'T': 'total time', 'R': 'time remaining',
     'N': 'next video', 'P': 'previous video', 'A': 'autoplay on or off', 'F': 'video full screen',
     'H': 'list chapters', 'Ctrl+Left': 'previous chapter', 'Ctrl+Right': 'next chapter', 'S': 'skip ad',
     'I': 'video details', 'D': 'read description', 'O': 'read comments', 'G': 'go to channel', 'X': 'up next',
-    'T': 'like video', 'U': 'subscribe or unsubscribe', 'W': 'save video',
+    'L': 'like video', 'U': 'subscribe or unsubscribe', 'W': 'save video',
     'Next': 'page down', 'Prior': 'page up',   # ten items at a time in a list
 }
 KEYS.update({str(n): 'jump to ' + str(n * 10) + ' percent' for n in range(1, 10)})
@@ -993,25 +995,39 @@ class YouTubeScreen:
         return yp.spoken_length(time_) + ' of ' + yp.spoken_length(duration)
 
     def skip_by(self, seconds):
+        """Left and Right Arrow. Says only how far it moved: E, T and R say the times
+        (Will, November 12, 2026). One trip to the page, with no wait after it, so the
+        answer comes at once (it took 0.28 seconds a key before)."""
+        problem = self.need_video()
+        if problem:
+            return problem
+        moved = self.player.skip(seconds)
+        if moved.get('ad'):
+            state = self.player.state()
+            return 'An ad is playing. You cannot move in an ad.' + (' Press S to skip it.' if state.get('ad', {}).get('skippable') else '')
+        target, duration = moved.get('time') or 0, moved.get('duration')
+        if seconds < 0 and target <= 0:
+            return 'Start of the video.'
+        if seconds > 0 and duration and not moved.get('live') and target >= duration:
+            return 'End of the video.'
+        return ('Back ' if seconds < 0 else 'Forward ') + yp.spoken_length(abs(seconds)) + '.'
+
+    def times(self, which):
+        """E, T and R: elapsed time, total time, time remaining."""
         problem = self.need_video()
         if problem:
             return problem
         state = self.player.state()
-        if state.get('ad', {}).get('showing'):
-            return 'An ad is playing. You cannot move in an ad.' + (' Press S to skip it.' if state['ad'].get('skippable') else '')
-        now = state.get('time') or 0
-        duration = state.get('duration')
-        target = max(0, now + seconds)
-        if duration and not state.get('live'):
-            target = min(duration, target)
-        state = self.player.seek(target)
-        jump = ('Back ' if seconds < 0 else 'Forward ') + yp.spoken_length(abs(seconds)) + '.'
-        if seconds < 0 and target == 0:
-            jump = 'Start of the video.'
-        elif seconds > 0 and duration and target >= duration:
-            jump = 'End of the video.'
-        where = self.position_words(state)
-        return jump + (' ' + where + '.' if where and not jump.startswith(('Start', 'End')) else '')
+        now, duration = state.get('time'), state.get('duration')
+        if now is None:
+            return 'The video has not started yet.'
+        if which == 'elapsed':
+            return yp.spoken_length(int(now)) + ' elapsed.'
+        if state.get('live') or not duration:
+            return 'This is a live video, so it has no set length.'
+        if which == 'total':
+            return 'Total time ' + yp.spoken_length(int(duration)) + '.'
+        return yp.spoken_length(max(0, int(duration) - int(now))) + ' remaining.'
 
     def seek_to(self, seconds, lead=''):
         problem = self.need_video()
@@ -1093,7 +1109,7 @@ class YouTubeScreen:
         if wanted is not None and captions.get('on') == wanted:
             return 'Captions are already ' + ('on.' if wanted else 'off.')
         captions = self.player.toggle_captions()
-        return 'Captions on. Press R to read the current caption.' if captions.get('on') else 'Captions off.'
+        return 'Captions on. Press Shift+C to read the current caption.' if captions.get('on') else 'Captions off.'
 
     def read_caption(self):
         problem = self.need_video()
@@ -1979,6 +1995,10 @@ COMMANDS = {
     'captions on or off': 'captions', 'toggle captions': 'captions', 'captions on': 'captions on', 'turn on captions': 'captions on',
     'subtitles on': 'captions on', 'captions off': 'captions off', 'turn off captions': 'captions off', 'subtitles off': 'captions off',
     'read caption': 'read caption', 'read captions': 'read caption', 'read the caption': 'read caption',
+    'elapsed time': 'elapsed', 'time elapsed': 'elapsed', 'how far in am i': 'elapsed', 'current time': 'elapsed',
+    'total time': 'total', 'video length': 'total', 'length of the video': 'total', 'how long is the video': 'total',
+    'how long is this video': 'total', 'time remaining': 'remaining', 'remaining time': 'remaining', 'time left': 'remaining',
+    'how much time is left': 'remaining', 'how much is left': 'remaining',
     'what did they say': 'read caption', 'current caption': 'read caption',
     'video quality': 'quality', 'quality': 'quality', 'change quality': 'quality',
     'next video': 'next', 'play the next video': 'next', 'play next video': 'next', 'skip video': 'next',
@@ -2243,7 +2263,8 @@ def run(m, s, action, raw, command):
         'volume up': lambda: s.volume(10), 'volume down': lambda: s.volume(-10),
         'mute': s.mute, 'mute on': lambda: s.mute(True), 'mute off': lambda: s.mute(False),
         'captions': s.captions, 'captions on': lambda: s.captions(True), 'captions off': lambda: s.captions(False),
-        'read caption': s.read_caption, 'quality': s.quality_list, 'next': s.next_video, 'previous': s.previous_video,
+        'read caption': s.read_caption, 'quality': s.quality_list,
+        'elapsed': lambda: s.times('elapsed'), 'total': lambda: s.times('total'), 'remaining': lambda: s.times('remaining'), 'next': s.next_video, 'previous': s.previous_video,
         'autoplay': s.autoplay, 'autoplay on': lambda: s.autoplay(True), 'autoplay off': lambda: s.autoplay(False),
         'fullscreen': s.fullscreen, 'chapters': s.chapters, 'next chapter': lambda: s.chapter_step(1),
         'previous chapter': lambda: s.chapter_step(-1), 'skip ad': s.skip_ad, 'details': s.details,

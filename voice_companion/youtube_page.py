@@ -1143,6 +1143,31 @@ class YouTubePage:
             self.settle(250)
         return bool(self.state().get('paused'))
 
+    def skip(self, seconds):
+        """Move by seconds in one trip to the page: {time, duration, live}, or {ad: True}.
+        Reads the time, moves and answers together, with no wait to settle."""
+        try:
+            value = self.evaluate("""(delta)=>{const p=document.getElementById('movie_player');
+              const v=document.querySelector('#movie_player video,video.html5-main-video,video');
+              if(p&&(p.classList.contains('ad-showing')||p.classList.contains('ad-interrupting')))return {ad:true};
+              const has=n=>p&&typeof p[n]==='function';
+              const num=x=>typeof x==='number'&&isFinite(x)?x:null;
+              const now=num(has('getCurrentTime')?p.getCurrentTime():v?v.currentTime:null);
+              if(now===null)return {missing:true};
+              const duration=num(has('getDuration')?p.getDuration():v?v.duration:null);
+              let live=false;try{live=!!(has('getVideoData')&&p.getVideoData().isLive);}catch(e){}
+              let target=Math.max(0,now+delta);
+              if(duration&&!live)target=Math.min(duration,target);
+              if(has('seekTo'))p.seekTo(target,true);else if(v)v.currentTime=target;else return {missing:true};
+              return {time:target,duration:duration,live:live};}""", float(seconds))
+        except YouTubeError:
+            raise
+        except Exception as exc:
+            raise YouTubeError(PLAYER_CHANGED) from exc
+        if not isinstance(value, dict) or value.get('missing'):
+            raise YouTubeError(PLAYER_CHANGED)
+        return value
+
     def seek(self, seconds):
         if self._player_call('seekTo', float(seconds), True).get('missing'):
             if self._video('v.currentTime=arg;return true;', float(seconds)) is None:

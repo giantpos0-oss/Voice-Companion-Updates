@@ -37,6 +37,7 @@
           "title": "Faster keys and voice commands",
           "details": [
             "Companion answers a key the moment you press it.",
+            "Companion used to stop its voice twice for every key. Now it stops it once.",
             "Short commands, such as next, check email and main menu, are acted on right away.",
             "Before, every command went through the dictation engine a second time. That could add a second or more."
           ]
@@ -47,6 +48,16 @@
             "Only the part of the recording with your words goes to the dictation engine.",
             "The quiet before and after you speak is left out, so your text comes back sooner.",
             "Silence alone is no longer sent to the engine. This keeps the computer quicker while the microphone is on."
+          ]
+        },
+        {
+          "title": "YouTube keys",
+          "details": [
+            "Left and Right Arrow now say only how far they moved, such as Back 10 seconds.",
+            "Press E to hear the time played so far.",
+            "Press T to hear the total time, and R to hear the time left.",
+            "Like is now L. To read the caption that is showing, press Shift+C.",
+            "Moving through a video is faster, too."
           ]
         },
         {

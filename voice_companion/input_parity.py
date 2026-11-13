@@ -125,7 +125,10 @@ def chord(keysym, state):
     name = keysym.upper() if len(keysym) == 1 else {'Page_Down': 'Next', 'Page_Up': 'Prior', 'space': 'Space'}.get(keysym, keysym)
     if control:
         return 'Ctrl+' + ('Shift+' if shift else '') + name
-    return None if shift else name
+    if shift:
+        # Shift with a letter, such as Shift+C (read the caption on YouTube). Other Shift keys stay theirs.
+        return 'Shift+' + name if len(name) == 1 and name.isalpha() else None
+    return name
 
 
 def screen_key(mode, keysym, state, context, email_field=None, typed_text=''):

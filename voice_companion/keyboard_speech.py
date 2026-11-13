@@ -14,6 +14,7 @@ class KeyboardSpeech:
     def speak(self,text):
         if text:
             self.interrupt()
+            self.requested_at=time.monotonic()
             self.narration_interrupt.set();self.active=True;self.queue.put(text)
     def preview(self,text,settings):
         """One utterance with staged settings; saved speech is untouched."""
@@ -69,7 +70,9 @@ class KeyboardSpeech:
                             if getattr(self,'paused',False):voice.Resume()
                             self.paused=False
                             if action=='interrupt':
+                                stop_started=time.monotonic()
                                 voice.Speak('',3);self.active=False;self.quiet_until=time.monotonic()+.15
+                                self.stop_seconds=getattr(self,'stop_seconds',0.0)+time.monotonic()-stop_started
                                 if espeak:espeak.interrupt()
                             elif espeak:espeak.resume()
                         continue
@@ -88,6 +91,11 @@ class KeyboardSpeech:
                     if applied!=(rate,volume):voice.Rate=rate;voice.Volume=volume;applied=(rate,volume)
                     from voice_pitch import sapi_speak
                     sapi_speak(voice,text,pitch)
+                    # How long the words waited after Companion asked for them (response_times.py).
+                    report=getattr(self,'on_timing',None);asked=getattr(self,'requested_at',None)
+                    if report and asked and not preview:
+                        report(time.monotonic()-asked,getattr(self,'stop_seconds',0.0))
+                    self.requested_at=None;self.stop_seconds=0.0
                 except Exception as exc:self.problem=type(exc).__name__
         except Exception as exc:
             self.problem=type(exc).__name__;self.active=False
