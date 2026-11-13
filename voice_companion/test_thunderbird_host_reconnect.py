@@ -119,6 +119,26 @@ class HostReconnectTests(unittest.TestCase):
         self.assertTrue(relay.connected.wait(5), 'The host did not find Voice Companion once it started')
         self.assertEqual(relay.request('accounts', timeout=5), 'accounts')
 
+    def test_a_connection_that_breaks_during_the_handshake_does_not_stop_mail(self):
+        # A host that is stopped mid-connection (an update closing it, Thunderbird closing)
+        # used to end Voice Companion's listening for good: mail never connected until it restarted.
+        from multiprocessing.connection import Client
+        relay = self.relay()
+        for _ in range(3):
+            try:
+                broken = Client(self.endpoint or thunderbird_bridge.address(self.folder) + '-mail', family=self.family)
+                broken.close()
+            except Exception:
+                pass
+            time.sleep(0.05)
+        try:
+            Client(self.endpoint or thunderbird_bridge.address(self.folder) + '-mail', family=self.family, authkey=b'old key')
+        except Exception:
+            pass   # a host holding the key from the last time Voice Companion ran
+        self.start_host()
+        self.assertTrue(relay.connected.wait(5), 'Mail stopped connecting after one broken connection')
+        self.assertEqual(relay.request('accounts', timeout=5), 'accounts')
+
     def test_thunderbird_closing_ends_the_host(self):
         self.relay()
         self.start_host()

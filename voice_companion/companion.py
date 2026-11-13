@@ -2992,12 +2992,12 @@ def thunderbird_busy():
                 or (ACCOUNT_ENTRY or {}).get('provider') == 'thunderbird' or THUNDERBIRD_STARTING)
 
 
-def mail_log(text):
+def mail_log(text, always=False):
     """thunderbird-log.txt: what Voice Companion said and heard while Thunderbird was busy. Never raises."""
     try:
         if MAIL_LOG.folder is None:
             MAIL_LOG.start(APP)
-        if thunderbird_busy():
+        if always or thunderbird_busy():
             MAIL_LOG.mode = str(TRANSCRIPT.mode or '')
             MAIL_LOG.said(text)
     except Exception:
@@ -3253,8 +3253,9 @@ def start_thunderbird_quietly():
                 THUNDERBIRD_STARTING = False
             if launched:
                 quiet_thunderbird(relay)
-        except Exception:
-            pass    # said only if mail is used and still cannot connect
+        except Exception as exc:
+            # Said only if mail is used and still cannot connect; the reason goes in the mail log.
+            mail_log('[thunderbird] at startup: not connected (%s: %s)' % (type(exc).__name__, exc), always=True)
     thread = threading.Thread(target=run, name='Start Thunderbird', daemon=True)
     thread.start()
     return thread

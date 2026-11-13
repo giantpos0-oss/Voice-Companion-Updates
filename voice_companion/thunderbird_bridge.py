@@ -67,13 +67,30 @@ class MailRelay:
         self.state_lock = threading.Lock(); self.send_lock = threading.Lock()
         self.pending = {}
         self.ids = itertools.count(1)
-        threading.Thread(target=self._accept, daemon=True).start()
+        self.closed = False
+        self.problems = 0   # connections that broke before they were set up, for the log
+        threading.Thread(target=self._accept, name='Mail connection', daemon=True).start()
 
     def _accept(self):
-        while True:
-            try: pipe = self.listener.accept()
-            except (EOFError, OSError): return
-            except Exception: continue
+        """Wait for Thunderbird's host, for as long as Voice Companion runs.
+
+        One connection that breaks while it is being set up (a host stopped by an
+        update, Thunderbird closing, a host holding the key from Voice Companion's
+        last run) must never end this loop. It once did: mail then could not
+        connect until Thunderbird and Voice Companion were both restarted
+        (Will, November 12, 2026)."""
+        failures = 0
+        while not self.closed:
+            try:
+                pipe = self.listener.accept()
+            except Exception:
+                if self.closed:
+                    return
+                self.problems += 1; failures += 1
+                # Never a busy loop if Windows keeps refusing: wait a little longer each time, at most a second.
+                threading.Event().wait(min(1.0, 0.05 * failures))
+                continue
+            failures = 0
             with self.state_lock:
                 old, self.pipe = self.pipe, pipe
             # A restarted Thunderbird replaces the old connection.
@@ -138,6 +155,7 @@ class MailRelay:
         return answer.get('result')
 
     def close(self):
+        self.closed = True
         self.connected.clear()
         if self.pipe is not None:
             try: self.pipe.close()
