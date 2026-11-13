@@ -42,7 +42,7 @@ class KeyboardSpeech:
         pythoncom.CoInitialize()
         try:
             from speech32 import with_32bit_voices
-            voice=with_32bit_voices(Dispatch('SAPI.SpVoice'));chosen=None  # 32-bit voices too (speech32.py)
+            voice=with_32bit_voices(Dispatch('SAPI.SpVoice'));chosen=None;applied=None  # 32-bit voices too (speech32.py)
             while True:
                 if sys.platform=='win32':
                     import ctypes
@@ -82,8 +82,10 @@ class KeyboardSpeech:
                         voices=voice.GetVoices()
                         token=next((voices.Item(i) for i in range(voices.Count) if voices.Item(i).Id==voice_id),None)
                         if token:voice.Voice=token
-                        chosen=voice_id
-                    voice.Rate=rate;voice.Volume=volume
+                        chosen=voice_id;applied=None   # a new voice gets the rate and volume again
+                    # Each setting is a call into the voice; set it only when it changed, so a key's
+                    # word starts sooner (Will, November 12, 2026: keys felt slow).
+                    if applied!=(rate,volume):voice.Rate=rate;voice.Volume=volume;applied=(rate,volume)
                     from voice_pitch import sapi_speak
                     sapi_speak(voice,text,pitch)
                 except Exception as exc:self.problem=type(exc).__name__

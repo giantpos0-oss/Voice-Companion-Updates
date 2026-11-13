@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.212-test.
+Guide version: 0.2.213-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -1029,6 +1029,7 @@ While Companion waits, you can say:
 - "Enter Thunderbird password" to open the private password box.
 - "Show Thunderbird" to bring Thunderbird to the front.
 - "Stop waiting for Thunderbird" to stop. Nothing is removed.
+If Thunderbird was open before Companion, email connects in a few seconds. If it does not, Companion restarts Thunderbird once, the normal way. Thunderbird asks first if you are writing a message.
 Companion keeps its connection in Thunderbird up to date by itself. After a Companion update, Thunderbird may restart once. You hear "Updating the Voice Companion connection in Thunderbird". Then you hear when it is done. Thunderbird never restarts while you write a message. If you opened Thunderbird yourself, it waits until you are back in Companion.
 If Thunderbird already has the address, Companion connects it at once.
 Companion waits up to 15 minutes. If you finish in Thunderbird later, say "Add account" and choose Thunderbird. Companion connects every new address it finds.
@@ -2077,6 +2078,7 @@ Audio ducking is on at first. It lowers sound from these places:
 - Radio and podcasts in Companion.
 Other programs keep their sound unless you turn on Also lower other apps. Screen readers, such as NVDA, JAWS, and Narrator, are never lowered.
 The sound stays low through short pauses between phrases. So it does not go up and down while you move through a list.
+Sound comes back on the same device it was lowered on, such as a headset or your speakers. If you set a level yourself in the Windows volume mixer, Companion keeps it.
 Ducking level sets how much quieter the sound gets. The choices are:
 - Light: 25 percent quieter.
 - Medium: 50 percent quieter.

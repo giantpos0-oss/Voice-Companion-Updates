@@ -52,7 +52,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.212-test'
+APP_VERSION = '0.2.213-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -681,6 +681,7 @@ def process_keyboard_batch(mode):
     global KEYBOARD_BATCH,KEYBOARD_BATCH_TEXT,KEYBOARD_BATCH_STATUS,SLEEP_RETURN_MODE
     previous=KEYBOARD_BATCH;KEYBOARD_BATCH=True
     if not previous:KEYBOARD_BATCH_STATUS=False
+    batch_started=time.monotonic();last_label=None
     # App mode page keys go to the page through the browser's own channel; they
     # do not move the window's keyboard focus. Unless another page opened, the
     # window is not refocused or given the page again after them.
@@ -698,6 +699,7 @@ def process_keyboard_batch(mode):
         for _ in range(100):
             try:command=APP_WINDOW.commands.get_nowait()
             except queue.Empty:break
+            last_label=__import__('response_times').key_label(command)
             if isinstance(command,tuple) and command and command[0] in ('account_secret','web_private_value','file_secret'):
                 MAIL_LOG.remember_private(command[1].get('value') if isinstance(command[1],dict) else command[1])
             if TRANSCRIPT.enabled:
@@ -758,7 +760,13 @@ def process_keyboard_batch(mode):
                 if command is None:continue
             mode=resume_from_sleep() if mode=='sleep' and command.lower() in ('wake up','wake companion') else handle_keyboard(command,mode)
             if mode=='exit':break
-    finally:KEYBOARD_BATCH=previous
+    finally:
+        KEYBOARD_BATCH=previous
+        if not previous and last_label:
+            # A slow key is written down with its slow step (response_times.py); never the text.
+            take=getattr(APP_WINDOW.commands,'take_oldest',None);arrived=take() if take else None
+            RESPONSE_LOG.slow('key '+last_label,SLEEP_RETURN_MODE if mode=='sleep' else mode,
+                              [('waiting',batch_started-arrived if arrived else 0),('handling',time.monotonic()-batch_started)])
     if not previous and APP_WINDOW.commands.empty() and KEYBOARD_BATCH_TEXT:
         if KEYBOARD_BATCH_STATUS:finish_mail_announcement()
         text=KEYBOARD_BATCH_TEXT;KEYBOARD_BATCH_TEXT=None
@@ -769,6 +777,7 @@ def process_keyboard_batch(mode):
     return mode
 
 SLEEP_RETURN_MODE = 'awake'
+RESPONSE_LOG = __import__('response_times').Log()   # its folder is set when the app starts
 MAIN_MENU_HELP = ('help me', 'what can i say', 'what can i do', 'what do i say', 'i need help', 'please help',
                   'help me please', 'help please', 'what are my choices', 'what are my options')
 MAIN_MENU_FIRST = 'You are on the main menu. It is the first screen, so there is nothing to go back to. Say a choice, or say help.'
@@ -1639,6 +1648,38 @@ FAST_OFFLINE_COMMANDS = frozenset((
     'next preset', 'previous preset', 'list presets', 'read more', 'go back', 'back',
     'pause', 'play', 'resume'))
 
+
+
+# Screens where words are commands, never text to write: an exact command phrase heard
+# there is acted on without the dictation model's slower second pass (quick_voice_command).
+COMMAND_SCREENS = frozenset(('awake', 'attachments', 'browser_menu', 'document_menu', 'downloads', 'favorites_menu',
+                             'file_reader', 'files', 'help', 'local_media', 'mailbox', 'media', 'media_menu', 'notepad_menu',
+                             'office_menu', 'organizer_menu', 'power_menu', 'reader_menu', 'reader_recent',
+                             'recent_documents', 'web_tools_menu', 'word_processor', 'web', 'document', 'email_draft', 'note'))
+_COMMAND_PHRASES = None
+
+
+def command_phrases():
+    """The fixed command phrases (command_phrases.txt, made from the command handler)."""
+    global _COMMAND_PHRASES
+    if _COMMAND_PHRASES is None:
+        folder = Path(getattr(sys, '_MEIPASS', Path(__file__).parent))
+        try:
+            lines = (folder / 'command_phrases.txt').read_text(encoding='utf-8').splitlines()
+        except (OSError, UnicodeError):
+            lines = []
+        _COMMAND_PHRASES = frozenset(line.strip() for line in lines if line.strip() and not line.startswith('#'))
+    return _COMMAND_PHRASES
+
+
+def quick_voice_command(heard, mode):
+    """True when the quick recognizer heard an exact command on a command screen, so the
+    dictation model's second pass (often a second or more) is skipped
+    (Will, November 12, 2026: voice commands felt slow). Anything that may be text
+    to write, a name or a search, still gets the dictation model."""
+    if mode not in COMMAND_SCREENS or writing_dictation(mode) or mode == 'tutorial':
+        return False
+    return normalized_command(heard) in command_phrases()
 
 
 def fast_command_request(command, mode):
@@ -6594,6 +6635,9 @@ def main():
                 raise RuntimeError('The onboard user guide is missing.')
             from guide_files import guide_sources
             guide_sources(expected_version=APP_VERSION)
+            # Quick voice commands need their phrase list (0.2.213).
+            if len(command_phrases()) < 100:
+                raise RuntimeError('The voice command phrase list (command_phrases.txt) is missing.')
             # Every tutorial lesson's practice screens load in the packed app (0.2.211).
             import tutorial_engine
             broken = tutorial_engine.self_check(sys.modules[__name__])
@@ -6749,6 +6793,7 @@ def main():
         # Keys must reach this window at once (Thunderbird or the installer may have the foreground).
         if APP_WINDOW is not None and hasattr(APP_WINDOW,'reclaim_focus'):APP_WINDOW.reclaim_focus()
         start_freeze_watch()
+        RESPONSE_LOG.folder=APP
         # Listen and process keys while the asynchronous startup speech plays.
         settings_quiet_until=0
         settings_audio_blocked=False
@@ -6862,6 +6907,14 @@ def main():
                     if mode=='exit':return 0
                     continue
             try:
+                if input_stream is None and APP_WINDOW is not None and hasattr(APP_WINDOW.commands,'arrived'):
+                    # Microphone off: wake the moment a key arrives, not after a fixed wait.
+                    arrived=APP_WINDOW.commands.arrived
+                    arrived.wait(0.02);arrived.clear()
+                    while True:
+                        try:AUDIO.get_nowait()   # sound from before the microphone closed is never acted on
+                        except queue.Empty:break
+                    raise queue.Empty
                 audio = AUDIO.get(timeout=0.02)
             except queue.Empty:
                 if time.monotonic()-last_focus_check>1.2:
@@ -6941,9 +6994,22 @@ def main():
                 mode = handle(local_control, mode)
                 if mode == 'exit': return 0
                 continue
+            recognized_at = time.monotonic(); second_pass = 0.0
+            if mode != 'sleep' and parakeet and utterance and quick_voice_command(heard, mode):
+                utterance.clear()
+            if mode != 'sleep' and parakeet and utterance:
+                # Only the part with speech in it goes to Parakeet: it takes longer the more
+                # sound it gets. Silence alone (nothing heard) is not transcribed at all.
+                from parakeet_recognition import speech_span
+                spoken = speech_span(bytes(utterance))
+                if not spoken and not heard:
+                    utterance.clear()
+                elif not spoken:
+                    spoken = bytes(utterance)   # the quick recognizer heard words: never drop them
             if mode != 'sleep' and parakeet and utterance:
                 try:
-                    better = parakeet.recognize(bytes(utterance))
+                    better = parakeet.recognize(spoken)
+                    second_pass = time.monotonic() - recognized_at
                     if better:
                         heard = better
                 except Exception as exc:
@@ -6963,7 +7029,12 @@ def main():
                             mode = handle(remainder, mode)
                         break
             else:
+                screen = mode
+                handle_started = time.monotonic()
                 mode = handle(heard, mode)
+                # A slow voice command is written down with its slow step; never the words.
+                RESPONSE_LOG.slow('voice command', screen, [('second recognition', second_pass),
+                                                            ('handling', time.monotonic() - handle_started)])
             if mode == 'exit':
                 return 0
 
