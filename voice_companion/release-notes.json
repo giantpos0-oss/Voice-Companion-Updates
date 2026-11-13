@@ -3,11 +3,22 @@
   "status": "Testing build",
   "date": "November 12, 2026",
   "baseline": "0.2.212-test",
-  "scope": "Faster answers to keys, voice commands and dictation. Thunderbird connects quickly when it was open first. Sound in Chrome no longer stays quiet on a headset.",
+  "scope": "Companion makes sure your microphone is loud enough. Keys, voice commands and dictation answer faster. Thunderbird connects quickly when it was open first. Sound in Chrome no longer stays quiet on a headset.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
+        {
+          "title": "Microphone level",
+          "details": [
+            "Windows often sets a headset mic too low. Then Companion misses words.",
+            "Now Companion turns your mic up to 70 percent when it listens, if it was lower.",
+            "It never lowers it. It does not change it while you talk.",
+            "You hear when it raises the level, and if the microphone is muted.",
+            "Say microphone level to hear the level. Say microphone level 80 to choose another level.",
+            "You can also choose it in Input options, or turn it off."
+          ]
+        },
         {
           "title": "Response time record",
           "details": [

@@ -325,6 +325,10 @@ Text boxes use letter keys for typing instead.
 1.5 Set up your microphone
 Voice Companion uses the microphone chosen in Windows. A built-in microphone works. A headset works better.
 A headset keeps the app's own speech out of the microphone. It can also make your voice easier to hear.
+Windows often sets headset microphones very low. Then Companion misses words. So, while Companion listens, it raises the microphone to 70 percent if it is lower. It never lowers it. If Companion raises it, you hear what the level was. If the microphone is muted, you hear that too. Companion never unmutes it for you.
+- Say "Microphone level" to hear the microphone's name and level.
+- Say "Microphone level 80" to choose another level, from 50 to 100 percent.
+- Say "Microphone level off" to leave the level as Windows has it.
 If voice commands do not work, follow these steps.
 1. Open Windows sound settings and check the microphone.
 2. Check that apps are allowed to use it.
@@ -2101,6 +2105,7 @@ If a program is still too quiet, open the Windows volume mixer and raise it ther
 
 25.5 Input and Email options
 In Input options, you can choose Normal, Commands only, or Dictation only. See part 2.2.
+Microphone level sets how loud Companion makes the microphone while it listens. The choices are 50 to 100 percent, or Leave as Windows has it. The default is 70 percent. Companion only raises the level. It never lowers it, and it does not change it while you talk. See part 1.5.
 Dictation type is a separate choice:
 - Old school keeps the speech entry you used before. It is the default.
 - AI-based uses the local AI speech model and light cleanup. The model adds stops and capital letters as you speak. Cleanup removes um, uh, and clear repeated starts. For example, "I I, um, want to go" becomes "I want to go".

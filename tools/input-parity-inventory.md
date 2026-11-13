@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 759
-- Already had both ways: 607
+- Actions inventoried: 760
+- Already had both ways: 608
 - Gaps found: 152
 - Gaps fixed (Added): 144
 - Not applicable (N/A, with reason): 8
@@ -1350,6 +1350,12 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Dictation type
 
 - Voice: "Set Dictation type to ..."
+- Keyboard: Alt+O, arrows to Input options, Tab to the field, arrows or Space, Enter to save
+- Status: Both
+
+### Microphone level while Companion listens
+
+- Voice: "Set Microphone level while Companion listens to ..."
 - Keyboard: Alt+O, arrows to Input options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 

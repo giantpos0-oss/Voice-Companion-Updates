@@ -1498,6 +1498,7 @@ def save_options(values,mode):
     global SLEEP_RETURN_MODE
     __import__('app_settings').stop_preview(sys.modules[__name__])
     apply_settings(values)
+    if MICROPHONE_KEEPER is not None:MICROPHONE_KEEPER.wake.set()   # a new microphone level is used at once
     SETTINGS_PANEL.accepted()
     if APP_WINDOW is not None:
         # Old field notices must not interrupt the successful save message.
@@ -1946,6 +1947,53 @@ def audio_ducker():
         # Never leave other programs quiet when Companion closes or stops on an error.
         atexit.register(AUDIO_DUCKER.close)
     return AUDIO_DUCKER
+
+
+MICROPHONE_KEEPER = None
+
+
+def microphone_keeper():
+    """Raises the default microphone to the level chosen in Options while Companion listens
+    (microphone_level.py). None outside Windows and in text mode."""
+    global MICROPHONE_KEEPER
+    if MICROPHONE_KEEPER is None and not TEXT_MODE and os.name == 'nt':
+        from microphone_level import DEFAULT_LEVEL, MicrophoneKeeper, WindowsMicrophone
+        MICROPHONE_KEEPER = MicrophoneKeeper(WindowsMicrophone, choice=lambda: PREFERENCES.get('microphone_level', DEFAULT_LEVEL),
+                                             notify=MEDIA_NOTICES.put, log=lambda text: print(text, file=sys.stderr)).start()
+    return MICROPHONE_KEEPER
+
+
+def microphone_level_request(command):
+    """ "Microphone level", "What is my microphone level?" -> ('report', None);
+    "Set the microphone level to 80 percent." -> ('set', '80 percent'); a level that is not a choice -> ('set', None)."""
+    if re.fullmatch(r'(?:(?:what is|what s|whats|check|tell me) )?(?:the |my )?(?:microphone|mic) (?:level|volume)(?: (?:now|please))?', command):
+        return 'report', None
+    level = re.fullmatch(r'(?:(?:set|change|make|put|turn) )?(?:the |my )?(?:microphone|mic) (?:level|volume)(?: to)? (.+)', command)
+    if level:
+        from microphone_level import spoken_level
+        return 'set', spoken_level(level[1])
+    return None
+
+
+def microphone_level_answer(request):
+    from microphone_level import OFF, DEFAULT_LEVEL
+    kind, value = request
+    keeper = microphone_keeper()
+    if kind == 'report':
+        if keeper is not None:
+            return keeper.report()
+        chosen = PREFERENCES.get('microphone_level', DEFAULT_LEVEL)
+        return ('Voice Companion leaves the microphone level as Windows has it.' if chosen == OFF else
+                'Voice Companion raises the microphone to at least ' + chosen + ' while it listens.')
+    if value is None:
+        return 'Choose a microphone level from 50 to 100 percent, in steps of 10. For example, say microphone level 70. Or say microphone level off.'
+    PREFERENCES['microphone_level'] = value
+    if keeper is not None:
+        keeper.wake.set()   # the new level is used at once if Companion is listening
+    if value == OFF:
+        return 'Microphone level off. Voice Companion leaves the microphone level as Windows has it.' + remembered(save_preferences)
+    return ('Microphone level ' + value + '. Voice Companion raises the microphone to at least ' + value +
+            ' while it listens. It never lowers it.' + remembered(save_preferences))
 
 
 def audio_ducking_request(command):
@@ -4748,6 +4796,10 @@ def _handle(text, mode, typed=False):
         PREFERENCES['web_search_engine']=engine
         if web_session:web_session.search_engine=engine
         speak('Default search engine '+{'google':'Google','bing':'Bing','brave':'Brave Search','duckduckgo':'DuckDuckGo'}[engine]+'.'+remembered(save_preferences));return mode
+    # Microphone level (Will, November 12, 2026). Not while dictating: "Mic volume was low" is a sentence.
+    mic_request=None if writing_dictation(mode,typed) else microphone_level_request(command)
+    if mic_request:
+        speak(microphone_level_answer(mic_request));return mode
     ducking_request=audio_ducking_request(command)
     if ducking_request:
         key,value=ducking_request
@@ -6799,8 +6851,14 @@ def main():
         settings_audio_blocked=False
         web_refresh=RefreshPacer();startup_speaking=True;startup_quiet_until=time.monotonic()+.3
         microphone_retry_at=0
+        microphone_listening=None
         while True:
             FREEZE_WATCH['beat']=time.monotonic()
+            if (input_stream is not None)!=microphone_listening:
+                # The microphone opened or closed: check its Windows level at once, or stop checking.
+                microphone_listening=input_stream is not None
+                keeper=microphone_keeper()
+                if keeper is not None:keeper.listening_changed(microphone_listening)
             poll_dictation_echo()
             mode=poll_thunderbird_watch(mode)
             if input_stream is not None and (MICROPHONE_OFF or not microphone_active(input_stream)):
