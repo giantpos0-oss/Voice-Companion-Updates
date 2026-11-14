@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 759
-- Already had both ways: 607
+- Actions inventoried: 763
+- Already had both ways: 611
 - Gaps found: 152
 - Gaps fixed (Added): 144
 - Not applicable (N/A, with reason): 8
@@ -1350,6 +1350,12 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Dictation type
 
 - Voice: "Set Dictation type to ..."
+- Keyboard: Alt+O, arrows to Input options, Tab to the field, arrows or Space, Enter to save
+- Status: Both
+
+### Microphone level while Companion listens
+
+- Voice: "Set Microphone level while Companion listens to ..."
 - Keyboard: Alt+O, arrows to Input options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 
@@ -3287,6 +3293,26 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Alt, P, M
 - Status: Added: Alt menu path
 
+## Alt menu, YouTube actions: Elapsed and remaining time
+
+### Elapsed time
+
+- Voice: "Elapsed time"
+- Keyboard: E
+- Status: Both
+
+### Total time
+
+- Voice: "Total time"
+- Keyboard: T
+- Status: Both
+
+### Time left
+
+- Voice: "Time remaining"
+- Keyboard: R
+- Status: Both
+
 ## Alt menu, YouTube actions: Volume and speed
 
 ### Volume up
@@ -3336,7 +3362,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Read the caption
 
 - Voice: "Read caption"
-- Keyboard: R
+- Keyboard: Shift+C
 - Status: Both
 
 ### Video quality
@@ -3418,7 +3444,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Like
 
 - Voice: "Like video"
-- Keyboard: T
+- Keyboard: L
 - Status: Both
 
 ### Subscribe or unsubscribe

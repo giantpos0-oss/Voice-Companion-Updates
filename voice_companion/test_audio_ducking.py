@@ -169,6 +169,48 @@ class DuckerTests(unittest.TestCase):
         self.run_for(3)
         self.assertEqual(reopened.get_volume(), float32(0.9))
 
+    def test_headset_that_drops_out_while_lowered_gets_its_volume_back(self):
+        # Windows keeps a separate volume for each app on each output device.
+        # Session names carry the device, as Windows session identifiers do.
+        jabra = self.windows.add('{0.0.0.00000000}.{jabra}|chrome.exe%b1', 5100)
+        self.speak()
+        self.assertAlmostEqual(jabra.get_volume(), 0.25, places=5)
+        # The headset drops out while lowered: Chrome moves to the speakers.
+        jabra.ended = True
+        speakers = self.windows.add('{0.0.0.00000000}.{speakers}|chrome.exe%b1', 5100)
+        self.run_for(3)
+        self.speak(0.2)
+        self.run_for(3)
+        self.assertEqual(speakers.get_volume(), 1.0)
+        # The headset comes back. Windows gives Chrome the level it last had there.
+        speakers.ended = True
+        back = self.windows.add('{0.0.0.00000000}.{jabra}|chrome.exe%b1 again', 5100, 0.25)
+        self.run_for(audio_ducking.PENDING_SCAN_SECONDS + 1)
+        self.assertEqual(back.get_volume(), 1.0, 'Chrome must not stay quiet on the headset.')
+        self.assertFalse(self.state.exists())
+
+    def test_level_the_user_chose_after_a_session_ended_is_kept(self):
+        chrome = self.windows.add('{dev}|chrome.exe%b1', 5100)
+        self.speak()
+        chrome.ended = True
+        self.run_for(3)
+        # While Chrome was closed, the user set it to 40 in the volume mixer.
+        reopened = self.windows.add('{dev}|chrome.exe%b2', 5100, 0.4)
+        self.run_for(audio_ducking.PENDING_SCAN_SECONDS + 1)
+        self.speak(0.2)
+        self.run_for(3)
+        self.assertEqual(reopened.get_volume(), float32(0.4))
+        self.assertFalse(self.state.exists())
+
+    def test_saved_state_from_an_older_version_is_still_put_back(self):
+        self.state.write_text(json.dumps({'chrome.exe': 0.8}), encoding='utf-8')
+        chrome = self.windows.add('{dev}|chrome.exe%b1', 5100, 0.2)
+        ducker = self.make()
+        ducker.recover()
+        self.run_for(0.1, ducker)
+        self.assertEqual(chrome.get_volume(), float32(0.8))
+        self.assertFalse(self.state.exists())
+
     def test_session_that_starts_while_speaking_is_lowered_and_restored(self):
         self.windows.add('chrome', 5100)
         self.ducker.request(True, 0.5, False)
@@ -207,8 +249,9 @@ class DuckerTests(unittest.TestCase):
         chrome = self.windows.add('chrome', 5100, 0.7)
         self.ducker.request(True, 0.25, False)
         self.run_for(0.3)
-        saved = json.loads(self.state.read_text(encoding='utf-8'))
-        self.assertAlmostEqual(saved['chrome.exe'], 0.7, places=5)
+        saved = json.loads(self.state.read_text(encoding='utf-8'))['sessions']
+        self.assertEqual([item['app'] for item in saved], ['chrome.exe'])
+        self.assertAlmostEqual(saved[0]['volume'], 0.7, places=5)
         # The app stops here without restoring. A new copy starts.
         restarted = self.make()
         restarted.recover()

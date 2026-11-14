@@ -296,6 +296,10 @@ MENUS = {
             ('Skip ad', 'S', 'skip ad'),
             ('Stop video', '', 'stop video'),
             ('Skip amount', '', 'skip amount {value}')]),
+        ('Elapsed and remaining time', [
+            ('Elapsed time', 'E', 'elapsed time'),
+            ('Total time', 'T', 'total time'),
+            ('Time left', 'R', 'time remaining')]),
         ('Volume and speed', [
             ('Volume up', 'Ctrl+Up', 'video volume up'),
             ('Volume down', 'Ctrl+Down', 'video volume down'),
@@ -305,7 +309,7 @@ MENUS = {
             ('Normal speed', '', 'normal speed')]),
         ('Captions and picture', [
             ('Captions on or off', 'C', 'captions on or off'),
-            ('Read the caption', 'R', 'read caption'),
+            ('Read the caption', 'Shift+C', 'read caption'),
             ('Video quality', 'Q', 'video quality'),
             ('Video full screen', 'F', 'video full screen'),
             ('Autoplay on or off', 'A', 'autoplay on or off')]),
@@ -320,7 +324,7 @@ MENUS = {
             ('Next chapter', 'Ctrl+Right', 'next chapter'),
             ('Previous chapter', 'Ctrl+Left', 'previous chapter')]),
         ('Your account', [
-            ('Like', 'T', 'like video'),
+            ('Like', 'L', 'like video'),
             ('Subscribe or unsubscribe', 'U', 'subscribe or unsubscribe'),
             ('Save to Watch later', '', 'save to watch later'),
             ('Save to a playlist', 'W', 'save video'),
@@ -424,6 +428,7 @@ LETTERS = {
     # YouTube
     'play or pause video': 'P', 'skip back': 'B', 'skip forward': 'F', 'restart video': 'R', 'next video': 'N',
     'previous video': 'V', 'skip ad': 'A', 'stop video': 'S', 'skip amount {value}': 'M',
+    'elapsed time': 'E', 'total time': 'T', 'time remaining': 'L',
     'video volume up': 'U', 'video volume down': 'D', 'mute or unmute': 'M', 'slower video': 'S', 'faster video': 'F',
     'normal speed': 'N', 'captions on or off': 'C', 'read caption': 'R', 'video quality': 'Q', 'video full screen': 'F',
     'autoplay on or off': 'A', 'video details': 'I', 'read description': 'D', 'read comments': 'C', 'up next': 'U',

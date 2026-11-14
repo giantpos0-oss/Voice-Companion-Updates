@@ -1,0 +1,704 @@
+# Fixed voice command phrases, made by tools/command_phrases.py from the command handler.
+# Do not edit by hand: run python3 tools/command_phrases.py --update
+about voice companion
+account
+account entry busy
+account entry empty
+accounts
+action
+add account
+add another account
+add bookmark
+add email account
+add favorite
+add favorite as
+add preset
+add preset as
+add the chrome extension
+address
+ai voice setup
+at
+attach
+attachments
+auto download
+automatically download
+available
+awake
+back
+back a list
+back one list
+back to files
+back to folder
+back to inbox
+back to main menu
+back to topics
+bcc
+beginning of list
+bing
+body
+brave
+browse city
+browse country
+browse files
+browse genre
+browse podcasts
+browse state
+browser menu
+calendar
+cancel
+cancel account setup
+cancel draft
+cancel email
+cancel forward
+cancel forward draft
+cancel forwarding
+cancel message
+cancel new email
+cancel reply
+cancel reply draft
+cancel send
+cancel setup
+cancel this draft
+cancel this email
+cancel this forward
+cancel this message
+cancel this reply
+cancel update
+cc
+change account
+change address
+change email account
+change email list size
+change list to
+change the address
+change voice to
+check email
+check for updates
+check gmail
+check mail
+check microsoft email
+check my email
+check my mail
+check outlook
+check podcasts
+check thunderbird version
+check updates
+check voices
+check yahoo
+choose account
+choose an account
+choose an email account
+choose email account
+choose radio source
+choose station database
+chrome setup
+close
+close document
+close email
+close file manager
+close inbox
+close list
+close website
+command mode
+commands
+commands and dictation
+commands help
+commands mode
+commands only
+compose a message
+compose a new message
+compose email
+compose email to sender
+confirm
+confirm send
+confirm send email
+confirm that
+confirm website
+connect chrome
+connect email account
+connect google contacts
+connect regular browser
+contacts
+continue document
+continue email
+continue writing
+copy
+copy sender address
+copy sender email address
+copy the sender address
+create a document
+create document
+create email
+current
+delete
+delete account
+delete an account
+delete an email account
+delete bookmark
+delete email account
+delete favorite
+delete mail account
+delete preset
+dictate
+dictation
+dictation and commands
+dictation mode
+dictation only
+discard
+discard draft
+discard email
+discard message
+discard this draft
+discard this email
+disconnect account
+disconnect an account
+disconnect an email account
+disconnect email account
+do it
+do not replace
+do not send
+document
+document help
+documents
+done dictating
+download
+downloads
+duck
+duckduckgo
+earlier emails
+email
+email help
+email list size
+email sender
+email the sender
+enable
+end of list
+episode
+escape
+exchange
+exit
+exit companion
+exit document
+exit document mode
+exit email
+exit note
+faster
+favorite list
+favorites list
+file letter
+file letters
+file manager
+files
+find contact
+find podcast
+find radio
+find station
+finish note
+first item
+fix address
+fix the address
+flow
+folder
+folders
+forward
+forward message
+get more emails
+get more messages
+get the new thunderbird
+get the newest thunderbird
+gmail
+go ahead
+go back
+go back a list
+go back a screen
+go back to main menu
+go to
+go to bookmark
+go to email
+go to favorite
+go to folder
+go to inbox
+go to my email
+go to my inbox
+go to the inbox
+go to website
+google
+help
+help for
+help with
+high
+history
+how many emails
+how many messages per page
+id
+import radiosure
+importance
+in
+inbox
+index
+install browser extension
+install chrome
+install google chrome
+install it
+install the browser extension
+install the chrome extension
+install update
+installing
+items
+keep
+keep it
+last item
+later
+leave
+leave document
+leave email
+leave file manager
+leave podcasts
+leave radio
+leave web browser
+leave website
+list address book
+list bookmarks
+list contacts
+list documents
+list email accounts
+list favorites
+list my notes
+list notes
+list podcast
+list podcasts
+list presets
+list radio favorites
+list recordings
+list saved notes
+list scheduled recordings
+list station databases
+list subscriptions
+list the notes
+list voices
+louder
+low
+mail
+mail list size
+mailbox
+mailto
+main menu
+manage files
+manual
+manual downloads
+maybe later
+media
+media menu
+message
+microsoft 365
+mixed
+mixed mode
+mode
+more emails
+mozilla thunderbird
+my documents
+my email
+my email accounts
+my favorites
+my inbox
+my notes
+my podcasts
+my presets
+name
+name document
+never mind
+nevermind
+new bookmark
+new document
+new email
+new email to sender
+new favorite
+new line
+new message
+new note
+new search
+next
+next chapter
+next episode
+next list
+next message
+next messages
+next page
+next podcast
+next preset
+next show
+next voice
+no
+no message body
+no subject
+no thank you
+no thanks
+nope
+normal mode
+not now
+not yet
+note
+notepad
+notes list
+nt
+ok
+okay
+on
+open
+open a note
+open a saved note
+open current document
+open document
+open documents
+open documents folder
+open earlier copy
+open email
+open email draft
+open favorite
+open file manager
+open first podcast
+open folder
+open gmail
+open gmail inbox
+open guides
+open guides folder
+open inbox
+open mail
+open manual
+open my email
+open my inbox
+open my mail
+open my notes
+open note
+open notepad
+open notes
+open options
+open outlook
+open outlook inbox
+open outlook mail
+open podcast
+open preferences
+open preset
+open regular browser
+open release notes
+open saved note
+open saved notes
+open settings
+open the earlier copy
+open the inbox
+open user guide
+open user guides
+open user guides folder
+open web browser
+open web browsing
+open website
+open yahoo
+open yahoo inbox
+open yahoo mail
+options
+origin
+outlook
+password
+pause
+pending
+play
+play download
+play episode
+play preset
+play recording
+play station
+please send
+please send it
+please send my email
+please send that
+podcast
+podcast categories
+podcast help
+podcast list
+podcasts
+podcasts list
+preferences
+preparing
+preset list
+previous
+previous chapter
+previous episode
+previous list
+previous message
+previous messages
+previous page
+previous podcast
+previous preset
+previous screen
+previous show
+previous voice
+provider
+purpose
+question
+quieter
+radio
+radio help
+radio presets
+read
+read address book
+read email
+read gmail
+read mail
+read my email
+read my mail
+read my note
+read my notes
+read note
+read notes
+read outlook
+read saved notes
+read yahoo
+reader
+recipient
+record station
+refresh google contacts
+refresh subscriptions
+regular browser
+release notes
+remove
+remove account
+remove an account
+remove an email account
+remove email account
+remove mail account
+remove preset
+rename
+rename bookmark
+rename document
+rename favorite
+repeat
+repeat that
+replace
+replace it
+reply
+reply all
+reply to all
+reply to message
+restart
+restart computer
+restore earlier copy
+resume
+resume document
+resume draft
+resume email
+return to inbox
+return to main menu
+rows
+save
+save as
+save document
+save document as
+save draft
+save favorite
+save favorite as
+save it
+save my document
+save my document as
+save note
+save preset
+save preset as
+save the document as
+save this document as
+saved notes
+say that again
+schedule station
+scratch
+scratch that
+search
+search podcast
+search radio
+search the web
+search web
+send
+send a message
+send email
+send email now
+send it
+send it now
+send message
+send my email
+send my message
+send now
+send that
+send the email
+send the message
+send this
+send this email
+send this message
+session
+set email list size
+set list to
+set mail list size
+set message list size
+set page size
+set podcast
+set radio source
+set show
+set station database
+set to
+set up ai voice
+set up chrome
+set up email
+set up the browser extension
+set voice to
+settings
+setup ai voice
+setup chrome
+show
+show documents folder
+show more emails
+show more messages
+show my notes
+show notes
+show options
+show saved notes
+show settings
+show user guides
+shut down computer
+shutdown
+sleep
+slower
+speak faster
+speak slower
+start dictation
+start of list
+station database
+status
+step
+stop
+stop update
+storage
+subject
+subprocess
+subscribe podcast
+subscribe to podcast
+subscription
+subscription list
+subscriptions list
+sure
+switch account
+switch accounts
+switch email account
+switch email accounts
+switch to
+switch to command mode
+switch to commands mode
+switch to commands only
+switch to dictation mode
+switch to dictation only
+switch to mixed mode
+switch to normal mode
+switch to radio source
+switch to station database
+sync google contacts
+take a note
+that one
+the same screen
+thunderbird
+thunderbird mail
+toggle audio
+top podcast
+turn off auto downloads
+tutorial
+type
+type new line
+unittest
+update my thunderbird
+update status
+update subscribed podcasts
+update thunderbird
+update thunderbird now
+update voice companion
+upgrade
+upgrade my thunderbird
+upgrade thunderbird
+use ai voice
+use earlier copy
+use espeak
+use radio source
+use sapi
+use sapi voice
+use station database
+use the earlier copy
+use voice
+use windows voice
+user guide
+verbosity
+version
+visit
+voice check
+voice diagnostics
+web
+web browser
+web browser menu
+web browsing
+web help
+web history
+web key
+web search
+what
+what browser am i using
+what do i do
+what documents do i have
+what email account
+what input mode
+what is new
+what mode
+what mode am i in
+what mode is it
+what mode is on
+what mode is this
+what notes do i have
+what now
+what s new
+what version
+what version am i using
+what version do i have
+what version is it
+what version is this
+what's new
+whats new
+where am i
+where am i now
+where are my documents
+where are my user guides
+where are the user guides
+where do documents save
+where is the user guide folder
+which browser
+which email account
+which mode
+which mode am i in
+which radio source
+which station database
+which thunderbird do i have
+which version
+which version is this
+write a document
+write a message
+write a new message
+write a note
+write an email
+write an email to sender
+write email
+write mail
+writing email
+wrong address
+yahoo
+yahoo mail
+yeah
+yep
+yes
+yes open it
+yes open website
+yes please
+yes replace it
+yes send email
+yes send it
+yes send that
+youtube

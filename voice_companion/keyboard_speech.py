@@ -14,6 +14,7 @@ class KeyboardSpeech:
     def speak(self,text):
         if text:
             self.interrupt()
+            self.requested_at=time.monotonic()
             self.narration_interrupt.set();self.active=True;self.queue.put(text)
     def preview(self,text,settings):
         """One utterance with staged settings; saved speech is untouched."""
@@ -42,7 +43,7 @@ class KeyboardSpeech:
         pythoncom.CoInitialize()
         try:
             from speech32 import with_32bit_voices
-            voice=with_32bit_voices(Dispatch('SAPI.SpVoice'));chosen=None  # 32-bit voices too (speech32.py)
+            voice=with_32bit_voices(Dispatch('SAPI.SpVoice'));chosen=None;applied=None  # 32-bit voices too (speech32.py)
             while True:
                 if sys.platform=='win32':
                     import ctypes
@@ -69,7 +70,9 @@ class KeyboardSpeech:
                             if getattr(self,'paused',False):voice.Resume()
                             self.paused=False
                             if action=='interrupt':
+                                stop_started=time.monotonic()
                                 voice.Speak('',3);self.active=False;self.quiet_until=time.monotonic()+.15
+                                self.stop_seconds=getattr(self,'stop_seconds',0.0)+time.monotonic()-stop_started
                                 if espeak:espeak.interrupt()
                             elif espeak:espeak.resume()
                         continue
@@ -82,10 +85,17 @@ class KeyboardSpeech:
                         voices=voice.GetVoices()
                         token=next((voices.Item(i) for i in range(voices.Count) if voices.Item(i).Id==voice_id),None)
                         if token:voice.Voice=token
-                        chosen=voice_id
-                    voice.Rate=rate;voice.Volume=volume
+                        chosen=voice_id;applied=None   # a new voice gets the rate and volume again
+                    # Each setting is a call into the voice; set it only when it changed, so a key's
+                    # word starts sooner (Will, November 12, 2026: keys felt slow).
+                    if applied!=(rate,volume):voice.Rate=rate;voice.Volume=volume;applied=(rate,volume)
                     from voice_pitch import sapi_speak
                     sapi_speak(voice,text,pitch)
+                    # How long the words waited after Companion asked for them (response_times.py).
+                    report=getattr(self,'on_timing',None);asked=getattr(self,'requested_at',None)
+                    if report and asked and not preview:
+                        report(time.monotonic()-asked,getattr(self,'stop_seconds',0.0))
+                    self.requested_at=None;self.stop_seconds=0.0
                 except Exception as exc:self.problem=type(exc).__name__
         except Exception as exc:
             self.problem=type(exc).__name__;self.active=False

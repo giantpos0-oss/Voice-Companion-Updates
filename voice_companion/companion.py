@@ -52,7 +52,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.212-test'
+APP_VERSION = '0.2.213-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -681,6 +681,8 @@ def process_keyboard_batch(mode):
     global KEYBOARD_BATCH,KEYBOARD_BATCH_TEXT,KEYBOARD_BATCH_STATUS,SLEEP_RETURN_MODE
     previous=KEYBOARD_BATCH;KEYBOARD_BATCH=True
     if not previous:KEYBOARD_BATCH_STATUS=False
+    batch_started=time.monotonic();last_label=None
+    if not previous:__import__('response_times').take()   # steps timed before this key are not its own
     # App mode page keys go to the page through the browser's own channel; they
     # do not move the window's keyboard focus. Unless another page opened, the
     # window is not refocused or given the page again after them.
@@ -698,6 +700,7 @@ def process_keyboard_batch(mode):
         for _ in range(100):
             try:command=APP_WINDOW.commands.get_nowait()
             except queue.Empty:break
+            last_label=__import__('response_times').key_label(command)
             if isinstance(command,tuple) and command and command[0] in ('account_secret','web_private_value','file_secret'):
                 MAIL_LOG.remember_private(command[1].get('value') if isinstance(command[1],dict) else command[1])
             if TRANSCRIPT.enabled:
@@ -758,7 +761,14 @@ def process_keyboard_batch(mode):
                 if command is None:continue
             mode=resume_from_sleep() if mode=='sleep' and command.lower() in ('wake up','wake companion') else handle_keyboard(command,mode)
             if mode=='exit':break
-    finally:KEYBOARD_BATCH=previous
+    finally:
+        KEYBOARD_BATCH=previous
+        if not previous and last_label:
+            # A slow key is written down with its slow step (response_times.py); never the text.
+            take=getattr(APP_WINDOW.commands,'take_oldest',None);arrived=take() if take else None
+            total=time.monotonic()-batch_started;steps=__import__('response_times').take()
+            RESPONSE_LOG.slow('key '+last_label,SLEEP_RETURN_MODE if mode=='sleep' else mode,
+                              [('waiting',batch_started-arrived if arrived else 0)]+steps+[('other handling',max(0,total-sum(t for _,t in steps)))])
     if not previous and APP_WINDOW.commands.empty() and KEYBOARD_BATCH_TEXT:
         if KEYBOARD_BATCH_STATUS:finish_mail_announcement()
         text=KEYBOARD_BATCH_TEXT;KEYBOARD_BATCH_TEXT=None
@@ -769,6 +779,7 @@ def process_keyboard_batch(mode):
     return mode
 
 SLEEP_RETURN_MODE = 'awake'
+RESPONSE_LOG = __import__('response_times').Log()   # its folder is set when the app starts
 MAIN_MENU_HELP = ('help me', 'what can i say', 'what can i do', 'what do i say', 'i need help', 'please help',
                   'help me please', 'help please', 'what are my choices', 'what are my options')
 MAIN_MENU_FIRST = 'You are on the main menu. It is the first screen, so there is nothing to go back to. Say a choice, or say help.'
@@ -1232,7 +1243,9 @@ TEXT_READING_KEYS={'Insert+Down':'say all','CapsLock+Down':'say all',
 
 def _navigation_key(key,mode):
     global CONFIRM_CHOICE, ACCOUNT_MENU_INDEX
-    interrupt_speech()
+    # process_keyboard_batch stopped the speech just before; stopping it twice made every key
+    # wait for the voice twice (Will, November 12, 2026: keys felt slow).
+    if not KEYBOARD_BATCH:interrupt_speech()
     if key=='F1' and LAST_YES_NO and yes_no_open(mode):
         # F1 in a yes or no question says the question again (Will, October 31, 2026).
         speak(LAST_YES_NO);return None
@@ -1489,6 +1502,7 @@ def save_options(values,mode):
     global SLEEP_RETURN_MODE
     __import__('app_settings').stop_preview(sys.modules[__name__])
     apply_settings(values)
+    if MICROPHONE_KEEPER is not None:MICROPHONE_KEEPER.wake.set()   # a new microphone level is used at once
     SETTINGS_PANEL.accepted()
     if APP_WINDOW is not None:
         # Old field notices must not interrupt the successful save message.
@@ -1639,6 +1653,38 @@ FAST_OFFLINE_COMMANDS = frozenset((
     'next preset', 'previous preset', 'list presets', 'read more', 'go back', 'back',
     'pause', 'play', 'resume'))
 
+
+
+# Screens where words are commands, never text to write: an exact command phrase heard
+# there is acted on without the dictation model's slower second pass (quick_voice_command).
+COMMAND_SCREENS = frozenset(('awake', 'attachments', 'browser_menu', 'document_menu', 'downloads', 'favorites_menu',
+                             'file_reader', 'files', 'help', 'local_media', 'mailbox', 'media', 'media_menu', 'notepad_menu',
+                             'office_menu', 'organizer_menu', 'power_menu', 'reader_menu', 'reader_recent',
+                             'recent_documents', 'web_tools_menu', 'word_processor', 'web', 'document', 'email_draft', 'note'))
+_COMMAND_PHRASES = None
+
+
+def command_phrases():
+    """The fixed command phrases (command_phrases.txt, made from the command handler)."""
+    global _COMMAND_PHRASES
+    if _COMMAND_PHRASES is None:
+        folder = Path(getattr(sys, '_MEIPASS', Path(__file__).parent))
+        try:
+            lines = (folder / 'command_phrases.txt').read_text(encoding='utf-8').splitlines()
+        except (OSError, UnicodeError):
+            lines = []
+        _COMMAND_PHRASES = frozenset(line.strip() for line in lines if line.strip() and not line.startswith('#'))
+    return _COMMAND_PHRASES
+
+
+def quick_voice_command(heard, mode):
+    """True when the quick recognizer heard an exact command on a command screen, so the
+    dictation model's second pass (often a second or more) is skipped
+    (Will, November 12, 2026: voice commands felt slow). Anything that may be text
+    to write, a name or a search, still gets the dictation model."""
+    if mode not in COMMAND_SCREENS or writing_dictation(mode) or mode == 'tutorial':
+        return False
+    return normalized_command(heard) in command_phrases()
 
 
 def fast_command_request(command, mode):
@@ -1821,7 +1867,9 @@ def interrupt_speech():
     if SPEECH_PAUSED:
         voice.Resume()
         SPEECH_PAUSED = False
+    started = time.monotonic()
     voice.Speak('', 3)  # SAPI async + purge: discard the old spoken request.
+    __import__('response_times').add('stopping the voice', time.monotonic() - started)
 
 
 def control_speech(action):
@@ -1905,6 +1953,53 @@ def audio_ducker():
         # Never leave other programs quiet when Companion closes or stops on an error.
         atexit.register(AUDIO_DUCKER.close)
     return AUDIO_DUCKER
+
+
+MICROPHONE_KEEPER = None
+
+
+def microphone_keeper():
+    """Raises the default microphone to the level chosen in Options while Companion listens
+    (microphone_level.py). None outside Windows and in text mode."""
+    global MICROPHONE_KEEPER
+    if MICROPHONE_KEEPER is None and not TEXT_MODE and os.name == 'nt':
+        from microphone_level import DEFAULT_LEVEL, MicrophoneKeeper, WindowsMicrophone
+        MICROPHONE_KEEPER = MicrophoneKeeper(WindowsMicrophone, choice=lambda: PREFERENCES.get('microphone_level', DEFAULT_LEVEL),
+                                             notify=MEDIA_NOTICES.put, log=lambda text: print(text, file=sys.stderr)).start()
+    return MICROPHONE_KEEPER
+
+
+def microphone_level_request(command):
+    """ "Microphone level", "What is my microphone level?" -> ('report', None);
+    "Set the microphone level to 80 percent." -> ('set', '80 percent'); a level that is not a choice -> ('set', None)."""
+    if re.fullmatch(r'(?:(?:what is|what s|whats|check|tell me) )?(?:the |my )?(?:microphone|mic) (?:level|volume)(?: (?:now|please))?', command):
+        return 'report', None
+    level = re.fullmatch(r'(?:(?:set|change|make|put|turn) )?(?:the |my )?(?:microphone|mic) (?:level|volume)(?: to)? (.+)', command)
+    if level:
+        from microphone_level import spoken_level
+        return 'set', spoken_level(level[1])
+    return None
+
+
+def microphone_level_answer(request):
+    from microphone_level import OFF, DEFAULT_LEVEL
+    kind, value = request
+    keeper = microphone_keeper()
+    if kind == 'report':
+        if keeper is not None:
+            return keeper.report()
+        chosen = PREFERENCES.get('microphone_level', DEFAULT_LEVEL)
+        return ('Voice Companion leaves the microphone level as Windows has it.' if chosen == OFF else
+                'Voice Companion raises the microphone to at least ' + chosen + ' while it listens.')
+    if value is None:
+        return 'Choose a microphone level from 50 to 100 percent, in steps of 10. For example, say microphone level 70. Or say microphone level off.'
+    PREFERENCES['microphone_level'] = value
+    if keeper is not None:
+        keeper.wake.set()   # the new level is used at once if Companion is listening
+    if value == OFF:
+        return 'Microphone level off. Voice Companion leaves the microphone level as Windows has it.' + remembered(save_preferences)
+    return ('Microphone level ' + value + '. Voice Companion raises the microphone to at least ' + value +
+            ' while it listens. It never lowers it.' + remembered(save_preferences))
 
 
 def audio_ducking_request(command):
@@ -2992,12 +3087,12 @@ def thunderbird_busy():
                 or (ACCOUNT_ENTRY or {}).get('provider') == 'thunderbird' or THUNDERBIRD_STARTING)
 
 
-def mail_log(text):
+def mail_log(text, always=False):
     """thunderbird-log.txt: what Voice Companion said and heard while Thunderbird was busy. Never raises."""
     try:
         if MAIL_LOG.folder is None:
             MAIL_LOG.start(APP)
-        if thunderbird_busy():
+        if always or thunderbird_busy():
             MAIL_LOG.mode = str(TRANSCRIPT.mode or '')
             MAIL_LOG.said(text)
     except Exception:
@@ -3253,8 +3348,9 @@ def start_thunderbird_quietly():
                 THUNDERBIRD_STARTING = False
             if launched:
                 quiet_thunderbird(relay)
-        except Exception:
-            pass    # said only if mail is used and still cannot connect
+        except Exception as exc:
+            # Said only if mail is used and still cannot connect; the reason goes in the mail log.
+            mail_log('[thunderbird] at startup: not connected (%s: %s)' % (type(exc).__name__, exc), always=True)
     thread = threading.Thread(target=run, name='Start Thunderbird', daemon=True)
     thread.start()
     return thread
@@ -4706,6 +4802,10 @@ def _handle(text, mode, typed=False):
         PREFERENCES['web_search_engine']=engine
         if web_session:web_session.search_engine=engine
         speak('Default search engine '+{'google':'Google','bing':'Bing','brave':'Brave Search','duckduckgo':'DuckDuckGo'}[engine]+'.'+remembered(save_preferences));return mode
+    # Microphone level (Will, November 12, 2026). Not while dictating: "Mic volume was low" is a sentence.
+    mic_request=None if writing_dictation(mode,typed) else microphone_level_request(command)
+    if mic_request:
+        speak(microphone_level_answer(mic_request));return mode
     ducking_request=audio_ducking_request(command)
     if ducking_request:
         key,value=ducking_request
@@ -6593,6 +6693,9 @@ def main():
                 raise RuntimeError('The onboard user guide is missing.')
             from guide_files import guide_sources
             guide_sources(expected_version=APP_VERSION)
+            # Quick voice commands need their phrase list (0.2.213).
+            if len(command_phrases()) < 100:
+                raise RuntimeError('The voice command phrase list (command_phrases.txt) is missing.')
             # Every tutorial lesson's practice screens load in the packed app (0.2.211).
             import tutorial_engine
             broken = tutorial_engine.self_check(sys.modules[__name__])
@@ -6748,13 +6851,20 @@ def main():
         # Keys must reach this window at once (Thunderbird or the installer may have the foreground).
         if APP_WINDOW is not None and hasattr(APP_WINDOW,'reclaim_focus'):APP_WINDOW.reclaim_focus()
         start_freeze_watch()
+        RESPONSE_LOG.folder=APP
         # Listen and process keys while the asynchronous startup speech plays.
         settings_quiet_until=0
         settings_audio_blocked=False
         web_refresh=RefreshPacer();startup_speaking=True;startup_quiet_until=time.monotonic()+.3
         microphone_retry_at=0
+        microphone_listening=None
         while True:
             FREEZE_WATCH['beat']=time.monotonic()
+            if (input_stream is not None)!=microphone_listening:
+                # The microphone opened or closed: check its Windows level at once, or stop checking.
+                microphone_listening=input_stream is not None
+                keeper=microphone_keeper()
+                if keeper is not None:keeper.listening_changed(microphone_listening)
             poll_dictation_echo()
             mode=poll_thunderbird_watch(mode)
             if input_stream is not None and (MICROPHONE_OFF or not microphone_active(input_stream)):
@@ -6861,6 +6971,14 @@ def main():
                     if mode=='exit':return 0
                     continue
             try:
+                if input_stream is None and APP_WINDOW is not None and hasattr(APP_WINDOW.commands,'arrived'):
+                    # Microphone off: wake the moment a key arrives, not after a fixed wait.
+                    arrived=APP_WINDOW.commands.arrived
+                    arrived.wait(0.02);arrived.clear()
+                    while True:
+                        try:AUDIO.get_nowait()   # sound from before the microphone closed is never acted on
+                        except queue.Empty:break
+                    raise queue.Empty
                 audio = AUDIO.get(timeout=0.02)
             except queue.Empty:
                 if time.monotonic()-last_focus_check>1.2:
@@ -6940,9 +7058,22 @@ def main():
                 mode = handle(local_control, mode)
                 if mode == 'exit': return 0
                 continue
+            recognized_at = time.monotonic(); second_pass = 0.0
+            if mode != 'sleep' and parakeet and utterance and quick_voice_command(heard, mode):
+                utterance.clear()
+            if mode != 'sleep' and parakeet and utterance:
+                # Only the part with speech in it goes to Parakeet: it takes longer the more
+                # sound it gets. Silence alone (nothing heard) is not transcribed at all.
+                from parakeet_recognition import speech_span
+                spoken = speech_span(bytes(utterance))
+                if not spoken and not heard:
+                    utterance.clear()
+                elif not spoken:
+                    spoken = bytes(utterance)   # the quick recognizer heard words: never drop them
             if mode != 'sleep' and parakeet and utterance:
                 try:
-                    better = parakeet.recognize(bytes(utterance))
+                    better = parakeet.recognize(spoken)
+                    second_pass = time.monotonic() - recognized_at
                     if better:
                         heard = better
                 except Exception as exc:
@@ -6962,7 +7093,12 @@ def main():
                             mode = handle(remainder, mode)
                         break
             else:
+                screen = mode
+                handle_started = time.monotonic()
                 mode = handle(heard, mode)
+                # A slow voice command is written down with its slow step; never the words.
+                RESPONSE_LOG.slow('voice command', screen, [('second recognition', second_pass),
+                                                            ('handling', time.monotonic() - handle_started)])
             if mode == 'exit':
                 return 0
 
@@ -7089,6 +7225,9 @@ if __name__ == '__main__':
             APP_WINDOW = CompanionWindow(APP_VERSION, APP)
             from keyboard_speech import KeyboardSpeech
             KEYBOARD_SPEECH=KeyboardSpeech();KEYBOARD_SPEECH.configure(voice.Voice.Id,SPEECH_RATE,SPEECH_VOLUME,ESPEAK_SPEECH,SPEECH_PITCH,ai=AI_SPEECH,capital_letters=PREFERENCES.get('capital_letters','do nothing'));APP_WINDOW.keyboard_output=KEYBOARD_SPEECH
+            # The keyboard voice is timed too: from Companion asking for the words to the voice taking them.
+            KEYBOARD_SPEECH.on_timing=lambda waited,stop:RESPONSE_LOG.slow('keyboard voice',APP_WINDOW.context.get('mode') if APP_WINDOW else '',
+                                                                         [('stopping the keyboard voice',stop),('starting to speak',max(0,waited-stop))])
             APP_WINDOW.start()
             if os.name=='nt':
                 try:

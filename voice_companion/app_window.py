@@ -138,7 +138,8 @@ class CompanionWindow:
         self.settings_results = queue.Queue()
         self.settings_notices = queue.Queue()
         self.messages = queue.Queue()
-        self.commands = queue.Queue()
+        # Wakes the main loop the moment a key arrives (response_times.py).
+        self.commands = __import__('response_times').CommandQueue()
         self.ui_actions = queue.Queue()
         self.key_feedback = queue.Queue()
         self.closed = threading.Event()

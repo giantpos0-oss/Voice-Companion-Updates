@@ -626,6 +626,46 @@ class WakeTests(SetupCase):
         self.assertEqual(system.wakes, [1])
         self.assertEqual(system.settled, [[101]])
 
+    def open_thunderbird(self, connect_after, closes=True):
+        """Thunderbird was open before Voice Companion, but its connection helper had been closed."""
+        folder = self.profile()
+        self.add_on(folder, active=True)
+        system = FakeSystem(self.home, registered('159.0 (x64 en-US)'), {INSTALLED}, running=True)
+        system.wakes, system.settled = [], []
+        system.wake_windows = lambda stage: system.wakes.append(stage) or [100 + stage]
+        system.settle_windows = lambda handles: system.settled.append(list(handles))
+        if not closes:
+            system.close_program = lambda: system.__dict__.__setitem__('closes', system.__dict__.get('closes', 0) + 1)
+        relay = FakeRelay(connect_after=connect_after)
+        notes = []
+        import user_stop
+        with mock.patch.object(user_stop, 'wait', lambda event, timeout: event.wait(timeout)):
+            launched = thunderbird_setup.start_in_background(system, self.package, relay, self.progress.append, note=notes.append)
+        return system, relay, launched, notes
+
+    def test_an_open_thunderbird_that_does_not_connect_is_restarted_within_seconds(self):
+        # Will, November 12, 2026: it waited several minutes before trying a restart.
+        system, relay, launched, notes = self.open_thunderbird(connect_after=4)
+        self.assertEqual(sum(relay.waits[:4]), thunderbird_setup.RESTART_AFTER_SECONDS)
+        self.assertEqual(system.closes, 1)
+        self.assertEqual(system.background, [INSTALLED])
+        self.assertTrue(relay.connected.is_set())
+        self.assertIn(thunderbird_setup.RESTARTING_QUIETLY, self.progress)
+        self.assertEqual(system.settled, [[101, 102]], 'The woken windows are put back before the restart.')
+        self.assertFalse(launched, 'Thunderbird the person opened is not closed when Voice Companion closes.')
+
+    def test_an_open_thunderbird_that_connects_in_time_is_not_restarted(self):
+        system, relay, launched, notes = self.open_thunderbird(connect_after=3)
+        self.assertNotIn('closes', system.__dict__)
+        self.assertNotIn(thunderbird_setup.RESTARTING_QUIETLY, self.progress)
+
+    def test_a_thunderbird_that_does_not_close_is_left_open(self):
+        # It may be asking whether to save a message: never forced, never started twice.
+        system, relay, launched, notes = self.open_thunderbird(connect_after=None, closes=False)
+        self.assertEqual(system.closes, 1)
+        self.assertNotIn('background', system.__dict__)
+        self.assertTrue(any('left as it is' in note for note in notes))
+
     def test_the_efficiency_setting_is_turned_off_with_the_prompt_start(self):
         folder = self.profile()
         thunderbird_setup.start_addons_promptly(folder)

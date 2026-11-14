@@ -1,21 +1,31 @@
 {
-  "version": "0.2.212-test",
+  "version": "0.2.213-test",
   "status": "Testing build",
-  "date": "November 11, 2026",
-  "baseline": "0.2.211-test",
-  "scope": "Older 32-bit Windows voices, such as NeoSpeech Paul, Kate and James, now work in Voice Companion.",
+  "date": "November 12, 2026",
+  "baseline": "0.2.212-test",
+  "scope": "Companion makes sure your microphone is loud enough. Keys, voice commands and dictation answer faster. Thunderbird connects quickly when it was open first. Sound in Chrome no longer stays quiet on a headset.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "Older 32-bit voices",
+          "title": "Microphone level",
           "details": [
-            "Some older voices only work in 32-bit programs. NeoSpeech Paul, Kate and James are examples.",
-            "Before, Companion could not see them. Now they are in the voice list with your other voices.",
-            "Choose one in Options, or say use voice Paul.",
-            "Speed, volume, pause and stop work the same as with any other voice.",
-            "If one of these voices cannot start, Companion uses another voice and tells you."
+            "Windows often sets a headset mic too low. Then Companion misses words.",
+            "Now Companion turns your mic up to 70 percent when it listens, if it was lower.",
+            "It never lowers it. It does not change it while you talk.",
+            "You hear when it raises the level, and if the microphone is muted.",
+            "Say microphone level to hear the level. Say microphone level 80 to choose another level.",
+            "You can also choose it in Input options, or turn it off."
+          ]
+        },
+        {
+          "title": "Response time record",
+          "details": [
+            "Some keys or commands may still feel slow. Now Companion writes each slow one down.",
+            "The record is a file called response-times.txt in Companion's data folder.",
+            "It says which step was slow. It never keeps the words you say or type.",
+            "This helps us find and fix the slow spots."
           ]
         }
       ]
@@ -24,11 +34,48 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Voice check",
+          "title": "Faster keys and voice commands",
           "details": [
-            "Say Voice check to hear how many voices Companion can use.",
-            "It now runs in the background, so Companion keeps listening while it checks.",
-            "The report also lists the older 32-bit voices."
+            "Companion answers a key the moment you press it.",
+            "Companion used to stop its voice twice for every key. Now it stops it once.",
+            "Short commands, such as next, check email and main menu, are acted on right away.",
+            "Before, every command went through the dictation engine a second time. That could add a second or more."
+          ]
+        },
+        {
+          "title": "Faster dictation",
+          "details": [
+            "Only the part of the recording with your words goes to the dictation engine.",
+            "The quiet before and after you speak is left out, so your text comes back sooner.",
+            "Silence alone is no longer sent to the engine. This keeps the computer quicker while the microphone is on."
+          ]
+        },
+        {
+          "title": "YouTube keys",
+          "details": [
+            "Left and Right Arrow now say only how far they moved, such as Back 10 seconds.",
+            "Press E to hear the time played so far.",
+            "Press T to hear the total time, and R to hear the time left.",
+            "Like is now L. To read the caption that is showing, press Shift+C.",
+            "Moving through a video is faster, too."
+          ]
+        },
+        {
+          "title": "Thunderbird opened first",
+          "details": [
+            "Did you open Thunderbird first? Now email connects in a few seconds.",
+            "Before, it could take many minutes.",
+            "If Thunderbird still does not connect, Companion restarts it once, the normal way.",
+            "Thunderbird asks first if you are writing a message, so nothing is lost."
+          ]
+        },
+        {
+          "title": "Sound on headsets",
+          "details": [
+            "Companion lowers other sound while it talks, then puts it back.",
+            "On some headsets, such as the Jabra Engage, sound in Chrome could stay quiet afterward.",
+            "Now it always comes back, on the headset and on your speakers.",
+            "If you set a level yourself in the volume mixer, Companion keeps it."
           ]
         }
       ]

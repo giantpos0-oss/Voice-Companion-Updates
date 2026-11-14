@@ -82,6 +82,12 @@ STARTING_QUIETLY = 'Starting Thunderbird.'
 WAITING_QUIETLY = 'Waiting for Thunderbird.'
 STILL_STARTING = 'Still starting Thunderbird.'
 NOTICE_SECONDS = 2
+# Thunderbird was already open but its connection did not come, even after the wake-ups:
+# its connection helper was closed (an update closes it), and Thunderbird tries again only
+# on slow timers. After this long it is restarted once, the normal way (Will, November 12, 2026:
+# "waits several minutes before finally attempting a restart").
+RESTART_AFTER_SECONDS = 12
+RESTARTING_QUIETLY = 'Thunderbird did not connect, so Voice Companion is restarting it. Please wait.'
 AUTO_NO_CONNECTION = ('Thunderbird started, but it did not connect to Voice Companion within one minute. '
                       'Close Thunderbird, then try again. If it still does not connect, say add account and choose Thunderbird to check it.')
 OPENING_SITE = ('Opening thunderbird dot net in your web browser. Ask a helper to install Thunderbird '
@@ -728,16 +734,55 @@ def start_in_background(system, package, relay, progress, limit=WAIT_SECONDS, no
             if user_stop.wait(relay.connected, wait_for):
                 return launched
             waited += wait_for
+        if not launched:
+            if waited < RESTART_AFTER_SECONDS:
+                if user_stop.wait(relay.connected, RESTART_AFTER_SECONDS - waited):
+                    return launched
+                waited = RESTART_AFTER_SECONDS
+            if woken:
+                settle(system, woken, note); woken = []
+            if _restart_quietly(system, program, profile, package, progress, note):
+                waited = 0   # a full wait again for the fresh start
         while waited < limit:
-            if user_stop.wait(relay.connected, PROGRESS_SECONDS):
+            step = min(PROGRESS_SECONDS, limit - waited)
+            if user_stop.wait(relay.connected, step):
                 return launched
-            waited += PROGRESS_SECONDS
+            waited += step
             if waited < limit:
                 progress(STILL_STARTING)
+        if note: note('[thunderbird] still not connected after %d seconds' % waited)
         return launched
     finally:
         if woken:
             settle(system, woken, note)
+
+
+def _restart_quietly(system, program, profile, package, progress, note=None):
+    """Close an open Thunderbird the normal way and start it again in the background.
+
+    Never forced: Thunderbird's own close asks about a message being written, so
+    nothing is lost; if it does not close, it is left open. Returns True when it
+    started again."""
+    with _START_LOCK:
+        if not system.running():
+            return False
+        progress(RESTARTING_QUIETLY)
+        if note: note('[thunderbird] open but not connected: restarting it')
+        system.close_program()
+        if not _until(system, lambda: not system.running(), CLOSE_SECONDS):
+            if note: note('[thunderbird] did not close (a question may be open); left as it is')
+            return False
+        try:
+            refresh_addon(profile, package)
+            start_addons_promptly(profile)
+        except OSError:
+            pass   # the add-on already in the profile still connects
+        try:
+            system.launch_background(program)
+        except OSError:
+            if note: note('[thunderbird] could not start again after the restart')
+            return False
+        return True
 
 
 # ---- Installing Thunderbird ---------------------------------------------------

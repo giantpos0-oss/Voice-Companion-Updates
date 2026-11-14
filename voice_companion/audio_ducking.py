@@ -46,6 +46,8 @@ HOLD_SECONDS = 0.6      # stay lowered through short pauses between phrases
 RELEASE_SECONDS = 0.5   # how long sound takes to come back up
 SCAN_SECONDS = 0.25     # look for new sessions this often while lowered
 FADE_STEP_SECONDS = 0.03
+PENDING_SCAN_SECONDS = 5.0  # while a volume still needs putting back (headset away, app closed)
+MATCH = 0.02               # how close a volume must be to the level Companion set to count as ours
 
 
 def level_factor(value):
@@ -83,12 +85,27 @@ def spoken_level(value):
 
 
 class _Record:
-    __slots__ = ('original', 'last_set', 'name')
+    __slots__ = ('original', 'last_set', 'name', 'device')
 
-    def __init__(self, original, name):
+    def __init__(self, original, name, device=''):
         self.original = original
         self.last_set = original
         self.name = name
+        self.device = device
+
+
+def session_device(session):
+    """The output device a session plays on.
+
+    Windows keeps a separate volume for each app on each device, so a level
+    left lowered on a headset must be put back on that headset, not on the
+    speakers. A session instance identifier starts with the device's ID.
+    """
+    device = getattr(session, 'device', None)
+    if device is None:
+        key = str(getattr(session, 'key', '') or '')
+        device = key.split('|', 1)[0] if '|' in key else ''
+    return str(device or '').lower()
 
 
 class AudioDucker:
@@ -117,7 +134,11 @@ class AudioDucker:
         self.last_step = None
         self.records = {}          # session key -> _Record
         self.decisions = {}        # session key -> whether it is lowered
-        self.pending = {}          # exe name -> original volume, for sessions that ended while lowered
+        # (exe name, device) -> (original volume, volume Companion left it at or None),
+        # for sessions that ended or whose device went away while lowered.
+        # Device '' comes from older state files and matches any device.
+        self.pending = {}
+        self.last_pending_scan = None
         self.saved_state = {}
         self.recovering = False
         self._load_state()
@@ -153,6 +174,10 @@ class AudioDucker:
     def _busy(self, now):
         return self.gain < 1.0 or self.target(now) < 1.0 or bool(self.records) or self.recovering
 
+    def _pending_due(self, now):
+        return bool(self.pending) and (self.last_pending_scan is None
+                                       or now - self.last_pending_scan >= PENDING_SCAN_SECONDS)
+
     # ----- one pass; the worker thread calls this, tests call it directly -----
     def step(self):
         with self.work:
@@ -173,7 +198,10 @@ class AudioDucker:
                 gain = self.gain
                 if self.options_changed:
                     self.options_changed = False;self.decisions.clear()
-            if gain == 1.0 and not self.records and not self.recovering:
+                pending_due = self._pending_due(now)
+                if pending_due:
+                    self.last_pending_scan = now
+            if gain == 1.0 and not self.records and not self.recovering and not pending_due:
                 self._save_state()
                 return False
             self._apply(gain)
@@ -195,12 +223,13 @@ class AudioDucker:
             self.available = False;self.problem = str(exc);self.backend = None
             return
         self.available = True;self.problem = None
-        seen = set()
+        seen, names = set(), set()
         try:
             for session in sessions:
                 try:
                     key = session.key
                     seen.add(key)
+                    names.add(str(session.name or '').lower())
                     record = self.records.get(key)
                     if record is None and not self._wanted(session, key):
                         continue
@@ -210,15 +239,11 @@ class AudioDucker:
                     current = float(session.get_volume())
                     if record is None:
                         name = str(session.name or '').lower()
-                        original = current
-                        remembered = self.pending.pop(name, None)
-                        if remembered is not None and current < remembered - 0.005:
-                            # Windows kept a lowered volume from a session that ended,
-                            # or from a crash; its real level is the remembered one.
-                            original = remembered
+                        device = session_device(session)
+                        original = self._remembered(name, device, current)
                         if gain >= 1.0 and original <= current + 0.005:
                             continue
-                        record = self.records[key] = _Record(original, name)
+                        record = self.records[key] = _Record(original, name, device)
                         record.last_set = current
                     elif abs(current - record.last_set) > 0.02:
                         # Someone moved this app's slider while it was lowered: their level
@@ -238,6 +263,9 @@ class AudioDucker:
                 self._forget(key)
             for key in [k for k in self.decisions if k not in seen]:
                 del self.decisions[key]
+            # An entry from an older version had its chance on every device in this pass.
+            for where in [w for w in self.pending if w[1] == '' and w[0] in names]:
+                del self.pending[where]
         finally:
             for session in sessions:
                 close = getattr(session, 'close', None)
@@ -245,11 +273,35 @@ class AudioDucker:
                     try:close()
                     except Exception:pass
 
+    def _remembered(self, name, device, current):
+        """The level to bring a new session back to; its own volume when nothing is owed."""
+        for where in ((name, device), (name, '')):
+            entry = self.pending.get(where)
+            if entry is None:
+                continue
+            original, left_at = entry
+            if where[1] == '' and current >= original - 0.005:
+                # An entry from an older version names no device: keep it until a
+                # session that is still low turns up, wherever that is.
+                continue
+            del self.pending[where]
+            if current >= original - 0.005:
+                return current  # Already back on this device.
+            if left_at is not None and abs(current - left_at) > MATCH:
+                return current  # Someone chose a new level here since: keep theirs.
+            # Windows kept the lowered level from a session that ended, a device
+            # that went away, or a crash. Its real level is the remembered one.
+            return original
+        return current
+
     def _forget(self, key):
         record = self.records.pop(key, None)
         if record is not None and record.last_set < record.original - 0.005 and record.name:
-            # Windows may keep the lowered level for this app's next session.
-            self.pending[record.name] = max(record.original, self.pending.get(record.name, 0.0))
+            # Windows keeps the lowered level for this app's next session on this device.
+            where = (record.name, record.device)
+            previous = self.pending.get(where)
+            original = max(record.original, previous[0] if previous else 0.0)
+            self.pending[where] = (original, record.last_set)
 
     def _restore(self, session, record):
         try:
@@ -332,22 +384,40 @@ class AudioDucker:
             data = json.loads(self.state_path.read_text(encoding='utf-8'))
         except (OSError, ValueError):
             return
-        if isinstance(data, dict):
-            for name, value in data.items():
-                try:
-                    value = float(value)
-                except (TypeError, ValueError):
+        def level(value):
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                return None
+            return value if 0.0 <= value <= 1.0 else None
+        if isinstance(data, dict) and isinstance(data.get('sessions'), list):
+            for item in data['sessions']:
+                if not isinstance(item, dict) or not item.get('app'):
                     continue
-                if 0.0 <= value <= 1.0:
-                    self.pending[str(name).lower()] = value
-            self.saved_state = dict(self.pending)
+                original = level(item.get('volume'))
+                if original is None:
+                    continue
+                left_at = level(item.get('left_at')) if item.get('left_at') is not None else None
+                self.pending[(str(item['app']).lower(), str(item.get('device') or '').lower())] = (original, left_at)
+        elif isinstance(data, dict):
+            # Older versions saved {exe name: original volume}.
+            for name, value in data.items():
+                original = level(value)
+                if original is not None:
+                    self.pending[(str(name).lower(), '')] = (original, None)
+        self.saved_state = self._state()
 
     def _state(self):
-        state = dict(self.pending)
+        owed = dict(self.pending)
         for record in self.records.values():
             if record.name and record.last_set < record.original - 0.005:
-                state[record.name] = max(record.original, state.get(record.name, 0.0))
-        return state
+                where = (record.name, record.device)
+                previous = owed.get(where)
+                owed[where] = (max(record.original, previous[0] if previous else 0.0), record.last_set)
+        if not owed:
+            return {}
+        return {'sessions': [{'app': name, 'device': device, 'volume': original, 'left_at': left_at}
+                             for (name, device), (original, left_at) in sorted(owed.items())]}
 
     def _save_state(self):
         if not self.state_path:
@@ -381,7 +451,8 @@ class AudioDucker:
                     now = self.clock()
                     busy = self._busy(now)
                     fading = abs(self.gain - self.target(now)) > 1e-6
-                self.wake.wait(FADE_STEP_SECONDS if fading else SCAN_SECONDS if busy else None)
+                    idle = PENDING_SCAN_SECONDS if self.pending else None
+                self.wake.wait(FADE_STEP_SECONDS if fading else SCAN_SECONDS if busy else idle)
                 self.wake.clear()
                 if self.closed:
                     break
