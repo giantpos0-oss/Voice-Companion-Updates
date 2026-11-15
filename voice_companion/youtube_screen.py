@@ -91,6 +91,7 @@ HOME_EMPTY = ('YouTube shows no Home videos yet. It picks them from what you wat
 COMPLETE_LISTS = ('channels',)
 COMPLETE_LIMIT = 3000
 PAGE = 10          # Page Down and Page Up move this many items
+MORE_SECONDS = 8   # the longest one key waits for the next part of a list (each request gives up after 6)
 PREFETCH = 5       # the next part is fetched when this few items are left
 MORE_WAITING = ', and more load as you move down. '
 # Subscriptions is every channel you subscribe to (Will, October 29, 2026); their newest
@@ -766,7 +767,10 @@ class YouTubeScreen:
                 return False
             reader = yp.YouTubePage(lambda: page)
             known = {yp.item_key(i) for i in view['items']}
+            give_up = time.monotonic() + MORE_SECONDS
             for _ in range(3):   # a part may hold only items already listed (or only ads)
+                if time.monotonic() > give_up:
+                    break   # one key never waits for YouTube longer than this (Will, November 15, 2026)
                 try:
                     items, token = reader.next_part(view['token'], view.get('search'))
                 except YouTubeError:

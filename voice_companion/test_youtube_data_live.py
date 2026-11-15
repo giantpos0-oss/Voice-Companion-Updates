@@ -152,6 +152,28 @@ class ScreenTests(DataPages):
         self.press('Prior')
         self.assertTrue(self.last().endswith(', 20 of 30.'), self.last())
 
+    def test_end_never_freezes_when_youtube_does_not_answer(self):
+        # Will, November 15, 2026: pressing End to go on to the next videos froze the app. Asking
+        # YouTube for the next part had no time limit, so a request YouTube never answered held
+        # Voice Companion for good. Now it gives up after a few seconds and says so.
+        import faulthandler, sys, time
+        self.say('YouTube.', 'awake'); self.say('Home.')
+        self.press('End')
+        self.context.route('https://www.youtube.com/youtubei/**', lambda route: None)   # never answered
+        # A freeze would hold this test for good; the browser library keeps signals from arriving.
+        # So after 40 seconds the test process ends with a report, instead of hanging the checks.
+        sys.stderr.write('If this test stops here, End froze Voice Companion when YouTube did not answer.\n')
+        faulthandler.dump_traceback_later(40, exit=True)
+        self.addCleanup(faulthandler.cancel_dump_traceback_later)
+        started = time.monotonic()
+        self.press('End')
+        waited = time.monotonic() - started
+        faulthandler.cancel_dump_traceback_later()
+        self.assertLess(waited, 12, 'End must give up on YouTube within a few seconds.')
+        self.assertIn(self.ys.yp.NO_MORE, self.last())
+        self.press('Up')   # the list still works afterward
+        self.assertTrue(self.last().endswith(', 4 of 5.'), self.last())
+
     def test_every_subscribed_channel_is_listed(self):
         self.say('YouTube.', 'awake'); self.say('My subscriptions.')
         self.assertTrue(self.last().startswith('Subscriptions. 60 items. Channel: Channel 001.'), self.last())
