@@ -980,7 +980,10 @@ def choose_menu_letter(letter,mode):
     select(index)
     if current==index:speak('End of matching items.');return True
     if VOICE_PICK_INDEX is not None:preview_voice(index)
-    else:speak(('Link ' if mode=='web' and web_session and web_session.list_focus=='links' else '')+announce_item(names[index],index,len(names),hotkey=not (mode=='web' and web_session and web_session.list_focus in ('links','headings','fields'))))
+    else:
+        # Folders are said as the arrow keys say them, without a key letter after the name.
+        plain=mode=='web' and web_session and web_session.list_focus in ('links','headings','fields') or mode=='mailbox'
+        speak(('Link ' if mode=='web' and web_session and web_session.list_focus=='links' else '')+announce_item(names[index],index,len(names),hotkey=not plain))
     return True
 
 def commit_email_field_tab(payload,mode):
@@ -4164,8 +4167,19 @@ def account_picker_key(key):
     if request:
         return request
     if key.startswith('Letter:'):
-        letter = key[7:]
-        index = next_match([words.name(p) for p, _ in picker['accounts']], picker['index'], letter)
+        letter = key[7:].lower()
+        # The address or the kind of account: W for will@gmail.com, Y for Yahoo. Matching the
+        # kind alone gave every Gmail account in Thunderbird the letter T (Will, November 15, 2026).
+        from menu_navigation import quick_key
+        accounts = picker['accounts']
+        matches = [i for i, (provider, address) in enumerate(accounts)
+                   if letter in (quick_key(address), quick_key(words.name(provider)))]
+        if not matches:
+            index = None
+        elif picker['index'] in matches:
+            index = matches[(matches.index(picker['index']) + 1) % len(matches)]
+        else:
+            index = next((i for i in matches if i > picker['index']), matches[0])
         if index is None:
             speak('No account starts with ' + letter.upper() + '.')
         else:

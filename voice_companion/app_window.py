@@ -696,7 +696,12 @@ class CompanionWindow:
                 elif mode=='document' and key=='F2':request='F2'
                 elif mode=='mailbox':
                     from input_parity import mail_header_key
-                    if mail_header_key(key,event.state) and not (event.widget==typed and self.command_entry_active):
+                    if self.context.get('menu_letters') and not self.command_entry_active and not control and not alt_held(event.state) and len(event.char)==1 and event.char.isalpha() and not typed.get():
+                        # The folder list (Control+Y, "go to folder"): a letter moves to the next folder
+                        # that starts with it. This branch used to catch the key first, so the letter
+                        # went into the command box instead (Will, November 15, 2026).
+                        request='Letter:'+event.char.lower()
+                    elif mail_header_key(key,event.state) and not (event.widget==typed and self.command_entry_active):
                         # Alt+1 to Alt+6: From, To, CC, Subject, Date sent, attachments.
                         request=mail_header_key(key,event.state)
                     elif self.context.get('source') and self.context.get('email_html') and event.widget==self.editor and not control and not alt_held(event.state) and key.lower() in ('k','b'):
