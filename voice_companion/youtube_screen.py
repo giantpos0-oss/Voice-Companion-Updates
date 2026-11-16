@@ -91,6 +91,7 @@ HOME_EMPTY = ('YouTube shows no Home videos yet. It picks them from what you wat
 COMPLETE_LISTS = ('channels',)
 COMPLETE_LIMIT = 3000
 PAGE = 10          # Page Down and Page Up move this many items
+NEXT_SECONDS = 6   # the longest N waits to hear that the next video started
 MORE_SECONDS = 8   # the longest one key waits for the next part of a list (each request gives up after 6)
 PREFETCH = 5       # the next part is fetched when this few items are left
 MORE_WAITING = ', and more load as you move down. '
@@ -1149,13 +1150,25 @@ class YouTubeScreen:
         problem = self.need_video()
         if problem:
             return problem
-        before = self.player.state().get('id')
+        # The video playing now is known already; asking the page again cost a slow page seconds.
+        before = (getattr(self, 'video', None) or {}).get('id') or self.player.state().get('id')
         self.player.next_video()
-        for _ in range(20):
+        # Wait by time, not by count: with YouTube answering slowly, 20 checks froze Voice
+        # Companion for 76 seconds (Will, November 14, 2026).
+        give_up = time.monotonic() + NEXT_SECONDS
+        slow = False
+        while True:
             self.player.settle(250)
+            asked = time.monotonic()
             state = self.player.state()
+            slow = slow or time.monotonic() - asked > 1.0
             if state.get('id') and state.get('id') != before:
                 return self.now_on(state, 'Next video. ')
+            took = time.monotonic() - asked + 0.25
+            if time.monotonic() + took > give_up:
+                break   # another check would not finish in time
+        if slow:
+            return 'YouTube is slow to answer, so the next video may still be loading. Press F3 to hear what is playing.'
         return 'There is no next video.'
 
     def now_on(self, state, lead=''):
