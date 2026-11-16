@@ -1,0 +1,17 @@
+# Voice Companion AI service. Deployed by .github/workflows/ai-service.yml.
+# The usage namespace id is filled in by deploy.mjs at deploy time; the OpenAI key
+# is a Worker secret, never stored here.
+name = "voice-companion-ai"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+routes = [{ pattern = "ai.voicecompanionapp.com", custom_domain = true }]
+
+[vars]
+MODEL = "gpt-5.6-terra"
+MONTHLY_LIMIT = "200"
+DAILY_LIMIT = "3000"
+
+[[kv_namespaces]]
+binding = "USAGE"
+id = "FILLED_IN_AT_DEPLOY"
