@@ -77,6 +77,14 @@ test('pictures have a monthly limit; reading and writing do not', async () => {
   assert.equal((await handle(picture(), e, new Date('2026-12-01'), openai('A dog.'))).status, 200, 'a new month starts again');
 });
 
+test('check for errors says JSON in the input, as OpenAI requires', async () => {
+  let sent;
+  const capture = async (url, init) => { sent = JSON.parse(init.body); return new Response(JSON.stringify({ output_text: '{"corrections":[]}' }), { status: 200 }); };
+  const r = await handle(ask({ task: 'check_errors', text: 'I saw the dog.' }), env(), new Date('2026-11-16'), capture);
+  assert.equal(r.status, 200);
+  assert.match(JSON.stringify(sent.input).toLowerCase(), /json/);
+});
+
 test('the whole service has a daily limit', async () => {
   const e = env({ DAILY_LIMIT: '1', MONTHLY_LIMIT: '50' });
   await handle(ask({ task: 'simplify', text: 'x' }), e, new Date('2026-11-16'), openai('y'));
