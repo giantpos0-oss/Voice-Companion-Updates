@@ -1,0 +1,50 @@
+name: Deploy AI service
+
+# The Cloudflare Worker that answers Voice Companion's Reading Assistant, Writing
+# Assistant, Describe Image and Ask a Question. It holds the OpenAI key, so users
+# need no account of their own. See tools/ai-service/README.md.
+on:
+  push:
+    branches: [main]
+    paths: ['tools/ai-service/**', '.github/workflows/ai-service.yml']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test the AI service
+        run: node tools/ai-service/test-worker.mjs
+      - name: Check the secrets are there
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          missing=""
+          [ -z "$OPENAI_API_KEY" ] && missing="$missing OPENAI_API_KEY"
+          [ -z "$CLOUDFLARE_API_TOKEN" ] && missing="$missing CLOUDFLARE_API_TOKEN"
+          if [ -n "$missing" ]; then echo "::error::Add these repository secrets first:$missing. See tools/ai-service/README.md."; exit 1; fi
+      - name: Prepare the usage counter
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+        run: node tools/ai-service/deploy.mjs
+      - name: Deploy the Worker and its OpenAI key
+        working-directory: tools/ai-service
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          npx --yes wrangler@4 deploy || { echo "::error::wrangler deploy failed; its output above says why."; exit 1; }
+          printf '%s' "$OPENAI_API_KEY" | npx --yes wrangler@4 secret put OPENAI_API_KEY || { echo "::error::Could not store the OpenAI key in the Worker."; exit 1; }
+      - name: Check the service answers
+        run: |
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS https://ai.voicecompanionapp.com/v1/health; then echo; echo "The AI service is live."; exit 0; fi
+            sleep 10
+          done
+          echo "::error::https://ai.voicecompanionapp.com/v1/health did not answer. Check the custom domain in Cloudflare."; exit 1

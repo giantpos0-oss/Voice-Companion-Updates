@@ -20,6 +20,7 @@ import argparse
 import importlib.util
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -105,6 +106,13 @@ def main():
     if security.returncode:
         print(security.stdout[-3000:] + security.stderr[-1000:])
         sys.exit(1)
+    # The AI service (tools/ai-service): its own tests, with node, when node is installed.
+    if shutil.which('node'):
+        service = subprocess.run(['node', 'tools/ai-service/test-worker.mjs'], cwd=ROOT, capture_output=True, text=True, timeout=120)
+        print('AI service checks: ' + ('passed.' if not service.returncode else 'FAILED.'))
+        if service.returncode:
+            print(service.stdout[-3000:] + service.stderr[-1000:])
+            sys.exit(1)
     if not args.compare:
         for name in sorted(failures): print('  ' + name)
         sys.exit(1 if failures else 0)
