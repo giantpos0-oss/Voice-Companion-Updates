@@ -223,7 +223,7 @@ ALT_MENU_ADDED = {  # The AI assistant (Will, November 16, 2026).
     'mailbox': _AI_READ('email'), 'web': _AI_READ('page'), 'file_reader': _AI_READ('document'),
     'email_draft': _AI_WRITE, 'note': _AI_WRITE,
     'help': [('Ctrl+Shift+Q', 'ask a question')],
-    'attachments': [('', 'ask about the image'), ('', 'describe the image'), ('Ctrl+Shift+Q', 'ai assistant')],
+    'attachments': [('Ctrl+Shift+D', 'describe the image'), ('Ctrl+Shift+K', 'ask about the image'), ('Ctrl+Shift+Q', 'ai assistant')],
 }
 
 ALT_MENU_GROUPS = {

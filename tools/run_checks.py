@@ -69,6 +69,12 @@ def run(source, args):
         failures.update(f'{test} ({where})' for test, where in FAILURE.findall(output))
         ran = re.search(r'^Ran (\d+) tests?', output, re.M)
         totals.append(int(ran[1]) if ran else 0)
+        if not ran:
+            # A test file that cannot even be imported (a syntax error) stops the whole group before
+            # any test runs, so nothing matches FAILURE. Count that as a failure, never as a pass
+            # (0.2.214 trial: a SyntaxError in test_file_manager_tags passed here, failed on Windows).
+            last = [line for line in output.strip().splitlines() if line.strip()][-1:] or ['no output']
+            failures.add(f'TESTS DID NOT RUN ({" ".join(modules[:3])}{"..." if len(modules) > 3 else ""}): {last[0][:200]}')
     return failures, sum(totals)
 
 

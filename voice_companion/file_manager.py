@@ -288,7 +288,7 @@ SORT_MENU=(('Name','Ctrl+1','sort key name'),('Date modified','Ctrl+2','sort key
            ('Ascending','Ctrl+Shift+Up','sort ascending'),('Descending','Ctrl+Shift+Down','sort descending'))
 GO_MENU=(('Refresh','F5','refresh'),('Previous folder','Escape','go back'),('Drive list','Ctrl+D','drive list'),('File manager help','Double:F1','file manager help'),('Main menu','Alt+Home','main menu'))
 # The AI assistant (ai_assistant.py) describes the picture under the cursor; the app does the work.
-PICTURE_MENU=(('AI assistant','Ctrl+Shift+Q','ai assistant'),('Describe the image','','describe the image'),('Ask about the image','','ask about the image'))
+PICTURE_MENU=(('AI assistant','Ctrl+Shift+Q','ai assistant'),('Describe the image','Ctrl+Shift+D','describe the image'),('Ask about the image','Ctrl+Shift+K','ask about the image'))
 AI_COMMANDS=tuple(command for _,_,command in PICTURE_MENU)
 GROUPS={'actions':('Actions',ACTIONS),'search':('Search',SEARCH_MENU),'sort':('Sort',SORT_MENU),'picture':('Picture',PICTURE_MENU),'go':('Go to',GO_MENU)}
 MENU=tuple((name,'','open group '+key) for key,(name,_) in GROUPS.items())
