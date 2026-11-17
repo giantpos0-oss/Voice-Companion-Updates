@@ -11,6 +11,7 @@ routes = [{ pattern = "ai.voicecompanionapp.com", custom_domain = true }]
 MODEL = "gpt-5.6-terra"
 MONTHLY_LIMIT = "0"   # 0 = no limit for each copy; the OpenAI spending limit is the stop
 DAILY_LIMIT = "20000"
+IMAGE_MONTHLY_LIMIT = "200"   # pictures a month for each copy; reading and writing have no limit
 
 [[kv_namespaces]]
 binding = "USAGE"

@@ -64,6 +64,19 @@ test('OpenAI refusing for its spending limit says unavailable', async () => {
   assert.equal(r.status, 503); assert.equal((await r.json()).error, 'unavailable');
 });
 
+test('pictures have a monthly limit; reading and writing do not', async () => {
+  const e = env({ MONTHLY_LIMIT: '0', IMAGE_MONTHLY_LIMIT: '2' });
+  const when = new Date('2026-11-16');
+  const picture = () => ask({ task: 'describe_image', image: 'data:image/png;base64,iVBORw0KGgo=' });
+  let r = await handle(picture(), e, when, openai('A dog.'));
+  assert.equal(r.status, 200); assert.equal((await r.json()).pictures_left, 1);
+  assert.equal((await handle(picture(), e, when, openai('A dog.'))).status, 200);
+  r = await handle(picture(), e, when, openai('A dog.'));
+  assert.equal(r.status, 429); assert.equal((await r.json()).error, 'image limit');
+  for (let i = 0; i < 5; i++) assert.equal((await handle(ask({ task: 'simplify', text: 'x' }), e, when, openai('y'))).status, 200);
+  assert.equal((await handle(picture(), e, new Date('2026-12-01'), openai('A dog.'))).status, 200, 'a new month starts again');
+});
+
 test('the whole service has a daily limit', async () => {
   const e = env({ DAILY_LIMIT: '1', MONTHLY_LIMIT: '50' });
   await handle(ask({ task: 'simplify', text: 'x' }), e, new Date('2026-11-16'), openai('y'));

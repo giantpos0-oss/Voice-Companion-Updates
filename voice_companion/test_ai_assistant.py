@@ -217,6 +217,20 @@ class ServiceRequestTests(unittest.TestCase):
                                opener=self.reply({'ok': False, 'error': 'monthly limit', 'limit': 200}, 429))
         self.assertIn('all 200 AI requests for this month', str(caught.exception))
 
+    def test_the_picture_limit_is_said_plainly(self):
+        with self.assertRaises(ai.AssistantError) as caught:
+            ai.service_request(self.folder, 'v', 'describe_image', {'image': 'x'},
+                               opener=self.reply({'ok': False, 'error': 'image limit', 'limit': 200}, 429))
+        self.assertEqual(str(caught.exception), 'You have used all 200 picture descriptions for this month. They start again '
+                         'on the first of next month. Reading and writing help still works.')
+
+    def test_pictures_left_is_said_only_near_the_end(self):
+        self.assertEqual(ai.pictures_left_words({'pictures_left': 150}), '')
+        self.assertEqual(ai.pictures_left_words({}), '')
+        self.assertEqual(ai.pictures_left_words({'pictures_left': 10}), ' You have 10 picture descriptions left this month.')
+        self.assertEqual(ai.pictures_left_words({'pictures_left': 1}), ' You have 1 picture description left this month.')
+        self.assertIn('last picture description', ai.pictures_left_words({'pictures_left': 0}))
+
     def test_the_spending_limit_reached_is_said_plainly(self):
         with self.assertRaises(ai.AssistantError) as caught:
             ai.service_request(self.folder, 'v', 'summarise', {'text': 'x'},

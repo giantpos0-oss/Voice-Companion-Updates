@@ -160,6 +160,9 @@ def service_request(folder, version, task, payload, timeout=TIMEOUT_SECONDS, ope
     if error == 'monthly limit':
         raise AssistantError('You have used all %s AI requests for this month. They start again on the first of next month.'
                              % answer.get('limit', 200))
+    if error == 'image limit':
+        raise AssistantError('You have used all %s picture descriptions for this month. They start again on the first of next month. '
+                             'Reading and writing help still works.' % answer.get('limit', 200))
     if error == 'unavailable':
         raise AssistantError('The AI assistant is not available right now. Please try again later.')
     if error == 'busy':
@@ -169,6 +172,16 @@ def service_request(folder, version, task, payload, timeout=TIMEOUT_SECONDS, ope
     if error == 'image too large':
         raise AssistantError('This picture is too large for the AI assistant.')
     raise AssistantError('The AI assistant could not do that just now. Please try again in a moment.')
+
+
+def pictures_left_words(answer):
+    """Pictures have a monthly limit (reading and writing do not): say how many are left once it is 10 or fewer."""
+    left = answer.get('pictures_left')
+    if not isinstance(left, int) or left > 10:
+        return ''
+    if left == 0:
+        return ' That was your last picture description this month. They start again on the first of next month.'
+    return ' You have %d picture %s left this month.' % (left, 'description' if left == 1 else 'descriptions')
 
 
 def image_payload(path):
@@ -392,7 +405,7 @@ class Session:
         self.level = 'result'
         if self.choice in TONES:
             return self.result + ' ... Press Enter to use this, or Escape to keep your own text.'
-        return self.result
+        return self.result + pictures_left_words(answer)
 
     # ----- keeping changes -----
     def keep_result(self):

@@ -9,7 +9,8 @@
 
 ## Limits
 
-- Each installed copy has no monthly limit (`MONTHLY_LIMIT` is 0 in `wrangler.toml`). Set a number there to bring one back.
+- Reading and writing help has no monthly limit (`MONTHLY_LIMIT` is 0 in `wrangler.toml`). Set a number there to bring one back.
+- Pictures (Describe the image and Ask about the image) are limited to 200 a month for each copy (`IMAGE_MONTHLY_LIMIT`), as in GuideConnect.
 - The real stop is the monthly spending limit in the OpenAI account.
 - The whole service also stops at 20,000 requests a day (`DAILY_LIMIT`), so a runaway mistake or misuse cannot use the whole budget in one day.
 - A request that fails is not counted.

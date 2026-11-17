@@ -2584,7 +2584,7 @@ This works on a picture in File manager or in the attachment list of an email.
 - Move to the picture. Say "Describe the image", or press Control+Shift+Q and choose Describe the image.
 - You hear what is in the picture, and any writing in it.
 - To ask about it, say "Ask about the image". Then type or say your question, and press Enter.
-Pictures can be PNG, JPG, GIF, or WebP files, up to 6 megabytes.
+Pictures can be PNG, JPG, GIF, or WebP files, up to 6 megabytes. You can describe 200 pictures a month.
 
 32.6 Ask a question about Voice Companion
 - In Help, say "Ask a question", or press Control+Shift+Q.
@@ -2594,5 +2594,5 @@ Pictures can be PNG, JPG, GIF, or WebP files, up to 6 megabytes.
 32.7 Turn AI features off
 - To turn them off or on, open Options and choose AI assistant. Check or clear AI features, then save.
 - When they are off, the AI key, menu items, and commands tell you they are off.
-- There is no limit on how often you use it. If the AI service is not available, Companion tells you. Try again later.
+- Reading and writing help has no limit. Pictures are limited to 200 a month. When 10 are left, Companion tells you. They start again on the first of each month.
 - AI can make mistakes. Listen to the answer before you send or save it.

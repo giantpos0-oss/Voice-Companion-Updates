@@ -140,9 +140,15 @@ export async function handle(request, env, now = new Date(), fetcher = fetch) {
   // spending limit is the real stop. DAILY_LIMIT stays as a guard against a runaway loop or misuse.
   const monthly = parseInt(env.MONTHLY_LIMIT ?? '0', 10) || 0;
   const daily = parseInt(env.DAILY_LIMIT || '20000', 10);
+  // Pictures cost the most, so each copy has IMAGE_MONTHLY_LIMIT of them a month, as GuideConnect
+  // does (200). Reading and writing help has no limit (Will, November 16, 2026).
+  const imageLimit = parseInt(env.IMAGE_MONTHLY_LIMIT ?? '200', 10) || 0;
   const mine = await count(env, 'm:' + month(now) + ':' + install, 40 * 86400);
+  const pictures = await count(env, 'mi:' + month(now) + ':' + install, 40 * 86400);
   const all = await count(env, 'd:' + day(now), 3 * 86400);
+  const isImage = task === 'describe_image';
   if (monthly > 0 && mine.used >= monthly) return json({ ok: false, error: 'monthly limit', limit: monthly }, 429);
+  if (isImage && imageLimit > 0 && pictures.used >= imageLimit) return json({ ok: false, error: 'image limit', limit: imageLimit }, 429);
   if (all.used >= daily) return json({ ok: false, error: 'busy' }, 429);
 
   const spec = TASKS[task];
@@ -163,7 +169,9 @@ export async function handle(request, env, now = new Date(), fetcher = fetch) {
   const text = outputText(await reply.json()).trim();
   await mine.add();
   await all.add();
-  const result = { ok: true, ...(monthly > 0 ? { remaining: Math.max(0, monthly - mine.used - 1) } : {}) };
+  if (isImage) await pictures.add();
+  const result = { ok: true, ...(monthly > 0 ? { remaining: Math.max(0, monthly - mine.used - 1) } : {}),
+                   ...(isImage && imageLimit > 0 ? { pictures_left: Math.max(0, imageLimit - pictures.used - 1) } : {}) };
   if (spec.json) {
     try {
       const parsed = JSON.parse(text);
