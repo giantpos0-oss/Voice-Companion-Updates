@@ -2581,9 +2581,9 @@ This works on an email you are reading, a document, a note, a web page, and a fi
 
 32.5 Describe a picture
 This works on a picture in File manager or in the attachment list of an email.
-- Move to the picture. Say "Describe the image", or press Control+Shift+Q and choose Describe the image.
+- Move to the picture. Say "Describe the image", or press Control+Shift+D.
 - You hear what is in the picture, and any writing in it.
-- To ask about it, say "Ask about the image". Then type or say your question, and press Enter.
+- To ask about it, say "Ask about the image", or press Control+Shift+K. Then type or say your question, and press Enter.
 Pictures can be PNG, JPG, GIF, or WebP files, up to 6 megabytes. You can describe 200 pictures a month.
 
 32.6 Ask a question about Voice Companion

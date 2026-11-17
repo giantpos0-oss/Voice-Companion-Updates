@@ -281,8 +281,8 @@ MENUS = {
             ('Clear tags', 'Ctrl+Shift+A', 'clear attachment tags')]),
         ('Picture', [
             ('AI assistant', 'Ctrl+Shift+Q', 'ai assistant'),
-            ('Describe the image', '', 'describe the image'),
-            ('Ask about the image', '', 'ask about the image')]),
+            ('Describe the image', 'Ctrl+Shift+D', 'describe the image'),
+            ('Ask about the image', 'Ctrl+Shift+K', 'ask about the image')]),
         ('Leave and help', [
             ('Close the list', 'Escape', 'close attachments'),
             ('Attachments help', 'Double:F1', 'help with attachments')]),

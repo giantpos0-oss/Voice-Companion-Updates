@@ -114,6 +114,9 @@ for _mode in ('document', 'email_draft', 'note', 'mailbox', 'file_reader', 'web'
     SCREEN_KEYS.setdefault(_mode, {})['Ctrl+Shift+Q'] = 'ai assistant'
 # Help has one choice, so the key asks the question straight away.
 SCREEN_KEYS['help']['Ctrl+Shift+Q'] = 'ask a question'
+# Pictures: a key for each choice too, in File manager and the attachment list.
+for _mode in ('files', 'attachments'):
+    SCREEN_KEYS[_mode].update({'Ctrl+Shift+D': 'describe the image', 'Ctrl+Shift+K': 'ask about the image'})
 SCREEN_KEYS['ai_assistant'] = {'F1': 'help with ai assistant', 'Ctrl+Enter': 'keep all corrections',
                                'Delete': 'skip this correction', 'Ctrl+C': 'copy the answer',
                                'Ctrl+R': 'read it again', 'Ctrl+F12': 'go to sleep'}

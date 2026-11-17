@@ -8,9 +8,9 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ## Counts
 
 - Actions inventoried: 800
-- Already had both ways: 630
-- Gaps found: 170
-- Gaps fixed (Added): 162
+- Already had both ways: 632
+- Gaps found: 168
+- Gaps fixed (Added): 160
 - Not applicable (N/A, with reason): 8
 
 ## Main menu
@@ -248,13 +248,13 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Describe the image
 
 - Voice: "Describe the image"
-- Keyboard: 
+- Keyboard: Ctrl+Shift+D
 - Status: Both
 
 ### Ask about the image
 
 - Voice: "Ask about the image"
-- Keyboard: 
+- Keyboard: Ctrl+Shift+K
 - Status: Both
 
 ### Refresh
@@ -3316,14 +3316,14 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 ### Describe the image
 
 - Voice: "Describe the image"
-- Keyboard: Alt, P, D
-- Status: Added: Alt menu path
+- Keyboard: Ctrl+Shift+D
+- Status: Both
 
 ### Ask about the image
 
 - Voice: "Ask about the image"
-- Keyboard: Alt, P, A
-- Status: Added: Alt menu path
+- Keyboard: Ctrl+Shift+K
+- Status: Both
 
 ## Alt menu, Attachments: Leave and help
 
