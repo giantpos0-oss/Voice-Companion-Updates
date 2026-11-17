@@ -4,7 +4,7 @@
 name = "voice-companion-ai"
 main = "worker.js"
 compatibility_date = "2026-11-01"
-workers_dev = true
+workers_dev = false   # only ai.voicecompanionapp.com; the account has no workers.dev subdomain
 routes = [{ pattern = "ai.voicecompanionapp.com", custom_domain = true }]
 
 [vars]
