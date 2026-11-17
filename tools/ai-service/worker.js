@@ -89,7 +89,9 @@ function buildInput(task, spec, body) {
   } else if (task === 'help_question') {
     parts.push({ type: 'input_text', text: 'Guide sections:\n' + body.guide + '\n\nQuestion: ' + body.question });
   } else {
-    parts.push({ type: 'input_text', text: 'Text:\n' + body.text });
+    // OpenAI's JSON mode needs the word "json" in the input itself, not only the instructions
+    // (live request, November 16, 2026: "must contain the word 'json'").
+    parts.push({ type: 'input_text', text: (spec.json ? 'Reply in JSON.\n\n' : '') + 'Text:\n' + body.text });
   }
   return [{ role: 'user', content: parts }];
 }
