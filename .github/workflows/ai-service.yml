@@ -39,7 +39,14 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          npx --yes wrangler@4 deploy || { echo "::error::wrangler deploy failed; its output above says why."; exit 1; }
+          # The first deploy of a new Worker can upload it and then fail to find it (code 10007,
+          # November 16, 2026). Print wrangler's own log on any failure, then try once more.
+          if ! npx --yes wrangler@4 deploy; then
+            cat ~/.config/.wrangler/logs/*.log 2>/dev/null | grep -v -i authorization | tail -60
+            echo "First deploy failed; trying once more in 15 seconds."
+            sleep 15
+            npx --yes wrangler@4 deploy || { cat ~/.config/.wrangler/logs/*.log 2>/dev/null | grep -v -i authorization | tail -60; echo "::error::wrangler deploy failed twice; its log above says why."; exit 1; }
+          fi
           printf '%s' "$OPENAI_API_KEY" | npx --yes wrangler@4 secret put OPENAI_API_KEY || { echo "::error::Could not store the OpenAI key in the Worker."; exit 1; }
       - name: Check the service answers
         run: |
