@@ -647,7 +647,7 @@ Windows puts deleted items in the Recycle Bin when it can. File manager has no p
 If Windows cannot finish, check the folder before you try again.
 
 6.10 Find commands and keys
-- To open the File manager menu, say "File manager menu", or press Alt. It has four groups: Actions, Search, Sort, and Go to.
+- To open the File manager menu, say "File manager menu", or press Alt. It has five groups: Actions, Search, Sort, Picture, and Go to.
 - Press Enter to open a group. Each item says its key and its voice command. Escape goes back to the groups, then to your files.
 - Tab does not move anywhere on the File manager screen. Everything is in the list or on the Alt menu.
 - To hear the main commands, say "File manager help", or press F1 twice quickly.

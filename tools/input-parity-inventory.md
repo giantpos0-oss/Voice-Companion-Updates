@@ -7,8 +7,8 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 797
-- Already had both ways: 627
+- Actions inventoried: 800
+- Already had both ways: 630
 - Gaps found: 170
 - Gaps fixed (Added): 162
 - Not applicable (N/A, with reason): 8
@@ -237,6 +237,24 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 - Voice: "Sort descending"
 - Keyboard: Ctrl+Shift+Down
+- Status: Both
+
+### AI assistant
+
+- Voice: "Ai assistant"
+- Keyboard: Ctrl+Shift+Q
+- Status: Both
+
+### Describe the image
+
+- Voice: "Describe the image"
+- Keyboard: 
+- Status: Both
+
+### Ask about the image
+
+- Voice: "Ask about the image"
+- Keyboard: 
 - Status: Both
 
 ### Refresh

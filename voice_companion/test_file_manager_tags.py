@@ -162,7 +162,7 @@ class AltMenuTests(Folders):
     def test_alt_menu_groups_actions_search_sort_and_go_to(self):
         top = self.fm.command('file manager menu')
         self.assertTrue(top.startswith('File manager menu. Actions'), top)
-        self.assertEqual([label.split(',')[0] for label in self.fm.labels()], ['Actions', 'Search', 'Sort', 'Go to'])
+        self.assertEqual([label.split(',')[0] for label in self.fm.labels()], ['Actions', 'Search', 'Sort', 'Picture', 'Go to']  # Picture: the AI assistant (November 16, 2026))
         self.fm.command('next'); self.fm.command('next')
         self.assertTrue(self.fm.command('enter').startswith('Sort. Name. Control+1.'))
         self.assertIn('Control+3', ' '.join(self.fm.labels()))

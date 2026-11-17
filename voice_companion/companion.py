@@ -5471,6 +5471,10 @@ def _handle(text, mode, typed=False):
                 return screen.files_command(sys.modules[__name__],result[len('__attach__:'):],mode) or mode
             except (screen.AttachmentError,ValueError,OSError) as exc:
                 speak(str(exc));return mode
+        if result.startswith('__ai__:'):
+            # The File manager menu's Picture group: the same as the spoken command.
+            wanted=ai_voice_request(result[len('__ai__:'):],mode,True)
+            return ai_open(mode,wanted[1]) if wanted else mode
         if result=='__home__':
             # Main menu chosen on the File manager menu, the same as saying "Main menu".
             return handle('main menu',mode,typed=True)

@@ -183,6 +183,19 @@ class ImageAndHelpTests(AIScreenTestCase):
         self.assertEqual(self.answer(), 'A dog on a beach.')
         self.assertTrue(self.service.asked[0][1]['image'].startswith('data:image/jpeg;base64,'))
 
+    def test_the_file_manager_menu_picture_group(self):
+        import file_manager
+        self.assertIn('picture', file_manager.GROUPS)
+        labels = [label for label, _, _ in file_manager.GROUPS['picture'][1]]
+        self.assertEqual(labels, ['AI assistant', 'Describe the image', 'Ask about the image'])
+        # Enter on Describe the image in that group hands it to the app, which describes the picture.
+        picture = self.folder / 'cat.png'; picture.write_bytes(b'\x89PNG picture')
+        companion.FILE_MANAGER = SimpleNamespace(current=lambda: SimpleNamespace(path=str(picture)), busy=False, pending=None,
+                                                 items=[1], command=lambda text: '__ai__:describe the image')
+        mode = companion.handle('enter', 'files', typed=True)
+        self.assertEqual(mode, 'ai_assistant')
+        self.assertEqual(self.answer(), 'A dog on a beach.')
+
     def test_a_file_that_is_not_a_picture(self):
         companion.FILE_MANAGER = SimpleNamespace(current=lambda: SimpleNamespace(path=str(self.folder / 'notes.txt')))
         self.assertEqual(self.key('Ctrl+Shift+Q', 'files'), 'files')
