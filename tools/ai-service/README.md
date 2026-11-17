@@ -9,8 +9,9 @@
 
 ## Limits
 
-- Each installed copy can make 200 requests a month (`MONTHLY_LIMIT` in `wrangler.toml`).
-- The whole service stops at 3,000 requests a day (`DAILY_LIMIT`), so a mistake or misuse cannot run up a large bill.
+- Each installed copy has no monthly limit (`MONTHLY_LIMIT` is 0 in `wrangler.toml`). Set a number there to bring one back.
+- The real stop is the monthly spending limit in the OpenAI account.
+- The whole service also stops at 20,000 requests a day (`DAILY_LIMIT`), so a runaway mistake or misuse cannot use the whole budget in one day.
 - A request that fails is not counted.
 - The model is set by `MODEL` in `wrangler.toml`. Change it there to switch models without a Companion update.
 

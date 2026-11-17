@@ -136,11 +136,13 @@ export async function handle(request, env, now = new Date(), fetcher = fetch) {
   const why = problem(task, body);
   if (why) return json({ ok: false, error: why }, 400);
 
-  const monthly = parseInt(env.MONTHLY_LIMIT || '200', 10);
-  const daily = parseInt(env.DAILY_LIMIT || '3000', 10);
+  // MONTHLY_LIMIT "0" means no limit for each copy (Will, November 16, 2026): the OpenAI
+  // spending limit is the real stop. DAILY_LIMIT stays as a guard against a runaway loop or misuse.
+  const monthly = parseInt(env.MONTHLY_LIMIT ?? '0', 10) || 0;
+  const daily = parseInt(env.DAILY_LIMIT || '20000', 10);
   const mine = await count(env, 'm:' + month(now) + ':' + install, 40 * 86400);
   const all = await count(env, 'd:' + day(now), 3 * 86400);
-  if (mine.used >= monthly) return json({ ok: false, error: 'monthly limit', limit: monthly }, 429);
+  if (monthly > 0 && mine.used >= monthly) return json({ ok: false, error: 'monthly limit', limit: monthly }, 429);
   if (all.used >= daily) return json({ ok: false, error: 'busy' }, 429);
 
   const spec = TASKS[task];
@@ -155,11 +157,13 @@ export async function handle(request, env, now = new Date(), fetcher = fetch) {
       store: false,
     }),
   });
+  // 429 from OpenAI: the spending limit is reached, or OpenAI is overloaded. Say so plainly.
+  if (reply.status === 429) return json({ ok: false, error: 'unavailable' }, 503);
   if (!reply.ok) return json({ ok: false, error: 'ai service ' + reply.status }, 502);
   const text = outputText(await reply.json()).trim();
   await mine.add();
   await all.add();
-  const result = { ok: true, remaining: Math.max(0, monthly - mine.used - 1) };
+  const result = { ok: true, ...(monthly > 0 ? { remaining: Math.max(0, monthly - mine.used - 1) } : {}) };
   if (spec.json) {
     try {
       const parsed = JSON.parse(text);

@@ -49,6 +49,21 @@ test('each installed copy has a monthly limit', async () => {
   assert.equal((await handle(ask({ task: 'simplify', text: 'x' }), e, new Date('2026-12-01'), openai('y'))).status, 200, 'a new month starts again');
 });
 
+test('no monthly limit when MONTHLY_LIMIT is 0', async () => {
+  const e = env({ MONTHLY_LIMIT: '0' });
+  for (let i = 0; i < 5; i++) {
+    const r = await handle(ask({ task: 'simplify', text: 'x' }), e, new Date('2026-11-16'), openai('y'));
+    assert.equal(r.status, 200);
+    assert.equal((await r.json()).remaining, undefined);
+  }
+});
+
+test('OpenAI refusing for its spending limit says unavailable', async () => {
+  const refuse = async () => new Response('{"error":{"code":"insufficient_quota"}}', { status: 429 });
+  const r = await handle(ask({ task: 'simplify', text: 'x' }), env(), new Date('2026-11-16'), refuse);
+  assert.equal(r.status, 503); assert.equal((await r.json()).error, 'unavailable');
+});
+
 test('the whole service has a daily limit', async () => {
   const e = env({ DAILY_LIMIT: '1', MONTHLY_LIMIT: '50' });
   await handle(ask({ task: 'simplify', text: 'x' }), e, new Date('2026-11-16'), openai('y'));

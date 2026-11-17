@@ -160,6 +160,8 @@ def service_request(folder, version, task, payload, timeout=TIMEOUT_SECONDS, ope
     if error == 'monthly limit':
         raise AssistantError('You have used all %s AI requests for this month. They start again on the first of next month.'
                              % answer.get('limit', 200))
+    if error == 'unavailable':
+        raise AssistantError('The AI assistant is not available right now. Please try again later.')
     if error == 'busy':
         raise AssistantError('The AI assistant is very busy today. Please try again tomorrow.')
     if error == 'text too long':

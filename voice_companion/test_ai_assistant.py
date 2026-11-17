@@ -217,6 +217,12 @@ class ServiceRequestTests(unittest.TestCase):
                                opener=self.reply({'ok': False, 'error': 'monthly limit', 'limit': 200}, 429))
         self.assertIn('all 200 AI requests for this month', str(caught.exception))
 
+    def test_the_spending_limit_reached_is_said_plainly(self):
+        with self.assertRaises(ai.AssistantError) as caught:
+            ai.service_request(self.folder, 'v', 'summarise', {'text': 'x'},
+                               opener=self.reply({'ok': False, 'error': 'unavailable'}, 503))
+        self.assertEqual(str(caught.exception), 'The AI assistant is not available right now. Please try again later.')
+
     def test_no_internet(self):
         def offline(request, timeout):
             raise urllib.error.URLError('down')

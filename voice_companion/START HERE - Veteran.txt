@@ -2594,5 +2594,5 @@ Pictures can be PNG, JPG, GIF, or WebP files, up to 6 megabytes.
 32.7 Turn AI features off
 - To turn them off or on, open Options and choose AI assistant. Check or clear AI features, then save.
 - When they are off, the AI key, menu items, and commands tell you they are off.
-- Each copy of Voice Companion can use the AI assistant 200 times a month. If you reach that, Companion tells you. It works again next month.
+- There is no limit on how often you use it. If the AI service is not available, Companion tells you. Try again later.
 - AI can make mistakes. Listen to the answer before you send or save it.
