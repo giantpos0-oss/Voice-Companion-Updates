@@ -37,6 +37,11 @@ DOCUMENT_ACTIONS = {
                           ('End of document', 'Ctrl+End', 'go to end of document'),
                           ('Document details', '', 'where am i')],
     'Dictation': [('Start dictation', 'F4', 'start dictation'), ('Pause dictation', 'Shift+F4', 'pause dictation')],
+    # AI assistant (ai_assistant.py): the same choices as its own menu, each also a voice command.
+    'Writing assistant': [('AI assistant', 'Ctrl+Shift+Q', 'ai assistant'), ('Check for errors', '', 'check for errors'),
+                          ('Friendlier', '', 'make it friendlier'), ('More professional', '', 'make it more professional'),
+                          ('Clearer', '', 'make it clearer'), ('Shorter', '', 'make it shorter'),
+                          ('Summarise', '', 'summarise this document'), ('Simplify', '', 'simplify this document')],
     'Tools and help': [('Run any document voice command', 'Alt+T', '{value}'),
                       ('Document help', 'Double:F1', 'help with documents'), ('Word processor options', 'Alt+O', '@options')],
 }
@@ -111,6 +116,9 @@ DOCUMENT_LAYOUT = (
                     ('Previous row', 'O'), ('Next column', 'C'), ('Previous column', 'U'), ('Add row', 'A'),
                     ('Add column', 'D'), ('Delete row', 'X'), ('Delete column', 'L'), ('Clear cell', 'K'),
                     ('Delete table', 'T'), ('Leave table', 'V'))),
+    ('Writing assistant', 'W', (('AI assistant', 'Q'), ('Check for errors', 'C'), ('Friendlier', 'F'),
+                                ('More professional', 'P'), ('Clearer', 'L'), ('Shorter', 'S'), ('Summarise', 'U'),
+                                ('Simplify', 'I'))),
     ('Options and help', 'O', (('Run any document voice command', 'R'), ('Document help', 'H'),
                                ('Word processor options', 'O'))),
 )

@@ -478,6 +478,12 @@ def app_context(mode):
         else:
             context.update(named_list=True,mode='list',menu_letters=True)
             return context
+    if logical=='ai_assistant' and AI_SESSION is not None:
+        # Letters move in the choices; a question is typed; the answer is shown for low vision.
+        context['menu_letters']=AI_SESSION.level=='menu'
+        if AI_SESSION.level=='consent':context['confirmation']=CONFIRM_CHOICE
+        context['text']=AI_SESSION.result if AI_SESSION.level=='result' else '\n'.join(AI_SESSION.choices)
+        return context
     context['menu_letters']=logical!='document_name' and menu_state(logical) is not None
     if SCREEN_MENU is not None and SCREEN_MENU.is_open(logical):context['screen_menu']=True
     if logical=='files' and FILE_MANAGER:
@@ -1198,6 +1204,7 @@ def key_text_box_open(mode):
 
 def yes_no_open(mode):
     """True while a yes or no question waits for its answer on this screen."""
+    if mode=='ai_assistant':return AI_SESSION is not None and AI_SESSION.level=='consent'
     return bool(THUNDERBIRD_SETUP is not None or ACCOUNT_PICKER is not None and ACCOUNT_PICKER.get('confirm') or mode=='browser_menu' and web_session is not None and web_session.menu.level=='confirm' or pending_website is not None or chrome_confirming(mode) or mode in ('document_save','document_replace','power_confirm','exit_confirm','update_offer') or mode=='files' and FILE_MANAGER is not None and bool(FILE_MANAGER.pending) and FILE_MANAGER.pending[0]=='delete' or mode=='email_draft' and pending_send is not None or (mode=='mailbox' and mail_session and mail_session.pending) or (mode=='web' and web_session and (web_session.pending or web_session.submit_pending)))
 
 
@@ -1337,6 +1344,7 @@ def _navigation_key(key,mode):
             CONFIRM_CHOICE=choice;speak(CONFIRM_CHOICE.capitalize()+'.');return None
         if key=='Enter':return CONFIRM_CHOICE
         if key=='Escape':return 'cancel' if mode=='document_save' else 'no'
+    if mode=='ai_assistant' and AI_SESSION is not None:return ai_key(key)
     if mode in ('media','podcast') and MEDIA_HUB:
         from media_navigation import spoken_error
         # As by voice: a key whose action fails says so, and the app keeps going.
@@ -1956,6 +1964,296 @@ def audio_ducker():
         # Never leave other programs quiet when Companion closes or stops on an error.
         atexit.register(AUDIO_DUCKER.close)
     return AUDIO_DUCKER
+
+
+AI_SESSION = None   # the AI assistant screen (ai_assistant.py), or None
+# Screens the AI assistant opens from (Control+Shift+Q, "AI assistant").
+AI_SCREENS = ('document', 'email_draft', 'note', 'mailbox', 'file_reader', 'web', 'help', 'files', 'attachments')
+AI_WRITING = ('document', 'email_draft', 'note')
+
+
+def ai_request(task, payload):
+    import ai_assistant
+    return ai_assistant.service_request(APP, APP_VERSION, task, payload)
+
+
+def ai_editor_text(editor):
+    return '\n'.join(p.text for p in editor.paragraphs)
+
+
+def ai_editor_apply(editor, selection, new):
+    """Put a rewrite in place of the selection, or of all the text: one step Undo takes back."""
+    from document_editor import TextSelection
+    if selection is None:
+        if any(p.table_id for p in editor.paragraphs):
+            return 'This has a table, so all of it cannot be replaced at once. Select the text to rewrite, then try again.'
+        last = len(editor.paragraphs) - 1
+        selection = TextSelection(0, 0, last, len(editor.paragraphs[last].text))
+    editor.selection = selection
+    try:
+        editor._replace_selection(new)
+    except ValueError as problem:
+        editor.selection = None
+        return str(problem)
+    return 'Done. Say undo to put your own text back.'
+
+
+def ai_editor_fix(editor, selection, original, replacement):
+    """One correction: the first time the words appear, from the start of the selection."""
+    from document_editor import TextSelection
+    whole = ai_editor_text(editor)
+    start = 0
+    if selection is not None:
+        start = sum(len(p.text) + 1 for p in editor.paragraphs[:selection.first_paragraph]) + selection.first_offset
+    at = whole.find(original, start)
+    if at < 0:
+        at = whole.find(original)
+    if at < 0:
+        return False
+    span = TextSelection(*editor._location(at), *editor._location(at + len(original)))
+    if editor.crosses_table_cells(span):
+        return False
+    editor.selection = span
+    editor._replace_selection(replacement)
+    return True
+
+
+def ai_source(mode):
+    """What the AI assistant works on here: (source, None), or (None, words saying why not)."""
+    import ai_assistant as ai
+    if mode in ('document', 'email_draft'):
+        editor = document if mode == 'document' else email_draft
+        if editor is None:
+            return None, 'Open a document first.'
+        selection = editor.selection
+        label = 'the selected text' if selection else ('this document' if mode == 'document' else 'this email')
+        return {'kind': 'write', 'label': label, 'text': editor.selected_text() if selection else ai_editor_text(editor),
+                'apply': lambda new: ai_editor_apply(editor, selection, new),
+                'fix': lambda original, replacement: ai_editor_fix(editor, selection, original, replacement)}, None
+    if mode == 'note':
+        def apply(new):
+            note_buffer[:] = [new]
+            return 'Done. Say undo to put your own text back.'
+        def fix(original, replacement):
+            text = ' '.join(note_buffer)
+            if original not in text:
+                return False
+            note_buffer[:] = [text.replace(original, replacement, 1)]
+            return True
+        return {'kind': 'write', 'label': 'this note', 'text': ' '.join(note_buffer), 'apply': apply, 'fix': fix}, None
+    if mode == 'mailbox':
+        if not (mail_session and mail_session.view == 'message'):
+            return None, 'Open an email first, then press Control+Shift+Q.'
+        return {'kind': 'read', 'label': 'this email', 'text': mail_session.body_text or ''}, None
+    if mode == 'file_reader' and FILE_READER:
+        return {'kind': 'read', 'label': 'this document', 'text': FILE_READER.reading.text}, None
+    if mode == 'web' and web_session and web_session.snapshot:
+        return {'kind': 'read', 'label': 'this page', 'text': web_session.snapshot.get('text', '')}, None
+    if mode == 'help':
+        def guide(question):
+            try:
+                text = GUIDE.read_text(encoding='utf-8')
+            except OSError:
+                text = ''
+            return ai.guide_sections(text, question)
+        return {'kind': 'help', 'label': 'Voice Companion help', 'guide': guide}, None
+    if mode == 'files' and FILE_MANAGER:
+        item = FILE_MANAGER.current()
+        path = getattr(item, 'path', None)
+        if path and ai.is_image(path):
+            return {'kind': 'image', 'label': Path(path).name, 'image_path': path}, None
+        return None, 'Move to a picture first. The AI assistant describes PNG, JPEG, GIF and WebP pictures.'
+    if mode == 'attachments':
+        screen = __import__('attachment_screen')
+        item = screen.current()
+        if not item or not ai.is_image(item.get('name')):
+            return None, 'Move to a picture first. The AI assistant describes PNG, JPEG, GIF and WebP pictures.'
+        try:
+            data = b''.join(screen.chunks_for(sys.modules[__name__], item))
+            return {'kind': 'image', 'label': item['name'], 'image_data': ai.image_data(item['name'], data)}, None
+        except ai.AssistantError as problem:
+            return None, str(problem)
+        except Exception:
+            return None, 'Voice Companion could not open that picture.'
+    return None, 'The AI assistant works in documents, notes, email, web pages, the document reader, help, and with pictures.'
+
+
+def ai_open(mode, choice=None):
+    """Control+Shift+Q or "AI assistant": open the assistant for this screen, or run a choice at once."""
+    global AI_SESSION
+    import ai_assistant as ai
+    if not PREFERENCES.get('ai_features', True):
+        speak(ai.NOT_ON); return mode
+    source, problem = ai_source(mode)
+    if source is None:
+        speak(problem); return mode
+    if choice and choice not in ai.CHOICES[source['kind']]:
+        speak(choice + ' is not offered here.'); return mode
+    AI_SESSION = ai.Session(source, mode, ai_request)
+    AI_SESSION.reading = ReadingCursor()
+    AI_SESSION.pending_choice = choice
+    if not PREFERENCES.get('ai_assistant_consent'):
+        AI_SESSION.level = 'consent'
+        speak(ai.CONSENT)
+        return 'ai_assistant'
+    return ai_begin()
+
+
+def ai_begin():
+    session = AI_SESSION
+    if session.pending_choice:
+        choice, session.pending_choice = session.pending_choice, None
+        speak(session.choose(choice))
+    else:
+        speak(session.opening())
+    return 'ai_assistant'
+
+
+def ai_leave(said='AI assistant closed.'):
+    global AI_SESSION
+    mode = AI_SESSION.return_mode if AI_SESSION else 'awake'
+    if AI_SESSION is not None:
+        AI_SESSION.stop()
+    AI_SESSION = None
+    speak(said)
+    return mode
+
+
+def ai_refresh_source():
+    """After a change is kept, the next choice works on the text as it is now."""
+    source, _ = ai_source(AI_SESSION.return_mode)
+    if source is not None:
+        AI_SESSION.source = source
+
+
+def ai_poll():
+    """The main loop: say the answer when it arrives, or that it is still coming."""
+    if AI_SESSION is None:
+        return
+    said = AI_SESSION.poll()
+    if said:
+        if AI_SESSION.level == 'result':
+            AI_SESSION.reading.set_text(AI_SESSION.result, reset=True)
+        speak(said)
+
+
+AI_KEYS = {'Up': 'previous', 'Down': 'next', 'Home': 'first', 'End': 'last', 'Escape': 'go back', 'F1': 'help with ai assistant'}
+
+
+def ai_key(key):
+    """Keys on the AI assistant screen. Each one is a spoken command, so keys and voice are the same."""
+    session = AI_SESSION
+    if key.startswith('Letter:'):
+        said = session.letter(key[7:])
+        if said: speak(said)
+        return None
+    if key == 'Enter':
+        return {'menu': 'choose', 'result': 'use it', 'corrections': 'keep this correction'}.get(session.level)
+    if session.level == 'result' and key in ('Ctrl+Up', 'Ctrl+Down'):
+        return 'previous paragraph' if key == 'Ctrl+Up' else 'next paragraph'
+    if session.level == 'result' and key == 'Ctrl+Home':
+        return 'read from top'
+    return AI_KEYS.get(key) or screen_command(key, 'ai_assistant')
+
+
+def ai_handle(raw, command):
+    """Voice and typed commands on the AI assistant screen."""
+    import ai_assistant as ai
+    session = AI_SESSION
+    level = session.level
+    if level == 'consent':
+        if command in ('yes', 'yes please', 'okay', 'ok', 'sure'):
+            PREFERENCES['ai_assistant_consent'] = True
+            __import__('app_settings').save_preferences(sys.modules[__name__])
+            return ai_begin()
+        if command in ('no', 'no thanks', 'cancel', 'go back'):
+            return ai_leave('The AI assistant was not used.')
+        speak(ai.CONSENT); return 'ai_assistant'
+    if command in ('help with ai assistant', 'help', 'what can i say'):
+        speak(ai_help_words(session)); return 'ai_assistant'
+    if command in ('go back', 'cancel', 'escape', 'close', 'close ai assistant', 'exit ai assistant', 'stop'):
+        said = session.back()
+        return ai_leave() if said is None else (speak(said) or 'ai_assistant')
+    if level == 'question':
+        speak(session.ask(raw)); return 'ai_assistant'
+    if level == 'working':
+        speak('Still working. Press Escape to stop.'); return 'ai_assistant'
+    moves = {'next': 1, 'next item': 1, 'down': 1, 'previous': -1, 'previous item': -1, 'up': -1}
+    if level == 'result':
+        if command in ('use it', 'use this', 'keep it', 'yes', 'replace my text', 'use the rewrite'):
+            said = session.keep_result()
+            if said is None:
+                speak('There is nothing to keep here. Press Escape to go back.')
+            else:
+                ai_refresh_source(); speak(said)
+            return 'ai_assistant'
+        if command in ('read it again', 'repeat', 'say it again', 'read the answer', 'read from top'):
+            session.reading.set_text(session.result, reset=True); speak(session.result); return 'ai_assistant'
+        if command in ('copy the answer', 'copy it', 'copy answer', 'copy'):
+            __import__('document_editor').copy_to_clipboard(session.result); speak('Copied the answer.'); return 'ai_assistant'
+        units = {'next': ('line', 1), 'previous': ('line', -1), 'next line': ('line', 1), 'previous line': ('line', -1),
+                 'next paragraph': ('paragraph', 1), 'previous paragraph': ('paragraph', -1),
+                 'next sentence': ('sentence', 1), 'previous sentence': ('sentence', -1)}
+        if command in units:
+            speak(session.reading.move(*units[command])); return 'ai_assistant'
+    if level == 'corrections':
+        if command in ('keep this correction', 'keep this', 'keep', 'keep it', 'yes', 'use it', 'fix it'):
+            speak(session.keep_correction()); ai_refresh_source(); return 'ai_assistant'
+        if command in ('skip this correction', 'skip this', 'skip', 'skip it', 'no'):
+            speak(session.skip_correction()); return 'ai_assistant'
+        if command in ('keep all corrections', 'keep all', 'keep them all', 'fix them all', 'fix all'):
+            speak(session.keep_all()); ai_refresh_source(); return 'ai_assistant'
+        if command in moves:
+            speak(session.move(moves[command])); return 'ai_assistant'
+        if command in ('first', 'top'):
+            speak(session.move(to='first')); return 'ai_assistant'
+        if command in ('last', 'bottom'):
+            speak(session.move(to='last')); return 'ai_assistant'
+    if level in ('menu', 'result'):
+        choice = ai.spoken_choice(command, session.kind)
+        if choice:
+            speak(session.choose(choice)); return 'ai_assistant'
+    if level == 'menu':
+        if command in moves:
+            speak(session.move(moves[command])); return 'ai_assistant'
+        if command in ('first', 'top'):
+            speak(session.move(to='first')); return 'ai_assistant'
+        if command in ('last', 'bottom'):
+            speak(session.move(to='last')); return 'ai_assistant'
+        if command in ('choose', 'select', 'okay', 'ok', 'enter', 'do it', 'choose this'):
+            speak(session.choose()); return 'ai_assistant'
+    speak('Say a choice, or press Escape to go back. Press F1 for help.')
+    return 'ai_assistant'
+
+
+def ai_help_words(session):
+    if session.level == 'corrections':
+        return ('Up and Down Arrow move through the corrections. Enter keeps one, Delete skips it, '
+                'and Control+Enter keeps them all. Escape goes back.')
+    if session.level == 'result':
+        rewrite = ' Press Enter to use it in place of your text.' if session.choice in __import__('ai_assistant').TONES else ''
+        return ('Up and Down Arrow read the answer a line at a time. Control+Home reads it from the top, '
+                'and Control+C copies it.' + rewrite + ' Escape goes back to the choices.')
+    if session.level == 'question':
+        return 'Type or say your question, then press Enter. Escape goes back.'
+    return ('Up and Down Arrow move through the choices, and a letter moves to the choice that starts with it. '
+            'Enter does it, and Escape closes the AI assistant. You can also say a choice, such as summarise this.')
+
+
+def ai_voice_request(command, mode, typed=False):
+    """Opening the assistant, or one of its choices, from a screen: None when the words are not that.
+    In writing places only a whole phrase counts, so a dictated word such as "Summary" stays text."""
+    import ai_assistant as ai
+    if mode not in AI_SCREENS:
+        return None
+    if ai.opens_assistant(command):
+        return ('open', None)
+    choice = ai.spoken_choice(command)
+    if choice is None:
+        return None
+    if writing_dictation(mode, typed) and not ai.writing_command(command):
+        return None
+    return ('open', choice)
 
 
 MICROPHONE_KEEPER = None
@@ -4524,6 +4822,14 @@ def _handle(text, mode, typed=False):
     if mode=='tutorial':
         # Every word and key goes to the tutorial first (tutorial_engine.route).
         return tutorial_engine.route(sys.modules[__name__],text,typed)
+    if mode=='ai_assistant':
+        # The AI assistant screen (ai_assistant.py): F1 and Control+F1 close it first, then do as everywhere.
+        if AI_SESSION is None:return 'awake'
+        if not text.startswith('@'):return ai_handle(text,command)
+        mode=ai_leave('')
+    ai_wanted=None if text.startswith('@') else ai_voice_request(command,mode,typed)
+    if ai_wanted:
+        return ai_open(mode,ai_wanted[1])
     if text in ('@favorites','@main_menu') and ACCOUNT_ENTRY is None and key_text_box_open(mode):
         # F1 or Control+F1 in a box that takes typed words: close the box first, as Escape does,
         # so the words "main menu" never become a name, a search or an answer.
@@ -6382,7 +6688,7 @@ _HANDLE_DEPTH = 0
 # bug still stops the test that found it; SAFETY_NET = True turns it on there.
 SAFETY_NET = None
 # Screens that come back to the note with its words: questions, Help, sleep and Options.
-NOTE_KEPT_OPEN = ('note','sleep','help','tutorial','exit_confirm','power_confirm','settings','update_offer','exit')
+NOTE_KEPT_OPEN = ('note','sleep','help','tutorial','ai_assistant','exit_confirm','power_confirm','settings','update_offer','exit')
 COMMAND_FAILED = 'That did not work because of a problem in Voice Companion. You are still on {screen}. Try again, or press F1 twice for help.'
 
 
@@ -6921,6 +7227,7 @@ def main():
             if CHROME_SETUP is not None:
                 mode = __import__('chrome_setup').poll(sys.modules[__name__],mode)
             update_audio_ducking()
+            ai_poll()   # the AI assistant's answer, when it arrives (it works on its own thread)
             if APP_WINDOW is not None and APP_WINDOW.closed.is_set():
                 close_from_window(mode)
                 return 0

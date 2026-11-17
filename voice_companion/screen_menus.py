@@ -33,13 +33,17 @@ MENUS = {
             ('Move to folder', 'M', 'move'),
             ('Delete', 'Delete', 'delete'),
             ('Message details', 'I', 'message details')]),
-        ('Header', [
+        # The reading assistant joins Header: this menu already has the most groups it can (nine).
+        ('Header and reading assistant', [
             ('From', 'Alt+1', 'who is it from'),
             ('To', 'Alt+2', 'who is it to'),
             ('CC', 'Alt+3', 'read the cc'),
             ('Subject', 'Alt+4', 'what is the subject'),
             ('Date sent', 'Alt+5', 'when was it sent'),
-            ('Copy sender address', 'C', 'copy sender address')]),
+            ('Copy sender address', 'C', 'copy sender address'),
+            ('AI assistant', 'Ctrl+Shift+Q', 'ai assistant'),
+            ('Summarise', '', 'summarise this email'),
+            ('Simplify', '', 'simplify this email')]),
         ('Attachments', [
             ('List attachments', 'L', 'list attachments'),
             ('Open attachment', '', 'open attachment'),
@@ -111,6 +115,13 @@ MENUS = {
             ('Bold', 'Ctrl+B', 'toggle bold'),
             ('Italic', 'Ctrl+I', 'toggle italic'),
             ('Underline', 'Ctrl+U', 'toggle underline')]),
+        ('Writing assistant', [
+            ('AI assistant', 'Ctrl+Shift+Q', 'ai assistant'),
+            ('Check for errors', '', 'check for errors'),
+            ('Friendlier', '', 'make it friendlier'),
+            ('More professional', '', 'make it more professional'),
+            ('Clearer', '', 'make it clearer'),
+            ('Shorter', '', 'make it shorter')]),
         ('Attachments', [
             ('Attach a file', 'Ctrl+O', 'attach a file'),
             ('Attach the last download', '', 'attach the last download'),
@@ -141,6 +152,13 @@ MENUS = {
             ('Undo', 'Ctrl+Z', 'undo'),
             ('Redo', 'Ctrl+Y', 'redo'),
             ('Scratch last words', '', 'scratch that')]),
+        ('Writing assistant', [
+            ('AI assistant', 'Ctrl+Shift+Q', 'ai assistant'),
+            ('Check for errors', '', 'check for errors'),
+            ('Friendlier', '', 'make it friendlier'),
+            ('More professional', '', 'make it more professional'),
+            ('Clearer', '', 'make it clearer'),
+            ('Shorter', '', 'make it shorter')]),
         ('Options and help', [
             ('Notepad options', '', '@options:Notepad'),
             ('Notepad help', 'Double:F1', 'help with notepad'),
@@ -169,6 +187,10 @@ MENUS = {
             ('Set up Chrome', '', 'set up chrome'),
             ('Show browser window', '', 'show browser window'),
             ('Hide browser window', '', 'hide browser window')]),
+        ('Reading assistant', [
+            ('AI assistant', 'Ctrl+Shift+Q', 'ai assistant'),
+            ('Summarise', '', 'summarise this page'),
+            ('Simplify', '', 'simplify this page')]),
         ('Options and help', [
             ('Web browser options', '', '@options:Web browser'),
             ('Web help', 'Double:F1', 'help with web')]),
@@ -238,6 +260,7 @@ MENUS = {
             ('Release notes', '', 'release notes'),
             ('Tutorial', '', 'start tutorial'),
             ('Open the guide folder', '', 'open user guides'),
+            ('Ask a question', 'Ctrl+Shift+Q', 'ask a question'),
             ('Close help', '', 'close help'),
             ('Main menu', '', 'main menu')]),
     ]),
@@ -256,6 +279,10 @@ MENUS = {
             ('Tag all', 'Ctrl+A', 'tag all attachments'),
             ('What is tagged', 'Ctrl+Shift+T', 'what attachments are tagged'),
             ('Clear tags', 'Ctrl+Shift+A', 'clear attachment tags')]),
+        ('Picture', [
+            ('AI assistant', 'Ctrl+Shift+Q', 'ai assistant'),
+            ('Describe the image', '', 'describe the image'),
+            ('Ask about the image', '', 'ask about the image')]),
         ('Leave and help', [
             ('Close the list', 'Escape', 'close attachments'),
             ('Attachments help', 'Double:F1', 'help with attachments')]),
@@ -279,6 +306,10 @@ MENUS = {
             ('Follow link', 'Enter', 'follow link'),
             ('Next bookmark', 'B', 'next bookmark'),
             ('Next footnote', 'N', 'next footnote')]),
+        ('AI reading assistant', [
+            ('AI assistant', 'Ctrl+Shift+Q', 'ai assistant'),
+            ('Summarise', '', 'summarise this document'),
+            ('Simplify', '', 'simplify this document')]),
         ('Leave and help', [
             ('Back to files', 'Escape', 'back to files'),
             ('Main menu', '', 'main menu'),
@@ -367,6 +398,11 @@ OPEN_PHRASES = {'mailbox': ('menu', 'open menu', 'mail menu'), 'file_reader': ('
 # two items in a group would share one, a well-known letter from the word (Windows style).
 # Help is always H and Options always O.
 LETTERS = {
+    # AI assistant groups (ai_assistant.py)
+    'ai assistant': 'Q', 'check for errors': 'C', 'make it friendlier': 'F', 'make it more professional': 'P',
+    'make it clearer': 'L', 'make it shorter': 'S', 'summarise this email': 'U', 'simplify this email': 'I',
+    'summarise this page': 'U', 'simplify this page': 'I', 'summarise this document': 'U', 'simplify this document': 'I',
+    'describe the image': 'D', 'ask about the image': 'A', 'ask a question': 'Q',
     # Email: Message
     'new email': 'N', 'open current message': 'O', 'reply': 'R', 'reply all': 'A', 'forward': 'F',
     'new email to sender': 'E', 'move': 'M', 'delete': 'D', 'message details': 'I',
