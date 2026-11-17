@@ -164,8 +164,13 @@ export async function handle(request, env, now = new Date(), fetcher = fetch) {
     }),
   });
   // 429 from OpenAI: the spending limit is reached, or OpenAI is overloaded. Say so plainly.
-  if (reply.status === 429) return json({ ok: false, error: 'unavailable' }, 503);
-  if (!reply.ok) return json({ ok: false, error: 'ai service ' + reply.status }, 502);
+  if (!reply.ok) {
+    // Every failure names itself: pass on OpenAI's own error code and message (never the key).
+    const why = await reply.json().catch(() => ({}));
+    const detail = String((why.error && (why.error.code || why.error.type)) || '') + ': ' + String((why.error && why.error.message) || '').slice(0, 300);
+    if (reply.status === 429) return json({ ok: false, error: 'unavailable', detail }, 503);
+    return json({ ok: false, error: 'ai service ' + reply.status, detail }, 502);
+  }
   const text = outputText(await reply.json()).trim();
   await mine.add();
   await all.add();
