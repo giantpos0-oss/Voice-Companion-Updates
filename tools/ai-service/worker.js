@@ -36,8 +36,11 @@ const TASKS = {
   summarise: {
     instructions:
       'Summarise the text for a blind or low-vision person who listens with a screen reader. ' +
-      'Start with the main point in one sentence. Then give any dates, times, amounts, people, and anything the reader must do, ' +
-      'each on its own short line starting with a dash. Use plain words. No headings, no tables, no bold or other formatting.',
+      'Start with the main point in one sentence. Then give only what matters most: dates, times, amounts, and anything ' +
+      'the reader must do, as short sentences, each on its own line. Use at most 5 lines in all, and fewer for a short text. ' +
+      'Do not repeat the main point, and leave out greetings, sign-offs and small details. ' +
+      'Do not start lines with dashes, bullets or numbers, because a screen reader says them aloud. ' +
+      'Use plain words. No headings, no tables, no bold or other formatting.',
   },
   simplify: {
     instructions:
