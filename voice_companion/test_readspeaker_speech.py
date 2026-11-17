@@ -161,6 +161,25 @@ class EngineTests(unittest.TestCase):
             self.assertEqual(fake.license, str(base).encode())
 
 
+class SelfCheckTests(unittest.TestCase):
+    def test_the_check_lists_voices_and_timings_without_user_text(self):
+        fake = FakeVTAPI()
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder) / 'readspeaker-check.txt'
+            with mock.patch.object(rs, '_ENGINE', rs.Engine(folder=Path(folder), lib=fake)):
+                rs.self_check(out)
+            text = out.read_text()
+        self.assertIn('ReadSpeaker Sophie (readspeaker:sophie:d22, 22050 Hz)', text)
+        self.assertIn('Julie: 8 words made in', text)
+
+    def test_a_problem_is_written_not_raised(self):
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder) / 'readspeaker-check.txt'
+            with mock.patch.object(rs, 'engine', side_effect=rs.ReadSpeakerError('The ReadSpeaker license has expired.')):
+                rs.self_check(out)
+            self.assertIn('Problem: ReadSpeakerError: The ReadSpeaker license has expired.', out.read_text())
+
+
 class CompanionTests(unittest.TestCase):
     """The voice picker and the local speech player use ReadSpeaker voices only when they exist."""
 

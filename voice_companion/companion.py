@@ -7543,6 +7543,13 @@ if __name__ == '__main__':
             try:
                 if configure_espeak_speech():
                     stored = locals().get('settings', {})
+                    try:
+                        from readspeaker_speech import sdk_folder, self_check
+                        if sdk_folder():
+                            # Evaluation (readspeaker_speech.py): record what works, on a thread, never blocking start.
+                            threading.Thread(target=self_check, args=(APP / 'readspeaker-check.txt',), name='ReadSpeaker check', daemon=True).start()
+                    except Exception:
+                        pass
                     ESPEAK_SPEECH.enabled = bool(stored.get('espeak_enabled', False))
                     from espeak_speech import ALL_VOICES as ESPEAK_VOICES
                     if stored.get('espeak_voice') in {code for _, code in ESPEAK_VOICES}: ESPEAK_VOICE_NAME = stored['espeak_voice']

@@ -242,3 +242,27 @@ def synthesize(text, rate=0, voice='', pitch=0):
         raise ReadSpeakerError('ReadSpeaker is not set up on this computer.')
     from capital_feedback import pitch_for
     return current.synthesize(text, rate, voice, pitch_for(text, pitch))
+
+
+def self_check(output):
+    """Writes readspeaker-check.txt: what was found and how fast a short phrase is made.
+
+    Run once at start on a computer that has the readspeaker folder, so a helper (or Claude) can
+    see whether the SDK, license and voices work without anyone listening. No user text is written."""
+    import time
+    lines = ['ReadSpeaker check', 'SDK folder: ' + str(sdk_folder())]
+    try:
+        current = engine()
+        voices = current.voices() if current else []
+        lines.append('Voices: ' + (', '.join(name + ' (' + code + ', ' + str(rate) + ' Hz)' for name, code, rate in voices) or 'none found'))
+        for name, code, _ in voices:
+            for phrase in ('Hello.', 'Voice Companion is ready. Press F1 for help.'):
+                started = time.perf_counter()
+                pcm = current.synthesize(phrase, 0, code, 0)
+                took = time.perf_counter() - started
+                lines.append('%s: %d words made in %.0f ms, %.2f seconds of speech' % (name, len(phrase.split()), took * 1000, len(pcm) / 2 / OUTPUT_RATE))
+    except Exception as exc:
+        lines.append('Problem: ' + type(exc).__name__ + ': ' + str(exc)[:500])
+    Path(output).write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    return lines
+
