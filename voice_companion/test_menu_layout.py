@@ -215,18 +215,29 @@ ALT_MENU_COMMANDS = {
     'youtube': [('', 'clear filters'), ('', 'history'), ('', 'liked videos'), ('', 'main menu'), ('', 'media menu'), ('', 'my playlists'), ('', 'my subscriptions'), ('', 'normal speed'), ('', 'open in browser'), ('', 'post comment {value}'), ('', 'save to watch later'), ('', 'sign in'), ('', 'sign out'), ('', 'skip amount {value}'), ('', 'stop video'), ('', 'subscriptions'), ('', 'watch later'), ('', 'youtube home'), ('', 'youtube menu'), ('0', 'restart video'), ('A', 'autoplay on or off'), ('C', 'captions on or off'), ('Ctrl+Down', 'video volume down'), ('Ctrl+F', 'search youtube'), ('Ctrl+Left', 'previous chapter'), ('Ctrl+Right', 'next chapter'), ('Ctrl+Shift+F', 'search filters'), ('Ctrl+Up', 'video volume up'), ('D', 'read description'), ('Double:F1', 'help with youtube'), ('E', 'elapsed time'), ('Escape', 'go back'), ('F', 'video full screen'), ('F5', 'refresh youtube'), ('G', 'go to channel'), ('H', 'list chapters'), ('I', 'video details'), ('L', 'like video'), ('Left', 'skip back'), ('M', 'mute or unmute'), ('N', 'next video'), ('O', 'read comments'), ('P', 'previous video'), ('Q', 'video quality'), ('R', 'time remaining'), ('Right', 'skip forward'), ('S', 'skip ad'), ('Shift+C', 'read caption'), ('Space', 'play or pause video'), ('T', 'total time'), ('U', 'subscribe or unsubscribe'), ('W', 'save video'), ('X', 'up next'), ('comma', 'slower video'), ('period', 'faster video')],
 }
 
+# Added on purpose since then. Nothing else may appear.
+_AI_READ = lambda what: [('', 'simplify this ' + what), ('', 'summarise this ' + what), ('Ctrl+Shift+Q', 'ai assistant')]
+_AI_WRITE = [('', 'check for errors'), ('', 'make it clearer'), ('', 'make it friendlier'), ('', 'make it more professional'),
+             ('', 'make it shorter'), ('Ctrl+Shift+Q', 'ai assistant')]
+ALT_MENU_ADDED = {  # The AI assistant (Will, November 16, 2026).
+    'mailbox': _AI_READ('email'), 'web': _AI_READ('page'), 'file_reader': _AI_READ('document'),
+    'email_draft': _AI_WRITE, 'note': _AI_WRITE,
+    'help': [('Ctrl+Shift+Q', 'ask a question')],
+    'attachments': [('Ctrl+Shift+D', 'describe the image'), ('Ctrl+Shift+K', 'ask about the image'), ('Ctrl+Shift+Q', 'ai assistant')],
+}
+
 ALT_MENU_GROUPS = {
-    'mailbox': ['Message', 'Header', 'Attachments', 'Unread and flags', 'Select', 'Go to', 'Edit folders', 'View', 'Tools'],
-    'email_draft': ['Message', 'Edit', 'Go to', 'Text style', 'Attachments', 'Contacts', 'Importance and read receipt',
+    'mailbox': ['Message', 'Header and reading assistant', 'Attachments', 'Unread and flags', 'Select', 'Go to', 'Edit folders', 'View', 'Tools'],
+    'email_draft': ['Message', 'Edit', 'Go to', 'Text style', 'Writing assistant', 'Attachments', 'Contacts', 'Importance and read receipt',
                     'Options and help'],
-    'note': ['Note', 'Edit', 'Options and help'],
-    'web': ['Go to', 'Page', 'Favorites', 'Tools', 'Options and help'],
+    'note': ['Note', 'Edit', 'Writing assistant', 'Options and help'],
+    'web': ['Go to', 'Page', 'Favorites', 'Tools', 'Reading assistant', 'Options and help'],
     'downloads': ['Download', 'Move in list', 'Folder', 'Leave and help'],
     'contacts': ['Contact', 'Address book', 'Leave and help'],
     'calendar': ['Event', 'Go to', 'Calendar', 'Leave and help'],
     'help': ['Help'],
-    'attachments': ['Attachment', 'Tags', 'Leave and help'],
-    'file_reader': ['Read', 'Go to', 'Leave and help'],
+    'attachments': ['Attachment', 'Tags', 'Picture', 'Leave and help'],
+    'file_reader': ['Read', 'Go to', 'AI reading assistant', 'Leave and help'],
     'youtube': ['Play', 'Elapsed and remaining time', 'Volume and speed', 'Captions and picture', 'This video', 'Your account', 'Search', 'Go to',
                 'Leave and help'],
 }
@@ -244,7 +255,7 @@ class AltMenuCategoryTests(unittest.TestCase):
         for mode, (_, groups) in screen_menus.MENUS.items():
             with self.subTest(mode=mode):
                 self.assertEqual(sorted((key, command) for _, entries in groups for _, key, command in entries),
-                                 ALT_MENU_COMMANDS[mode])
+                                 sorted(ALT_MENU_COMMANDS[mode] + ALT_MENU_ADDED.get(mode, [])))
 
     def test_each_group_has_its_own_first_letter(self):
         # A letter on the group list goes straight to one group.
@@ -260,7 +271,7 @@ class AltMenuCategoryTests(unittest.TestCase):
                  for group, entries in groups for label, _, _ in entries}
         for mode, label, group in (
                 ('mailbox', 'Mark as read or unread', 'Unread and flags'), ('mailbox', 'Flag or unflag', 'Unread and flags'),
-                ('mailbox', 'Copy sender address', 'Header'), ('mailbox', 'Email the sender', 'Message'),
+                ('mailbox', 'Copy sender address', 'Header and reading assistant'), ('mailbox', 'Email the sender', 'Message'),
                 ('mailbox', 'Email drafts', 'Go to'), ('mailbox', 'Check for new mail', 'View'),
                 ('mailbox', 'Show Thunderbird', 'View'), ('mailbox', 'Switch account', 'Tools'),
                 ('mailbox', 'Message details', 'Message'), ('mailbox', 'Main menu', 'Go to'),
@@ -411,7 +422,7 @@ class AltMenuKeyTests(MenuLayoutCase):
 
     def test_letters_open_the_group_and_run_the_item(self):
         self.press('Alt')
-        self.assertEqual(self.said[-1], 'Email draft menu. Message (M), 1 of 8.')
+        self.assertEqual(self.said[-1], 'Email draft menu. Message (M), 1 of 9.')
         self.press('Letter:e')
         self.assertEqual(self.said[-1], 'Edit menu. Undo (U), 1 of 2. Control+Z. Say undo.')
         with mock.patch.object(companion, 'handle', wraps=companion.handle) as handled:

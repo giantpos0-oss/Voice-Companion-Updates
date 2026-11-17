@@ -1,31 +1,47 @@
 {
-  "version": "0.2.213-test",
+  "version": "0.2.214-test",
   "status": "Testing build",
-  "date": "November 12, 2026",
-  "baseline": "0.2.212-test",
-  "scope": "Companion makes sure your microphone is loud enough. Keys, voice commands and dictation answer faster. Thunderbird connects quickly when it was open first. Sound in Chrome no longer stays quiet on a headset.",
+  "date": "November 17, 2026",
+  "baseline": "0.2.213-test",
+  "scope": "Companion has a new AI assistant. It checks and rewrites your writing, sums up long emails and pages, and describes pictures. First letters work in the email account and folder lists. YouTube no longer freezes when you press N or End.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "Microphone level",
+          "title": "AI assistant",
           "details": [
-            "Windows often sets a headset mic too low. Then Companion misses words.",
-            "Now Companion turns your mic up to 70 percent when it listens, if it was lower.",
-            "It never lowers it. It does not change it while you talk.",
-            "You hear when it raises the level, and if the microphone is muted.",
-            "Say microphone level to hear the level. Say microphone level 80 to choose another level.",
-            "You can also choose it in Input options, or turn it off."
+            "Press Control+Shift+Q, or say AI assistant, to open it.",
+            "It works where you read and write. That means documents, emails, notes and web pages. It also works in Help, and on pictures.",
+            "The first time, it asks if you want to use it. Say yes or no.",
+            "Each choice is also in the Alt menu, and you can say it, too."
           ]
         },
         {
-          "title": "Response time record",
+          "title": "Writing help",
           "details": [
-            "Some keys or commands may still feel slow. Now Companion writes each slow one down.",
-            "The record is a file called response-times.txt in Companion's data folder.",
-            "It says which step was slow. It never keeps the words you say or type.",
-            "This helps us find and fix the slow spots."
+            "Say check for errors. You hear each mistake and how to fix it.",
+            "Press Enter to keep a fix, or Delete to skip it. Control+Enter keeps them all.",
+            "Say make it friendlier, more professional, clearer, or shorter.",
+            "You hear the new words first. Press Enter to use them, or Escape to keep yours.",
+            "Undo puts your own words back."
+          ]
+        },
+        {
+          "title": "Reading help",
+          "details": [
+            "Say summarise to hear the main points of an email, page or document.",
+            "Say simplify to hear it in plain words.",
+            "Use the arrows to read the answer a line at a time."
+          ]
+        },
+        {
+          "title": "Pictures and questions",
+          "details": [
+            "In File manager or in an email's attachments, say describe the image.",
+            "You hear what is in the picture, and any writing in it.",
+            "You can describe 200 pictures a month. Reading and writing help has no limit.",
+            "In Help, say ask a question. The answer comes from the user guide."
           ]
         }
       ]
@@ -34,48 +50,19 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Faster keys and voice commands",
+          "title": "First letters in email lists",
           "details": [
-            "Companion answers a key the moment you press it.",
-            "Companion used to stop its voice twice for every key. Now it stops it once.",
-            "Short commands, such as next, check email and main menu, are acted on right away.",
-            "Before, every command went through the dictation engine a second time. That could add a second or more."
+            "In the list of email accounts, press a letter to jump to the account that starts with it.",
+            "In the folder list, a letter jumps to the folder. Press it again for the next one.",
+            "This works when you open the lists with Control+Y, and when you say go to folder."
           ]
         },
         {
-          "title": "Faster dictation",
+          "title": "YouTube no longer freezes",
           "details": [
-            "Only the part of the recording with your words goes to the dictation engine.",
-            "The quiet before and after you speak is left out, so your text comes back sooner.",
-            "Silence alone is no longer sent to the engine. This keeps the computer quicker while the microphone is on."
-          ]
-        },
-        {
-          "title": "YouTube keys",
-          "details": [
-            "Left and Right Arrow now say only how far they moved, such as Back 10 seconds.",
-            "Press E to hear the time played so far.",
-            "Press T to hear the total time, and R to hear the time left.",
-            "Like is now L. To read the caption that is showing, press Shift+C.",
-            "Moving through a video is faster, too."
-          ]
-        },
-        {
-          "title": "Thunderbird opened first",
-          "details": [
-            "Did you open Thunderbird first? Now email connects in a few seconds.",
-            "Before, it could take many minutes.",
-            "If Thunderbird still does not connect, Companion restarts it once, the normal way.",
-            "Thunderbird asks first if you are writing a message, so nothing is lost."
-          ]
-        },
-        {
-          "title": "Sound on headsets",
-          "details": [
-            "Companion lowers other sound while it talks, then puts it back.",
-            "On some headsets, such as the Jabra Engage, sound in Chrome could stay quiet afterward.",
-            "Now it always comes back, on the headset and on your speakers.",
-            "If you set a level yourself in the volume mixer, Companion keeps it."
+            "Pressing N for the next video could freeze Companion when YouTube was slow.",
+            "Pressing End to load more videos could freeze it, too.",
+            "Now Companion waits only a few seconds. If YouTube is slow, it tells you, and you can keep working."
           ]
         }
       ]

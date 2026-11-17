@@ -7,10 +7,10 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 ## Counts
 
-- Actions inventoried: 763
-- Already had both ways: 611
-- Gaps found: 152
-- Gaps fixed (Added): 144
+- Actions inventoried: 800
+- Already had both ways: 632
+- Gaps found: 168
+- Gaps fixed (Added): 160
 - Not applicable (N/A, with reason): 8
 
 ## Main menu
@@ -237,6 +237,24 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 - Voice: "Sort descending"
 - Keyboard: Ctrl+Shift+Down
+- Status: Both
+
+### AI assistant
+
+- Voice: "Ai assistant"
+- Keyboard: Ctrl+Shift+Q
+- Status: Both
+
+### Describe the image
+
+- Voice: "Describe the image"
+- Keyboard: Ctrl+Shift+D
+- Status: Both
+
+### Ask about the image
+
+- Voice: "Ask about the image"
+- Keyboard: Ctrl+Shift+K
 - Status: Both
 
 ### Refresh
@@ -889,6 +907,56 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Alt, A, V
 - Status: Both
 
+## Word processor document: Writing assistant
+
+### AI assistant
+
+- Voice: "Ai assistant"
+- Keyboard: Ctrl+Shift+Q
+- Status: Both
+
+### Check for errors
+
+- Voice: "Check for errors"
+- Keyboard: Alt, W, C
+- Status: Both
+
+### Friendlier
+
+- Voice: "Make it friendlier"
+- Keyboard: Alt, W, F
+- Status: Both
+
+### More professional
+
+- Voice: "Make it more professional"
+- Keyboard: Alt, W, P
+- Status: Both
+
+### Clearer
+
+- Voice: "Make it clearer"
+- Keyboard: Alt, W, L
+- Status: Both
+
+### Shorter
+
+- Voice: "Make it shorter"
+- Keyboard: Alt, W, S
+- Status: Both
+
+### Summarise
+
+- Voice: "Summarise this document"
+- Keyboard: Alt, W, U
+- Status: Both
+
+### Simplify
+
+- Voice: "Simplify this document"
+- Keyboard: Alt, W, I
+- Status: Both
+
 ## Word processor document: Options and help
 
 ### Run any document voice command
@@ -1357,6 +1425,14 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 - Voice: "Set Microphone level while Companion listens to ..."
 - Keyboard: Alt+O, arrows to Input options, Tab to the field, arrows or Space, Enter to save
+- Status: Both
+
+## AI assistant options
+
+### AI features: Reading and Writing Assistants, Describe Image and Ask a Question
+
+- Voice: "Set AI features: Reading and Writing Assistants, Describe Image and Ask a Question to ..."
+- Keyboard: Alt+O, arrows to AI assistant options, Tab to the field, arrows or Space, Enter to save
 - Status: Both
 
 ## Email options
@@ -2043,7 +2119,7 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: I
 - Status: Both
 
-## Alt menu, Email: Header
+## Alt menu, Email: Header and reading assistant
 
 ### From
 
@@ -2080,6 +2156,24 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Voice: "Copy sender address"
 - Keyboard: C
 - Status: Both
+
+### AI assistant
+
+- Voice: "Ai assistant"
+- Keyboard: Ctrl+Shift+Q
+- Status: Both
+
+### Summarise
+
+- Voice: "Summarise this email"
+- Keyboard: Alt, H, U
+- Status: Added: Alt menu path
+
+### Simplify
+
+- Voice: "Simplify this email"
+- Keyboard: Alt, H, I
+- Status: Added: Alt menu path
 
 ## Alt menu, Email: Attachments
 
@@ -2451,6 +2545,44 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Ctrl+U
 - Status: Both
 
+## Alt menu, Email draft: Writing assistant
+
+### AI assistant
+
+- Voice: "Ai assistant"
+- Keyboard: Ctrl+Shift+Q
+- Status: Both
+
+### Check for errors
+
+- Voice: "Check for errors"
+- Keyboard: Alt, W, C
+- Status: Added: Alt menu path
+
+### Friendlier
+
+- Voice: "Make it friendlier"
+- Keyboard: Alt, W, F
+- Status: Added: Alt menu path
+
+### More professional
+
+- Voice: "Make it more professional"
+- Keyboard: Alt, W, P
+- Status: Added: Alt menu path
+
+### Clearer
+
+- Voice: "Make it clearer"
+- Keyboard: Alt, W, L
+- Status: Added: Alt menu path
+
+### Shorter
+
+- Voice: "Make it shorter"
+- Keyboard: Alt, W, S
+- Status: Added: Alt menu path
+
 ## Alt menu, Email draft: Attachments
 
 ### Attach a file
@@ -2589,6 +2721,44 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Alt, E, S
 - Status: Added: Alt menu path
 
+## Alt menu, Note: Writing assistant
+
+### AI assistant
+
+- Voice: "Ai assistant"
+- Keyboard: Ctrl+Shift+Q
+- Status: Both
+
+### Check for errors
+
+- Voice: "Check for errors"
+- Keyboard: Alt, W, C
+- Status: Added: Alt menu path
+
+### Friendlier
+
+- Voice: "Make it friendlier"
+- Keyboard: Alt, W, F
+- Status: Added: Alt menu path
+
+### More professional
+
+- Voice: "Make it more professional"
+- Keyboard: Alt, W, P
+- Status: Added: Alt menu path
+
+### Clearer
+
+- Voice: "Make it clearer"
+- Keyboard: Alt, W, L
+- Status: Added: Alt menu path
+
+### Shorter
+
+- Voice: "Make it shorter"
+- Keyboard: Alt, W, S
+- Status: Added: Alt menu path
+
 ## Alt menu, Note: Options and help
 
 ### Notepad options
@@ -2723,6 +2893,26 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 - Voice: "Hide browser window"
 - Keyboard: Alt, T, H
+- Status: Added: Alt menu path
+
+## Alt menu, Web page: Reading assistant
+
+### AI assistant
+
+- Voice: "Ai assistant"
+- Keyboard: Ctrl+Shift+Q
+- Status: Both
+
+### Summarise
+
+- Voice: "Summarise this page"
+- Keyboard: Alt, R, U
+- Status: Added: Alt menu path
+
+### Simplify
+
+- Voice: "Simplify this page"
+- Keyboard: Alt, R, I
 - Status: Added: Alt menu path
 
 ## Alt menu, Web page: Options and help
@@ -3027,6 +3217,12 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Keyboard: Alt, G
 - Status: Added: Alt menu path
 
+### Ask a question
+
+- Voice: "Ask a question"
+- Keyboard: Ctrl+Shift+Q
+- Status: Both
+
 ### Close help
 
 - Voice: "Close help"
@@ -3107,6 +3303,26 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 
 - Voice: "Clear attachment tags"
 - Keyboard: Ctrl+Shift+A
+- Status: Both
+
+## Alt menu, Attachments: Picture
+
+### AI assistant
+
+- Voice: "Ai assistant"
+- Keyboard: Ctrl+Shift+Q
+- Status: Both
+
+### Describe the image
+
+- Voice: "Describe the image"
+- Keyboard: Ctrl+Shift+D
+- Status: Both
+
+### Ask about the image
+
+- Voice: "Ask about the image"
+- Keyboard: Ctrl+Shift+K
 - Status: Both
 
 ## Alt menu, Attachments: Leave and help
@@ -3216,6 +3432,26 @@ The command box (Alt+T, type the command, Enter) also works everywhere but is no
 - Voice: "Next footnote"
 - Keyboard: N
 - Status: Both
+
+## Alt menu, Document: AI reading assistant
+
+### AI assistant
+
+- Voice: "Ai assistant"
+- Keyboard: Ctrl+Shift+Q
+- Status: Both
+
+### Summarise
+
+- Voice: "Summarise this document"
+- Keyboard: Alt, A, U
+- Status: Added: Alt menu path
+
+### Simplify
+
+- Voice: "Simplify this document"
+- Keyboard: Alt, A, I
+- Status: Added: Alt menu path
 
 ## Alt menu, Document: Leave and help
 

@@ -287,14 +287,17 @@ SORT_MENU=(('Name','Ctrl+1','sort key name'),('Date modified','Ctrl+2','sort key
            ('Date created','Ctrl+5','sort key date created'),('Date added (first seen here)','Alt+D','sort by date added'),
            ('Ascending','Ctrl+Shift+Up','sort ascending'),('Descending','Ctrl+Shift+Down','sort descending'))
 GO_MENU=(('Refresh','F5','refresh'),('Previous folder','Escape','go back'),('Drive list','Ctrl+D','drive list'),('File manager help','Double:F1','file manager help'),('Main menu','Alt+Home','main menu'))
-GROUPS={'actions':('Actions',ACTIONS),'search':('Search',SEARCH_MENU),'sort':('Sort',SORT_MENU),'go':('Go to',GO_MENU)}
+# The AI assistant (ai_assistant.py) describes the picture under the cursor; the app does the work.
+PICTURE_MENU=(('AI assistant','Ctrl+Shift+Q','ai assistant'),('Describe the image','Ctrl+Shift+D','describe the image'),('Ask about the image','Ctrl+Shift+K','ask about the image'))
+AI_COMMANDS=tuple(command for _,_,command in PICTURE_MENU)
+GROUPS={'actions':('Actions',ACTIONS),'search':('Search',SEARCH_MENU),'sort':('Sort',SORT_MENU),'picture':('Picture',PICTURE_MENU),'go':('Go to',GO_MENU)}
 MENU=tuple((name,'','open group '+key) for key,(name,_) in GROUPS.items())
 # Email this file and Attach to draft need the app (attachment_screen.py); File manager hands them over.
 ATTACH_COMMANDS=('email this file','attach to draft')
 # Control+1 to Control+5 (sort key ...): the same key again flips ascending and descending.
 SORT_KEYS=('name','date modified','type','size','date created')
 
-HELP='File manager. Up Arrow and Down Arrow move through items. Home and End reach the list boundaries. Enter opens. Escape goes up one folder, then back to the drive list. Say an item name, or open followed by its name. Space tags or untags an item: Companion tags. Tags stay when you open another folder, so you can tag items in several folders. Copy, cut, delete, zip, and email act on every tagged item, or on the current item when nothing is tagged. Control+A tags all; Control+Shift+A clears tags; Control+Shift+T says what is tagged. F2 renames. Delete asks you to confirm removal. Control+C copies; Control+X cuts; Control+V pastes in the current folder. Alt+Z zips. Alt+Shift+Z zips with a password. Alt+U unzips into a new folder, and asks for the password of a locked zip. Alt+Enter shows properties; use the arrows to read them. Control+1 sorts by name, Control+2 by date modified, Control+3 by type, Control+4 by size, and Control+5 by date created. Press the same key again to switch between ascending and descending. Control+F searches names in this list; Control+Shift+F searches subfolders. Control+Shift+X clears search. F5 refreshes. Control+D returns to drives. Type the first few letters of an item to jump to it. Alt opens the File manager menu, in groups: Actions, Search, Sort, and Go to. Alt+Home returns to the main menu.'
+HELP='File manager. Up Arrow and Down Arrow move through items. Home and End reach the list boundaries. Enter opens. Escape goes up one folder, then back to the drive list. Say an item name, or open followed by its name. Space tags or untags an item: Companion tags. Tags stay when you open another folder, so you can tag items in several folders. Copy, cut, delete, zip, and email act on every tagged item, or on the current item when nothing is tagged. Control+A tags all; Control+Shift+A clears tags; Control+Shift+T says what is tagged. F2 renames. Delete asks you to confirm removal. Control+C copies; Control+X cuts; Control+V pastes in the current folder. Alt+Z zips. Alt+Shift+Z zips with a password. Alt+U unzips into a new folder, and asks for the password of a locked zip. Alt+Enter shows properties; use the arrows to read them. Control+1 sorts by name, Control+2 by date modified, Control+3 by type, Control+4 by size, and Control+5 by date created. Press the same key again to switch between ascending and descending. Control+F searches names in this list; Control+Shift+F searches subfolders. Control+Shift+X clears search. F5 refreshes. Control+D returns to drives. Type the first few letters of an item to jump to it. Control+Shift+Q opens the AI assistant, to describe a picture. Alt opens the File manager menu, in groups: Actions, Search, Sort, Picture, and Go to. Alt+Home returns to the main menu.'
 
 HELP_WORDS=('file manager help','help with file manager','help for file manager')
 # The steps with a box to type a name or search words in (passwords go to secret()).
@@ -503,6 +506,7 @@ class FileManager:
                 if self.menu is True:return self.command(command)
                 self.menu=False
                 if command in ATTACH_COMMANDS:return '__attach__:'+command
+                if command in AI_COMMANDS:return '__ai__:'+command
                 # Go to, Main menu: the app leaves File manager (it said "No item is named main menu").
                 if command=='main menu':return '__home__'
                 return self.command(command)

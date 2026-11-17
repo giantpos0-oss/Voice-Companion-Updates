@@ -427,3 +427,46 @@ class WritingComesFirstTests(AccountScreenTestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class FirstLetterTests(AccountScreenTestCase):
+    """First-letter navigation in the account list and the folder list (Will, November 15, 2026:
+    "First letter navigation is not working at all")."""
+
+    def test_a_letter_moves_to_the_account_whose_address_starts_with_it(self):
+        self.open_inbox()
+        self.key('Ctrl+Y')
+        self.assertTrue(companion.app_context('mailbox').get('menu_letters'), 'The window must send letters to this list.')
+        self.key('Letter:p')
+        self.assertEqual(self.last(), 'Thunderbird, pat@example.com, 3 of 4.')
+        self.key('Letter:s')
+        self.assertEqual(self.last(), 'Yahoo, sam@yahoo.com, 4 of 4.')
+        self.key('Letter:s')   # the next one that starts with S, round to the top
+        self.assertEqual(self.last(), 'Thunderbird, sam@gmail.com, 2 of 4.')
+        self.key('Letter:y')   # the kind of account works too
+        self.assertEqual(self.last(), 'Yahoo, sam@yahoo.com, 4 of 4.')
+        self.key('Letter:q')
+        self.assertEqual(self.last(), 'No account starts with Q.')
+        self.key('Letter:w')
+        self.key('Enter')
+        self.assertTrue(self.last().startswith('Found 2 folders.'), self.last())
+
+    def test_a_letter_moves_to_the_folder_that_starts_with_it(self):
+        self.open_inbox()
+        self.key('Ctrl+Y')
+        self.key('Enter')
+        self.assertTrue(companion.app_context('mailbox').get('menu_letters'), 'The window must send letters to this list.')
+        self.key('Letter:w')
+        self.assertEqual(self.last(), 'Will receipts, 2 of 2.')
+        self.key('Letter:i')
+        self.assertEqual(self.last(), 'Inbox, 1 of 2.')
+        self.key('Letter:w')
+        self.key('Enter')
+        self.assertIn('in r-will@gmail.com', self.last())
+
+    def test_a_spoken_folder_list_takes_letters_too(self):
+        self.open_inbox()
+        companion.handle('go to folder', 'mailbox')
+        self.key('Enter')
+        self.key('Letter:w')
+        self.assertEqual(self.last(), 'Will receipts, 2 of 2.')

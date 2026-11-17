@@ -253,3 +253,11 @@ Problems found in the October 2026 review. All fixed in 0.2.153-test, with tests
 ## 0.2.190: a note was not saved when a command left it (October 31, 2026)
 - Found while checking routing: "Media menu" said in a note opened the Media menu, and the note was not saved. Starting a new note then lost its words.
 - Fix: any command that leaves a note saves it first (`NOTE_KEPT_OPEN` in companion.py lists the screens that come back to it). If it cannot be saved, the note stays open.
+
+## 0.2.214: a syntax error in one test file hid the whole Linux test run (November 16, 2026)
+
+- A missing bracket in `test_file_manager_tags.py` stopped the main test group before any test ran.
+- `tools/run_checks.py` found no failure lines, so it said "No new failures." twice. The Windows trial caught it.
+- Fix: when a test group prints no "Ran N tests" line, `run_checks.py` now counts it as a failure and names the error.
+- Checked by breaking the file on purpose: the run then reports "TESTS DID NOT RUN ... SyntaxError".
+- The full run then found three real failures (File manager Picture items had no keys). Those are fixed: Control+Shift+D describes the picture, Control+Shift+K asks about it.

@@ -155,7 +155,10 @@ class TaskMenuTests(unittest.TestCase):
         self.assertNotIn(str(self.root),result)
 
     def test_document_menu_fixed_actions_do_not_fall_through_to_dictation(self):
-        app_commands={'create a document','leave document','name document','save as','help with documents'}
+        app_commands={'create a document','leave document','name document','save as','help with documents',
+                      # The AI assistant is Companion's, not the editor's (ai_assistant.py).
+                      'ai assistant','check for errors','make it friendlier','make it more professional','make it clearer',
+                      'make it shorter','summarise this document','simplify this document'}
         for group,items in DOCUMENT_ACTIONS.items():
             for label,_,command in items:
                 if command in app_commands or command.startswith(('@','toggle ')) or '{value}' in command:continue

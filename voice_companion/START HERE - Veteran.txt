@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.213-test.
+Guide version: 0.2.214-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -213,6 +213,14 @@ Contents
   31.7 Use your YouTube account
   31.8 Sign in when you use embedded Edge
   31.9 Keys, menus, and other audio
+32 AI Assistant
+  32.1 Open the AI assistant
+  32.2 Check your writing for errors
+  32.3 Rewrite your writing
+  32.4 Summarise or simplify
+  32.5 Describe a picture
+  32.6 Ask a question about Voice Companion
+  32.7 Turn AI features off
 
 1. GETTING STARTED
 
@@ -639,7 +647,7 @@ Windows puts deleted items in the Recycle Bin when it can. File manager has no p
 If Windows cannot finish, check the folder before you try again.
 
 6.10 Find commands and keys
-- To open the File manager menu, say "File manager menu", or press Alt. It has four groups: Actions, Search, Sort, and Go to.
+- To open the File manager menu, say "File manager menu", or press Alt. It has five groups: Actions, Search, Sort, Picture, and Go to.
 - Press Enter to open a group. Each item says its key and its voice command. Escape goes back to the groups, then to your files.
 - Tab does not move anywhere on the File manager screen. Everything is in the list or on the Alt menu.
 - To hear the main commands, say "File manager help", or press F1 twice quickly.
@@ -2347,6 +2355,7 @@ Online services need your permission:
 - To stop online narration, choose another voice, turn off Allow narration text to be sent to OpenAI, and save. Any AI speech still waiting is cleared.
 The app keeps the documents, drafts, contacts, favorites, and history you use. Account sign-ins and AI keys are protected for your Windows user account. Documents and drafts are ordinary files, so protect your computer and your Windows account.
 Email, websites, audio streams, contact sync, and update checks use the internet when you use them. Each service has its own data rules. The app has no user tracking or advertising.
+The AI assistant sends text or a picture only when you ask it to. It asks your permission the first time. See chapter 32.
 The app skips history entries with private sign-in data. It also removes sign-in codes from older saved addresses. If a favorite needs you to sign in again, open the site and save its main page.
 
 29.6 Keep a transcript of what Companion says
@@ -2525,3 +2534,65 @@ Google may also refuse to sign in a browser that a program controls. If Google s
 - A video keeps playing when you go to the Media menu or another screen.
 - Going back to the main menu stops the video, unless Keep audio playing in the background is on. See part 25.8.
 - Videos play in a browser tab of their own, so you can look through lists while one plays.
+
+32. AI ASSISTANT
+
+32.1 Open the AI assistant
+The AI assistant helps you read and write. It can check your writing, rewrite it, make long text short, and describe pictures. It can also answer questions about Voice Companion.
+It works the same way on every screen where it fits. The same key, the same menu items, and the same spoken commands work everywhere.
+You need the internet to use it. Voice Companion pays for the AI service, so you do not need an account.
+- To open it, say "AI assistant", or press Control+Shift+Q.
+- It works in a document, an email you are writing, a note, an email you are reading, the Document reader, a web page, Help, and the attachment list.
+- You hear a list of choices. Use Up Arrow and Down Arrow to move. A letter moves to the choice that starts with it. Press Enter to do it.
+- You can also say a choice, such as "Summarise", or "Make it shorter".
+- For help, say "Help with AI assistant", or press F1.
+- To close it, say "Go back", or press Escape.
+- Each AI choice is also in the Alt menu of the screen you are on. Look for the group named Writing assistant, Reading assistant, or Picture.
+The first time, Companion tells you where your text goes and asks your permission. Say Yes or No, or press Y or N.
+While it works, you hear "Working on it". To stop, press Escape. Nothing changes.
+
+32.2 Check your writing for errors
+This works in a document, an email you are writing, and a note.
+- Say "Check for errors", or choose Check for errors.
+- If text is selected, only that text is checked. If not, all of it is checked.
+- You hear each mistake and how to fix it. Use Up Arrow and Down Arrow to move between them.
+- To keep a fix, press Enter or say "Keep this correction".
+- To skip a fix, say "Skip this correction", or press Delete.
+- To keep every fix at once, say "Keep all corrections", or press Control+Enter.
+- If you change your mind, say "Undo", or press Control+Z.
+
+32.3 Rewrite your writing
+This works in a document, an email you are writing, and a note.
+- To change the tone, say "Make it friendlier", "Make it more professional", "Make it clearer", or "Make it shorter".
+- You hear the new version first. Your own text does not change yet.
+- To use the new version, press Enter or say "Use it".
+- To keep your own text, press Escape.
+- If you change your mind, say "Undo", or press Control+Z.
+If a document has a table, select the words you want to change first.
+
+32.4 Summarise or simplify
+This works on an email you are reading, a document, a note, a web page, and a file in the Document reader.
+- To hear the main points, say "Summarise this", or choose Summarise.
+- To hear it in plain words, say "Simplify this", or choose Simplify.
+- To hear the answer again, say "Read it again", or press Control+R.
+- Use Up Arrow and Down Arrow to read the answer a line at a time.
+- To copy the answer, say "Copy the answer", or press Control+C.
+- Press Escape to go back to the choices.
+
+32.5 Describe a picture
+This works on a picture in File manager or in the attachment list of an email.
+- Move to the picture. Say "Describe the image", or press Control+Shift+D.
+- You hear what is in the picture, and any writing in it.
+- To ask about it, say "Ask about the image", or press Control+Shift+K. Then type or say your question, and press Enter.
+Pictures can be PNG, JPG, GIF, or WebP files, up to 6 megabytes. You can describe 200 pictures a month.
+
+32.6 Ask a question about Voice Companion
+- In Help, say "Ask a question", or press Control+Shift+Q.
+- Type or say your question, then press Enter. An example is "How do I attach a file?"
+- The answer comes from this guide.
+
+32.7 Turn AI features off
+- To turn them off or on, open Options and choose AI assistant. Check or clear AI features, then save.
+- When they are off, the AI key, menu items, and commands tell you they are off.
+- Reading and writing help has no limit. Pictures are limited to 200 a month. When 10 are left, Companion tells you. They start again on the first of each month.
+- AI can make mistakes. Listen to the answer before you send or save it.

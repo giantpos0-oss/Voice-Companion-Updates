@@ -107,6 +107,19 @@ for _mode in ('awake', 'note', 'email_draft', 'mailbox', 'file_reader', 'web', '
               'recent_documents', 'media_menu', 'office_menu', 'organizer_menu', 'web_tools_menu', 'favorites_menu', 'power_menu', 'local_media', 'notepad_menu', 'reader_menu', 'reader_recent', 'help', 'tutorial', 'document', 'files', 'document_menu', 'downloads',
               'contacts', 'calendar', 'attachments', 'youtube'):
     SCREEN_KEYS.setdefault(_mode, {})['Ctrl+F12'] = 'go to sleep'
+# The AI assistant (ai_assistant.py, Will, November 16, 2026): Control+Shift+Q opens it from every
+# screen it works on, the same as saying "AI assistant". On its own screen, Enter does the
+# choice, keeps a rewrite or a correction; these keys do the rest.
+for _mode in ('document', 'email_draft', 'note', 'mailbox', 'file_reader', 'web', 'help', 'files', 'attachments'):
+    SCREEN_KEYS.setdefault(_mode, {})['Ctrl+Shift+Q'] = 'ai assistant'
+# Help has one choice, so the key asks the question straight away.
+SCREEN_KEYS['help']['Ctrl+Shift+Q'] = 'ask a question'
+# Pictures: a key for each choice too, in File manager and the attachment list.
+for _mode in ('files', 'attachments'):
+    SCREEN_KEYS[_mode].update({'Ctrl+Shift+D': 'describe the image', 'Ctrl+Shift+K': 'ask about the image'})
+SCREEN_KEYS['ai_assistant'] = {'F1': 'help with ai assistant', 'Ctrl+Enter': 'keep all corrections',
+                               'Delete': 'skip this correction', 'Ctrl+C': 'copy the answer',
+                               'Ctrl+R': 'read it again', 'Ctrl+F12': 'go to sleep'}
 NOTE_READING_KEYS = {'Up', 'Down', 'Left', 'Right', 'Ctrl+Left', 'Ctrl+Right', 'Ctrl+Up', 'Ctrl+Down'}
 # Keys that work only in one part of a screen.
 HELP_ARTICLE_ONLY = set()

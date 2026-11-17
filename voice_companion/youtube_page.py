@@ -737,12 +737,15 @@ async ([token,search])=>{
   }
   const key=cfg.get('INNERTUBE_API_KEY');
   const address='/youtubei/v1/'+(search?'search':'browse')+'?prettyPrint=false'+(key?'&key='+encodeURIComponent(key):'');
+  // Never wait for YouTube for good: a request it does not answer froze Voice Companion
+  // (Will, November 15, 2026). After 6 seconds the request is given up.
+  const stop=new AbortController();const timer=setTimeout(()=>stop.abort(),6000);
   let response;
-  try{response=await fetch(address,{method:'POST',credentials:'include',headers,
+  try{response=await fetch(address,{method:'POST',credentials:'include',headers,signal:stop.signal,
     body:JSON.stringify({context:cfg.get('INNERTUBE_CONTEXT'),continuation:token})});}
-  catch(e){return {error:String(e)};}
-  if(!response.ok)return {error:'status '+response.status};
-  let data;try{data=await response.json();}catch(e){return {error:'not json'};}
+  catch(e){clearTimeout(timer);return {error:String(e)};}
+  if(!response.ok){clearTimeout(timer);return {error:'status '+response.status};}
+  let data;try{data=await response.json();}catch(e){return {error:'not json'};}finally{clearTimeout(timer);}
   const found=extract(data.onResponseReceivedActions||data.onResponseReceivedCommands||data.continuationContents||data);
   return {items:found.items,token:found.token};
 }
