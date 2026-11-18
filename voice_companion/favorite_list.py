@@ -107,8 +107,6 @@ class FavoriteList:
         index = next_match(self.order, self.index, character)
         if index is None:
             return 'No app starts with ' + character.upper() + '.'
-        if index == self.index:
-            return 'End of matching items.'
         self.index = index
         return self.label()
 

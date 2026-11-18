@@ -9,12 +9,15 @@ def menu_label(name):
 
 
 def next_match(names, current, letter):
+    """The next item after `current` that starts with `letter`, going round to the top after the
+    last (Will, November 18, 2026: first letters wrap in every list; arrows, Home and End keep
+    their edges). The current item itself comes back when it is the only match. None: no match."""
     matches = [i for i, name in enumerate(names) if quick_key(name) == letter.lower()]
     if not matches:
         return None
-    if current in matches:
-        return matches[min(matches.index(current) + 1, len(matches)-1)]
-    return matches[0]
+    if not isinstance(current, int):
+        return matches[0]
+    return next((i for i in matches if i > current), matches[0])
 
 
 # Key ids (as the window sends them) and the words the guide uses for them. Menus speak

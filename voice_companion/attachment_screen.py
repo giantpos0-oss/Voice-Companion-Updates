@@ -673,7 +673,7 @@ def command_here(m, raw, command):
                 m.speak('No attachment starts with ' + raw[-1].upper() + '.')
                 return MODE
             INDEX = found
-            m.speak(('End of matching items. ' if found == old else '') + describe())
+            m.speak(describe())
             return MODE
         if command in ends:
             INDEX = 0 if ends[command] == 0 else len(ITEMS) - 1

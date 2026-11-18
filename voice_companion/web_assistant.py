@@ -1610,9 +1610,9 @@ class WebSession:
         if key.startswith('ChoiceLetter:'):
             letter=key.split(':',1)[1].casefold()
             matches=[i for i,o in enumerate(options) if o['label'].casefold().startswith(letter)]
-            index=matches[min(matches.index(current)+1,len(matches)-1)] if current in matches else matches[0] if matches else None
-            if index==current:return 'End of matching items.'
-            if index is None:return 'End of matching items.' if any(o['label'].casefold().startswith(letter) for o in options) else 'No option starts with '+letter.upper()+'.'
+            # Round the list, as every first letter does (Will, November 18, 2026).
+            index=next((i for i in matches if i>current),matches[0]) if matches else None
+            if index is None:return 'No option starts with '+letter.upper()+'.'
         elif key=='Home':index=0
         elif key=='End':index=len(options)-1
         elif key in ('Up','Down','Left','Right'):index=max(0,min(len(options)-1,current+(-1 if key in ('Up','Left') else 1)))
@@ -2838,8 +2838,7 @@ class WebSession:
         if not prefix:return 'Name search cleared.'
         matches=[i for i,name in enumerate(names) if name.startswith(prefix)]
         if not matches:return 'No item starts with '+prefix+'.'
-        index=next((i for i in matches if current is None or i>current),None) if cycle else matches[0]
-        if index is None:return 'End of matching items.'
+        index=next((i for i in matches if current is None or i>current),matches[0]) if cycle else matches[0]
         if self.list_focus=='links':self.link_position=index
         else:self.heading_index=index
         self.pending=None

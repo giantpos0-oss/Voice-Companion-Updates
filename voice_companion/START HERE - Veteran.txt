@@ -1547,7 +1547,7 @@ To see a list of items on the page:
 - For form fields, say "List fields" or "List form fields", or press F8.
 Use the arrows, Home, or End to choose an item, then press Enter. A heading moves your reading place there. A link opens its address. To go back to the page, say "Close list", or press Escape.
 To find a name in a links or headings list, type its first letter. Type more letters quickly to narrow it. You can type the full name, with spaces. Backspace removes the last letter.
-Type the same first letter again to move through matching names. The search stops at the last match. Pause before you start a new name. Typing only chooses an item. Press Enter to open it.
+Type the same first letter again to move through matching names. After the last match, it goes back to the first. Pause before you start a new name. Typing only chooses an item. Press Enter to open it.
 
 15.6 Enter or change a web answer
 1. Use Tab to reach the next control. Or press Up Arrow or Down Arrow to reach a text box. You can type as soon as you reach it.

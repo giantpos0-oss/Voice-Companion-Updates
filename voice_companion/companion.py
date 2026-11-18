@@ -984,7 +984,7 @@ def choose_menu_letter(letter,mode):
     index=next_match(names,current,letter)
     if index is None:speak('No menu item starts with '+letter.upper()+'.');return True
     select(index)
-    if current==index:speak('End of matching items.');return True
+    # First letters go round the list; the only match is said again.
     if VOICE_PICK_INDEX is not None:preview_voice(index)
     else:
         # Folders are said as the arrow keys say them, without a key letter after the name.

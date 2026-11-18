@@ -38,7 +38,8 @@ class WebPolicyTests(unittest.TestCase):
             self.assertIn('Account settings',session.list_name_input('',backspace=True,now=now+.1))
             self.assertIn('Beta',session.list_name_input('b',now=200))
             self.assertIn('Bravo',session.list_name_input('b',now=200.1))
-            self.assertEqual(session.list_name_input('b',now=200.2),'End of matching items.')
+            self.assertIn('Beta',session.list_name_input('b',now=200.2))     # round to the first B
+            self.assertIn('Bravo',session.list_name_input('b',now=200.3))
             session.activate_list_item();self.assertEqual(backend.activated,['3'])
 
     def test_accessible_name_bundle_and_license_are_packaged_and_unchanged(self):
