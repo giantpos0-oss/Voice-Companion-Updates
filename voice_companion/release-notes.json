@@ -44,6 +44,12 @@
             "Before, it said it would reconnect by itself, even when Chrome was closed.",
             "If Chrome cannot be reached, you hear that. Check that Chrome is open, then try again."
           ]
+        },
+        {
+          "title": "Tutorial",
+          "details": [
+            "In the YouTube lesson, Left and Right Arrow move back and forward in the practice video again."
+          ]
         }
       ]
     }
