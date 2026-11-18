@@ -2142,6 +2142,9 @@ AI_KEYS = {'Up': 'previous', 'Down': 'next', 'Home': 'first', 'End': 'last', 'Es
 
 def ai_key(key):
     """Keys on the AI assistant screen. Each one is a spoken command, so keys and voice are the same."""
+    # Imported here: without it, every key but a few stopped with NameError, so Control+Enter (keep
+    # all corrections), Delete (skip) and Control+C did nothing (Will, November 18, 2026).
+    from input_parity import screen_command
     session = AI_SESSION
     if key.startswith('Letter:'):
         said = session.letter(key[7:])
@@ -2231,7 +2234,7 @@ def ai_help_words(session):
         return ('Up and Down Arrow move through the corrections. Enter keeps one, Delete skips it, '
                 'and Control+Enter keeps them all. Escape goes back.')
     if session.level == 'result':
-        rewrite = ' Press Enter to use it in place of your text.' if session.choice in __import__('ai_assistant').TONES else ''
+        rewrite = ' Press Enter to use it in place of your text.' if session.keepable() else ''
         return ('Up and Down Arrow read the answer a line at a time. Control+Home reads it from the top, '
                 'and Control+C copies it.' + rewrite + ' Escape goes back to the choices.')
     if session.level == 'question':

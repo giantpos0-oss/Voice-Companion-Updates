@@ -47,6 +47,7 @@ CHOICES = {
     'image': (DESCRIBE, ASK_IMAGE),
     'help': (ASK_HELP,),
 }
+KEEP_FIRST = 'Done. Press Enter to use it in place of your text, or Escape to keep your own. Here it is. '
 TONES = {FRIENDLIER: 'friendlier', PROFESSIONAL: 'professional', CLEARER: 'clearer', SHORTER: 'shorter'}
 
 # Spoken words for each choice. Recognizers add capitals and periods; normalized() removes them.
@@ -432,14 +433,20 @@ class Session:
             self.level = 'menu'
             return 'The AI assistant sent back nothing. Please try again.'
         self.level = 'result'
-        if self.choice in TONES:
-            return self.result + ' ... Press Enter to use this, or Escape to keep your own text.'
-        return self.result + pictures_left_words(answer)
+        # What to do comes first, before the answer is read (Will, November 18, 2026: "a better
+        # prompt ... that says done, press Enter to keep, before what it generated is read back").
+        if self.keepable():
+            return KEEP_FIRST + self.result
+        return 'Done. Here it is. ' + self.result + pictures_left_words(answer)
+
+    def keepable(self):
+        """A rewrite, or simplified writing, can go in place of the text it came from."""
+        return bool(self.source.get('apply')) and (self.choice in TONES or (self.choice == SIMPLIFY and self.source.get('kind') == 'write'))
 
     # ----- keeping changes -----
     def keep_result(self):
         """Enter on a rewrite: put it in place of your text."""
-        if self.level != 'result' or self.choice not in TONES or not self.source.get('apply'):
+        if self.level != 'result' or not self.keepable():
             return None
         said = self.source['apply'](self.result)
         self.level = 'menu'

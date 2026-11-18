@@ -84,7 +84,7 @@ class ReadingTests(unittest.TestCase):
         service = Service({'summarise': {'ok': True, 'text': 'The meeting moved to Friday.'}})
         session = ai.Session({'kind': 'read', 'label': 'this email', 'text': 'Long email text.'}, 'mailbox', service)
         self.assertEqual(session.choose(), ai.WORKING)
-        self.assertEqual(wait(session), 'The meeting moved to Friday.')
+        self.assertEqual(wait(session), 'Done. Here it is. The meeting moved to Friday.')
         self.assertEqual(service.asked, [('summarise', {'text': 'Long email text.'})])
         self.assertEqual(session.level, 'result')
         self.assertEqual(session.back(), 'Summarise, 1 of 2.')
@@ -119,7 +119,7 @@ class ReadingTests(unittest.TestCase):
         now[0] += ai.STILL_WORKING_SECONDS
         self.assertEqual(session.poll(), ai.STILL)
         gate.set(); session.job.done.wait(2)
-        self.assertEqual(session.poll(), 'y')
+        self.assertEqual(session.poll(), 'Done. Here it is. y')
 
 
 class WritingTests(unittest.TestCase):
@@ -127,7 +127,7 @@ class WritingTests(unittest.TestCase):
         service = Service({'rewrite': {'ok': True, 'text': 'Dear Sir, I saw the dog.'}})
         session, document, _ = writing(service=service)
         session.choose(ai.PROFESSIONAL)
-        self.assertTrue(wait(session).startswith('Dear Sir, I saw the dog. ... Press Enter to use this'))
+        self.assertEqual(wait(session), ai.KEEP_FIRST + 'Dear Sir, I saw the dog.')   # what to do comes first
         self.assertEqual(service.asked[0], ('rewrite', {'text': 'I saw teh dog yesterdy.', 'tone': 'professional'}))
         self.assertEqual(session.back(), 'Kept your own text. More professional, 3 of 7.')
         self.assertEqual(document.text, 'I saw teh dog yesterdy.')
@@ -169,7 +169,7 @@ class ImageAndHelpTests(unittest.TestCase):
         service = Service({'describe_image': {'ok': True, 'text': 'A handwritten birthday card.'}})
         session = ai.Session({'kind': 'image', 'label': 'card.png', 'image_path': picture}, 'files', service)
         session.choose()
-        self.assertEqual(wait(session), 'A handwritten birthday card.')
+        self.assertEqual(wait(session), 'Done. Here it is. A handwritten birthday card.')
         self.assertTrue(service.asked[0][1]['image'].startswith('data:image/png;base64,'))
         session.back()
         self.assertEqual(session.choose(ai.ASK_IMAGE), 'Type or say your question about the image, then press Enter.')
@@ -186,7 +186,7 @@ class ImageAndHelpTests(unittest.TestCase):
         service = Service({'help_question': {'ok': True, 'text': 'Press R.'}})
         session = ai.Session({'kind': 'help', 'guide': lambda q: ai.guide_sections(guide, q)}, 'help', service)
         session.choose(); session.ask('How do I reply to an email?')
-        self.assertEqual(wait(session), 'Press R.')
+        self.assertEqual(wait(session), 'Done. Here it is. Press R.')
         self.assertIn('30 Email', service.asked[0][1]['guide'])
         self.assertNotIn('Audio ducking', service.asked[0][1]['guide'])
 
