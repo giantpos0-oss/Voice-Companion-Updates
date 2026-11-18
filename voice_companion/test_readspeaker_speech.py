@@ -119,6 +119,27 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(self.fake.closed, 1)
         self.assertEqual(self.fake.opened[0][2], rs.TEXT_FORMAT_UTF8)
 
+    def test_a_short_phrase_said_again_is_not_made_again(self):
+        # Key names and letters repeat all the time; the second time must not wait for the SDK.
+        engine = self.engine()
+        first = engine.synthesize('Backspace', voice='readspeaker:sophie:d22')
+        again = engine.synthesize('Backspace', voice='readspeaker:sophie:d22')
+        self.assertEqual(first, again)
+        self.assertEqual(len(self.fake.opened), 1)
+        engine.synthesize('Backspace', rate=4, voice='readspeaker:sophie:d22')
+        engine.synthesize('Backspace', voice='readspeaker:julie:d22')
+        self.assertEqual(len(self.fake.opened), 3, 'another speed or voice is made fresh')
+        engine.synthesize('A long sentence that is well over forty characters in length.', voice='readspeaker:sophie:d22')
+        engine.synthesize('A long sentence that is well over forty characters in length.', voice='readspeaker:sophie:d22')
+        self.assertEqual(len(self.fake.opened), 5, 'long text is not kept')
+
+    def test_the_kept_phrases_have_a_limit(self):
+        engine = self.engine(pieces=1, piece_size=4)
+        for number in range(rs.REMEMBERED + 50):
+            engine.synthesize(str(number), voice='readspeaker:sophie:d22')
+        self.assertEqual(len(engine.recent), rs.REMEMBERED)
+        self.assertNotIn(('0', 100, 'readspeaker:sophie:d22', 100), engine.recent)
+
     def test_non_english_letters_go_in_as_utf8(self):
         engine = self.engine()
         engine.synthesize('Café, naïve.', voice='readspeaker:julie:d22')
@@ -199,7 +220,8 @@ class CompanionTests(unittest.TestCase):
 
     def test_readspeaker_voices_are_a_synthesizer_and_can_be_chosen(self):
         voices = [('ReadSpeaker Sophie', 'readspeaker:sophie:d22')]
-        with mock.patch('readspeaker_speech.available_voices', return_value=voices), mock.patch.object(self.app, 'interrupt_speech'):
+        with mock.patch('readspeaker_speech.available_voices', return_value=voices), mock.patch.object(self.app, 'interrupt_speech'), \
+                mock.patch.object(self.app, 'PREFERENCES', {}):
             self.assertIn(('readspeaker', 'ReadSpeaker'), self.app.synthesizers())
             name = self.app.choose_voice(('readspeaker', 'ReadSpeaker Sophie', 'readspeaker:sophie:d22'))
         self.assertEqual(name, 'ReadSpeaker Sophie')
@@ -211,10 +233,98 @@ class CompanionTests(unittest.TestCase):
         said = []
         with mock.patch('readspeaker_speech.available_voices', return_value=voices), \
                 mock.patch.object(self.app, 'interrupt_speech'), mock.patch.object(self.app, 'speak', said.append), \
-                mock.patch.object(self.app, 'save_speech_settings', return_value=True), mock.patch.object(self.app, 'TEXT_MODE', False):
+                mock.patch.object(self.app, 'save_speech_settings', return_value=True), mock.patch.object(self.app, 'TEXT_MODE', False), \
+                mock.patch.object(self.app, 'PREFERENCES', {}):
             self.assertTrue(self.app.use_synthesizer('Use ReadSpeaker.'))
         self.assertTrue(said[-1].startswith('Using ReadSpeaker Julie.'))
         self.assertEqual(self.app.ESPEAK_VOICE_NAME, 'readspeaker:julie:d22')
+
+    def test_use_readspeaker_returns_to_the_last_readspeaker_voice_and_says_how_to_change(self):
+        voices = [('ReadSpeaker Julie', 'readspeaker:julie:g22'), ('ReadSpeaker Sophie', 'readspeaker:sophie:g22')]
+        said = []
+        with mock.patch('readspeaker_speech.available_voices', return_value=voices), \
+                mock.patch.object(self.app, 'interrupt_speech'), mock.patch.object(self.app, 'speak', said.append), \
+                mock.patch.object(self.app, 'save_speech_settings', return_value=True), mock.patch.object(self.app, 'TEXT_MODE', False), \
+                mock.patch.object(self.app, 'PREFERENCES', {}):
+            self.app.choose_voice(('readspeaker', 'ReadSpeaker Sophie', 'readspeaker:sophie:g22'))
+            self.app.ESPEAK_VOICE_NAME = 'en-us'          # back on eSpeak
+            self.app.use_synthesizer('Use ReadSpeaker.')
+        self.assertTrue(said[-1].startswith('Using ReadSpeaker Sophie.'), said[-1])
+        self.assertTrue(said[-1].endswith('To choose another ReadSpeaker voice, say select voice.'))
+
+
+class OptionsTests(unittest.TestCase):
+    """Synthesizer options and Voice options (Alt+O) offer ReadSpeaker and each of its voices.
+
+    Will, November 17, 2026: the first test copy only switched by voice ("Use ReadSpeaker"),
+    with no ReadSpeaker in Synthesizer options and no way to pick Sophie or Julie."""
+    VOICES = [('windows', 'Microsoft David', None), ('espeak', 'eSpeak US English', 'en-us'),
+              ('readspeaker', 'ReadSpeaker Julie', 'readspeaker:julie:g22'),
+              ('readspeaker', 'ReadSpeaker Sophie', 'readspeaker:sophie:g22')]
+
+    def patches(self, folder, voice_name='readspeaker:sophie:g22'):
+        import companion
+        from settings_model import DEFAULTS
+        windows = mock.Mock()
+        windows.Voice.GetDescription.return_value = 'Microsoft David'
+        stack = [mock.patch.object(companion, 'APP', Path(folder)), mock.patch.object(companion, 'TEXT_MODE', False),
+                 mock.patch.object(companion, 'voice', windows, create=True),
+                 mock.patch.object(companion, 'voice_choices', lambda engine=None: [v for v in self.VOICES if engine in (None, v[0])]),
+                 mock.patch.object(companion, 'ESPEAK_SPEECH', mock.Mock(enabled=True)),
+                 mock.patch.object(companion, 'AI_SPEECH', None), mock.patch.object(companion, 'ESPEAK_VOICE_NAME', voice_name),
+                 mock.patch.object(companion, 'PREFERENCES', dict(DEFAULTS)), mock.patch.object(companion, 'mail_session', None),
+                 mock.patch.object(companion, 'save_speech_settings'), mock.patch.object(companion, 'apply_transcript'),
+                 mock.patch.object(companion, 'interrupt_speech'), mock.patch('windows_actions.startup_enabled', return_value=False)]
+        for item in stack:
+            item.start()
+            self.addCleanup(item.stop)
+        return companion
+
+    def test_options_list_readspeaker_and_both_voices(self):
+        import app_settings
+        from settings_model import fields, voice_field
+        with tempfile.TemporaryDirectory() as folder:
+            companion = self.patches(folder)
+            values, context = app_settings.snapshot(companion)
+        self.assertIn('readspeaker', context['engines'])
+        self.assertEqual(values['engine'], 'readspeaker')
+        self.assertEqual(values['readspeaker_voice'], 'ReadSpeaker Sophie')
+        engine = next(f for f in fields('Synthesizer', context) if f.key == 'engine')
+        self.assertIn('readspeaker', engine.choices)
+        from settings_model import SettingsSession
+        session = SettingsSession(values, context)   # as Alt+O opens it
+        shown = voice_field(session.context)
+        self.assertEqual((shown.key, shown.label), ('readspeaker_voice', 'ReadSpeaker voice'))
+        self.assertEqual(shown.choices, ('ReadSpeaker Julie', 'ReadSpeaker Sophie'))
+
+    def test_choosing_sophie_in_options_saves_and_uses_sophie(self):
+        import app_settings
+        with tempfile.TemporaryDirectory() as folder:
+            companion = self.patches(folder, voice_name='en-us')
+            values, _ = app_settings.snapshot(companion)
+            values.update(engine='readspeaker', readspeaker_voice='ReadSpeaker Sophie')
+            app_settings.apply_settings(companion, values)
+            self.assertEqual(companion.ESPEAK_VOICE_NAME, 'readspeaker:sophie:g22')
+            self.assertTrue(companion.ESPEAK_SPEECH.enabled)
+
+    def test_no_readspeaker_on_this_computer_means_no_choice_and_a_plain_refusal(self):
+        import app_settings
+        self.VOICES = [v for v in self.VOICES if v[0] != 'readspeaker']
+        with tempfile.TemporaryDirectory() as folder:
+            companion = self.patches(folder, voice_name='en-us')
+            values, context = app_settings.snapshot(companion)
+            self.assertNotIn('readspeaker', context['engines'])
+            values['engine'] = 'readspeaker'
+            with self.assertRaises(ValueError) as caught:
+                app_settings.apply_settings(companion, values)
+        self.assertIn('ReadSpeaker is not set up', str(caught.exception))
+
+    def test_saying_use_readspeaker_in_options_picks_the_synthesizer(self):
+        from settings_model import SettingsSession
+        session = SettingsSession({'engine': 'SAPI'}, {'engines': ('SAPI', 'espeak', 'readspeaker', 'ai')})
+        for said in ('Use ReadSpeaker.', 'use read speaker', 'Choose synthesizer ReadSpeaker'):
+            with self.subTest(said=said):
+                self.assertEqual(session.voice_setting(said), ('engine', 'readspeaker'))
 
 
 if __name__ == '__main__':

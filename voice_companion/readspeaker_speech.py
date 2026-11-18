@@ -24,6 +24,8 @@ FORMAT_16PCM = 0
 TEXT_FORMAT_UTF8 = 2
 ATTR_PITCH, ATTR_SPEED = 0, 1
 DEFAULT_BUFFER = -1
+SHORT_PHRASE = 40      # characters: phrases this short are kept once made
+REMEMBERED = 400       # how many short phrases are kept (about 12 MB at most)
 
 
 class ReadSpeakerError(Exception):
@@ -85,6 +87,10 @@ class Engine:
         self.lib = lib
         self.lock = threading.Lock()
         self.engines = {}
+        # Short phrases (key names, letters, menu items) are said again and again: keep their sound,
+        # so a key press speaks at once instead of waiting for ReadSpeaker each time.
+        from collections import OrderedDict
+        self.recent = OrderedDict()
         self._declare()
         self.lib.VTAPI_Init(str(self.folder or '').encode('utf-8') or None)
         licenses = Path(license_folder) if license_folder else (self.folder.parent if self.folder and (self.folder.parent / 'verification.txt').is_file() else self.folder)
@@ -160,6 +166,22 @@ class Engine:
         if not str(text).strip():
             raise ValueError('Nothing to say')
         engine, sampling = self._engine(voice)
+        remember = len(str(text)) <= SHORT_PHRASE
+        key = (str(text), speed_percent(rate), voice, pitch_percent(pitch))
+        if remember:
+            with self.lock:
+                if key in self.recent:
+                    self.recent.move_to_end(key)
+                    return self.recent[key]
+        pcm = self._make(text, rate, voice, pitch, engine, sampling)
+        if remember:
+            with self.lock:
+                self.recent[key] = pcm
+                while len(self.recent) > REMEMBERED:
+                    self.recent.popitem(last=False)
+        return pcm
+
+    def _make(self, text, rate, voice, pitch, engine, sampling):
         with self.lock:
             lib, handle = self.lib, self.handle
             if lib.VTAPI_SetEngineHandle(handle, engine) != 0:

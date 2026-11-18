@@ -40,6 +40,10 @@ class AISpeech:
         self.paused = False
         self.active = False
         self.enabled = False
+        # One output stream kept open between phrases (Will, November 17, 2026: keys lagged).
+        # Opening a Windows audio stream for every key press cost a noticeable delay each time.
+        self._out = None
+        self._out_entered = False
         self.thread = threading.Thread(target=self._run, daemon=True)
         self.thread.start()
 
@@ -59,6 +63,41 @@ class AISpeech:
         self.interrupt()
         self.pending.put(None)
 
+    IDLE_SECONDS = 30   # the stream is closed after this long with nothing to say
+    _out = None          # class defaults, so a player made without __init__ still works
+    _out_entered = False
+
+    def _stream(self):
+        """The open output stream, opened (or restarted after an interruption) when needed."""
+        if self._out is None:
+            if self.output_factory is None:
+                import sounddevice
+                factory, options = sounddevice.RawOutputStream, {'latency': 'low'}
+            else:
+                factory, options = self.output_factory, {}
+            stream = factory(samplerate=24000, channels=1, dtype='int16', blocksize=480, **options)
+            if hasattr(stream, 'start'):
+                stream.start()
+                self._out_entered = False
+            else:
+                stream = stream.__enter__()
+                self._out_entered = True
+            self._out = stream
+        elif getattr(self._out, 'active', True) is False and hasattr(self._out, 'start'):
+            self._out.start()
+        return self._out
+
+    def _close_stream(self):
+        stream, self._out = self._out, None
+        if stream is None: return
+        try:
+            if self._out_entered: stream.__exit__(None, None, None)
+            else:
+                if hasattr(stream, 'abort'): stream.abort()
+                stream.close()
+        except Exception:
+            pass
+
     def pause(self):
         with self.lock: self.paused = True
 
@@ -77,26 +116,34 @@ class AISpeech:
 
     def _play(self, audio, generation, volume):
         import array
-        if self.output_factory is None:
-            import sounddevice
-            factory = sounddevice.RawOutputStream
-        else: factory = self.output_factory
         samples = array.array('h', audio)
         if volume != 100:
             samples = array.array('h', (int(v * volume / 100) for v in samples))
         audio = samples.tobytes()
-        with factory(samplerate=24000, channels=1, dtype='int16', blocksize=960) as stream:
-            for start in range(0, len(audio), 1920):
+        try:
+            stream = self._stream()
+            for start in range(0, len(audio), 960):
                 if not self._wait(generation):
-                    stream.abort()
+                    # Interrupted: drop what is still queued in the device at once.
+                    if hasattr(stream, 'abort'): stream.abort()
                     return
-                stream.write(audio[start:start + 1920])
+                stream.write(audio[start:start + 960])
+        except Exception:
+            # A device that went away (headset unplugged): open a fresh stream next time.
+            self._close_stream()
+            raise
 
     def _run(self):
         fallback = None
         while True:
-            job = self.pending.get()
-            if job is None: return
+            try:
+                job = self.pending.get(timeout=self.IDLE_SECONDS)
+            except queue.Empty:
+                self._close_stream()
+                continue
+            if job is None:
+                self._close_stream()
+                return
             generation, text, rate, volume = job
             with self.lock: self.active = True
             try:

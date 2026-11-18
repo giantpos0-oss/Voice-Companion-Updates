@@ -96,6 +96,47 @@ class SpeechControlTests(unittest.TestCase):
             self.assertEqual(list(array.array('h',b''.join(blocks))),[50,-50])
         finally:engine.close()
 
+    def test_one_output_stream_serves_many_phrases(self):
+        # Will, November 17, 2026: keys lagged. Opening a Windows audio stream for every phrase
+        # cost a delay each key press; the stream now stays open, and an interruption only aborts it.
+        import ai_speech,array
+        opened=[]
+        class Output:
+            def __init__(self,**options):opened.append(options);self.active=False;self.calls=[]
+            def start(self):self.active=True;self.calls.append('start')
+            def write(self,data):self.calls.append('write')
+            def abort(self):self.active=False;self.calls.append('abort')
+            def close(self):self.calls.append('close')
+        engine=ai_speech.AISpeech(Mock(),output_factory=Output)
+        try:
+            tone=array.array('h',[100]*2000).tobytes()
+            for _ in range(5):engine._play(tone,engine.generation,100)
+            self.assertEqual(len(opened),1)
+            stream=engine._out
+            engine.generation+=1                       # a key press interrupts
+            engine._play(tone,engine.generation-1,100)
+            self.assertIn('abort',stream.calls)
+            engine._play(tone,engine.generation,100)   # the next phrase restarts the same stream
+            self.assertEqual(len(opened),1)
+            self.assertEqual(stream.calls.count('start'),2)
+        finally:engine.close()
+
+    def test_a_failed_device_is_reopened_next_time(self):
+        import ai_speech,array
+        opened=[]
+        class Output:
+            def __init__(self,**options):opened.append(self);self.broken=len(opened)==1
+            def start(self):pass
+            def write(self,data):
+                if self.broken:raise OSError('device unplugged')
+            def close(self):pass
+        engine=ai_speech.AISpeech(Mock(),output_factory=Output)
+        try:
+            with self.assertRaises(OSError):engine._play(b'\x00\x00'*10,engine.generation,100)
+            engine._play(b'\x00\x00'*10,engine.generation,100)
+            self.assertEqual(len(opened),2)
+        finally:engine.close()
+
     def test_espeak_direct_speed_is_passed_to_local_generator(self):
         import io,wave,espeak_speech
         buffer=io.BytesIO()

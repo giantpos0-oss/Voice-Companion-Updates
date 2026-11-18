@@ -2491,6 +2491,7 @@ def choose_voice(choice):
     if AI_SPEECH is not None: AI_SPEECH.enabled = kind == 'ai'
     if kind == 'ai': AI_VOICE_NAME = value
     elif kind in ('espeak', 'readspeaker'): ESPEAK_VOICE_NAME = value
+    if kind == 'readspeaker': PREFERENCES['readspeaker_last_voice'] = value   # "Use ReadSpeaker" returns to it
     else: voice.Voice = value
     return name
 
@@ -2541,12 +2542,15 @@ def use_synthesizer(text):
         choices = [('espeak', 'eSpeak ' + name, code) for name, code in ALL_VOICES if code == ESPEAK_VOICE_NAME]
     elif kind == 'readspeaker':
         voices = readspeaker_voices()
-        choices = [('readspeaker', name, code) for name, code in voices if code == ESPEAK_VOICE_NAME][:1] or [('readspeaker', name, code) for name, code in voices][:1]
+        last = ESPEAK_VOICE_NAME if ESPEAK_VOICE_NAME.startswith('readspeaker:') else PREFERENCES.get('readspeaker_last_voice')
+        choices = [('readspeaker', name, code) for name, code in voices if code == last][:1] or [('readspeaker', name, code) for name, code in voices][:1]
     else: choices = []
     if choices:
         choose_voice(choices[0])
         SYNTH_PICK_INDEX = VOICE_PICK_INDEX = VOICE_PICK_ORIGINAL = VOICE_PICK_ENGINE = None
-        speak('Using ' + choices[0][1] + '.' + remembered(save_speech_settings))
+        others = len(readspeaker_voices()) - 1 if kind == 'readspeaker' else 0
+        speak('Using ' + choices[0][1] + '.' + remembered(save_speech_settings) +
+              (' To choose another ReadSpeaker voice, say select voice.' if others > 0 else ''))
     else:
         speak('That synthesizer is not configured. Ask your trainer to check setup.')
     return True
