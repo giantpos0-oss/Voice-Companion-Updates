@@ -4,6 +4,7 @@
 keyboard could be left in Thunderbird, which Companion starts for mail. Now it starts
 on the main menu, takes the keyboard, and a stall writes freeze-report.txt."""
 import queue
+from pathlib import Path
 import time
 import unittest
 from unittest import mock
@@ -59,6 +60,20 @@ class MicrophoneOffStartupTests(CompanionTestCase):
             self.assertFalse(report.exists())     # once per freeze, not every few seconds
             companion.FREEZE_WATCH['beat'] = time.monotonic() + 3600   # the loop is moving again: stop watching
             time.sleep(.2)
+        companion.FREEZE_WATCH['watcher'] = companion.FREEZE_WATCH.get('watcher', 0) + 1   # retire this test's watcher
+
+    def test_an_old_watcher_never_writes_into_a_later_folder(self):
+        # The 0.2.214 ReadSpeaker trial failed on Windows: a watcher from an earlier test wrote
+        # freeze-report.txt into the tutorial test's folder when that test ran long.
+        import tempfile
+        with mock.patch.dict(companion.FREEZE_WATCH, {'beat': None, 'reported': False}):
+            companion.start_freeze_watch(limit=0.2, interval=.05)
+            with tempfile.TemporaryDirectory() as later, mock.patch.object(companion, 'APP', Path(later)):
+                companion.FREEZE_WATCH['beat'] = time.monotonic() - 100
+                time.sleep(.4)
+                self.assertFalse((Path(later) / 'freeze-report.txt').exists())
+            companion.FREEZE_WATCH['watcher'] += 1
+            time.sleep(.1)
 
 
 if __name__ == '__main__':

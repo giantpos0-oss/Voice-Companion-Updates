@@ -3509,9 +3509,14 @@ def start_freeze_watch(limit=15.0, interval=5.0):
     """If the main loop stops for `limit` seconds, write where every thread is to
     freeze-report.txt in the app folder, once per freeze. faulthandler reads the
     stacks without making Python objects of other threads' frames, so it cannot
-    free the window's Tk objects on the wrong thread."""
+    free the window's Tk objects on the wrong thread.
+
+    One watcher at a time: a newer one replaces it. The report goes to the folder of the run that
+    started it (a watcher left from one test run once wrote into another test's folder)."""
+    FREEZE_WATCH['watcher'] = FREEZE_WATCH.get('watcher', 0) + 1
+    me, folder = FREEZE_WATCH['watcher'], APP
     def watch():
-        while True:
+        while FREEZE_WATCH.get('watcher') == me:
             time.sleep(interval)
             beat = FREEZE_WATCH['beat']
             if beat is None:
@@ -3521,15 +3526,15 @@ def start_freeze_watch(limit=15.0, interval=5.0):
                 FREEZE_WATCH['reported'] = True
                 try:
                     import faulthandler
-                    APP.mkdir(parents=True, exist_ok=True)
+                    folder.mkdir(parents=True, exist_ok=True)
                     # Written whole, then put in place, so the report is never seen half written.
-                    partial = APP / 'freeze-report.tmp'
+                    partial = folder / 'freeze-report.tmp'
                     with open(partial, 'w', encoding='utf-8') as report:
                         report.write('Voice Companion ' + APP_VERSION + ' stopped responding for ' + str(int(time.monotonic() - beat))
                                      + ' seconds at ' + time.strftime('%Y-%m-%d %H:%M:%S') + '.\n')
                         report.flush()
                         faulthandler.dump_traceback(file=report, all_threads=True)
-                    os.replace(partial, APP / 'freeze-report.txt')
+                    os.replace(partial, folder / 'freeze-report.txt')
                 except Exception:
                     pass
             elif not stalled:
