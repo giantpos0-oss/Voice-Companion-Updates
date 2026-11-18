@@ -436,7 +436,6 @@ class NativeSettings:
                 continue
             if message.message==0x100 and 65<=message.wParam<=90 and get_focus()==category[0] and not editing[0]:
                 index=next_match(CATEGORIES,self.session.category,chr(message.wParam))
-                if index==self.session.category:self.announce('End of matching items.');continue
                 if index is not None:select_category(index)
                 else:self.announce('No category starts with '+chr(message.wParam)+'.')
                 continue
@@ -454,7 +453,6 @@ class NativeSettings:
                 else:index=next_match(field.choices,old,chr(message.wParam))
                 if index is None:self.announce('No matching option.');continue
                 if index==old and message.wParam in (0x26,0x28,0x24,0x23):self.announce('Start of list.' if message.wParam in (0x26,0x24) else 'End of list.');continue
-                if index==old and 65<=message.wParam<=90:self.announce('End of matching items.');continue
                 send(current,0x14E,index,0);self.session.set(field.key,field.choices[index]);announce_value(current);continue
             if message.message==0x100 and message.wParam==0x1B:cancel_category();continue
             if message.message==0x100 and message.wParam in (0x26,0x28,0x25,0x27) and get_focus()==category[0] and not editing[0]:

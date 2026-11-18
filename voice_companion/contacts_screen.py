@@ -492,7 +492,7 @@ def internal(m, raw, mode):
             return MODE
         old = INDEX
         select(found)
-        m.speak(('End of matching items. ' if found == old else '') + describe())
+        m.speak(describe())
         return MODE
     if action == 'choose':
         if not DETAILS:

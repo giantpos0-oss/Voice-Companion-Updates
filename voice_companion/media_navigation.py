@@ -189,7 +189,6 @@ class MediaNavigation:
         elif key.startswith('Letter:'):
             match=next_match(names,index,key[-1])
             if match is None:return 'No item starts with '+key[-1].upper()+'.'
-            if match==index:return 'End of matching items. '+self.announce()
             index=match
         else:return ''
         select(index);return self.announce()

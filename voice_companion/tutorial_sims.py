@@ -485,6 +485,29 @@ class PracticeVideo:
         self.time = max(0, min(self.duration, int(seconds)))
         return self.state()
 
+    def skip(self, seconds):
+        # Left and Right Arrow in practice (youtube_screen.skip_by); missing before, so the arrows
+        # stopped with an error in the YouTube lesson.
+        self.time = max(0, min(self.duration, self.time + int(seconds)))
+        return {'time': self.time, 'duration': self.duration, 'live': False}
+
+    def settle(self, milliseconds=0):
+        return True
+
+    # Set by YouTubeSim to youtube_screen.YouTubeError, so the screen speaks it as usual.
+    error = RuntimeError
+
+    def __getattr__(self, name):
+        # Anything else the real player page does (comments, likes, quality, and so on) needs
+        # YouTube in a browser. Say so plainly instead of stopping the lesson with an error.
+        if name.startswith('__'):
+            raise AttributeError(name)
+        error = self.error
+
+        def not_here(*args, **kwargs):
+            raise error('That needs YouTube in a browser. Here, nothing opens.')
+        return not_here
+
     def set_volume(self, value):
         self.volume = max(0, min(100, int(value)))
         return self.volume
@@ -527,6 +550,7 @@ class YouTubeSim(Sim):
         self.module.SCREEN = screen
         box.YOUTUBE = screen
         video = PracticeVideo()
+        video.error = self.module.YouTubeError
         screen.lists = screen.player = video
         screen.go = lambda url: ''
 

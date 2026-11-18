@@ -24,6 +24,18 @@ from dictation_text import clean_dictation
 from ai_dictation import prepare_dictation
 
 
+BROWSER_UNREACHABLE = 'Voice Companion could not reach your browser. Check that Chrome is open, then try again.'
+
+
+def browser_note(folder, text):
+    """A line in browser-log.txt for a helper: what happened to the browser link. Never a page."""
+    try:
+        import time as _time
+        with (Path(folder) / 'browser-log.txt').open('a', encoding='utf-8') as out:
+            out.write(_time.strftime('%Y-%m-%d %H:%M:%S') + ' ' + text + '\n')
+    except Exception:
+        pass
+
 class WebError(Exception):
     pass
 
@@ -1610,9 +1622,9 @@ class WebSession:
         if key.startswith('ChoiceLetter:'):
             letter=key.split(':',1)[1].casefold()
             matches=[i for i,o in enumerate(options) if o['label'].casefold().startswith(letter)]
-            index=matches[min(matches.index(current)+1,len(matches)-1)] if current in matches else matches[0] if matches else None
-            if index==current:return 'End of matching items.'
-            if index is None:return 'End of matching items.' if any(o['label'].casefold().startswith(letter) for o in options) else 'No option starts with '+letter.upper()+'.'
+            # Round the list, as every first letter does (Will, November 18, 2026).
+            index=next((i for i in matches if i>current),matches[0]) if matches else None
+            if index is None:return 'No option starts with '+letter.upper()+'.'
         elif key=='Home':index=0
         elif key=='End':index=len(options)-1
         elif key in ('Up','Down','Left','Right'):index=max(0,min(len(options)-1,current+(-1 if key in ('Up','Left') else 1)))
@@ -1845,7 +1857,18 @@ class WebSession:
         if not self.injected_backend and not getattr(self.backend,'regular',False):
             self.adopt_connected_browser()
         sync=getattr(type(self.backend),'sync_active_tab',None)
-        if sync and sync(self.backend):
+        try:changed=sync and sync(self.backend)
+        except WebError:raise
+        except Exception as exc:
+            if not getattr(self.backend,'regular',False):raise
+            # The link to your Chrome broke (Chrome closed or restarted its extension): the old
+            # connection is dropped and made again once, instead of being tried over and over
+            # (Will, November 18, 2026: "kept trying to restart with no success").
+            browser_note(self.folder,'browser link failed ('+type(exc).__name__+'), linking again')
+            self.backend.close()
+            self.backend.start()
+            changed=True
+        if changed:
             self.keyboard_field=None;self.form_index=None;self.pending=None;self.submit_pending=None
             self.list_focus=None;self.browse=None
             self._refresh(read=False)
@@ -1872,7 +1895,9 @@ class WebSession:
                 return load_failure(exc,'The page reload did not finish. Wait a moment, then press F5 again, or return to the browser menu.')
         try:self._sync_browser_tab()
         except WebError as exc:return str(exc)   # its own reason, such as "Open a normal website tab"
-        except Exception:return 'The browser connection is not ready. Keep Voice Companion open; it will reconnect automatically.'
+        except Exception as exc:
+            browser_note(self.folder,'browser still not linked ('+type(exc).__name__+')')
+            return BROWSER_UNREACHABLE
         if not self.snapshot:return 'Open a website first.'
         if self.browse is None:self.browse=BrowseCursor(self.snapshot)
         try:
@@ -2838,8 +2863,7 @@ class WebSession:
         if not prefix:return 'Name search cleared.'
         matches=[i for i,name in enumerate(names) if name.startswith(prefix)]
         if not matches:return 'No item starts with '+prefix+'.'
-        index=next((i for i in matches if current is None or i>current),None) if cycle else matches[0]
-        if index is None:return 'End of matching items.'
+        index=next((i for i in matches if current is None or i>current),matches[0]) if cycle else matches[0]
         if self.list_focus=='links':self.link_position=index
         else:self.heading_index=index
         self.pending=None
@@ -3322,7 +3346,9 @@ class WebSession:
     def _command(self, spoken):
         try:self._sync_browser_tab()
         except WebError as exc:return str(exc)   # its own reason, such as "Open a normal website tab"
-        except Exception:return 'The browser connection is not ready. Keep Voice Companion open; it will reconnect automatically.'
+        except Exception as exc:
+            browser_note(self.folder,'browser still not linked ('+type(exc).__name__+')')
+            return BROWSER_UNREACHABLE
         command = _plain(spoken).rstrip('.!?').lower()
         if self.list_focus in ('fields','favorites') and command in ('cancel','go back','close list','back to page','escape','no','no thanks'):
             self.list_focus=None;self.pending=None;return 'Virtual page view.'

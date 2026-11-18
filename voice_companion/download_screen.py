@@ -300,7 +300,7 @@ def command_here(m, raw, command):
                 m.speak('No download starts with ' + raw[-1].upper() + '.')
                 return MODE
             select(records, found)
-            m.speak(('End of matching items. ' if found == old else '') + describe(m))
+            m.speak(describe(m))
             return MODE
         if command in ends:
             select(records, 0 if ends[command] == 0 else len(records) - 1)

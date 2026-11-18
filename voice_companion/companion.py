@@ -52,7 +52,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.214-test'
+APP_VERSION = '0.2.215-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -984,7 +984,7 @@ def choose_menu_letter(letter,mode):
     index=next_match(names,current,letter)
     if index is None:speak('No menu item starts with '+letter.upper()+'.');return True
     select(index)
-    if current==index:speak('End of matching items.');return True
+    # First letters go round the list; the only match is said again.
     if VOICE_PICK_INDEX is not None:preview_voice(index)
     else:
         # Folders are said as the arrow keys say them, without a key letter after the name.
@@ -2875,6 +2875,18 @@ def open_own_chrome_for_web(session):
 # Every way into the web (the menu, a search, a favorite, a link in an email) goes through this first.
 WebSession.own_browser_opener=staticmethod(open_own_chrome_for_web)
 
+def relink_own_chrome():
+    """Your Chrome's link to Companion dropped (Chrome closed, or its extension restarted): open
+    Chrome again, or wait for the extension to link, instead of only waiting (Will, November 18,
+    2026). True when linked, words saying why not, or None."""
+    if os.name!='nt':return None
+    import chrome_setup
+    engine=getattr(web_session,'search_engine','google') if web_session else 'google'
+    return chrome_setup.link_own_chrome(sys.modules[__name__],WEB_HOME.get(engine,WEB_HOME['google']),'Linking your Chrome again.')
+
+try:__import__('connected_browser').ConnectedBrowserBackend.relink=staticmethod(relink_own_chrome)
+except Exception:pass
+
 def open_browser_menu(regular=False):
     global web_session
     if os.name=='nt':
@@ -3479,10 +3491,20 @@ def start_freeze_watch(limit=15.0, interval=5.0):
     """If the main loop stops for `limit` seconds, write where every thread is to
     freeze-report.txt in the app folder, once per freeze. faulthandler reads the
     stacks without making Python objects of other threads' frames, so it cannot
-    free the window's Tk objects on the wrong thread."""
+    free the window's Tk objects on the wrong thread.
+
+    One watcher at a time: a newer one replaces it. The report goes to the folder of the run that
+    started it (a watcher left from one test run once wrote into another test's folder)."""
+    # A token no other watcher can have, even if FREEZE_WATCH is put back to an earlier state.
+    me, folder = object(), APP
+    FREEZE_WATCH['watcher'] = me
     def watch():
-        while True:
+        while FREEZE_WATCH.get('watcher') is me:
             time.sleep(interval)
+            # Checked again after sleeping: a watcher replaced while it slept must not act on the
+            # newer watcher's state (it once marked a freeze reported in its own folder first).
+            if FREEZE_WATCH.get('watcher') is not me:
+                return
             beat = FREEZE_WATCH['beat']
             if beat is None:
                 continue
@@ -3491,15 +3513,15 @@ def start_freeze_watch(limit=15.0, interval=5.0):
                 FREEZE_WATCH['reported'] = True
                 try:
                     import faulthandler
-                    APP.mkdir(parents=True, exist_ok=True)
+                    folder.mkdir(parents=True, exist_ok=True)
                     # Written whole, then put in place, so the report is never seen half written.
-                    partial = APP / 'freeze-report.tmp'
+                    partial = folder / 'freeze-report.tmp'
                     with open(partial, 'w', encoding='utf-8') as report:
                         report.write('Voice Companion ' + APP_VERSION + ' stopped responding for ' + str(int(time.monotonic() - beat))
                                      + ' seconds at ' + time.strftime('%Y-%m-%d %H:%M:%S') + '.\n')
                         report.flush()
                         faulthandler.dump_traceback(file=report, all_threads=True)
-                    os.replace(partial, APP / 'freeze-report.txt')
+                    os.replace(partial, folder / 'freeze-report.txt')
                 except Exception:
                     pass
             elif not stalled:

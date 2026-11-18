@@ -1,5 +1,6 @@
 """Regression checks for web and browser bugs found in the October 2026 review."""
 import tempfile
+from pathlib import Path
 import unittest
 
 from browser_navigation import looks_like_address, prepare_address
@@ -306,8 +307,72 @@ class BrowserLinkReasonTests(unittest.TestCase):
             self.assertEqual(session.command('list links'), reason)
             self.assertEqual(session.keyboard('Quick:h'), reason)
         with patch.object(WebSession, '_sync_browser_tab', side_effect=OSError('pipe closed')):
-            self.assertIn('reconnect automatically', session.command('list links'))
+            self.assertIn('Check that Chrome is open', session.command('list links'))
 
+
+
+class LostBrowserLinkTests(unittest.TestCase):
+    """Will, November 18, 2026: the Chrome extension "kept trying to restart with no success".
+    A lost link was only waited on: "it will reconnect automatically", even with Chrome closed."""
+
+    def backend(self, connected):
+        import threading
+        from connected_browser import ConnectedBrowserBackend
+        relay = type('Relay', (), {})()
+        relay.connected = threading.Event()
+        if connected: relay.connected.set()
+        relay.browser, relay.generation = 'chrome', 1
+        backend = ConnectedBrowserBackend.__new__(ConnectedBrowserBackend)
+        backend.relay = relay
+        return backend
+
+    def test_a_lost_link_opens_or_relinks_chrome(self):
+        from unittest.mock import patch
+        from connected_browser import ConnectedBrowserBackend
+        backend = self.backend(False)
+        relinked = []
+        def relink():
+            relinked.append(True); backend.relay.connected.set(); return True
+        with patch.object(ConnectedBrowserBackend, 'relink', staticmethod(relink)):
+            self.assertTrue(backend.linked())
+        self.assertEqual(relinked, [True])
+
+    def test_when_chrome_cannot_link_the_reason_is_said(self):
+        from unittest.mock import patch
+        from connected_browser import ConnectedBrowserBackend, NOT_LINKED
+        from web_assistant import WebError
+        backend = self.backend(False)
+        with patch.object(ConnectedBrowserBackend, 'relink', staticmethod(lambda: 'Your own Chrome opened, but the Voice Companion extension did not link it.')):
+            with self.assertRaises(WebError) as caught:
+                backend.linked()
+        self.assertIn('did not link it', str(caught.exception))
+        with patch.object(ConnectedBrowserBackend, 'relink', staticmethod(lambda: None)):
+            with self.assertRaises(WebError) as caught:
+                backend.start()
+        self.assertEqual(str(caught.exception), NOT_LINKED)
+        self.assertNotIn('automatically', NOT_LINKED)
+
+    def test_a_broken_link_is_made_again_once_and_logged(self):
+        from unittest.mock import Mock
+        folder = tempfile.TemporaryDirectory(); self.addCleanup(folder.cleanup)
+        session = WebSession(folder.name, FakeBackend())
+        session.open('example.com')
+        backend = session.backend
+        backend.regular = True
+        calls = []
+        def sync(self):
+            calls.append('sync')
+            if len(calls) == 1:
+                raise OSError('pipe closed')
+            return False
+        type(backend).sync_active_tab = sync
+        self.addCleanup(delattr, type(backend), 'sync_active_tab')
+        backend.close = Mock(); backend.start = Mock()
+        session.injected_backend = True
+        session._sync_browser_tab()
+        backend.close.assert_called_once(); backend.start.assert_called_once()
+        log = (Path(folder.name) / 'browser-log.txt').read_text(encoding='utf-8')
+        self.assertIn('browser link failed (OSError), linking again', log)
 
 if __name__ == '__main__':
     unittest.main()

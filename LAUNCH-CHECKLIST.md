@@ -261,3 +261,14 @@ Problems found in the October 2026 review. All fixed in 0.2.153-test, with tests
 - Fix: when a test group prints no "Ran N tests" line, `run_checks.py` now counts it as a failure and names the error.
 - Checked by breaking the file on purpose: the run then reports "TESTS DID NOT RUN ... SyntaxError".
 - The full run then found three real failures (File manager Picture items had no keys). Those are fixed: Control+Shift+D describes the picture, Control+Shift+K asks about it.
+
+## 0.2.215: freeze report test failed only in the full run (found November 18, 2026)
+
+- Cause: freeze watchers were numbered with a counter in FREEZE_WATCH. Tests that use
+  `mock.patch.dict(FREEZE_WATCH, ...)` put the counter back when they end, so an old watcher could get
+  its number back. A watcher also checked whether it had been replaced only before sleeping, so a
+  replaced watcher could wake, see the newer test's freeze, and mark it reported in its own folder.
+- Fix: each watcher has its own token (`object()`), and it checks again right after sleeping.
+  `test_a_replaced_watcher_does_nothing_after_it_wakes` fails without the fix.
+- Also: `tools/run_checks.py` now runs the Thunderbird add-on and browser extension node tests. An
+  add-on test was found only by the Windows build, an hour later.

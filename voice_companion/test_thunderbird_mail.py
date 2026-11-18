@@ -351,6 +351,38 @@ class ThunderbirdOfflineTests(unittest.TestCase):
             self.assertIn(word, label)
 
 
+
+class ReplySubjectTests(unittest.TestCase):
+    """Will, November 18, 2026: "Re:" was not said for replies in a thread. Thunderbird keeps
+    "Re:" out of the subject and marks the message HasRe; the add-on now passes that mark on."""
+
+    def test_a_reply_says_re(self):
+        from thunderbird_mailbox import ThunderbirdMailbox
+        rows, _ = ThunderbirdMailbox._rows({'rows': [
+            {'id': 1, 'from': 'Sam <sam@example.com>', 'subject': 'Lunch', 're': True},
+            {'id': 2, 'from': 'Sam <sam@example.com>', 'subject': 'Lunch'},
+            {'id': 3, 'from': 'Sam <sam@example.com>', 'subject': 'RE: Lunch', 're': True},
+            {'id': 4, 'from': 'Sam <sam@example.com>', 'subject': '', 're': True},
+            {'id': 5, 'from': 'Sam <sam@example.com>', 'subject': ''}]})
+        self.assertEqual([row['subject'] for row in rows], ['Re: Lunch', 'Lunch', 'RE: Lunch', 'Re:', '(no subject)'])
+
+    def test_the_message_list_says_re(self):
+        from mail_voice import MailSession
+        session = MailSession.__new__(MailSession)
+        session.folder = tempfile.mkdtemp(); self.addCleanup(shutil.rmtree, session.folder, True)
+        session.rows = [{'id': 1, 'from': 'sam@example.com', 'sender_name': 'Sam', 'subject': 'Re: Lunch',
+                         'date': 'today', 'unread': False}]
+        session.current = 1
+        self.assertIn('Sam. Re: Lunch.', session._summary(1))
+
+    def test_the_add_on_passes_the_mark_on(self):
+        folder = Path(__file__).with_name('thunderbird_mail_extension')
+        self.assertIn('re: Boolean(header.flags & flags.HasRe)', (folder / 'experiment' / 'implementation.js').read_text(encoding='utf-8'))
+        self.assertIn('re: item.re === true', (folder / 'background.js').read_text(encoding='utf-8'))
+        # A newer version makes Companion put the new add-on in place (thunderbird_setup.refresh_addon).
+        version = json.loads((folder / 'manifest.json').read_text(encoding='utf-8'))['version']
+        self.assertGreaterEqual(tuple(int(x) for x in version.split('.')), (1, 10, 0))
+
 if __name__ == '__main__':
     unittest.main()
 

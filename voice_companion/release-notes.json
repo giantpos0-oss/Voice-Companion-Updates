@@ -1,47 +1,27 @@
 {
-  "version": "0.2.214-test",
+  "version": "0.2.215-test",
   "status": "Testing build",
-  "date": "November 17, 2026",
-  "baseline": "0.2.213-test",
-  "scope": "Companion has a new AI assistant. It checks and rewrites your writing, sums up long emails and pages, and describes pictures. First letters work in the email account and folder lists. YouTube no longer freezes when you press N or End.",
+  "date": "November 18, 2026",
+  "baseline": "0.2.214-test",
+  "scope": "Writing and reading help work again. First letters go round every list. Email says Re: for replies. Companion links your Chrome again when the link drops.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "AI assistant",
+          "title": "First letters go round",
           "details": [
-            "Press Control+Shift+Q, or say AI assistant, to open it.",
-            "It works where you read and write. That means documents, emails, notes and web pages. It also works in Help, and on pictures.",
-            "The first time, it asks if you want to use it. Say yes or no.",
-            "Each choice is also in the Alt menu, and you can say it, too."
+            "In every list, a first letter now goes round to the top after the last match.",
+            "This works in menus, email folders, file lists, and the other lists.",
+            "The arrows, Home and End still stop at the start and end of a list.",
+            "If only one item starts with that letter, you hear it again."
           ]
         },
         {
-          "title": "Writing help",
+          "title": "Replies say Re:",
           "details": [
-            "Say check for errors. You hear each mistake and how to fix it.",
-            "Press Enter to keep a fix, or Delete to skip it. Control+Enter keeps them all.",
-            "Say make it friendlier, more professional, clearer, or shorter.",
-            "You hear the new words first. Press Enter to use them, or Escape to keep yours.",
-            "Undo puts your own words back."
-          ]
-        },
-        {
-          "title": "Reading help",
-          "details": [
-            "Say summarise to hear the main points of an email, page or document.",
-            "Say simplify to hear it in plain words.",
-            "Use the arrows to read the answer a line at a time."
-          ]
-        },
-        {
-          "title": "Pictures and questions",
-          "details": [
-            "In File manager or in an email's attachments, say describe the image.",
-            "You hear what is in the picture, and any writing in it.",
-            "You can describe 200 pictures a month. Reading and writing help has no limit.",
-            "In Help, say ask a question. The answer comes from the user guide."
+            "In Thunderbird email, a reply in a thread now says Re: before its subject.",
+            "Companion updates its Thunderbird add-on for this. Thunderbird may restart once by itself."
           ]
         }
       ]
@@ -50,19 +30,25 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "First letters in email lists",
+          "title": "Writing and reading help",
           "details": [
-            "In the list of email accounts, press a letter to jump to the account that starts with it.",
-            "In the folder list, a letter jumps to the folder. Press it again for the next one.",
-            "This works when you open the lists with Control+Y, and when you say go to folder."
+            "Writing help works again. So do summarise and simplify.",
+            "Before, every request said the AI assistant could not do that just now.",
+            "If a request fails, Companion now writes the reason in ai-error.txt in its settings folder. Your words are never written there."
           ]
         },
         {
-          "title": "YouTube no longer freezes",
+          "title": "Your Chrome",
           "details": [
-            "Pressing N for the next video could freeze Companion when YouTube was slow.",
-            "Pressing End to load more videos could freeze it, too.",
-            "Now Companion waits only a few seconds. If YouTube is slow, it tells you, and you can keep working."
+            "If the link to your Chrome drops, Companion opens Chrome or links it again.",
+            "Before, it said it would reconnect by itself, even when Chrome was closed.",
+            "If Chrome cannot be reached, you hear that. Check that Chrome is open, then try again."
+          ]
+        },
+        {
+          "title": "Tutorial",
+          "details": [
+            "In the YouTube lesson, Left and Right Arrow move back and forward in the practice video again."
           ]
         }
       ]

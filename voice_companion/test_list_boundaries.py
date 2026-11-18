@@ -15,11 +15,41 @@ class BoundaryTests(unittest.TestCase):
                 index=0 if step<0 else count-1
                 self.assertEqual(bounded_index(index,step,count),index)
         self.assertEqual(boundary_notice(0,1),'Start and end of list.')
-    def test_letters_stop_at_last_match_but_other_letters_jump_back(self):
-        names=['Alpha','Beta','Another']
+    def test_letters_go_round_the_list_while_arrows_keep_their_edges(self):
+        # Will, November 18, 2026: first letters wrap in every list; arrows, Home and End do not.
+        names=['Alpha','Beta','Another','Bravo']
         self.assertEqual(next_match(names,0,'a'),2)
-        self.assertEqual(next_match(names,2,'a'),2)
-        self.assertEqual(next_match(names,2,'b'),1)
+        self.assertEqual(next_match(names,2,'a'),0)        # past the last A: back to the first
+        self.assertEqual(next_match(names,2,'b'),3)        # the next B after this item
+        self.assertEqual(next_match(names,3,'b'),1)
+        self.assertEqual(next_match(['Alpha','Beta'],1,'b'),1)   # the only match stays
+        self.assertIsNone(next_match(names,0,'z'))
+        self.assertEqual(next_match(names,None,'b'),1)
+        self.assertEqual(bounded_index(3,1,4),3)
+    def test_mailbox_folder_letters_go_round(self):
+        # Will, November 18, 2026: "first letter navigation should wrap around in all cases,
+        # including mailboxes, menus, file lists".
+        from types import SimpleNamespace
+        picker={'folders':[('Inbox','i'),('Sent','s'),('Spam','x'),('Trash','t')],'index':0}
+        session=SimpleNamespace(folder_picker=picker,pending=None,_spoken_folder=lambda x:x)
+        with patch.object(app,'mail_session',session),patch.object(app,'SYNTH_PICK_INDEX',None),patch.object(app,'VOICE_PICK_INDEX',None),patch.object(app,'account_setup',False),patch.object(app,'speak') as say:
+            seen=[]
+            for _ in range(3):
+                app.navigation_key('Letter:s','mailbox');seen.append(picker['index'])
+            self.assertEqual(seen,[1,2,1])
+            self.assertIn('Sent',say.call_args.args[0])
+            app.navigation_key('Letter:i','mailbox');app.navigation_key('Letter:i','mailbox')
+            self.assertEqual(picker['index'],0)
+            self.assertNotIn('End of matching',say.call_args.args[0])
+
+    def test_a_web_choice_box_letter_goes_round(self):
+        from web_assistant import WebSession
+        session=WebSession.__new__(WebSession)
+        session.backend=Mock();session._refresh_at=Mock();session.focus_current=Mock()
+        session.keyboard_field={'options':[{'label':'Alabama'},{'label':'Alaska'},{'label':'Arizona'}],'selected_label':'Arizona'}
+        self.assertEqual(session.choice_key('ChoiceLetter:a'),'Alabama.')
+        session.backend.choose_form_option.assert_called_with(session.keyboard_field,'Alabama')
+
     def test_main_voice_navigation_stops_and_home_end_voice_equivalents(self):
         with patch.object(app,'MAIN_MENU_INDEX',0),patch.object(app,'SYNTH_PICK_INDEX',None),patch.object(app,'VOICE_PICK_INDEX',None),patch.object(app,'account_setup',False),patch.object(app,'speak') as speech:
             app.handle('previous','awake');self.assertEqual(app.MAIN_MENU_INDEX,0)

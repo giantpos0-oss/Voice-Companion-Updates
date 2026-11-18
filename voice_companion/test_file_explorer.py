@@ -23,6 +23,15 @@ class FileExplorerTests(unittest.TestCase):
         m.command('escape');self.assertEqual(len(m.items),5);self.assertEqual(m.location,str(self.root))
         m.view.last_key=0;m.command('file letters 1');self.assertEqual(m.current().name,'123.txt')
 
+    def test_a_first_letter_goes_round_the_file_list(self):
+        # Will, November 18, 2026: first letters wrap in every list, file lists too.
+        m=self.manager
+        names=[]
+        for _ in range(3):
+            m.command('file letters a');names.append(m.current().name)
+        self.assertEqual(names,['Alpha.txt','Alpine.txt','Alpha.txt'])
+        m.command('end');self.assertTrue(m.command('next').startswith('End of list.'))   # arrows keep their edge
+
     def test_search_filters_names_and_recursive_search_can_be_cleared(self):
         m=self.manager;m.command('search files');m.command('alp');self.assertEqual(len(m.items),2)
         m.command('clear search');self.assertEqual(len(m.items),5)

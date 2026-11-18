@@ -29,6 +29,15 @@ SIGN_IN_SECONDS = 150   # how long a send listens for Thunderbird's sign-in page
 SIGN_IN_CHECK_SECONDS = 2
 
 
+
+def reply_subject(subject, has_re):
+    """The subject as it was sent: "Re: " in front when Thunderbird marked the message a reply
+    and took it off. Never twice. An empty subject is "(no subject)", or just "Re:" on a reply."""
+    subject = str(subject or '').strip()
+    if has_re and not re.match(r'(?i)re\s*:', subject):
+        return ('Re: ' + subject).strip()
+    return subject or '(no subject)'
+
 class SignInNeeded(Exception):
     """Thunderbird asked for a web sign-in (Microsoft or Google) while sending."""
     def __init__(self, url):
@@ -214,11 +223,13 @@ class ThunderbirdMailbox:
 
     @staticmethod
     def _rows(page):
+        # Thunderbird keeps "Re:" out of a reply's subject (its HasRe mark, add-on 1.10.0): it is
+        # put back, so a reply in a thread is said as one (Will, November 18, 2026).
         rows = []
         for item in page.get('rows', []):
             name, sender = person(item.get('from', ''))
             rows.append({'id': item['id'], 'from': sender or item.get('from') or 'Unknown sender',
-                         'sender_name': name, 'subject': item.get('subject') or '(no subject)',
+                         'sender_name': name, 'subject': reply_subject(item.get('subject'), item.get('re') is True),
                          'date': message_date(item.get('date')),
                          'size': item.get('size') if isinstance(item.get('size'), int) else 'unavailable',
                          'unread': bool(item.get('unread')), 'flagged': item.get('flagged') is True,

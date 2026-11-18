@@ -211,6 +211,40 @@ class ServiceRequestTests(unittest.TestCase):
         self.assertEqual(ai.install_id(self.folder), install, 'the same id every time')
         self.assertEqual(json.loads(self.sent.data)['task'], 'summarise')
 
+    def test_the_request_names_itself_so_cloudflare_lets_it_through(self):
+        # Will, November 18, 2026: writing help always said it could not do that. Cloudflare turns
+        # away Python's own request name ("error code: 1010") before the service sees it.
+        ai.service_request(self.folder, '0.2.215', 'summarise', {'text': 'x'}, opener=self.reply({'ok': True, 'text': 'y'}))
+        agent = self.sent.get_header('User-agent')
+        self.assertEqual(agent, 'VoiceCompanion/0.2.215')
+
+    def test_a_refusal_it_does_not_know_is_written_down_without_the_text(self):
+        def refused(request, timeout):
+            raise urllib.error.HTTPError(request.full_url, 403, 'Forbidden', {}, io.BytesIO(b'error code: 1010\n'))
+        with self.assertRaises(ai.AssistantError) as caught:
+            ai.service_request(self.folder, 'v', 'rewrite', {'text': 'My private letter'}, opener=refused)
+        self.assertIn('try again', str(caught.exception))
+        log = (Path(self.folder) / 'ai-error.txt').read_text(encoding='utf-8')
+        self.assertIn('rewrite: status 403', log)
+        self.assertIn('error code: 1010', log)
+        self.assertNotIn('private letter', log)
+
+    def test_the_service_own_reason_is_written_down(self):
+        with self.assertRaises(ai.AssistantError):
+            ai.service_request(self.folder, 'v', 'check_errors', {'text': 'x'},
+                               opener=self.reply({'ok': False, 'error': 'ai service 400', 'detail': 'invalid_request: bad'}, 502))
+        self.assertIn('check_errors: ai service 400 (invalid_request: bad)', (Path(self.folder) / 'ai-error.txt').read_text(encoding='utf-8'))
+
+    def test_an_unexpected_problem_is_written_down_too(self):
+        ai.LOG_FOLDER[0] = self.folder
+        self.addCleanup(ai.LOG_FOLDER.__setitem__, 0, None)
+        def broken():
+            raise KeyError('corrections')
+        job = ai.Job(broken)
+        self.assertTrue(job.done.wait(2))
+        self.assertIn('could not do that', job.error)
+        self.assertIn('request: KeyError', (Path(self.folder) / 'ai-error.txt').read_text(encoding='utf-8'))
+
     def test_the_monthly_limit_is_said_plainly(self):
         with self.assertRaises(ai.AssistantError) as caught:
             ai.service_request(self.folder, 'v', 'summarise', {'text': 'x'},
