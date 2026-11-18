@@ -1,0 +1,30 @@
+name: Probe AI service from Python
+on:
+  push:
+    branches: ['claude/try-ai-probe']
+jobs:
+  probe:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Ask the service the way Voice Companion does
+        shell: python
+        run: |
+          import json, os, urllib.request, urllib.error
+          for agent in (None, 'VoiceCompanion/0.2.214'):
+              headers = {'content-type': 'application/json', 'X-Companion-Install': os.urandom(16).hex(), 'X-Companion-Version': '0.2.214-test'}
+              if agent: headers['User-Agent'] = agent
+              body = json.dumps({'task': 'summarise', 'text': 'The meeting moved to Thursday at 3.'}).encode()
+              request = urllib.request.Request('https://ai.voicecompanionapp.com/v1/assist', data=body, method='POST', headers=headers)
+              try:
+                  with urllib.request.urlopen(request, timeout=60) as reply:
+                      print(agent, reply.status, reply.read()[:300])
+              except urllib.error.HTTPError as error:
+                  print(agent, 'HTTPError', error.code, error.read()[:600])
+              except Exception as error:
+                  print(agent, type(error).__name__, error)
