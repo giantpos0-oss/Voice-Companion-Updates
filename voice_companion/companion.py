@@ -3527,11 +3527,16 @@ def start_freeze_watch(limit=15.0, interval=5.0):
 
     One watcher at a time: a newer one replaces it. The report goes to the folder of the run that
     started it (a watcher left from one test run once wrote into another test's folder)."""
-    FREEZE_WATCH['watcher'] = FREEZE_WATCH.get('watcher', 0) + 1
-    me, folder = FREEZE_WATCH['watcher'], APP
+    # A token no other watcher can have, even if FREEZE_WATCH is put back to an earlier state.
+    me, folder = object(), APP
+    FREEZE_WATCH['watcher'] = me
     def watch():
-        while FREEZE_WATCH.get('watcher') == me:
+        while FREEZE_WATCH.get('watcher') is me:
             time.sleep(interval)
+            # Checked again after sleeping: a watcher replaced while it slept must not act on the
+            # newer watcher's state (it once marked a freeze reported in its own folder first).
+            if FREEZE_WATCH.get('watcher') is not me:
+                return
             beat = FREEZE_WATCH['beat']
             if beat is None:
                 continue

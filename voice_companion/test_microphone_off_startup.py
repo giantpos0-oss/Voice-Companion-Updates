@@ -60,7 +60,21 @@ class MicrophoneOffStartupTests(CompanionTestCase):
             self.assertFalse(report.exists())     # once per freeze, not every few seconds
             companion.FREEZE_WATCH['beat'] = time.monotonic() + 3600   # the loop is moving again: stop watching
             time.sleep(.2)
-        companion.FREEZE_WATCH['watcher'] = companion.FREEZE_WATCH.get('watcher', 0) + 1   # retire this test's watcher
+        companion.FREEZE_WATCH['watcher'] = object()   # retire this test's watcher
+
+    def test_a_replaced_watcher_does_nothing_after_it_wakes(self):
+        # Found in the 0.2.215 checks: an older watcher woke during the freeze test, saw its freeze,
+        # and marked it reported (in its own folder), so the test's watcher never wrote its report.
+        import tempfile
+        with tempfile.TemporaryDirectory() as old_folder, mock.patch.object(companion, 'APP', Path(old_folder)), \
+                mock.patch.dict(companion.FREEZE_WATCH, {'beat': None, 'reported': False}):
+            companion.start_freeze_watch(limit=0.1, interval=.3)       # the old watcher, asleep
+            time.sleep(.05)
+            companion.FREEZE_WATCH['watcher'] = object()               # replaced while it sleeps
+            companion.FREEZE_WATCH['beat'] = time.monotonic() - 100
+            time.sleep(.5)
+            self.assertFalse(companion.FREEZE_WATCH['reported'])
+            self.assertFalse((Path(old_folder) / 'freeze-report.txt').exists())
 
     def test_an_old_watcher_never_writes_into_a_later_folder(self):
         # The 0.2.214 ReadSpeaker trial failed on Windows: a watcher from an earlier test wrote
@@ -72,7 +86,7 @@ class MicrophoneOffStartupTests(CompanionTestCase):
                 companion.FREEZE_WATCH['beat'] = time.monotonic() - 100
                 time.sleep(.4)
                 self.assertFalse((Path(later) / 'freeze-report.txt').exists())
-            companion.FREEZE_WATCH['watcher'] += 1
+            companion.FREEZE_WATCH['watcher'] = object()
             time.sleep(.1)
 
 
