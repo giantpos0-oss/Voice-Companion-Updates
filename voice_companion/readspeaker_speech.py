@@ -22,7 +22,13 @@ DLL = 'libvtapi.dll'
 OUTPUT_RATE = 24000
 FORMAT_16PCM = 0
 TEXT_FORMAT_UTF8 = 2
-ATTR_PITCH, ATTR_SPEED = 0, 1
+ATTR_PITCH, ATTR_SPEED, ATTR_PAUSE = 0, 1, 3
+ATTR_FRONT_MARGIN, ATTR_REAR_MARGIN = 9, 10
+# Will, November 17, 2026: pauses between sentences were too long. ReadSpeaker adds 200 ms of
+# silence after every request by default, plus its own pause between sentences.
+SENTENCE_PAUSE_MS = 250
+QUIET = 150            # samples quieter than this at the start or end count as silence
+KEEP_END_MS = 30
 DEFAULT_BUFFER = -1
 SHORT_PHRASE = 40      # characters: phrases this short are kept once made
 REMEMBERED = 400       # how many short phrases are kept (about 12 MB at most)
@@ -60,6 +66,20 @@ def speed_percent(rate):
 def pitch_percent(pitch):
     """Companion's pitch steps (each about 5 percent) as ReadSpeaker pitch (50 to 200 percent)."""
     return max(50, min(200, 100 + int(pitch or 0) * 5))
+
+
+def trim_silence(pcm, rate=OUTPUT_RATE):
+    """Drops silence before the first sound and all but a moment after the last, so one phrase
+    runs straight into the next (key echo, and sentence after sentence)."""
+    from array import array
+    samples = array('h')
+    samples.frombytes(pcm)
+    first = next((i for i, v in enumerate(samples) if abs(v) > QUIET), None)
+    if first is None:
+        return pcm
+    last = next(i for i in range(len(samples) - 1, -1, -1) if abs(samples[i]) > QUIET)
+    end = min(len(samples), last + 1 + rate * KEEP_END_MS // 1000)
+    return samples[first:end].tobytes()
 
 
 def voice_code(speaker, kind):
@@ -188,6 +208,9 @@ class Engine:
                 raise ReadSpeakerError('ReadSpeaker could not use that voice. ' + self.last_error())
             lib.VTAPI_SetAttr(handle, ATTR_SPEED, speed_percent(rate))
             lib.VTAPI_SetAttr(handle, ATTR_PITCH, pitch_percent(pitch))
+            lib.VTAPI_SetAttr(handle, ATTR_FRONT_MARGIN, 0)
+            lib.VTAPI_SetAttr(handle, ATTR_REAR_MARGIN, 0)
+            lib.VTAPI_SetAttr(handle, ATTR_PAUSE, SENTENCE_PAUSE_MS)
             if lib.VTAPI_SetOutputBuffer(handle, FORMAT_16PCM) != 0:
                 raise ReadSpeakerError('ReadSpeaker could not make sound. ' + self.last_error())
             data = str(text).encode('utf-8')
@@ -213,7 +236,8 @@ class Engine:
             raise ReadSpeakerError('ReadSpeaker made no sound.')
         if len(pcm) % 2:
             pcm = pcm[:-1]
-        return pcm if sampling == OUTPUT_RATE else PCM16Resampler(sampling, OUTPUT_RATE).convert(pcm)
+        pcm = pcm if sampling == OUTPUT_RATE else PCM16Resampler(sampling, OUTPUT_RATE).convert(pcm)
+        return trim_silence(pcm)
 
     def close(self):
         with self.lock:

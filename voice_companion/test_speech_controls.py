@@ -121,6 +121,43 @@ class SpeechControlTests(unittest.TestCase):
             self.assertEqual(stream.calls.count('start'),2)
         finally:engine.close()
 
+    def test_the_next_sentence_is_made_while_this_one_plays(self):
+        # Will, November 17, 2026: "Exit Voice Companion. Are you sure?" had a long pause between.
+        # The second phrase is now made while the first plays, so it starts right after it.
+        import ai_speech,time as clock
+        events=[]
+        def make(text,rate):
+            clock.sleep(0.25);events.append(('made',text,clock.perf_counter()));return b'\x00\x00'
+        engine=ai_speech.AISpeech(Mock(),synthesizer=make)
+        def play(audio,generation,volume):
+            events.append(('start',clock.perf_counter()));clock.sleep(0.4);events.append(('end',clock.perf_counter()))
+        engine._play=play
+        try:
+            engine.speak('Exit Voice Companion.');engine.speak('Are you sure?')
+            deadline=clock.time()+5
+            while len([e for e in events if e[0]=='end'])<2 and clock.time()<deadline:clock.sleep(0.02)
+        finally:engine.close()
+        ends=[e[1] for e in events if e[0]=='end'];starts=[e[1] for e in events if e[0]=='start']
+        self.assertEqual(len(starts),2)
+        self.assertLess(starts[1]-ends[0],0.1,'the second phrase waited for the synthesizer')
+
+    def test_an_interruption_drops_the_phrase_made_ahead(self):
+        import ai_speech,time as clock
+        made=[];played=[]
+        engine=ai_speech.AISpeech(Mock(),synthesizer=lambda text,rate:(made.append(text),b'\x00\x00')[1])
+        def play(audio,generation,volume):
+            played.append(generation)
+            if len(played)==1:engine.interrupt();engine.speak('New key')
+        engine._play=play
+        try:
+            engine.speak('First');engine.speak('Old next')
+            deadline=clock.time()+3
+            while len(played)<2 and clock.time()<deadline:clock.sleep(0.02)
+        finally:engine.close()
+        self.assertEqual(len(played),2)
+        self.assertEqual(played[1],played[0]+1,'the phrase made ahead was from before the key press')
+        self.assertEqual(made[-1],'New key')
+
     def test_a_failed_device_is_reopened_next_time(self):
         import ai_speech,array
         opened=[]

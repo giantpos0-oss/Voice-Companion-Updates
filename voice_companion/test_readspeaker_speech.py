@@ -57,6 +57,20 @@ class FakeVTAPI:
     def VTAPI_BufferClose(self, handle): self.closed += 1; return 0
 
 
+class SilenceTests(unittest.TestCase):
+    def test_silence_before_and_after_is_cut_to_a_moment(self):
+        from array import array
+        quiet, sound = [0] * 4800, [3000, -3000] * 2400        # 0.2 s of silence, 0.2 s of sound
+        pcm = array('h', quiet + sound + quiet).tobytes()
+        trimmed = array('h', rs.trim_silence(pcm))
+        self.assertEqual(trimmed[0], 3000)
+        self.assertEqual(len(trimmed), len(sound) + 24000 * rs.KEEP_END_MS // 1000)
+
+    def test_all_silence_is_left_alone(self):
+        pcm = b'\x00\x00' * 100
+        self.assertEqual(rs.trim_silence(pcm), pcm)
+
+
 class MappingTests(unittest.TestCase):
     def test_rate_and_pitch_stay_inside_what_readspeaker_allows(self):
         self.assertEqual(rs.speed_percent(0), 100)
@@ -115,6 +129,9 @@ class EngineTests(unittest.TestCase):
         self.assertAlmostEqual(len(pcm) / 2 / 24000, seconds_in, delta=0.01)
         self.assertEqual(self.fake.attrs[rs.ATTR_SPEED], rs.speed_percent(3))
         self.assertEqual(self.fake.attrs[rs.ATTR_PITCH], 110)
+        self.assertEqual(self.fake.attrs[rs.ATTR_FRONT_MARGIN], 0)
+        self.assertEqual(self.fake.attrs[rs.ATTR_REAR_MARGIN], 0)
+        self.assertEqual(self.fake.attrs[rs.ATTR_PAUSE], rs.SENTENCE_PAUSE_MS)
         self.assertEqual(self.fake.freed, 3)
         self.assertEqual(self.fake.closed, 1)
         self.assertEqual(self.fake.opened[0][2], rs.TEXT_FORMAT_UTF8)

@@ -63,9 +63,44 @@ class AISpeech:
         self.interrupt()
         self.pending.put(None)
 
-    IDLE_SECONDS = 30   # the stream is closed after this long with nothing to say
+    # The stream stays open for as long as Companion runs (Will, November 17, 2026: no start-up
+    # delay before speech, ever). It is reopened only if the sound device fails.
     _out = None          # class defaults, so a player made without __init__ still works
     _out_entered = False
+    _ahead = None        # the next phrase, made while this one plays
+
+    @staticmethod
+    def _part(text, start):
+        part = text[start:start + 1800]
+        if hasattr(text, 'pitch_delta'):
+            from capital_feedback import CharacterSpeech
+            part = CharacterSpeech(part, getattr(text, 'capital', False), text.pitch_delta)
+        return part
+
+    def _prefetch(self, generation):
+        """Starts making the next queued phrase while this one plays, so sentences follow each
+        other without a pause for the synthesizer (Will: "Exit Voice Companion. Are you sure?")."""
+        with self.pending.mutex:
+            job = self.pending.queue[0] if self.pending.queue else None
+        if job is None or job[0] != generation or (self._ahead is not None and self._ahead['job'] is job):
+            return
+        holder = {'job': job, 'done': threading.Event()}
+        part = self._part(job[1], 0)
+        def work():
+            try: holder['audio'] = self.synthesizer(part, job[2])
+            except Exception as exc: holder['error'] = exc
+            finally: holder['done'].set()
+        self._ahead = holder
+        threading.Thread(target=work, name='Next phrase', daemon=True).start()
+
+    def _made(self, job, part, rate):
+        """The sound for the first part of a job: the one made ahead if it is this job."""
+        ahead, self._ahead = self._ahead, None
+        if ahead is not None and ahead['job'] is job:
+            ahead['done'].wait()
+            if 'error' in ahead: raise ahead['error']
+            return ahead['audio']
+        return self.synthesizer(part, rate)
 
     def _stream(self):
         """The open output stream, opened (or restarted after an interruption) when needed."""
@@ -136,11 +171,7 @@ class AISpeech:
     def _run(self):
         fallback = None
         while True:
-            try:
-                job = self.pending.get(timeout=self.IDLE_SECONDS)
-            except queue.Empty:
-                self._close_stream()
-                continue
+            job = self.pending.get()
             if job is None:
                 self._close_stream()
                 return
@@ -149,13 +180,11 @@ class AISpeech:
             try:
                 # Small requests let silence commands take effect between audio blocks.
                 for start in range(0, len(text), 1800):
-                    part = text[start:start + 1800]
-                    if hasattr(text,'pitch_delta'):
-                        from capital_feedback import CharacterSpeech
-                        part=CharacterSpeech(part,getattr(text,'capital',False),text.pitch_delta)
+                    part = self._part(text, start)
                     if not self._wait(generation): break
                     try:
-                        audio = self.synthesizer(part, rate)
+                        audio = self._made(job, part, rate) if start == 0 else self.synthesizer(part, rate)
+                        if start + 1800 >= len(text): self._prefetch(generation)
                         if self._wait(generation): self._play(audio, generation, volume)
                     except Exception as exc:
                         if self.error_callback is not None:
