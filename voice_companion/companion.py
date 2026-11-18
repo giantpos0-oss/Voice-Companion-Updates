@@ -6849,6 +6849,20 @@ def group_menu(menu, words):
 HELP_OPENERS=('help','user guide','open user guide','manual','open manual','document help','email help','web help','radio help','podcast help','commands help','release notes')
 
 
+# The object each screen works on. A screen whose object is gone (an earlier error closed it) made
+# every key there fail; it now says so once and goes to the main menu (bug sweep, November 18, 2026).
+SCREEN_OBJECTS={'files':'FILE_MANAGER','file_reader':'FILE_READER','document':'document','document_name':'document','document_menu':'document',
+                'document_save':'document','document_replace':'document','email_draft':'email_draft',
+                'update_offer':'UPDATES','update_download':'UPDATES'}
+
+
+def screen_lost(mode):
+    """Words to say when this screen's object is gone, or None."""
+    name=SCREEN_OBJECTS.get(mode)
+    if name is None or globals().get(name) is not None:return None
+    return 'That screen has closed. Main menu.'
+
+
 def handle(text, mode, typed=False):
     global _HANDLE_DEPTH, CONFIRM_CHOICE, KEYBOARD_NAVIGATION, POWER_RETURN_MODE, account_setup
     asking_account_type = account_setup
@@ -6875,8 +6889,12 @@ def handle(text, mode, typed=False):
             try:flush_keyboard_edits(True)
             except OSError:speak('Your typed changes could not be saved yet. The file may be open in another program. Close it and they will be saved.')
         try:
-            with dictation_scope(PREFERENCES.get('dictation_type','old school'), typed=typed):
-                result = _handle(text, mode, typed)
+            lost=_HANDLE_DEPTH==1 and screen_lost(mode)
+            if lost:
+                speak(lost);result='awake'
+            else:
+                with dictation_scope(PREFERENCES.get('dictation_type','old school'), typed=typed):
+                    result = _handle(text, mode, typed)
         except Exception as exc:
             if _HANDLE_DEPTH!=1 or isinstance(exc,user_stop.Stopped) or not safety_net_on():raise
             result = command_failed(exc, mode)

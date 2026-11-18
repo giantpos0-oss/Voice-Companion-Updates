@@ -657,6 +657,10 @@ class TaskNavigation:
         if mode == 'task_input':
             # A third value True: the answer may be left out (Enter with nothing typed, or "skip").
             prompt = self.prompt
+            if not prompt:
+                # Nothing is being asked any more (an earlier error ended it): go back, do not fail.
+                self.app.speak('That question has closed. Main menu.')
+                return 'awake'
             template, target = prompt[:2]
             optional = len(prompt) > 2 and prompt[2]
             if command in ('cancel','escape','go back'):
