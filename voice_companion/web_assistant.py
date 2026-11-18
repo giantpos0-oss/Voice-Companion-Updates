@@ -24,6 +24,18 @@ from dictation_text import clean_dictation
 from ai_dictation import prepare_dictation
 
 
+BROWSER_UNREACHABLE = 'Voice Companion could not reach your browser. Check that Chrome is open, then try again.'
+
+
+def browser_note(folder, text):
+    """A line in browser-log.txt for a helper: what happened to the browser link. Never a page."""
+    try:
+        import time as _time
+        with (Path(folder) / 'browser-log.txt').open('a', encoding='utf-8') as out:
+            out.write(_time.strftime('%Y-%m-%d %H:%M:%S') + ' ' + text + '\n')
+    except Exception:
+        pass
+
 class WebError(Exception):
     pass
 
@@ -1845,7 +1857,18 @@ class WebSession:
         if not self.injected_backend and not getattr(self.backend,'regular',False):
             self.adopt_connected_browser()
         sync=getattr(type(self.backend),'sync_active_tab',None)
-        if sync and sync(self.backend):
+        try:changed=sync and sync(self.backend)
+        except WebError:raise
+        except Exception as exc:
+            if not getattr(self.backend,'regular',False):raise
+            # The link to your Chrome broke (Chrome closed or restarted its extension): the old
+            # connection is dropped and made again once, instead of being tried over and over
+            # (Will, November 18, 2026: "kept trying to restart with no success").
+            browser_note(self.folder,'browser link failed ('+type(exc).__name__+'), linking again')
+            self.backend.close()
+            self.backend.start()
+            changed=True
+        if changed:
             self.keyboard_field=None;self.form_index=None;self.pending=None;self.submit_pending=None
             self.list_focus=None;self.browse=None
             self._refresh(read=False)
@@ -1872,7 +1895,9 @@ class WebSession:
                 return load_failure(exc,'The page reload did not finish. Wait a moment, then press F5 again, or return to the browser menu.')
         try:self._sync_browser_tab()
         except WebError as exc:return str(exc)   # its own reason, such as "Open a normal website tab"
-        except Exception:return 'The browser connection is not ready. Keep Voice Companion open; it will reconnect automatically.'
+        except Exception as exc:
+            browser_note(self.folder,'browser still not linked ('+type(exc).__name__+')')
+            return BROWSER_UNREACHABLE
         if not self.snapshot:return 'Open a website first.'
         if self.browse is None:self.browse=BrowseCursor(self.snapshot)
         try:
@@ -3321,7 +3346,9 @@ class WebSession:
     def _command(self, spoken):
         try:self._sync_browser_tab()
         except WebError as exc:return str(exc)   # its own reason, such as "Open a normal website tab"
-        except Exception:return 'The browser connection is not ready. Keep Voice Companion open; it will reconnect automatically.'
+        except Exception as exc:
+            browser_note(self.folder,'browser still not linked ('+type(exc).__name__+')')
+            return BROWSER_UNREACHABLE
         command = _plain(spoken).rstrip('.!?').lower()
         if self.list_focus in ('fields','favorites') and command in ('cancel','go back','close list','back to page','escape','no','no thanks'):
             self.list_focus=None;self.pending=None;return 'Virtual page view.'

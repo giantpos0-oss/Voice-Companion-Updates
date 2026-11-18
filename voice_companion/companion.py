@@ -2875,6 +2875,18 @@ def open_own_chrome_for_web(session):
 # Every way into the web (the menu, a search, a favorite, a link in an email) goes through this first.
 WebSession.own_browser_opener=staticmethod(open_own_chrome_for_web)
 
+def relink_own_chrome():
+    """Your Chrome's link to Companion dropped (Chrome closed, or its extension restarted): open
+    Chrome again, or wait for the extension to link, instead of only waiting (Will, November 18,
+    2026). True when linked, words saying why not, or None."""
+    if os.name!='nt':return None
+    import chrome_setup
+    engine=getattr(web_session,'search_engine','google') if web_session else 'google'
+    return chrome_setup.link_own_chrome(sys.modules[__name__],WEB_HOME.get(engine,WEB_HOME['google']),'Linking your Chrome again.')
+
+try:__import__('connected_browser').ConnectedBrowserBackend.relink=staticmethod(relink_own_chrome)
+except Exception:pass
+
 def open_browser_menu(regular=False):
     global web_session
     if os.name=='nt':

@@ -2,8 +2,32 @@
 from web_assistant import BrowserBackend, WebError
 
 
+NOT_LINKED = 'Your Chrome is not linked to Voice Companion right now. Check that Chrome is open, then try again.'
+
+
 class ConnectedBrowserBackend(BrowserBackend):
     regular = True
+    # Set by Companion: opens your Chrome, or waits for its extension to link again, and returns
+    # True, words saying why not, or None. Before, a lost link was only ever waited on, saying "it
+    # will reconnect automatically" when Chrome was closed (Will, November 18, 2026).
+    relink = None
+
+    def linked(self):
+        """True once the extension is linked, reopening or relinking Chrome when it is not.
+        Raises WebError with the reason when it cannot be linked."""
+        if self.relay.connected.is_set():
+            return True
+        relink = type(self).relink
+        result = None
+        if relink is not None:
+            try:
+                result = relink()
+            except Exception:
+                result = None
+        if self.relay.connected.is_set():
+            return True
+        raise WebError(result if isinstance(result, str) and result else NOT_LINKED)
+
     def __init__(self, folder, browser, relay):
         super().__init__(folder,relay.browser)
         self.relay = relay
@@ -13,8 +37,7 @@ class ConnectedBrowserBackend(BrowserBackend):
         self.generation = -1
 
     def start(self):
-        if not self.relay.connected.is_set():
-            raise WebError('The browser connection is restarting. Keep Companion open; it will reconnect automatically. Your tabs stay open.')
+        self.linked()
         if self.page is not None and not self.page.is_closed():
             self.sync_active_tab();return
         self.close()
@@ -40,7 +63,7 @@ class ConnectedBrowserBackend(BrowserBackend):
             raise WebError('The browser link is not ready. Open a website tab and keep Companion open, then return to the Web browser menu.') from exc
 
     def sync_active_tab(self):
-        if not self.relay.connected.is_set():raise WebError('The browser is reconnecting. Keep Companion open.')
+        self.linked()
         if self.remote_browser and (self.generation!=self.relay.generation or not self.remote_browser.is_connected()):
             self.close();self.start();return True
         if not self.root_session or not self.context:return False
