@@ -360,15 +360,16 @@ async function microsoftAccountChecks() {
 
 // Replied, forwarded and importance from Thunderbird's own message list (nsIMsgDBHdr).
 async function statusChecks() {
-  const headers = {1: {flags: 0x1 | 0x2, priority: 6}, 2: {flags: 0x1000, priority: 4}, 3: {flags: 0, priority: 0},
+  // 3 is a reply in a thread: Thunderbird keeps "Re:" out of its subject and sets HasRe (0x10).
+  const headers = {1: {flags: 0x1 | 0x2, priority: 6}, 2: {flags: 0x1000, priority: 4}, 3: {flags: 0x10, priority: 0},
     4: {flags: 0x2 | 0x1000, priority: 2}};
   const extension = {messageManager: {get: id => { if (id === 5) throw new Error('gone'); return headers[id] || null; }}};
   const api = loadExperiment(null, fakeOAuth(), fakeMailServices(), {composing: 0, quits: [], extension});
   assert.deepEqual(plain(await api.messageStatus([1, 2, 3, 4, 5, 6])), {
-    1: {replied: true, forwarded: false, priority: 'highest'},
-    2: {replied: false, forwarded: true, priority: 'normal'},
-    3: {replied: false, forwarded: false, priority: ''},
-    4: {replied: true, forwarded: true, priority: 'lowest'}});
+    1: {replied: true, forwarded: false, re: false, priority: 'highest'},
+    2: {replied: false, forwarded: true, re: false, priority: 'normal'},
+    3: {replied: false, forwarded: false, re: true, priority: ''},
+    4: {replied: true, forwarded: true, re: false, priority: 'lowest'}});
   assert.deepEqual(plain(await api.messageStatus('not a list')), {});
   // No add-on context (should never happen): nothing, not an error.
   assert.deepEqual(plain(await loadExperiment(null).messageStatus([1])), {});
@@ -1028,7 +1029,7 @@ function loadExperiment(win, oauth = fakeOAuth(), mail = fakeMailServices(), app
                obs: {addObserver: (observer, topic) => app.observers.set(topic, observer),
                      removeObserver: (observer, topic) => { if (app.observers.get(topic) === observer) app.observers.delete(topic); }},
                ww: {registerNotification: observer => app.watchers.add(observer), unregisterNotification: observer => app.watchers.delete(observer)}},
-    Ci: {nsIAppStartup: {eAttemptQuit: 2}, nsISmtpServer: {}, nsIFile: {}, nsMsgMessageFlags: {Read: 0x1, Replied: 0x2, Marked: 0x4, Forwarded: 0x1000}},
+    Ci: {nsIAppStartup: {eAttemptQuit: 2}, nsISmtpServer: {}, nsIFile: {}, nsMsgMessageFlags: {Read: 0x1, Replied: 0x2, Marked: 0x4, HasRe: 0x10, Forwarded: 0x1000}},
     setTimeout, WeakRef, Symbol, Object, URL,
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname, 'experiment', 'implementation.js'), 'utf8'), context);
