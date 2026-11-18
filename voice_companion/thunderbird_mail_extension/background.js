@@ -196,7 +196,7 @@ class MailBridge {
       for (const id of ids) {
         const item = found && found[String(id)];
         if (!item) continue;
-        status[id] = {replied: item.replied === true, forwarded: item.forwarded === true,
+        status[id] = {replied: item.replied === true, forwarded: item.forwarded === true, re: item.re === true,
           priority: MailBridge.PRIORITIES.includes(item.priority) ? item.priority : ''};
         if (typeof important[String(id)] === 'boolean') status[id].important = important[String(id)];
       }
