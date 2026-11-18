@@ -283,14 +283,14 @@ class MenuTests(CompanionTestCase):
 
     def test_first_letters_in_the_category_list_reach_favorite_apps(self):
         # The categories list (native_settings): F goes to File manager options, then Favorite apps,
-        # then stays there. End goes to Favorite apps, the last category.
+        # then round to File manager options again. End goes to Favorite apps, the last category.
         from menu_navigation import next_match
         names = settings_model.CATEGORIES
         first = next_match(names, 0, 'f')
         self.assertEqual(names[first], 'File manager options')
         second = next_match(names, first, 'f')
         self.assertEqual(names[second], 'Favorite apps')
-        self.assertEqual(next_match(names, second, 'f'), second)   # "End of matching items."
+        self.assertEqual(next_match(names, second, 'f'), first)    # first letters go round
         self.assertEqual(len(names) - 1, second)
         # S still goes Synthesizer, then Startup and exit options (test_native_settings on Windows).
         self.assertEqual([names[next_match(names, 0, 's')], names[next_match(names, 2, 's')]],
@@ -376,7 +376,7 @@ class FavoriteAppsListTests(unittest.TestCase):
         self.assertEqual(self.list.keyboard('End'), 'End of list.')
         self.assertEqual(self.list.keyboard('Home'), 'File manager, not selected, 1 of 12.')
         self.assertEqual(self.list.keyboard('E'), 'Email, selected, 4 of 12.')
-        self.assertEqual(self.list.keyboard('E'), 'End of matching items.')
+        self.assertEqual(self.list.keyboard('E'), 'Email, selected, 4 of 12.')   # the only E: said again
         self.assertEqual(self.list.keyboard('Z'), 'No app starts with Z.')
         self.assertEqual(self.list.voice('Next.'), 'Document reader, not selected, 5 of 12.')
         self.assertEqual(self.list.voice('previous app'), 'Email, selected, 4 of 12.')

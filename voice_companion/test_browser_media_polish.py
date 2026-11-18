@@ -48,7 +48,7 @@ class MediaNavigationTests(unittest.TestCase):
         self.assertIn('Radio menu',self.nav.enter('radio'))
         self.nav.keyboard('Escape');self.nav.keyboard('Letter:l');self.assertEqual(self.nav.actions[self.nav.index].label,'List stations')
         self.nav.keyboard('Tab');self.nav.keyboard('Home');self.nav.keyboard('Letter:a');self.assertEqual(self.hub.station_index,2)
-        self.assertIn('End of matching items',self.nav.keyboard('Letter:a'));self.assertEqual(self.hub.station_index,2)
+        self.nav.keyboard('Letter:a');self.assertEqual(self.hub.station_index,0)   # past the last A: round to the first
         self.nav.keyboard('End');self.nav.keyboard('Enter');self.player.open.assert_called_with('https://radio.test/c','Another','radio')
         self.assertEqual(self.nav.keyboard('Escape').split('.')[0],'Station actions')
         self.assertIn('Radio menu',self.nav.keyboard('Escape'))

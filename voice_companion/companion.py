@@ -52,7 +52,7 @@ from menu_navigation import boundary_notice, bounded_index, next_match, menu_lab
 APP = Path(os.getenv('VOICE_COMPANION_DATA_DIR') or
            (Path(os.getenv('LOCALAPPDATA', str(Path.home()))) / 'VoiceCompanion'))
 DEFAULT_APP = APP
-APP_VERSION = '0.2.214-test'
+APP_VERSION = '0.2.215-test'
 POWER_COMMANDS={'restart computer':'restart','restart the computer':'restart','restart windows':'restart','reboot computer':'restart','shut down computer':'shutdown','shut down the computer':'shutdown','shutdown computer':'shutdown','shut down windows':'shutdown','turn off computer':'shutdown','turn off the computer':'shutdown'}
 POWER_COMMANDS.update(dict.fromkeys(('shut off the computer','shut off computer','turn the computer off','turn computer off','shut the computer down','shut computer down'), 'shutdown'))
 POWER_COMMANDS.update(dict.fromkeys(('reboot the damn thing','reboot the computer','reboot','restart','restart the damn thing'), 'restart'))
@@ -984,7 +984,7 @@ def choose_menu_letter(letter,mode):
     index=next_match(names,current,letter)
     if index is None:speak('No menu item starts with '+letter.upper()+'.');return True
     select(index)
-    if current==index:speak('End of matching items.');return True
+    # First letters go round the list; the only match is said again.
     if VOICE_PICK_INDEX is not None:preview_voice(index)
     else:
         # Folders are said as the arrow keys say them, without a key letter after the name.
@@ -2906,6 +2906,18 @@ def open_own_chrome_for_web(session):
 
 # Every way into the web (the menu, a search, a favorite, a link in an email) goes through this first.
 WebSession.own_browser_opener=staticmethod(open_own_chrome_for_web)
+
+def relink_own_chrome():
+    """Your Chrome's link to Companion dropped (Chrome closed, or its extension restarted): open
+    Chrome again, or wait for the extension to link, instead of only waiting (Will, November 18,
+    2026). True when linked, words saying why not, or None."""
+    if os.name!='nt':return None
+    import chrome_setup
+    engine=getattr(web_session,'search_engine','google') if web_session else 'google'
+    return chrome_setup.link_own_chrome(sys.modules[__name__],WEB_HOME.get(engine,WEB_HOME['google']),'Linking your Chrome again.')
+
+try:__import__('connected_browser').ConnectedBrowserBackend.relink=staticmethod(relink_own_chrome)
+except Exception:pass
 
 def open_browser_menu(regular=False):
     global web_session

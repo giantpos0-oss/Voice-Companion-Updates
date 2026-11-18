@@ -21,8 +21,8 @@ class MenuKeyboardTests(unittest.TestCase):
             app.navigation_key('Letter:o','awake')
             self.assertEqual(app.MAIN_MENU_CHOICES[app.MAIN_MENU_INDEX][0],'Options')
             app.navigation_key('Letter:o','awake')
-            self.assertEqual(app.MAIN_MENU_CHOICES[app.MAIN_MENU_INDEX][0],'Options')
-            say.assert_called_with('End of matching items.')
+            self.assertEqual(app.MAIN_MENU_CHOICES[app.MAIN_MENU_INDEX][0],'Office tools')   # round to the first O
+            say.assert_called_with('Office tools (O), 2 of 10.')
     def test_folder_letters_only_select_and_do_not_touch_messages(self):
         picker={'folders':[('Inbox','i'),('Sent','s'),('Stuff','x')],'index':0}
         session=SimpleNamespace(folder_picker=picker,pending=None,_spoken_folder=lambda x:x)

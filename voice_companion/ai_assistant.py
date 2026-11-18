@@ -137,19 +137,31 @@ def install_id(folder):
     return value
 
 
+LOG_FOLDER = [None]   # where ai-error.txt goes: the settings folder of the last request
+
+
 def service_request(folder, version, task, payload, timeout=TIMEOUT_SECONDS, opener=urllib.request.urlopen):
     """Ask the AI service. Returns its answer, or raises AssistantError with words to say."""
+    LOG_FOLDER[0] = folder
     body = json.dumps(dict(payload, task=task)).encode('utf-8')
+    # The request names itself. Python's own name ("Python-urllib") is turned away by Cloudflare
+    # with "error code: 1010" before the service sees it (Will, November 18, 2026: writing help
+    # always failed). The updater has always named itself.
     request = urllib.request.Request(os.getenv('VOICE_COMPANION_AI_URL', SERVICE), data=body, method='POST', headers={
-        'content-type': 'application/json', 'X-Companion-Install': install_id(folder), 'X-Companion-Version': str(version)})
+        'content-type': 'application/json', 'User-Agent': 'VoiceCompanion/%s' % version,
+        'X-Companion-Install': install_id(folder), 'X-Companion-Version': str(version)})
     try:
         with opener(request, timeout=timeout) as reply:
             answer = json.loads(reply.read().decode('utf-8'))
     except urllib.error.HTTPError as error:
         try:
-            answer = json.loads(error.read().decode('utf-8'))
+            raw = error.read()
         except Exception:
-            answer = {'ok': False, 'error': 'status %s' % error.code}
+            raw = b''
+        try:
+            answer = json.loads(raw.decode('utf-8'))
+        except Exception:
+            answer = {'ok': False, 'error': 'status %s' % error.code, 'detail': raw[:200].decode('utf-8', 'replace').strip()}
     except (urllib.error.URLError, OSError, TimeoutError):
         raise AssistantError('Voice Companion could not reach the AI assistant. Check your internet connection, then try again.')
     except ValueError:
@@ -171,7 +183,22 @@ def service_request(folder, version, task, payload, timeout=TIMEOUT_SECONDS, ope
         raise AssistantError('This is too long for the AI assistant. Select a smaller part, then try again.')
     if error == 'image too large':
         raise AssistantError('This picture is too large for the AI assistant.')
+    record_problem(folder, task, error, answer.get('detail'))
     raise AssistantError('The AI assistant could not do that just now. Please try again in a moment.')
+
+
+def record_problem(folder, task, error, detail=None):
+    """Every failure names itself: what went wrong goes in ai-error.txt in the settings folder,
+    never the person's text, so a helper (or Claude) can see why without asking."""
+    try:
+        from datetime import datetime
+        line = '%s %s: %s%s\n' % (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), task, error or 'no reason given',
+                                    ' (%s)' % str(detail)[:300].replace('\n', ' ').strip() if detail else '')
+        path = Path(folder) / 'ai-error.txt'
+        old = path.read_text(encoding='utf-8').splitlines(True)[-49:] if path.exists() else []
+        path.write_text(''.join(old) + line, encoding='utf-8')
+    except Exception:
+        pass
 
 
 def pictures_left_words(answer):
@@ -230,8 +257,10 @@ class Job:
             self.result = work()
         except AssistantError as problem:
             self.error = str(problem)
-        except Exception:
+        except Exception as problem:
             self.error = 'The AI assistant could not do that just now. Please try again in a moment.'
+            if LOG_FOLDER[0]:
+                record_problem(LOG_FOLDER[0], 'request', type(problem).__name__, str(problem)[:200])
         finally:
             self.done.set()
 

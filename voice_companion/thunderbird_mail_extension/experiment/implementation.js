@@ -496,6 +496,8 @@ function messageStatus(extension, ids) {
     found[String(id)] = {
       replied: Boolean(header.flags & flags.Replied),
       forwarded: Boolean(header.flags & flags.Forwarded),
+      // Thunderbird keeps "Re:" out of the subject and marks the message HasRe instead.
+      re: Boolean(header.flags & flags.HasRe),
       priority: PRIORITY_NAMES[header.priority] || '',
     };
   }

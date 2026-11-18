@@ -235,8 +235,6 @@ class MainMenuSim(Sim):
                 new = next_match(self.names(), self.index, key)
                 if new is None:
                     return 'No menu item starts with ' + key + '.'
-                if new == self.index:
-                    return 'End of matching items.'
                 self.index = new
                 return self.item(new)
             if key == 'Enter':

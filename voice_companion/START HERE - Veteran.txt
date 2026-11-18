@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.214-test.
+Guide version: 0.2.215-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -327,7 +327,7 @@ Keys for lists and menus:
 - Up Arrow and Down Arrow move through the items.
 - Home and End reach the first and last items.
 - Enter opens or chooses the item you hear.
-- A first letter jumps to a matching item.
+- A first letter jumps to a matching item. Press it again for the next one. After the last, it goes back to the first.
 Text boxes use letter keys for typing instead.
 
 1.5 Set up your microphone
@@ -1547,7 +1547,7 @@ To see a list of items on the page:
 - For form fields, say "List fields" or "List form fields", or press F8.
 Use the arrows, Home, or End to choose an item, then press Enter. A heading moves your reading place there. A link opens its address. To go back to the page, say "Close list", or press Escape.
 To find a name in a links or headings list, type its first letter. Type more letters quickly to narrow it. You can type the full name, with spaces. Backspace removes the last letter.
-Type the same first letter again to move through matching names. The search stops at the last match. Pause before you start a new name. Typing only chooses an item. Press Enter to open it.
+Type the same first letter again to move through matching names. After the last match, it goes back to the first. Pause before you start a new name. Typing only chooses an item. Press Enter to open it.
 
 15.6 Enter or change a web answer
 1. Use Tab to reach the next control. Or press Up Arrow or Down Arrow to reach a text box. You can type as soon as you reach it.

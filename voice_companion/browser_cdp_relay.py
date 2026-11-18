@@ -113,6 +113,7 @@ class BrowserRelay:
                     # Before connected: whoever waits for the link sees this extension's version.
                     self._check_extension_version(message.get('version'))
                     self.connected.set()
+                    self._note('extension linked (version %s)' % (message.get('version') or 'unknown'))
                     self._link_downloads()
                     continue
                 if message.get('method') == 'VoiceCompanion.download':
@@ -129,7 +130,9 @@ class BrowserRelay:
         finally:
             with self.state_lock:
                 closing = self.websocket if self.pipe is pipe else None
-                if self.pipe is pipe: self.pipe = None; self.connected.clear(); self._unlink_downloads()
+                if self.pipe is pipe:
+                    self.pipe = None; self.connected.clear(); self._unlink_downloads()
+                    self._note('extension link dropped')
             try:pipe.close()
             except OSError:pass
             if closing is not None:
@@ -154,6 +157,13 @@ class BrowserRelay:
         finally:
             with self.state_lock:
                 if self.websocket is websocket:self.websocket = None;self.client_closed.set()
+
+    def _note(self, text):
+        try:
+            from web_assistant import browser_note
+            browser_note(self.folder, text)
+        except Exception:
+            pass
 
     def _link_downloads(self):
         import downloads
