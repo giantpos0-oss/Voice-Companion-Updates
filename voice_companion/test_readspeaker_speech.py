@@ -11,8 +11,13 @@ import readspeaker_speech as rs
 class FakeVTAPI:
     """Behaves like VTAPI 4.5: installed engines, attributes, and PCM handed out in pieces."""
 
-    def __init__(self, sampling=22050, pieces=3, piece_size=4410, open_error=0, voices=(('sophie', 'd22'), ('julie', 'd22'))):
+    def __init__(self, sampling=22050, pieces=3, piece_size=4410, open_error=0, voices=(('sophie', 'd22'), ('julie', 'd22')),
+                 sample=1, reads_markup=True, reads_entities=True, by_length=False):
         self.sampling, self.pieces, self.piece_size, self.open_error = sampling, pieces, piece_size, open_error
+        # sample: the value of every sample made (1 is quieter than QUIET, so it counts as silence).
+        # reads_markup/reads_entities: whether tags and &amp; are read as markup or spoken as text.
+        self.sample, self.reads_markup, self.reads_entities, self.by_length = sample, reads_markup, reads_entities, by_length
+        self.given = 0
         self.installed = list(voices)
         self.attrs, self.freed, self.closed, self.opened, self.license = {}, 0, 0, [], None
         self._buffers = []
@@ -41,14 +46,27 @@ class FakeVTAPI:
 
     def VTAPI_BufferOpen(self, handle, text, length, kind, size):
         self.opened.append((text, length, kind))
-        self.left = self.pieces
+        self.buffer_size = size
+        # by_length: the number of pieces follows what is spoken, so markup the engine does not
+        # read (spoken as words) makes more sound than markup it reads.
+        spoken = text.decode('utf-8')
+        if self.by_length:
+            import re
+            if self.reads_markup:
+                spoken = re.sub(r'<[^>]+>', '', spoken)
+            spoken = spoken.replace('&amp;', 'and' if self.reads_entities else 'and ampersand ')
+            self.left = max(1, len(spoken) // 6)
+        else:
+            self.left = self.pieces
         return self.open_error
 
     def VTAPI_GetBuffer(self, handle, frame):
         if self.left <= 0:
             return 0
         self.left -= 1
-        buffer = ctypes.create_string_buffer(b'\x01\x00' * (self.piece_size // 2), self.piece_size)
+        self.given += 1
+        from array import array
+        buffer = ctypes.create_string_buffer(array('h', [self.sample] * (self.piece_size // 2)).tobytes(), self.piece_size)
         self._buffers.append(buffer)
         frame._obj.value = ctypes.addressof(buffer)
         return self.piece_size
@@ -199,6 +217,94 @@ class EngineTests(unittest.TestCase):
             self.assertEqual(fake.license, str(base).encode())
 
 
+class PiecesTests(unittest.TestCase):
+    """Will, November 17, 2026: quick key presses lagged. Speech starts with ReadSpeaker's first piece."""
+
+    def engine(self, **options):
+        self.fake = FakeVTAPI(**options)
+        engine = rs.Engine(folder=Path('.'), lib=self.fake)
+        engine.voices()
+        return engine
+
+    def test_the_first_piece_comes_before_the_rest_is_made(self):
+        engine = self.engine(sample=3000, pieces=6)
+        pieces = engine.pieces('Ready for you.', voice='readspeaker:sophie:d22')
+        next(pieces)
+        self.assertLess(self.fake.given, 6, 'speaking waited for the whole phrase')
+        self.assertEqual(self.fake.buffer_size, rs.PIECE_BYTES)
+        list(pieces)
+        self.assertEqual(self.fake.closed, 1)
+
+    def test_stopping_early_closes_the_request_and_keeps_nothing(self):
+        engine = self.engine(sample=3000, pieces=6)
+        pieces = engine.pieces('Shut', voice='readspeaker:sophie:d22')
+        next(pieces)
+        pieces.close()                         # a key press
+        self.assertEqual(self.fake.closed, 1)
+        self.assertEqual(len(engine.recent), 0, 'part of a word must never be kept as the whole word')
+        self.assertTrue(engine.lock.acquire(timeout=1)); engine.lock.release()
+
+    def test_pieces_join_to_the_same_sound_as_the_whole_phrase(self):
+        from array import array
+        engine = self.engine()
+        quiet, sound = [0] * 2205, [3000, -3000] * 2205
+        made = array('h', quiet + sound + quiet + sound + quiet * 3).tobytes()
+        engine._stream_source = made
+        def give(handle, frame, _made=[made]):
+            if not _made[0]:
+                return 0
+            piece, _made[0] = _made[0][:882], _made[0][882:]
+            buffer = ctypes.create_string_buffer(piece, len(piece)); self.fake._buffers.append(buffer)
+            frame._obj.value = ctypes.addressof(buffer); return len(piece)
+        self.fake.VTAPI_GetBuffer = give
+        whole = engine.synthesize('Hello there, again.', voice='readspeaker:sophie:d22', rate=0)
+        expected = rs.trim_silence(rs.PCM16Resampler(22050, 24000).convert(made))
+        self.assertEqual(len(whole), len(expected))
+        # Resampling piece by piece may round a sample one step differently: not audible.
+        self.assertLessEqual(max(abs(a - b) for a, b in zip(array('h', whole), array('h', expected))), 1)
+
+
+class PronunciationTests(unittest.TestCase):
+    # Will, November 17, 2026: Sophie said "lest", "shet down" and "fer".
+    def test_the_words_get_their_sounds_when_the_engine_reads_markup(self):
+        said = rs.prepare('List, then Shut down for now.', {'tags': True, 'entities': True})
+        self.assertIn('<vtml_phoneme alphabet="x-sapi" ph="l ih 1 s t">List</vtml_phoneme>', said)
+        self.assertIn('ph="sh ah 1 t">Shut</vtml_phoneme>', said)
+        self.assertIn('ph="f ao 1 r">for</vtml_phoneme>', said)
+
+    def test_other_words_and_parts_of_words_are_left_alone(self):
+        for text in ('Forward the message.', 'Listen.', 'Shutter speed', 'Ready.', "for's"):
+            self.assertEqual(rs.prepare(text, {'tags': True, 'entities': True}), text)
+
+    def test_nothing_changes_when_the_engine_does_not_read_markup(self):
+        self.assertEqual(rs.prepare('List for me.', None), 'List for me.')
+        self.assertEqual(rs.prepare('List for me.', {'tags': False, 'entities': False}), 'List for me.')
+
+    def test_special_characters_are_kept_as_characters(self):
+        self.assertEqual(rs.prepare('Salt & pepper <for> two', {'tags': True, 'entities': True}).count('&amp;'), 1)
+        self.assertIn('&lt;', rs.prepare('a < b for c', {'tags': True, 'entities': True}))
+        # Without entity support, marking text with & or < could change what is read: left plain.
+        self.assertEqual(rs.prepare('Salt & pepper for two', {'tags': True, 'entities': False}), 'Salt & pepper for two')
+
+    def test_the_check_finds_what_the_engine_reads(self):
+        for markup, entities in ((True, True), (True, False), (False, False)):
+            fake = FakeVTAPI(sample=3000, by_length=True, reads_markup=markup, reads_entities=entities)
+            engine = rs.Engine(folder=Path('.'), lib=fake)
+            engine.voices()
+            found = engine.check_markup('readspeaker:sophie:d22')
+            self.assertEqual(found, {'tags': markup, 'entities': entities}, (markup, entities))
+
+    def test_spoken_text_uses_the_fixes_after_the_check(self):
+        fake = FakeVTAPI(sample=3000, by_length=True)
+        engine = rs.Engine(folder=Path('.'), lib=fake)
+        engine.voices()
+        engine.synthesize('Shut down', voice='readspeaker:sophie:d22')
+        self.assertNotIn(b'vtml', fake.opened[-1][0], 'no markup before the check')
+        engine.check_markup('readspeaker:sophie:d22')
+        engine.synthesize('Shut down now', voice='readspeaker:julie:d22')
+        self.assertIn(b'ph="sh ah 1 t"', fake.opened[-1][0])
+
+
 class SelfCheckTests(unittest.TestCase):
     def test_the_check_lists_voices_and_timings_without_user_text(self):
         fake = FakeVTAPI()
@@ -208,7 +314,22 @@ class SelfCheckTests(unittest.TestCase):
                 rs.self_check(out)
             text = out.read_text()
         self.assertIn('ReadSpeaker Sophie (readspeaker:sophie:d22, 22050 Hz)', text)
-        self.assertIn('Julie: 8 words made in', text)
+        self.assertIn('Julie: 8 words, first sound in', text)
+        self.assertIn('Pronunciation fixes: on', text)
+
+    def test_samples_of_the_fixed_words_are_saved_at_the_users_speed(self):
+        fake = FakeVTAPI(sample=3000, by_length=True)
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder) / 'readspeaker-check.txt'
+            with mock.patch.object(rs, '_ENGINE', rs.Engine(folder=Path(folder), lib=fake)):
+                rs.self_check(out, rate=5)
+            names = sorted(p.name for p in (Path(folder) / 'readspeaker' / 'samples').iterdir())
+            text = out.read_text()
+        self.assertIn('sophie-rate5-fixed.wav', names)
+        self.assertIn('julie-rate0-plain.wav', names)
+        self.assertIn('samples saved at rate 0, 5', text)
+        fixed = [o[0].decode() for o in fake.opened if b'vtml_phoneme' in o[0]]
+        self.assertTrue(fixed, 'the fixed samples used the pronunciation markup')
 
     def test_a_problem_is_written_not_raised(self):
         with tempfile.TemporaryDirectory() as folder:

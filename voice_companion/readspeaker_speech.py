@@ -30,8 +30,40 @@ SENTENCE_PAUSE_MS = 250
 QUIET = 150            # samples quieter than this at the start or end count as silence
 KEEP_END_MS = 30
 DEFAULT_BUFFER = -1
+PIECE_BYTES = 2205 * 2  # ReadSpeaker hands out 50 ms of its 22 kHz sound at a time
+PIECE_SAMPLES = 1200    # pieces of at least 50 ms go to the speaker as soon as they are made
 SHORT_PHRASE = 40      # characters: phrases this short are kept once made
 REMEMBERED = 400       # how many short phrases are kept (about 12 MB at most)
+
+
+# Will, November 17, 2026: Sophie said "list" like "lest", "shut down" like "shet down" and "for"
+# like "fer". These words are given their sounds (SAPI phonemes, a stressed vowel) for every
+# ReadSpeaker voice. Add a word here when a voice says it wrong.
+PRONUNCIATIONS = {
+    'list': 'l ih 1 s t', 'lists': 'l ih 1 s t s', 'listed': 'l ih 1 s t ih d', 'listing': 'l ih 1 s t ih ng',
+    'shut': 'sh ah 1 t', 'shuts': 'sh ah 1 t s',
+    'for': 'f ao 1 r',
+}
+_WORD = None
+
+
+def prepare(text, markup):
+    """Text as ReadSpeaker should read it: the words in PRONUNCIATIONS get their sounds, when the
+    engine reads markup (check_markup). Text it cannot mark safely is left as it is."""
+    global _WORD
+    text = str(text)
+    if not markup or not markup.get('tags'):
+        return text
+    import re
+    if _WORD is None:
+        _WORD = re.compile(r"\b(" + '|'.join(sorted(PRONUNCIATIONS, key=len, reverse=True)) + r")\b(?!')", re.I)
+    if not _WORD.search(text):
+        return text
+    if markup.get('entities'):
+        text = text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+    elif any(mark in text for mark in '&<>'):
+        return text
+    return _WORD.sub(lambda m: '<vtml_phoneme alphabet="x-sapi" ph="%s">%s</vtml_phoneme>' % (PRONUNCIATIONS[m.group(1).lower()], m.group(1)), text)
 
 
 class ReadSpeakerError(Exception):
@@ -111,6 +143,7 @@ class Engine:
         # so a key press speaks at once instead of waiting for ReadSpeaker each time.
         from collections import OrderedDict
         self.recent = OrderedDict()
+        self.markup = None      # what check_markup() found: None until checked
         self._declare()
         self.lib.VTAPI_Init(str(self.folder or '').encode('utf-8') or None)
         licenses = Path(license_folder) if license_folder else (self.folder.parent if self.folder and (self.folder.parent / 'verification.txt').is_file() else self.folder)
@@ -183,6 +216,15 @@ class Engine:
 
     def synthesize(self, text, rate=0, voice='', pitch=0):
         """Speech for `text` as 24 kHz mono 16-bit PCM."""
+        return b''.join(self.pieces(text, rate, voice, pitch))
+
+    def pieces(self, text, rate=0, voice='', pitch=0):
+        """Speech for `text` as 24 kHz PCM, handed out piece by piece while ReadSpeaker makes it,
+        so speaking starts with the first piece (Will, November 17, 2026: quick keys lagged).
+
+        Silence before the first sound is dropped, and silence after the last is cut to a moment
+        (trim_silence), the same as for a whole phrase. Stopping early (a key press) closes the
+        request at once."""
         if not str(text).strip():
             raise ValueError('Nothing to say')
         engine, sampling = self._engine(voice)
@@ -190,18 +232,29 @@ class Engine:
         key = (str(text), speed_percent(rate), voice, pitch_percent(pitch))
         if remember:
             with self.lock:
-                if key in self.recent:
+                cached = self.recent.get(key)
+                if cached is not None:
                     self.recent.move_to_end(key)
-                    return self.recent[key]
-        pcm = self._make(text, rate, voice, pitch, engine, sampling)
+            if cached is not None:
+                yield cached
+                return
+        given = []
+        for piece in self._stream(prepare(text, self.markup), rate, pitch, engine, sampling):
+            given.append(piece)
+            yield piece
+        if not given:
+            raise ReadSpeakerError('ReadSpeaker made no sound.')
         if remember:
             with self.lock:
-                self.recent[key] = pcm
+                self.recent[key] = b''.join(given)
                 while len(self.recent) > REMEMBERED:
                     self.recent.popitem(last=False)
-        return pcm
 
-    def _make(self, text, rate, voice, pitch, engine, sampling):
+    def _stream(self, text, rate, pitch, engine, sampling):
+        from array import array
+        resampler = PCM16Resampler(sampling, OUTPUT_RATE) if sampling != OUTPUT_RATE else None
+        keep = OUTPUT_RATE * KEEP_END_MS // 1000
+        held, odd, started = array('h'), b'', False
         with self.lock:
             lib, handle = self.lib, self.handle
             if lib.VTAPI_SetEngineHandle(handle, engine) != 0:
@@ -214,10 +267,9 @@ class Engine:
             if lib.VTAPI_SetOutputBuffer(handle, FORMAT_16PCM) != 0:
                 raise ReadSpeakerError('ReadSpeaker could not make sound. ' + self.last_error())
             data = str(text).encode('utf-8')
-            code = lib.VTAPI_BufferOpen(handle, data, len(data), TEXT_FORMAT_UTF8, DEFAULT_BUFFER)
+            code = lib.VTAPI_BufferOpen(handle, data, len(data), TEXT_FORMAT_UTF8, PIECE_BYTES)
             if code != 0:
                 raise ReadSpeakerError(problem(code, self.last_error()))
-            pieces = []
             try:
                 for _ in range(100000):
                     frame = ctypes.c_void_p()
@@ -226,18 +278,51 @@ class Engine:
                         raise ReadSpeakerError(problem(size, self.last_error()))
                     if size == 0:
                         break
-                    if frame.value:
-                        pieces.append(ctypes.string_at(frame.value, size))
-                        lib.VTAPI_FreeBuffer(frame)
+                    if not frame.value:
+                        continue
+                    raw = odd + ctypes.string_at(frame.value, size)
+                    lib.VTAPI_FreeBuffer(frame)
+                    raw, odd = (raw[:-1], raw[-1:]) if len(raw) % 2 else (raw, b'')
+                    if resampler is not None:
+                        raw = resampler.convert(raw)
+                    held.frombytes(raw)
+                    if not started:
+                        first = next((i for i, v in enumerate(held) if abs(v) > QUIET), None)
+                        if first is None:
+                            continue
+                        del held[:first]
+                        started = True
+                    # Hand out everything up to the last sound; silence after it waits until
+                    # more sound follows or the phrase ends.
+                    last = next(i for i in range(len(held) - 1, -1, -1) if abs(held[i]) > QUIET)
+                    if last + 1 >= PIECE_SAMPLES:
+                        ready = held[:last + 1].tobytes()
+                        del held[:last + 1]
+                        yield ready
             finally:
                 lib.VTAPI_BufferClose(handle)
-        pcm = b''.join(pieces)
-        if not pcm:
-            raise ReadSpeakerError('ReadSpeaker made no sound.')
-        if len(pcm) % 2:
-            pcm = pcm[:-1]
-        pcm = pcm if sampling == OUTPUT_RATE else PCM16Resampler(sampling, OUTPUT_RATE).convert(pcm)
-        return trim_silence(pcm)
+        if not started:
+            if held:
+                yield held.tobytes()            # all quiet: left alone, as trim_silence does
+            return
+        last = next((i for i in range(len(held) - 1, -1, -1) if abs(held[i]) > QUIET), -1)
+        tail = held[:min(len(held), last + 1 + keep)].tobytes()
+        if tail:
+            yield tail
+
+    def check_markup(self, voice):
+        """Finds out, by length of sound alone, whether this engine reads VTML tags and &amp;-style
+        characters, so pronunciation fixes are used only where they work."""
+        def length(text):
+            return len(b''.join(self._stream(text, 0, 0, *self._engine(voice))))
+        plain = length('Ready.')
+        tags = length('<vtml_pause time="1"/>Ready.') < plain * 1.5
+        entities = False
+        if tags:
+            spelled, sign = length('Salt and pepper.'), length('Salt &amp; pepper.')
+            entities = abs(sign - spelled) < spelled * 0.25
+        self.markup = {'tags': tags, 'entities': entities}
+        return self.markup
 
     def close(self):
         with self.lock:
@@ -282,16 +367,30 @@ def available_voices():
         return []
 
 
-def synthesize(text, rate=0, voice='', pitch=0):
+def synthesize(text, rate=0, voice='', pitch=0, pieces=False):
+    """Speech as 24 kHz PCM; with pieces=True, as pieces handed out while they are made."""
     current = engine()
     if current is None:
         raise ReadSpeakerError('ReadSpeaker is not set up on this computer.')
     from capital_feedback import pitch_for
+    if pieces:
+        return current.pieces(text, rate, voice, pitch_for(text, pitch))
     return current.synthesize(text, rate, voice, pitch_for(text, pitch))
 
 
-def self_check(output):
-    """Writes readspeaker-check.txt: what was found and how fast a short phrase is made.
+SAMPLE_PHRASE = 'List. Shut down. Ready for you.'
+
+
+def write_wave(path, pcm, rate=OUTPUT_RATE):
+    import wave
+    with wave.open(str(path), 'wb') as out:
+        out.setnchannels(1); out.setsampwidth(2); out.setframerate(rate); out.writeframes(pcm)
+
+
+def self_check(output, rate=0):
+    """Writes readspeaker-check.txt: what was found, how fast speech starts, and whether
+    pronunciation fixes can be used. Also saves short samples of the words Will found said wrong
+    (in the readspeaker folder's "samples" folder), plain and fixed, so they can be measured.
 
     Run once at start on a computer that has the readspeaker folder, so a helper (or Claude) can
     see whether the SDK, license and voices work without anyone listening. No user text is written."""
@@ -300,15 +399,35 @@ def self_check(output):
     try:
         current = engine()
         voices = current.voices() if current else []
-        lines.append('Voices: ' + (', '.join(name + ' (' + code + ', ' + str(rate) + ' Hz)' for name, code, rate in voices) or 'none found'))
+        lines.append('Voices: ' + (', '.join(name + ' (' + code + ', ' + str(rate_hz) + ' Hz)' for name, code, rate_hz in voices) or 'none found'))
+        if voices:
+            found = current.check_markup(voices[0][1])
+            lines.append('Pronunciation fixes: ' + ('on' if found['tags'] else 'off, this engine does not read markup')
+                         + ('' if not found['tags'] else ', special characters ' + ('marked' if found['entities'] else 'left plain')))
+        samples = Path(output).parent / FOLDER_NAME / 'samples'
         for name, code, _ in voices:
             for phrase in ('Hello.', 'Voice Companion is ready. Press F1 for help.'):
                 started = time.perf_counter()
-                pcm = current.synthesize(phrase, 0, code, 0)
+                pieces = current.pieces(phrase + ' ', 0, code, 0)      # the space: never from the cache
+                first = next(pieces)
+                first_ms = (time.perf_counter() - started) * 1000
+                pcm = first + b''.join(pieces)
                 took = time.perf_counter() - started
-                lines.append('%s: %d words made in %.0f ms, %.2f seconds of speech' % (name, len(phrase.split()), took * 1000, len(pcm) / 2 / OUTPUT_RATE))
+                lines.append('%s: %d words, first sound in %.0f ms, made in %.0f ms, %.2f seconds of speech'
+                             % (name, len(phrase.split()), first_ms, took * 1000, len(pcm) / 2 / OUTPUT_RATE))
+            try:
+                samples.mkdir(parents=True, exist_ok=True)
+                speaker = split_code(code)[0]
+                for speed in sorted({0, int(rate or 0)}):
+                    engine_handle = current._engine(code)
+                    plain = b''.join(current._stream(SAMPLE_PHRASE, speed, 0, *engine_handle))
+                    fixed = b''.join(current._stream(prepare(SAMPLE_PHRASE, current.markup), speed, 0, *engine_handle))
+                    write_wave(samples / ('%s-rate%d-plain.wav' % (speaker, speed)), plain)
+                    write_wave(samples / ('%s-rate%d-fixed.wav' % (speaker, speed)), fixed)
+                lines.append('%s: samples saved at rate %s' % (name, ', '.join(str(v) for v in sorted({0, int(rate or 0)}))))
+            except Exception as exc:
+                lines.append('%s: samples not saved: %s' % (name, type(exc).__name__))
     except Exception as exc:
         lines.append('Problem: ' + type(exc).__name__ + ': ' + str(exc)[:500])
     Path(output).write_text('\n'.join(lines) + '\n', encoding='utf-8')
     return lines
-

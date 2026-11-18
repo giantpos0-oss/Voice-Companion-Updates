@@ -2659,7 +2659,7 @@ def configure_espeak_speech():
         # ReadSpeaker voices (readspeaker_speech.py) share this local speech player with eSpeak.
         if ESPEAK_VOICE_NAME.startswith('readspeaker:'):
             from readspeaker_speech import synthesize as readspeaker
-            return readspeaker(text, rate, voice=ESPEAK_VOICE_NAME, pitch=SPEECH_PITCH)
+            return readspeaker(text, rate, voice=ESPEAK_VOICE_NAME, pitch=SPEECH_PITCH, pieces=True)
         return synthesize(text, rate, voice=ESPEAK_VOICE_NAME, program=program, pitch=SPEECH_PITCH)
     ESPEAK_SPEECH = AISpeech(fallback, local_voice, engine_name='eSpeak', error_callback=record_espeak_error)
     return True
@@ -7556,7 +7556,7 @@ if __name__ == '__main__':
                         from readspeaker_speech import sdk_folder, self_check
                         if sdk_folder():
                             # Evaluation (readspeaker_speech.py): record what works, on a thread, never blocking start.
-                            threading.Thread(target=self_check, args=(APP / 'readspeaker-check.txt',), name='ReadSpeaker check', daemon=True).start()
+                            threading.Thread(target=self_check, args=(APP / 'readspeaker-check.txt', SPEECH_RATE), name='ReadSpeaker check', daemon=True).start()
                     except Exception:
                         pass
                     ESPEAK_SPEECH.enabled = bool(stored.get('espeak_enabled', False))
