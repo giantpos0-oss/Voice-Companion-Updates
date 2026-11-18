@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parent.parent / 'voice_companion'
 sys.path[:0] = [str(ROOT), str(ROOT.parent / 'tools/linux-test-stubs')]
 os.chdir(tempfile.mkdtemp())
 import companion, subprocess, webbrowser, urllib.request, socket, time
+companion.SAFETY_NET = True
 said = []
 modes = sys.argv[1:] or None
 sys.argv = ['companion']
@@ -41,8 +42,14 @@ for mode in (modes or MODES):
     for key in KEYS:
         signal.alarm(5)
         try:
+            before = len(said)
             request = companion.navigation_key(key, mode)
             if request: companion.handle_keyboard(request, mode)
+            logged = companion.APP / 'command-error.txt'
+            if logged.exists():
+                detail = logged.read_text(); logged.unlink()
+                if 'That screen has closed. Main menu.' not in said[before:]:
+                    failures.setdefault('caught: ' + ' | '.join(detail.splitlines()[1:4]), []).append('%s/%s' % (mode, key))
         except Stop:
             pass
         except Exception as exc:

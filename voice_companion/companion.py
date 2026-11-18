@@ -5485,6 +5485,8 @@ def _handle(text, mode, typed=False):
             state=menu_state(mode)
             if state:speak(FILE_MANAGER.command('file letters '+text[len('file letter '):]));sync_app_context(mode,True)
             elif not FILE_MANAGER.busy and not FILE_MANAGER.pending and not FILE_MANAGER.items:speak('This folder is empty.')
+            # A letter while the list is still loading said nothing (bug sweep, November 18, 2026).
+            elif FILE_MANAGER.busy:speak('Still loading. Try the letter again in a moment.')
             return mode
         try:result=FILE_MANAGER.command(text)
         except (ValueError,OSError) as exc:result=str(exc)
@@ -6725,8 +6727,9 @@ def safety_net_on():
     return SAFETY_NET if SAFETY_NET is not None else 'unittest' not in sys.modules
 
 
-def command_failed(exc, mode):
-    """Say the command did not work, record where (code places only, never what was said), and stay."""
+def command_failed(exc, mode, lost=None):
+    """Say the command did not work, record where (code places only, never what was said), and stay.
+    lost: words saying the screen has closed; then it goes to the main menu instead of staying."""
     try:
         frames = traceback.extract_tb(exc.__traceback__)
         detail = ('Voice Companion ' + APP_VERSION + '\n' + type(exc).__module__ + '.' + type(exc).__name__ + '\n' +
@@ -6740,9 +6743,11 @@ def command_failed(exc, mode):
     except Exception:
         screen = 'the same screen'
     try:
-        speak(COMMAND_FAILED.format(screen=screen))
+        speak(lost or COMMAND_FAILED.format(screen=screen))
     except Exception:
         pass
+    if lost:
+        return 'awake'
     return mode if mode != 'exit' else 'awake'
 
 
@@ -6851,16 +6856,21 @@ HELP_OPENERS=('help','user guide','open user guide','manual','open manual','docu
 
 # The object each screen works on. A screen whose object is gone (an earlier error closed it) made
 # every key there fail; it now says so once and goes to the main menu (bug sweep, November 18, 2026).
-SCREEN_OBJECTS={'files':'FILE_MANAGER','file_reader':'FILE_READER','document':'document','document_name':'document','document_menu':'document',
-                'document_save':'document','document_replace':'document','email_draft':'email_draft',
-                'update_offer':'UPDATES','update_download':'UPDATES'}
+SCREEN_OBJECTS={'files':'FILE_MANAGER','file_reader':'FILE_READER','document':'document','document_menu':'document',
+                'document_save':'document','email_draft':'email_draft','update_offer':'UPDATES','update_download':'UPDATES'}
 
 
 def screen_lost(mode):
     """Words to say when this screen's object is gone, or None."""
-    name=SCREEN_OBJECTS.get(mode)
-    if name is None or globals().get(name) is not None:return None
-    return 'That screen has closed. Main menu.'
+    if mode=='document_name':
+        # Naming a new document comes before the document; renaming and Save As need it.
+        gone=document is None and DOCUMENT_NAMING_ACTION!='new document'
+    elif mode=='document_replace':
+        gone=SAVE_AS_TITLE is None or SAVE_AS_FOLDER is None
+    else:
+        name=SCREEN_OBJECTS.get(mode)
+        gone=name is not None and globals().get(name) is None
+    return 'That screen has closed. Main menu.' if gone else None
 
 
 def handle(text, mode, typed=False):
@@ -6889,15 +6899,13 @@ def handle(text, mode, typed=False):
             try:flush_keyboard_edits(True)
             except OSError:speak('Your typed changes could not be saved yet. The file may be open in another program. Close it and they will be saved.')
         try:
-            lost=_HANDLE_DEPTH==1 and screen_lost(mode)
-            if lost:
-                speak(lost);result='awake'
-            else:
-                with dictation_scope(PREFERENCES.get('dictation_type','old school'), typed=typed):
-                    result = _handle(text, mode, typed)
+            with dictation_scope(PREFERENCES.get('dictation_type','old school'), typed=typed):
+                result = _handle(text, mode, typed)
         except Exception as exc:
             if _HANDLE_DEPTH!=1 or isinstance(exc,user_stop.Stopped) or not safety_net_on():raise
-            result = command_failed(exc, mode)
+            lost=screen_lost(mode)
+            # A screen whose object is gone would fail on every key: it goes to the main menu.
+            result = command_failed(exc, mode, lost)
         if _HANDLE_DEPTH==1 and mode=='note' and result not in NOTE_KEPT_OPEN and note_buffer:
             # Any command that leaves the note ("Media menu", "Radio") saves it first, as Main menu does.
             # If it cannot be saved, the note stays open with its words (save_note said why).
