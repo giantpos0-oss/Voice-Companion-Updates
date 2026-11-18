@@ -112,13 +112,18 @@ def main():
     if security.returncode:
         print(security.stdout[-3000:] + security.stderr[-1000:])
         sys.exit(1)
-    # The AI service (tools/ai-service): its own tests, with node, when node is installed.
+    # The node tests the Windows build also runs, when node is installed: the AI service, the
+    # Thunderbird add-on and the browser extension (0.2.215: an add-on test was found only on
+    # Windows, an hour later).
     if shutil.which('node'):
-        service = subprocess.run(['node', 'tools/ai-service/test-worker.mjs'], cwd=ROOT, capture_output=True, text=True, timeout=120)
-        print('AI service checks: ' + ('passed.' if not service.returncode else 'FAILED.'))
-        if service.returncode:
-            print(service.stdout[-3000:] + service.stderr[-1000:])
-            sys.exit(1)
+        for name, script in (('AI service', 'tools/ai-service/test-worker.mjs'),
+                             ('Thunderbird add-on', 'voice_companion/thunderbird_mail_extension/test-bridge.cjs'),
+                             ('Browser extension', 'voice_companion/regular_browser_extension/test-worker.cjs')):
+            result = subprocess.run(['node', script], cwd=ROOT, capture_output=True, text=True, timeout=180)
+            print(name + ' checks: ' + ('passed.' if not result.returncode else 'FAILED.'))
+            if result.returncode:
+                print(result.stdout[-3000:] + result.stderr[-1000:])
+                sys.exit(1)
     if not args.compare:
         for name in sorted(failures): print('  ' + name)
         sys.exit(1 if failures else 0)
