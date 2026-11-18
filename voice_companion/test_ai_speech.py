@@ -51,6 +51,17 @@ class AISpeechTests(unittest.TestCase):
         self.assertIn('Your inbox is empty', voice.Speak.call_args.args[0])
         self.assertEqual((voice.Rate, voice.Volume), (-2,80))
 
+    def test_the_fallback_names_the_voice_that_failed(self):
+        # Will, November 17, 2026: a ReadSpeaker failure said "eSpeak unavailable".
+        delivered = threading.Event()
+        voice = Mock()
+        voice.Speak.side_effect = lambda *args: delivered.set()
+        voice.WaitUntilDone.return_value = True
+        engine = AISpeech(lambda: voice, Mock(side_effect=OSError('broken')), engine_name=lambda: 'ReadSpeaker')
+        engine.speak('Hello')
+        self.assertTrue(delivered.wait(1))
+        self.assertTrue(voice.Speak.call_args.args[0].startswith('ReadSpeaker unavailable.'))
+
     def test_pause_before_generation_and_cancel(self):
         engine = AISpeech(Mock(), Mock())
         engine.pause()

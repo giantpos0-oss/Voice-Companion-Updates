@@ -2661,7 +2661,9 @@ def configure_espeak_speech():
             from readspeaker_speech import synthesize as readspeaker
             return readspeaker(text, rate, voice=ESPEAK_VOICE_NAME, pitch=SPEECH_PITCH, pieces=True)
         return synthesize(text, rate, voice=ESPEAK_VOICE_NAME, program=program, pitch=SPEECH_PITCH)
-    ESPEAK_SPEECH = AISpeech(fallback, local_voice, engine_name='eSpeak', error_callback=record_espeak_error)
+    def local_name():
+        return 'ReadSpeaker' if ESPEAK_VOICE_NAME.startswith('readspeaker:') else 'eSpeak'
+    ESPEAK_SPEECH = AISpeech(fallback, local_voice, engine_name=local_name, error_callback=record_espeak_error)
     return True
 
 

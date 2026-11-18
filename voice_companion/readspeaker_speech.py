@@ -294,8 +294,10 @@ class Engine:
                         started = True
                     # Hand out everything up to the last sound; silence after it waits until
                     # more sound follows or the phrase ends.
-                    last = next(i for i in range(len(held) - 1, -1, -1) if abs(held[i]) > QUIET)
-                    if last + 1 >= PIECE_SAMPLES:
+                    # A piece may be all silence (a pause inside a sentence): then nothing is
+                    # ready yet (Will, November 17, 2026: this stopped phrases with an error).
+                    last = next((i for i in range(len(held) - 1, -1, -1) if abs(held[i]) > QUIET), -1)
+                    if last >= 0 and last + 1 >= PIECE_SAMPLES:
                         ready = held[:last + 1].tobytes()
                         del held[:last + 1]
                         yield ready

@@ -244,6 +244,28 @@ class PiecesTests(unittest.TestCase):
         self.assertEqual(len(engine.recent), 0, 'part of a word must never be kept as the whole word')
         self.assertTrue(engine.lock.acquire(timeout=1)); engine.lock.release()
 
+    def test_a_quiet_piece_after_sound_is_not_an_error(self):
+        # Will, November 17, 2026: "eSpeak unavailable" on every few phrases. A piece of silence
+        # after speech (the pause inside a sentence) stopped the phrase with "generator raised
+        # StopIteration", and Companion fell back to the Windows voice.
+        from array import array
+        engine = self.engine()
+        # Real speech: a piece ends quietly, and the next piece is all quiet.
+        loud = array('h', [3000] * 2000 + [0] * 205).tobytes()
+        quiet = array('h', [0] * 2205).tobytes()
+        given = [loud, quiet, quiet, loud, quiet]
+        def give(handle, frame):
+            if not given:
+                return 0
+            piece = given.pop(0)
+            buffer = ctypes.create_string_buffer(piece, len(piece)); self.fake._buffers.append(buffer)
+            frame._obj.value = ctypes.addressof(buffer); return len(piece)
+        self.fake.VTAPI_GetBuffer = give
+        pcm = engine.synthesize('List. Shut down.', voice='readspeaker:sophie:d22')
+        samples = array('h', pcm)
+        self.assertGreater(len(samples), 2 * 2205, 'both sounds and the pause between them are kept')
+        self.assertEqual(samples[-1 - 24000 * rs.KEEP_END_MS // 1000 + 1:], array('h', [0] * (24000 * rs.KEEP_END_MS // 1000)))
+
     def test_pieces_join_to_the_same_sound_as_the_whole_phrase(self):
         from array import array
         engine = self.engine()

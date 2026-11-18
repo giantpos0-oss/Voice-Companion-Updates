@@ -360,7 +360,9 @@ class AISpeech:
                         if not self._wait(generation): break
                         if fallback is None: fallback = self.fallback_factory()
                         fallback.Rate, fallback.Volume = rate, volume
-                        fallback.Speak(self.engine_name + ' unavailable. Using Windows speech. ' + part, 1)
+                        # The name of the voice that failed: it may change while Companion runs.
+                        name = self.engine_name() if callable(self.engine_name) else self.engine_name
+                        fallback.Speak(name + ' unavailable. Using Windows speech. ' + part, 1)
                         was_paused = False
                         while not fallback.WaitUntilDone(0):
                             with self.lock:
