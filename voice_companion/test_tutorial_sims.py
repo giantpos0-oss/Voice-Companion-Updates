@@ -62,6 +62,26 @@ class PracticeScreenTests(unittest.TestCase):
             self.assertIs(youtube_screen.SCREEN, before)
             sim.close()
 
+    def test_the_practice_video_answers_every_call_the_youtube_screen_makes(self):
+        # The Windows trial of November 17, 2026 logged "'PracticeVideo' object has no attribute
+        # 'skip'": Left and Right Arrow stopped in the YouTube lesson. Every self.player call in
+        # youtube_screen.py must exist on the stand-in.
+        import re
+        from pathlib import Path
+        from tutorial_sims import PracticeVideo
+        source = (Path(__file__).with_name('youtube_screen.py')).read_text(encoding='utf-8')
+        called = set(re.findall(r'self\.player\.(\w+)\(', source))
+        self.assertIn('skip', called)
+        video = PracticeVideo()
+        for name in sorted(called):
+            self.assertTrue(callable(getattr(video, name)), name)
+        with self.assertRaises(RuntimeError) as caught:
+            video.comments()
+        self.assertIn('Here, nothing opens', str(caught.exception))
+        self.assertEqual(video.skip(10)['time'], 10)
+        self.assertEqual(video.skip(-30)['time'], 0)
+        self.assertEqual(video.skip(10000)['time'], video.duration)
+
     def test_file_manager_stays_on_the_practice_drive_in_memory(self):
         sim = FileSim(companion)
         for _ in range(4):
