@@ -1,0 +1,1 @@
+<!doctype html><html lang="en"><title>Frames</title><body><h1>Frames</h1><iframe src="form.html" title="Inner form"></iframe><iframe src="page2.html" title="Inner page"></iframe></body></html>

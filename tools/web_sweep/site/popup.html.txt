@@ -1,0 +1,1 @@
+<!doctype html><html lang="en"><title>Popup</title><body><h1>Popup</h1><button onclick="window.open('page2.html')">Open window</button><button onclick="window.close()">Close this</button></body></html>

@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.216-test.
+Guide version: 0.2.217-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -1778,6 +1778,15 @@ Search, favorites, web history, Go back, and Go forward stay in the web browser 
 - Some sites may still block access. PayPal sign-in has not been tested.
 - If the link stops, keep Companion open. The extension tries again by itself. Companion does not open a separate guided browser in its place.
 - Closing the connection leaves your browser tabs open.
+
+Replace an old extension
+If Companion says your extension is an old copy, replace it once. A helper can do this with you.
+1. In Chrome, press Alt+D, type chrome://extensions, and press Enter.
+2. Find Voice Companion Browser Connection. Choose Remove, then choose Remove again.
+3. Turn on Developer mode. It is a switch near the top of the page.
+4. Choose Load unpacked. In the File name box, type %LOCALAPPDATA%\Programs\Voice Companion\regular_browser_extension and press Enter. Then choose Select Folder.
+5. Open Web browser in Companion. Chrome links again by itself.
+A copy added this way gets each new version when Companion updates.
 
 19. MEDIA PLAYER
 

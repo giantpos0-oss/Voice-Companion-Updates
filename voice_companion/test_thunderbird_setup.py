@@ -557,6 +557,22 @@ class PromptAddOnStartTests(SetupCase):
         self.assertEqual(thunderbird_setup.read_prefs(folder / 'user.js')[thunderbird_setup.PROMPT_START], False)
         self.assertEqual(sorted(p.name for p in folder.iterdir()), ['extensions', 'extensions.json', 'prefs.js', 'user.js'])
 
+    def test_a_new_add_on_put_in_place_before_starting_is_logged(self):
+        # November 18, 2026: whether add-on 1.10.0 (Re: for replies) reached Will's computer could
+        # not be told from the log.
+        folder = self.profile()
+        self.add_on(folder, active=True)
+        (folder / 'extensions' / (ADDON_ID + '.xpi')).write_bytes(b'an older add-on')
+        notes = []
+        system = FakeSystem(self.home, registered('159.0 (x64 en-US)'), {INSTALLED})
+        thunderbird_setup.start_in_background(system, self.package, FakeRelay(connect_after=0), self.progress.append, note=notes.append)
+        self.assertIn('[thunderbird] add-on replaced with the new copy before starting', notes)
+        self.assertEqual((folder / 'extensions' / (ADDON_ID + '.xpi')).read_bytes(), self.package.read_bytes())
+        notes.clear()
+        system = FakeSystem(self.home, registered('159.0 (x64 en-US)'), {INSTALLED})
+        thunderbird_setup.start_in_background(system, self.package, FakeRelay(connect_after=0), self.progress.append, note=notes.append)
+        self.assertFalse([n for n in notes if 'add-on' in n], 'nothing to say when it is the same copy')
+
     def test_the_setting_is_written_once(self):
         folder = self.profile()
         self.quiet_start(folder)

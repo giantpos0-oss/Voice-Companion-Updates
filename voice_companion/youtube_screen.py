@@ -212,8 +212,9 @@ class YouTubeScreen:
         # Windows of your own Chrome that Companion opened for YouTube. They close when YouTube or
         # Companion closes (Will, October 31, 2026). A Chrome window you opened yourself never does.
         self.own_chrome_windows = set()
-        self.lists = yp.YouTubePage(lambda: self.list_page)
-        self.player = yp.YouTubePage(lambda: self.video_page)
+        folder = getattr(self.m, 'APP', None)   # browser-log.txt notes, as for other web pages
+        self.lists = yp.YouTubePage(lambda: self.list_page, folder)
+        self.player = yp.YouTubePage(lambda: self.video_page, folder)
 
     # ------------------------------------------------------------ signed in or not
     ACCOUNT_FILE = 'youtube-account.json'

@@ -20,7 +20,13 @@ class CompanionCDP {
     try{return await item.attaching;}finally{item.attaching=null;}
   }
   async _attach(item) {
-    if (!item.attached) { await this.api.debugger.attach({tabId:item.tabId},'1.3'); item.attached = true; }
+    if (!item.attached) {
+      // A tab this link attached before (then lost track of, as on a trip to a chrome:// page)
+      // is still ours: Chrome says it is already attached. Go on with it instead of losing the tab.
+      try { await this.api.debugger.attach({tabId:item.tabId},'1.3'); }
+      catch (error) { if (!/already attached/i.test(String(error?.message || error))) throw error; }
+      item.attached = true;
+    }
     const {targetInfo} = await this.api.debugger.sendCommand({tabId:item.tabId},'Target.getTargetInfo');
     // Playwright requires a nonempty context label even for the normal profile.
     // This is protocol metadata; it grants no access to other tabs or contexts.
@@ -58,7 +64,17 @@ class CompanionCDP {
     if (this.declined.has(tab.id)) return;
     if (!this.tabs.has(tab.openerTabId) && !(this.allTabs && /^https?:\/\//i.test(tab.url || ''))) return;
     const item = this.remember(tab);
-    if (this.autoAttach) await this.attach(item);
+    if (!this.autoAttach) return;
+    // A tab that could not attach yet (still loading, a page Chrome guards) is forgotten, so the
+    // next load of the tab tries again. Kept, it was never retried, and Companion could not reach it.
+    try { await this.attach(item); }
+    catch (error) { if (!item.announced && this.tabs.get(tab.id) === item) this.tabs.delete(tab.id); throw error; }
+  }
+  // Chrome swaps a tab for a new one when a page it loaded ahead is shown (typing an address).
+  async replaced(addedTabId, removedTabId) {
+    this.removed(removedTabId);
+    const tab = await this.api.tabs.get(addedTabId).catch(()=>null);
+    if (tab) await this.created(tab);
   }
   reset() {
     this.autoAttach = false;this.children.clear();this.aliases.clear();this.browserSessions.clear();
@@ -72,8 +88,9 @@ class CompanionCDP {
       const result = await this.dispatch(method,params,sessionId);
       this.emit({id:message.id,...(sessionId?{sessionId}:{}),result:result || {}});
     } catch (error) {
-      // CDP errors can contain a submitted value. Keep error text generic.
-      this.emit({id:message.id,...(sessionId?{sessionId}:{}),error:{code:-32000,message:'The browser could not complete '+method+'. The tab may have changed or disconnected.'}});
+      // CDP errors can contain a submitted value. Keep error text generic, but name the kind of
+      // failure from a fixed list, so Companion's log says why (every failure names itself).
+      this.emit({id:message.id,...(sessionId?{sessionId}:{}),error:{code:-32000,message:'The browser could not complete '+method+'. The tab may have changed or disconnected.'+CompanionCDP.reason(error)}});
     }
   }
   async dispatch(method,params,sessionId) {
@@ -91,7 +108,11 @@ class CompanionCDP {
     }
     if (!sessionId && method === 'VoiceCompanion.getActiveTarget') {
       const [tab]=await this.api.tabs.query({active:true,lastFocusedWindow:true});
-      const item=this.tabs.get(tab?.id);
+      let item=this.tabs.get(tab?.id);
+      // The tab the user is on is not linked yet: link it now rather than answer "unknown".
+      if (!item?.info && tab && this.allTabs && this.autoAttach && /^https?:\/\//i.test(tab.url || '') && !this.declined.has(tab.id)) {
+        await this.created(tab).catch(()=>{});item=this.tabs.get(tab.id);
+      }
       return {targetId:item?.info?.targetId || ''};
     }
     if (!sessionId && method === 'Browser.getVersion') {
@@ -146,6 +167,14 @@ class CompanionCDP {
     if (!/^(Accessibility|Audits|CSS|DOM|DOMDebugger|DOMSnapshot|Debugger|Emulation|Fetch|IO|Input|Inspector|Log|Network|Overlay|Page|Performance|Profiler|Runtime|Security|Target|WebAudio)\./.test(method)) throw new Error('Unsupported page request.');
     if (/^(Network\.(getAllCookies|getCookies|setCookie|setCookies|deleteCookies|clearBrowserCookies)|Storage\.)/.test(method)) throw new Error('Browser account storage is not exposed.');
     return await this.api.debugger.sendCommand(this.source(sessionId),method,params);
+  }
+  static reason(error) {
+    const text = String(error?.message || error || '');
+    const kinds = [[/not attached|detached|disconnected/i,'not linked'],[/no tab with id|tab.*closed|target closed|no target/i,'tab closed'],
+      [/cannot access|cannot attach|chrome:\/\/|chrome-extension:/i,'page Chrome guards'],[/another debugger|already attached/i,'another debugger'],
+      [/context|frame/i,'page changed'],[/unknown browser tab|unknown tab|open a normal website/i,'tab not linked'],[/unsupported/i,'not allowed']];
+    for (const [pattern,label] of kinds) if (pattern.test(text)) return ' (Reason: '+label+'.)';
+    return '';
   }
   async detachAll() {
     const items = [...this.tabs.values()];this.tabs.clear();this.children.clear();this.aliases.clear();this.browserSessions.clear();
