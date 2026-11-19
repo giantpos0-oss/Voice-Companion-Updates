@@ -1,0 +1,4 @@
+<!doctype html><html lang="en"><title>App</title><body><h1>App</h1><div id="app">Loading</div>
+<button onclick="history.pushState({},'', '?view=2');document.getElementById('app').innerHTML='<h2>View two</h2><p>New view text.</p><a href=\'page2.html\'>Link in view</a>'">Change view</button>
+<button onclick="let u=document.getElementById('list');for(let i=0;i<50;i++){let li=document.createElement('li');li.textContent='Item '+(u.children.length+1);u.append(li)}">Load more</button><ul id="list"></ul>
+<script>setTimeout(()=>{document.getElementById('app').innerHTML='<p>Loaded later <a href="page2.html">late link</a></p>'},800)</script></body></html>

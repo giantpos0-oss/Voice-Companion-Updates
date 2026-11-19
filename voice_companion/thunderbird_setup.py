@@ -551,10 +551,12 @@ def version_tuple(text):
 def refresh_addon(profile, package):
     """Replace an older copy of the add-on. Only while Thunderbird is closed: it locks the file.
     True when the profile now has this copy."""
+    # 'replaced' when the copy changed, 'same' when it was already this one; both count as done.
     try:
         if addon_file(profile).read_bytes() != Path(package).read_bytes():
             write_atomic(addon_file(profile), Path(package).read_bytes(), profile)
-        return True
+            return 'replaced'
+        return 'same'
     except OSError:
         return False
 
@@ -710,7 +712,10 @@ def start_in_background(system, package, relay, progress, limit=WAIT_SECONDS, no
             raise NotReady('add-on')
         launched = False
         if not running:
-            refresh_addon(profile, package)
+            # Logged, so a helper can see a new add-on (such as 1.10.0, Re: for replies) went in.
+            placed = refresh_addon(profile, package)
+            if note and placed == 'replaced': note('[thunderbird] add-on replaced with the new copy before starting')
+            elif note and not placed: note('[thunderbird] add-on could not be replaced; Thunderbird starts with the old one')
             start_addons_promptly(profile)
             try:
                 system.launch_background(program)

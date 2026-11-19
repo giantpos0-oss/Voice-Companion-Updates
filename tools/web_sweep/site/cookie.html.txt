@@ -1,0 +1,2 @@
+<!doctype html><html lang="en"><title>Cookie</title><body><h1>Cookie</h1><p>Text <a href="page2.html">covered link</a>.</p>
+<div id="banner" style="position:fixed;inset:0;background:rgba(0,0,0,.01)"><div style="position:absolute;bottom:0;background:#fff"><p>We use cookies.</p><button onclick="document.getElementById('banner').remove()">Accept all</button></div></div></body></html>

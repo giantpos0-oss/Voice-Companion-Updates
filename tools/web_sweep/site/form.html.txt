@@ -1,0 +1,8 @@
+<!doctype html><html lang="en"><title>Form</title><body><h1>Form</h1>
+<form action="results.html" method="get" role="search"><label>Search <input name="q" type="search"></label><button>Go</button></form>
+<form action="results.html"><label>Name <input name="name" required></label>
+<label><input type="checkbox" name="news"> News</label>
+<fieldset><legend>Size</legend><label><input type="radio" name="s" value="s">Small</label><label><input type="radio" name="s" value="l">Large</label></fieldset>
+<label>State <select name="st"><option>Alabama</option><option>Alaska</option><option>Arizona</option></select></label>
+<label>Notes <textarea name="n"></textarea></label><button type="submit">Send form</button></form>
+</body></html>
