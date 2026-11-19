@@ -1,0 +1,6 @@
+<!doctype html><html lang="en"><title>Dialogs</title><body><h1>Dialogs</h1>
+<button onclick="alert('Hello alert')">Alert button</button>
+<button onclick="document.getElementById('r').textContent=confirm('Sure?')?'yes':'no'">Confirm button</button>
+<button onclick="document.getElementById('r').textContent=prompt('Name?')||'none'">Prompt button</button>
+<p id="r"></p><a href="page2.html" onclick="window.onbeforeunload=e=>{e.preventDefault();e.returnValue=''}">Leave with warning</a>
+</body></html>

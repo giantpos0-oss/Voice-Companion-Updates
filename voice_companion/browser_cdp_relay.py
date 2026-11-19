@@ -205,6 +205,14 @@ class BrowserRelay:
         """One plain sentence the first time an older extension is seen, once for each new version."""
         shipped = self.extension_outdated
         if not shipped or self.update_told or not self.connected.is_set(): return ''
+        name = BROWSER_NAMES.get(self.browser, 'Chrome')
+        if not self.extension_version:
+            # Copies before 0.4.3 cannot update themselves, so "it updates on its own" was wrong and
+            # was said only once, ever (Will, November 18, 2026: his Chrome ran such a copy for days).
+            # Say it once each time Companion starts, until the copy is replaced.
+            self.update_told = True
+            return (f'Your {name} extension is an old copy that cannot update itself. Browsing still works. '
+                    f'To get the new copy, see "Replace an old extension" in chapter 18 of the guide.')
         record = self.folder / UPDATE_TOLD_FILE
         try:
             if record.read_text(encoding='utf-8').strip() == shipped:
@@ -218,7 +226,6 @@ class BrowserRelay:
             write_text_atomic(record, shipped)
         except Exception:
             pass
-        name = BROWSER_NAMES.get(self.browser, 'Chrome')
         return f'The {name} extension is updating. {name} checks for the new version on its own; it may take a little while.'
 
     def send_extension(self, message):

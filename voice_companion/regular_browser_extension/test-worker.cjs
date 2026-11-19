@@ -162,5 +162,30 @@ const Model=vm.runInContext('CompanionCDP',context);
    vm.runInContext(fs.readFileSync(path.join(__dirname,'popup.js'),'utf8'),popup);await new Promise(resolve=>setTimeout(resolve,5));
    assert.match(status.textContent,/^(The browser connection stopped|Open Voice Companion)/);
  }
+ // Deep sweep, November 18, 2026. A tab that cannot attach yet is tried again on its next load,
+ // instead of staying known but unreachable, which left Companion saying the tab was unknown.
+ {
+  let refuse=true;const linked=[],out=[];
+  const flaky={...api,debugger:{...api.debugger,attach:async source=>{if(refuse&&source.tabId===31)throw new Error('Cannot access contents of the page.');linked.push(source.tabId);}},
+   tabs:{...api.tabs,get:async id=>({id,url:'https://swap.test/'}),query:async()=>[{id:31,active:true,url:'https://late.test/'}]}};
+  const m=new Model(flaky,message=>out.push(message));m.allTabs=true;
+  await m.command({id:1,method:'Target.setAutoAttach',params:{autoAttach:true}});
+  await assert.rejects(m.created({id:31,url:'https://late.test/'}));assert.ok(!m.tabs.has(31));
+  refuse=false;await m.created({id:31,url:'https://late.test/'});assert.ok(m.tabs.get(31).announced);
+  // Chrome says the tab is already attached (this link attached it before): it is used, not lost.
+  m.removed(31);const before=linked.length;
+  flaky.debugger.attach=async()=>{throw new Error('Another debugger is already attached to the tab with id: 31.');};
+  await m.created({id:31,url:'https://late.test/'});assert.ok(m.tabs.get(31).announced);assert.equal(linked.length,before);
+  // The tab the user is on is linked when Companion asks for it, not reported as unknown.
+  m.removed(31);flaky.debugger.attach=async source=>linked.push(source.tabId);
+  await m.command({id:2,method:'VoiceCompanion.getActiveTarget'});assert.equal(out.at(-1).result.targetId,'target-31');
+  // A tab Chrome swaps for a preloaded one: the old one leaves, the new one links.
+  await m.replaced(32,31);assert.ok(!m.tabs.has(31));assert.ok(m.tabs.get(32).announced);
+  assert.ok(out.some(r=>r.method==='Target.detachedFromTarget'));
+  // A failure names its kind from a fixed list, never the browser's own words.
+  flaky.debugger.sendCommand=async()=>{throw new Error('Debugger is not attached to the tab with id: 32. secret-value');};
+  await m.command({id:3,sessionId:m.tabs.get(32).sessionId,method:'DOM.getDocument'});
+  assert.match(out.at(-1).error.message,/\(Reason: not linked\.\)$/);assert.ok(!/secret/.test(out.at(-1).error.message));
+ }
  process.stdout.write('Browser startup, persistent pause, retry, tabs, CDP routing, frame and download checks passed.\n');
 })().catch(error=>{process.stderr.write(error.stack+'\n');process.exitCode=1;});

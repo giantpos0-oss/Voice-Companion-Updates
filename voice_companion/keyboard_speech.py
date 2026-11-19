@@ -44,6 +44,10 @@ class KeyboardSpeech:
         try:
             from speech32 import with_32bit_voices
             voice=with_32bit_voices(Dispatch('SAPI.SpVoice'));chosen=None;applied=None  # 32-bit voices too (speech32.py)
+            # Whether the Windows voice has words to stop. With ReadSpeaker or eSpeak speaking, each
+            # key press skipped nothing but still waited for Windows to stop (Will, November 17,
+            # 2026: quick keys lagged; one stop took 0.7 seconds).
+            windows_spoke=False
             while True:
                 if sys.platform=='win32':
                     import ctypes
@@ -71,7 +75,8 @@ class KeyboardSpeech:
                             self.paused=False
                             if action=='interrupt':
                                 stop_started=time.monotonic()
-                                voice.Speak('',3);self.active=False;self.quiet_until=time.monotonic()+.15
+                                if windows_spoke:voice.Speak('',3);windows_spoke=False
+                                self.active=False;self.quiet_until=time.monotonic()+.15
                                 self.stop_seconds=getattr(self,'stop_seconds',0.0)+time.monotonic()-stop_started
                                 if espeak:espeak.interrupt()
                             elif espeak:espeak.resume()
@@ -90,7 +95,7 @@ class KeyboardSpeech:
                     # word starts sooner (Will, November 12, 2026: keys felt slow).
                     if applied!=(rate,volume):voice.Rate=rate;voice.Volume=volume;applied=(rate,volume)
                     from voice_pitch import sapi_speak
-                    sapi_speak(voice,text,pitch)
+                    windows_spoke=True;sapi_speak(voice,text,pitch)
                     # How long the words waited after Companion asked for them (response_times.py).
                     report=getattr(self,'on_timing',None);asked=getattr(self,'requested_at',None)
                     if report and asked and not preview:

@@ -199,7 +199,7 @@ class DetectionTests(unittest.TestCase):
         calls = []
         system = WindowsChrome(FakeRegistry(), self.environ, popen=lambda args, **kw: calls.append(args))
         self.assertTrue(system.open_chrome(chrome_setup.STORE_PAGE))
-        self.assertEqual(calls, [[str(chrome), chrome_setup.STORE_PAGE]])
+        self.assertEqual(calls, [[str(chrome)] + chrome_setup.KEEP_INPUT_FLAGS + [chrome_setup.STORE_PAGE]])
         self.assertFalse(WindowsChrome(FakeRegistry(), {'LOCALAPPDATA': str(self.folder/'none')}).open_chrome())
 
 

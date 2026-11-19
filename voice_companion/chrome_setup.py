@@ -94,6 +94,14 @@ MESSAGES = {
 FIRST_RUN_FILE = 'chrome-first-setup.txt'
 
 
+
+# Companion's own window is in front of Chrome, often full screen. Chrome then counts its window
+# as hidden and holds back the key presses and clicks Companion sends to the page; each one waited
+# 10 seconds (Will, November 18, 2026: "chrome still got stuck"). Reading the page still worked.
+# These keep a covered Chrome window working. They take effect when Companion starts Chrome.
+KEEP_INPUT_FLAGS = ['--disable-backgrounding-occluded-windows', '--disable-renderer-backgrounding',
+                    '--disable-features=CalculateNativeWinOcclusion']
+
 class Registry:
     """Small winreg wrapper so tests can use a dictionary instead."""
     def __init__(self, winreg=None):
@@ -277,6 +285,7 @@ class WindowsChrome:
             self.registry.delete('HKCU', EXTENSION_KEY)
 
     def open_chrome(self, address=None):
+        """Start your Chrome (or open a tab in it). KEEP_INPUT_FLAGS apply when this starts Chrome."""
         chrome = self.find_chrome()
         if chrome is None:
             return False
@@ -288,7 +297,7 @@ class WindowsChrome:
             except (OSError, AttributeError):
                 pass
         try:
-            self.popen([str(chrome)] + ([address] if address else []), close_fds=True)
+            self.popen([str(chrome)] + KEEP_INPUT_FLAGS + ([address] if address else []), close_fds=True)
         except OSError:
             return False
         return True
