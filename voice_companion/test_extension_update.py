@@ -140,9 +140,23 @@ class ExtensionVersionTests(unittest.TestCase):
     def test_message_names_the_browser_in_use(self):
         with tempfile.TemporaryDirectory() as folder:
             relay=self.relay(folder)
-            self.connect(relay,None,browser='edge')
+            self.connect(relay,'0.0.1',browser='edge')
             self.assertEqual(browser_cdp_relay.extension_update_notice(relay),
                              'The Edge extension is updating. Edge checks for the new version on its own; it may take a little while.')
+
+    def test_an_old_copy_that_cannot_update_is_named_each_start(self):
+        # Will, November 18, 2026: copies before 0.4.3 send no version and cannot update. He heard
+        # "updating on its own" once, and then nothing, while the old copy ran for days.
+        OLD='Your Chrome extension is an old copy that cannot update itself. Browsing still works. To get the new copy, see "Replace an old extension" in chapter 18 of the guide.'
+        with tempfile.TemporaryDirectory() as folder:
+            relay=self.relay(folder)
+            self.connect(relay,None)
+            self.assertEqual(browser_cdp_relay.extension_update_notice(relay),OLD)
+            self.assertEqual(browser_cdp_relay.extension_update_notice(relay),'')
+            relay.close()
+            again=self.relay(folder)
+            self.connect(again,None)
+            self.assertEqual(browser_cdp_relay.extension_update_notice(again),OLD)
 
     def test_no_relay_or_damaged_record_never_raises(self):
         self.assertEqual(browser_cdp_relay.extension_update_notice(None),'')

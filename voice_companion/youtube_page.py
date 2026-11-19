@@ -925,8 +925,9 @@ class YouTubePage:
     """The youtube.com page in the guided browser. `page` is a function that returns the
     current Playwright page (the browser may restart, or move to another tab)."""
 
-    def __init__(self, page):
+    def __init__(self, page, folder=None):
         self._page = page
+        self.folder = folder
 
     @property
     def page(self):
@@ -1102,7 +1103,10 @@ class YouTubePage:
                 try:
                     if not target.is_visible():
                         continue
-                    target.click(timeout=timeout)
+                    # Chrome holds back clicks while Companion covers its window: page_act
+                    # then clicks through the page, once (deep browser sweep, November 18, 2026).
+                    from web_assistant import page_act
+                    page_act(page, target, folder=self.folder, seconds=min(timeout / 1000, 1.5))
                     return True
                 except Exception:
                     continue
@@ -1356,7 +1360,8 @@ class YouTubePage:
             raise YouTubeError('The comment box could not be found. Say open in browser to use the page itself.')
         try:
             page.wait_for_selector('#contenteditable-root[contenteditable="true"],ytd-commentbox #contenteditable-root', timeout=5000)
-            page.click('#contenteditable-root', timeout=2000)
+            from web_assistant import page_act
+            page_act(page, page.locator('#contenteditable-root').first, folder=self.folder)
             page.keyboard.insert_text(text)
         except Exception as exc:
             raise YouTubeError('The comment box did not open. You may need to sign in. Say open in browser to check.') from exc

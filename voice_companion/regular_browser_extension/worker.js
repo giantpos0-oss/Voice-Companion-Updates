@@ -69,6 +69,7 @@ if(chrome.downloads){
 chrome.tabs.onCreated.addListener(tab=>{if(!connection)void ensureConnection();if(model)void model.created(tab).catch(()=>{});});
 chrome.tabs.onUpdated.addListener((id,change,tab)=>{if(!connection&&eligible(tab))void ensureConnection();if(eligible(tab)&&model&&!model.tabs.has(id))void model.created(tab).catch(()=>{});else if(model&&change.url&&/^(chrome|edge|devtools|chrome-extension):/i.test(change.url))model.removed(id);});
 chrome.tabs.onRemoved.addListener(id=>{declined.delete(id);model?.removed(id);});
+chrome.tabs.onReplaced?.addListener((added,removed)=>{if(declined.delete(removed))declined.add(added);void model?.replaced(added,removed).catch(()=>{});});
 chrome.runtime.onMessage.addListener((message,sender,respond)=>{
   if(sender.id!==chrome.runtime.id||sender.url!==chrome.runtime.getURL('popup.html'))return false;
   run(message.command).then(message=>respond({ok:true,message}),()=>respond({ok:false,error:'Open Voice Companion. The browser will reconnect automatically.'}));return true;

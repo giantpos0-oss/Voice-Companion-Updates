@@ -36,6 +36,74 @@ def browser_note(folder, text):
     except Exception:
         pass
 
+PAGE_CLICK='''e=>{e.scrollIntoView({block:'center'});e.focus&&e.focus();e.click();return true}'''
+PAGE_KEY='''(e,key)=>{
+        const t=(e&&e.isConnected)?e:document.activeElement||document.body;
+        const name=key==='Enter'?'Enter':key===' '||key==='Space'?' ':key;
+        for(const type of ['keydown','keypress']){if(!t.dispatchEvent(new KeyboardEvent(type,{key:name,code:name==='Enter'?'Enter':'',bubbles:true,cancelable:true})))return true;}
+        if(name==='Enter'){
+            if(t.matches('a[href],button,input[type=submit],input[type=button],input[type=image],[role=button],[role=link],summary'))t.click();
+            else if(t.form&&t.matches('input,select')){t.form.requestSubmit?t.form.requestSubmit():t.form.submit();}
+        }else if(name===' '&&t.matches('button,input[type=checkbox],input[type=radio],[role=button],[role=checkbox]'))t.click();
+        t.dispatchEvent(new KeyboardEvent('keyup',{key:name,bubbles:true}));return true}'''
+# What a click or key could change: the address, the text, the control's own state.
+# Never a field's text itself, only its length.
+PAGE_STATE='''(e)=>{e=e||document.activeElement;const b=document.body?document.body.innerText:'';const a=n=>e&&e.getAttribute?e.getAttribute(n):null;
+        return JSON.stringify([location.href,b.length,b.slice(0,3000),e?[!!e.checked,String(e.value||'').length,a('aria-expanded'),a('aria-pressed'),a('aria-checked'),a('aria-selected'),!!e.open]:0])}'''
+
+
+def _page_state(page,element,context=None):
+    try:
+        pages=len(context.pages) if context is not None else 0
+        if element is None:return (pages,page.evaluate('(e)=>('+PAGE_STATE+')(e)',None))
+        return (pages,element.evaluate(PAGE_STATE,timeout=3000))
+    except Exception:return None
+
+
+def page_act(page,element,key=None,focused=False,folder=None,seconds=1.5,context=None):
+    """Click, or press key, as a person would; through the page if Chrome holds the input back.
+    Companion's window in front makes Chrome count its own window as hidden, and Chrome then holds
+    back mouse input (Will, November 18, 2026: "I clicked on a link it said loading page"). Chrome
+    can also take the input and only answer late. Then the page has already moved, and doing it
+    again through the page would press twice (a form sent twice, a box ticked and unticked), so
+    the page is checked first."""
+    wait=int(seconds*1000)
+    before=_page_state(page,None if focused else element,context)
+    requests=[]
+    def started(request):
+        try:
+            if request.resource_type in ('document','xhr','fetch'):requests.append(1)
+        except Exception:pass
+    watched=page
+    try:watched.on('request',started)
+    except Exception:watched=None
+    try:
+        try:
+            if key and focused:
+                target=page.evaluate_handle('()=>document.activeElement')
+                target.as_element().press(key,timeout=wait,no_wait_after=True)
+            elif key:element.press(key,timeout=wait,no_wait_after=True)
+            else:element.click(timeout=wait,no_wait_after=True)
+            return
+        except Exception as exc:
+            if type(exc).__name__ not in ('TimeoutError','AttributeError'):raise
+            what=('key '+key if key else 'click')+' got no answer in '+str(seconds)+' seconds ('+type(exc).__name__+')'
+        if page.is_closed():return
+        if before is not None:
+            after=_page_state(page,None if focused else element,context)
+            if requests or after!=before:
+                if folder is not None:browser_note(folder,what+', but the page had already answered; not done again')
+                return
+        if folder is not None:browser_note(folder,what+', done through the page')
+    finally:
+        if watched is not None:
+            try:watched.remove_listener('request',started)
+            except Exception:pass
+    if key and focused:page.evaluate('(key)=>('+PAGE_KEY+')(null,key)',key)
+    elif key:element.evaluate(PAGE_KEY,key,timeout=5000)
+    else:element.evaluate(PAGE_CLICK,timeout=5000)
+
+
 class WebError(Exception):
     pass
 
@@ -428,6 +496,14 @@ class BrowserBackend:
             if not getattr(self,'_embedded',None):self._embedded=WebView2Backend(self.folder,self.headless)
             self._embedded.start();self.page=self._embedded.page;self.context=self._embedded.context;self.playwright=self._embedded.playwright;return
         if self.page and not self.page.is_closed(): return
+        # This tab closed, but others are open: go on in one, instead of starting the browser again
+        # and losing every tab (deep browser sweep, November 18, 2026).
+        try:
+            others=[p for p in (self.context.pages if self.context else []) if not p.is_closed()]
+        except Exception:
+            others=[]
+        if others:
+            self.page=others[-1];self.page.set_default_timeout(10000);return
         if self.context or self.playwright:self.close()
         try:
             from playwright.sync_api import sync_playwright
@@ -1030,6 +1106,26 @@ class BrowserBackend:
         """Let the site's Enter handling select its native default submitter."""
         return self.activate(item,key='Enter')
 
+    # Will, November 18, 2026: "I clicked on a link, it said loading page and that the page did not
+    # load cleanly". Chrome held back the click: with Companion's window in front, Chrome counts its
+    # own window as hidden and does not take input sent to the page, though reading the page still
+    # works. The click waited 10 seconds, then failed. Now a click or key that gets no answer within
+    # INPUT_SECONDS is done through the page itself, and that is written to browser-log.txt.
+    INPUT_SECONDS=1.5
+
+    def _act(self,element,key=None,focused=False):
+        """Click or press through page_act, which says why and works when Chrome holds input back."""
+        page_act(self.page,element,key,focused,self.folder,self.INPUT_SECONDS,getattr(self,'context',None))
+
+    def _page_closed(self):
+        """The page closed its own tab (a Close button, window.close()): go on in a tab still open,
+        at once. Before, this waited 8 seconds and then said the control could not be used (deep
+        browser sweep, November 18, 2026)."""
+        others=[p for p in (self.context.pages if self.context else []) if not p.is_closed()]
+        if not others:raise WebError('The page closed itself, and no other tab is open. Return to the web browser menu to open a page.')
+        self.page=others[-1];self.page.set_default_timeout(10000)
+        return {'closed':True}
+
     def activate(self,item,key=None,focused=False):
         import time
         self.last_action_started=False
@@ -1073,21 +1169,23 @@ class BrowserBackend:
         before_page.on('requestfailed',failed_request);before_page.on('response',failed_response)
         before_page.on('download',file_started)
         try:
+            # A form that will not submit (a required field left empty) is found before the press.
+            # Checked after it, a search that did submit waited 5 seconds for a form already gone
+            # (deep browser sweep, November 18, 2026: every search and Enter in a form was 5 seconds).
+            invalid=None
+            if kind(item)=='button' or key:
+                try:
+                    invalid=None if element.count()!=1 else element.evaluate('''e=>{if(!e.matches('button[type=submit],button:not([type]),input[type=submit],input[type=image]') && !('''+str(key=='Enter').lower()+''' && e.matches('input:not([type=button]):not([type=reset]),select')))return null;const bad=[...(e.form?.elements||[])].find(n=>n.willValidate&&!n.validity.valid);return bad?{label:('''+ACCESSIBLE_LABEL+''')(bad),message:bad.validationMessage}:null;}''',timeout=5000)
+                except Exception:invalid=None
             self.last_action_started=True
-            if key and focused:self.page.keyboard.press(key)
             # The driver would wait for a navigation the click starts, up to the
             # timeout, then fail; a slow site made a working link sound broken.
             # The loop below watches the page instead.
-            elif key:element.press(key,timeout=10000,no_wait_after=True)
-            else:element.click(timeout=10000,no_wait_after=True)
-            if kind(item)=='button' or key:
-                try:
-                    # A button that removes itself when pressed (Skip ad, Close,
-                    # Accept cookies) has no form to check. Asking the driver
-                    # about it anyway waited the full ten-second timeout.
-                    invalid=None if element.count()!=1 else element.evaluate('''e=>{if(!e.matches('button[type=submit],button:not([type]),input[type=submit],input[type=image]') && !('''+str(key=='Enter').lower()+''' && e.matches('input:not([type=button]):not([type=reset]),select')))return null;const bad=[...(e.form?.elements||[])].find(n=>n.willValidate&&!n.validity.valid);return bad?{label:('''+ACCESSIBLE_LABEL+''')(bad),message:bad.validationMessage}:null;}''',timeout=5000)
-                    if invalid:return {'validation':invalid['label']+'. '+invalid['message']}
-                except Exception:pass
+            try:self._act(element,key,focused)
+            except Exception:
+                if not before_page.is_closed():raise   # the click closed the tab: handled below
+            if before_page.is_closed():return self._page_closed()
+            if invalid:return {'validation':invalid['label']+'. '+invalid['message']}
             clicked_at=time.monotonic()
             deadline=clicked_at+8
             changed=False
@@ -1097,6 +1195,7 @@ class BrowserBackend:
                 except Exception:return False
             while time.monotonic()<deadline or loading():
                 if getattr(self,'dialog_notice','')==LEAVE_NOTICE:break
+                if before_page.is_closed():return self._page_closed()
                 if files or model is not None and model.serial!=serial:
                     return {'unchanged':True,'download':True,'notice':self.download_notice(LINK_DOWNLOADING)}
                 candidates=[p for p in opened if not p.is_closed()]
@@ -1126,7 +1225,10 @@ class BrowserBackend:
                     pass
                 if kind(item)!='link' and not item.get('href') and time.monotonic()-clicked_at>=.35:
                     if not (key or item.get('in_form')) or time.monotonic()-clicked_at>=3:break
-                before_page.wait_for_timeout(50)
+                try:before_page.wait_for_timeout(50)
+                except Exception:
+                    if before_page.is_closed():return self._page_closed()   # closed while waiting
+                    raise
             if not changed:
                 try:changed=frame.evaluate("()=>document.body?.innerText.slice(0,200000)||''")!=before_text
                 except Exception:pass
@@ -1164,7 +1266,10 @@ class BrowserBackend:
                     if not frame.is_detached() and not navigation_interrupted(exc):raise
                     document_changed=True
             if document_changed:self.wait_ready()
-            return {'fragment':fragment,'frame_index':item.get('frame_index')}
+            # The new page is the website's error page (404 and the like): say so first, before
+            # its own words (deep browser sweep, November 18, 2026). Only a website's own error is
+            # said first: a network error has its own message, and saying both repeated it.
+            return {'fragment':fragment,'frame_index':item.get('frame_index'),'http_error':([e for e in request_errors if e.startswith('The website returned')] or [None])[-1] if document_changed else None}
         finally:
             if self.context:self.context.remove_listener('page',new_page)
             before_page.remove_listener('request',started_request);before_page.remove_listener('requestfinished',finished_request)
@@ -1176,7 +1281,7 @@ class BrowserBackend:
         if editable_combo(item):self._text_element(item).focus();return
         element=self._element(item);element.focus()
         if kind(item) in ('combobox','listbox') and item.get('tag')!='select' and element.get_attribute('aria-expanded')=='false':
-            if not (item.get('tag')=='button' and item.get('type')=='submit' and item.get('in_form')):element.click(timeout=10000)
+            if not (item.get('tag')=='button' and item.get('type')=='submit' and item.get('in_form')):self._act(element)
 
     def blur_field(self,item):
         if editable_combo(item):
@@ -1207,7 +1312,7 @@ class BrowserBackend:
         there is text to put in, so arrowing past never opens anything."""
         from playwright.sync_api import TimeoutError as BrowserTimeout
         frame=self.page if 'frame_index' not in item else self.page.frames[item['frame_index']]
-        element.click(timeout=10000)
+        self._act(element)
         try:
             frame.wait_for_function(STAND_IN_TARGET,timeout=3000)
         except BrowserTimeout:
@@ -1356,8 +1461,9 @@ class BrowserBackend:
           [e,...(function*(n){while(n.parentElement){n=n.parentElement;yield n;}})(e)].some(n=>typeof n.onkeydown==='function'||typeof n.onkeyup==='function'||n.hasAttribute('onkeydown')||n.hasAttribute('onkeyup')))""")
         before=element.evaluate("e=>({checked:'checked' in e?e.checked:e.getAttribute('aria-checked'),busy:e.getAttribute('aria-busy')})")
         if item.get('tag')=='input' and item.get('type')=='radio' and before['checked'] is True:return ''
-        if keyboard:element.press('Space',timeout=2000)
-        else:element.click(timeout=2000)
+        # Deep browser sweep, November 18, 2026: with Chrome holding input back, every tick box and
+        # radio button said "the control could not be used". page_act does it through the page then.
+        self._act(element,'Space' if keyboard else None)
         # Wait for delayed rendering without activating the control again.
         try:
             delay=600 if re.search(r'robot|human|verif|captcha',_label(item),re.I) else 150
@@ -1385,7 +1491,7 @@ class BrowserBackend:
                 candidates=frame.locator(','.join('[id='+json.dumps(name,ensure_ascii=False)+'] [role="option"]' for name in owns.split()))
             matches=[candidates.nth(i) for i in range(candidates.count()) if candidates.nth(i).inner_text().strip().casefold()==answer.casefold() and candidates.nth(i).get_attribute('aria-disabled')!='true']
             if len(matches)!=1:raise WebError('I could not identify one option.')
-            matches[0].click(timeout=10000)
+            self._act(matches[0])
         elif item['type'] in ('checkbox', 'radio'):
             if answer not in ('yes', 'no'):
                 raise WebError('Say yes or no for this choice.')
@@ -2004,6 +2110,8 @@ class WebSession:
                     unchanged=isinstance(action,dict) and action.get('unchanged') and not action.get('download')
                     # Nothing moved: stay on the button, as a screen reader does.
                     message=self._refresh(wait=False,read=False if isinstance(action,dict) and (action.get('validation') or unchanged) else None,preserve=bool(unchanged))
+                    if isinstance(action,dict) and action.get('closed'):return 'The page closed itself. '+message
+                    if isinstance(action,dict) and action.get('http_error'):return action['http_error']+' '+message
                     return (action.get('validation') or action.get('notice') or message) if isinstance(action,dict) else message
                 if role in ('link','button'):
                     if item.get('href') and not self.address_allowed(item['href']):return 'That link does not use an HTTP or HTTPS page address.'
@@ -2016,6 +2124,7 @@ class WebSession:
             return message
         except Exception as exc:
             self.cursor_changed()
+            if not isinstance(exc,WebError):browser_note(self.folder,'key '+str(key)+' failed ('+type(exc).__name__+')')
             return str(exc) if isinstance(exc,WebError) else 'The page changed or the control could not be used. Press F5 to refresh it.'
 
     def _refresh_at(self,item):
@@ -3018,6 +3127,8 @@ class WebSession:
             same=None if fragment else self._same_page_result(before,navigation)
             if same:return same
             message=self._refresh(read=False if fragment else None)
+            if isinstance(navigation,dict) and navigation.get('closed'):return 'The page closed itself. '+message
+            if isinstance(navigation,dict) and navigation.get('http_error'):return navigation['http_error']+' '+message
             if fragment:
                 target=next((e for e in self.browse.elements+self.snapshot.get('anchors',[]) if e.get('id')==fragment and e.get('frame_index')==navigation.get('frame_index')),None)
                 if target:
@@ -3026,7 +3137,8 @@ class WebSession:
                     return 'Moved within the page. '+text
             return message
         except WebError as exc: return str(exc)
-        except Exception:
+        except Exception as exc:
+            browser_note(self.folder,'link did not open ('+type(exc).__name__+')')
             if getattr(self.backend,'last_action_started',False) is True:
                 try:return 'The link request did not finish cleanly. Current page: '+self._refresh(read=False)
                 except Exception:pass

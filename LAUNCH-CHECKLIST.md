@@ -272,3 +272,12 @@ Problems found in the October 2026 review. All fixed in 0.2.153-test, with tests
   `test_a_replaced_watcher_does_nothing_after_it_wakes` fails without the fix.
 - Also: `tools/run_checks.py` now runs the Thunderbird add-on and browser extension node tests. An
   add-on test was found only by the Windows build, an hour later.
+
+## 0.2.217: Chrome held back clicks while Companion covered it (November 18, 2026)
+
+- What Will heard: "loading page" and "the page did not load cleanly" after clicking a link in his own Chrome.
+- Cause: Companion's window covers Chrome. Chrome then treats its own window as hidden and holds back mouse input. Reading the page still worked, so it looked like a broken site.
+- Why it was missed: every sweep and live test ran Chrome in front. None ran Chrome behind Companion.
+- Fix: `page_act` in `web_assistant.py`. A click or key gets 1.5 seconds; then it is done through the page, once, and written to browser-log.txt. If the page already moved, it is not done again. Links, buttons, tick boxes, radio buttons, list options, combo boxes and YouTube buttons all use it.
+- Kept from now on: the web sweep's held mode (`tools/web_sweep.py --held`) and `test_held_back_input.py`.
+- [ ] **Will:** his Chrome runs a store copy of the extension older than 0.4.3. It cannot update. Replace it (guide chapter 18, "Replace an old extension") or finish store publishing.

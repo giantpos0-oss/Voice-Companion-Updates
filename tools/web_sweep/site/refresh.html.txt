@@ -1,0 +1,1 @@
+<!doctype html><html lang="en"><title>Refresh</title><meta http-equiv="refresh" content="1;url=page2.html"><body><h1>Refreshing</h1></body></html>

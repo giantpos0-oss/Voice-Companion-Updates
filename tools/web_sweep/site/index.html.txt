@@ -1,0 +1,21 @@
+<!doctype html><html lang="en"><title>Home</title><body>
+<header><nav><a href="#main">Skip to content</a> <a href="page2.html">Page two</a></nav></header>
+<main id="main"><h1>Sweep home</h1><p>Intro paragraph with a <a href="page2.html">plain link</a>.</p>
+<h2>Links</h2><ul>
+<li><a href="#section">Same page anchor</a></li>
+<li><a href="slow?to=page2.html">Slow link</a></li>
+<li><a href="page2.html" target="_blank">New tab link</a></li>
+<li><a href="missing.html">Broken link</a></li>
+<li><a href="redirect?to=page2.html">Redirect link</a></li>
+<li><a href="#" onclick="location.href='page2.html';return false">Script link</a></li>
+<li><a href="file.zip">Download link</a></li>
+<li><a href="mailto:sam@example.com">Email link</a></li>
+<li><a href="javascript:void(0)">Do nothing link</a></li>
+<li><a href="https://example.invalid/">Unreachable site</a></li>
+</ul>
+<h2 id="section">Section</h2><p>Anchor target text.</p>
+<button onclick="document.getElementById('out').textContent='Pressed '+(++window.n||(window.n=1))">Plain button</button>
+<button onclick="this.remove()">Remove me</button><p id="out"></p>
+<h2>More</h2><p><a href="form.html">Form page</a> <a href="dialogs.html">Dialogs page</a> <a href="spa.html">App page</a> <a href="modal.html">Modal page</a> <a href="frames.html">Frames page</a> <a href="cookie.html">Cookie page</a> <a href="long.html">Long page</a> <a href="refresh.html">Refresh page</a> <a href="popup.html">Popup page</a></p>
+<table><caption>Prices</caption><tr><th>Item</th><th>Cost</th></tr><tr><td>Tea</td><td>2</td></tr></table>
+</main></body></html>
