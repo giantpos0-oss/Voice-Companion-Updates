@@ -1142,6 +1142,7 @@ class BrowserBackend:
         before=self.document_stamp();before_pages=list(self.context.pages) if self.context else []
         opened=[]
         request_errors=[]
+        page_status=[]
         pending_requests=set()
         # A link or button that starts a download: the page stays, and saying so
         # at once beats waiting and then reporting that nothing opened.
@@ -1163,6 +1164,9 @@ class BrowserBackend:
             try:
                 if response.frame==frame and response.request.resource_type in ('document','xhr','fetch') and response.status>=400:
                     request_errors.append('The website returned an error (HTTP '+str(response.status)+').')
+                # The page itself, not a script on it. Will, November 18, 2026: a link from Google
+                # said "HTTP 404" because a Firebase script on a page that loaded fine got a 404.
+                if response.frame==frame and response.request.is_navigation_request():page_status.append(response.status)
             except Exception:pass
         if self.context:self.context.on('page',new_page)
         before_page.on('request',started_request);before_page.on('requestfinished',finished_request)
@@ -1267,9 +1271,9 @@ class BrowserBackend:
                     document_changed=True
             if document_changed:self.wait_ready()
             # The new page is the website's error page (404 and the like): say so first, before
-            # its own words (deep browser sweep, November 18, 2026). Only a website's own error is
-            # said first: a network error has its own message, and saying both repeated it.
-            return {'fragment':fragment,'frame_index':item.get('frame_index'),'http_error':([e for e in request_errors if e.startswith('The website returned')] or [None])[-1] if document_changed else None}
+            # its own words (deep browser sweep, November 18, 2026). Only the new page's own answer
+            # counts: a network error has its own message, and a script's 404 is not the page's.
+            return {'fragment':fragment,'frame_index':item.get('frame_index'),'http_error':'The website returned an error (HTTP '+str(page_status[-1])+').' if document_changed and page_status and page_status[-1]>=400 else None}
         finally:
             if self.context:self.context.remove_listener('page',new_page)
             before_page.remove_listener('request',started_request);before_page.remove_listener('requestfinished',finished_request)
