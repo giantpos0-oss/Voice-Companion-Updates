@@ -374,5 +374,54 @@ class LostBrowserLinkTests(unittest.TestCase):
         log = (Path(folder.name) / 'browser-log.txt').read_text(encoding='utf-8')
         self.assertIn('browser link failed (OSError), linking again', log)
 
+
+class ActiveTabTests(unittest.TestCase):
+    """Will, November 18, 2026: "it won't load a page". When Chrome's active tab was not one the
+    connection knew, Companion kept the old page, and every key waited 10 seconds."""
+
+    def backend(self, tabs_after_relink):
+        import threading
+        from unittest.mock import Mock
+        from connected_browser import ConnectedBrowserBackend
+        folder = tempfile.TemporaryDirectory(); self.addCleanup(folder.cleanup)
+        relay = type('Relay', (), {})(); relay.connected = threading.Event(); relay.connected.set()
+        relay.browser, relay.generation = 'chrome', 1
+        backend = ConnectedBrowserBackend(folder.name, 'chrome', relay)
+        old = Mock(name='old tab')
+        def page_with(target):
+            page = Mock(name=target)
+            page.target = target
+            return page
+        backend.context = Mock(pages=[old]); backend.target_ids = {old: 'old'}
+        backend.remote_browser = Mock(is_connected=Mock(return_value=True)); backend.generation = 1
+        backend.root_session = Mock(send=Mock(return_value={'targetId': 'new'}))
+        backend.page = old
+        restarted = []
+        def start():
+            restarted.append(True)
+            pages = [page_with(t) for t in tabs_after_relink]
+            backend.context = Mock(pages=pages)
+            backend.context.new_cdp_session = lambda page: Mock(send=Mock(return_value={'targetInfo': {'targetId': page.target}}))
+            backend.root_session = Mock(send=Mock(return_value={'targetId': 'new'}))
+            backend.remote_browser = Mock(is_connected=Mock(return_value=True))
+        backend.close = Mock(); backend.start = start
+        self.folder = folder.name
+        return backend, restarted
+
+    def test_an_unknown_active_tab_makes_the_link_again(self):
+        backend, restarted = self.backend(['old', 'new'])
+        self.assertTrue(backend.sync_active_tab())
+        self.assertEqual(restarted, [True])
+        self.assertEqual(backend.page.target, 'new')
+        self.assertIn('active tab not known', (Path(self.folder) / 'browser-log.txt').read_text(encoding='utf-8'))
+
+    def test_a_tab_still_not_found_is_said_plainly(self):
+        from web_assistant import WebError
+        backend, restarted = self.backend(['old'])
+        with self.assertRaises(WebError) as caught:
+            backend.sync_active_tab()
+        self.assertIn('Switch to that tab', str(caught.exception))
+        self.assertEqual(restarted, [True], 'made again once, not over and over')
+
 if __name__ == '__main__':
     unittest.main()
