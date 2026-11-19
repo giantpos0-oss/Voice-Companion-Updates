@@ -1,27 +1,20 @@
 {
-  "version": "0.2.215-test",
+  "version": "0.2.216-test",
   "status": "Testing build",
   "date": "November 18, 2026",
-  "baseline": "0.2.214-test",
-  "scope": "Writing and reading help work again. First letters go round every list. Email says Re: for replies. Companion links your Chrome again when the link drops.",
+  "baseline": "0.2.215-test",
+  "scope": "The AI assistant lets you keep text again, and says what to do first. Chrome pages load again. A large bug sweep checked every key and command on every screen.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "First letters go round",
+          "title": "The AI assistant says what to do first",
           "details": [
-            "In every list, a first letter now goes round to the top after the last match.",
-            "This works in menus, email folders, file lists, and the other lists.",
-            "The arrows, Home and End still stop at the start and end of a list.",
-            "If only one item starts with that letter, you hear it again."
-          ]
-        },
-        {
-          "title": "Replies say Re:",
-          "details": [
-            "In Thunderbird email, a reply in a thread now says Re: before its subject.",
-            "Companion updates its Thunderbird add-on for this. Thunderbird may restart once by itself."
+            "When a rewrite is ready, you hear: Done. Press Enter to use it in place of your text, or Escape to keep your own.",
+            "Then you hear the new version.",
+            "Other answers start with: Done. Here it is.",
+            "In your own writing, you can now keep a simpler version too. Press Enter after Simplify."
           ]
         }
       ]
@@ -30,25 +23,26 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Writing and reading help",
+          "title": "Keeping AI changes",
           "details": [
-            "Writing help works again. So do summarise and simplify.",
-            "Before, every request said the AI assistant could not do that just now.",
-            "If a request fails, Companion now writes the reason in ai-error.txt in its settings folder. Your words are never written there."
+            "Control+Enter keeps all corrections again. Delete skips one again.",
+            "Control+C copies an answer again.",
+            "Before, these keys did nothing in 0.2.215."
           ]
         },
         {
-          "title": "Your Chrome",
+          "title": "Chrome pages",
           "details": [
-            "If the link to your Chrome drops, Companion opens Chrome or links it again.",
-            "Before, it said it would reconnect by itself, even when Chrome was closed.",
-            "If Chrome cannot be reached, you hear that. Check that Chrome is open, then try again."
+            "Pages load again after you open a link to a new site.",
+            "Before, Companion could keep using an old tab, and each key waited 10 seconds."
           ]
         },
         {
-          "title": "Tutorial",
+          "title": "Bug sweep",
           "details": [
-            "In the YouTube lesson, Left and Right Arrow move back and forward in the practice video again."
+            "Every key was tried on every screen, and every command on many screens.",
+            "If a screen has closed by mistake, Companion now says so and goes to the main menu.",
+            "In the file manager, a letter pressed while the list loads now says to try again."
           ]
         }
       ]
