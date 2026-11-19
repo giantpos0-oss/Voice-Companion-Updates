@@ -1,6 +1,6 @@
 VOICE COMPANION USER GUIDE
 
-Guide version: 0.2.215-test.
+Guide version: 0.2.216-test.
 Voice Companion is a talking app for Windows. It speaks its own menus and messages. You can use your voice, your keyboard, or both. You do not need Microsoft Word or a screen reader to use it.
 This guide has numbered chapters. Each chapter has short numbered parts. Each part starts with the task, then tells you what to say or which key to press.
 Spoken commands are in quotation marks, such as "Help". Keys are written the way they are labeled, such as Control+F1 or Down Arrow. A plus sign means hold the first key, then press the next one.
@@ -2564,7 +2564,7 @@ This works in a document, an email you are writing, and a note.
 32.3 Rewrite your writing
 This works in a document, an email you are writing, and a note.
 - To change the tone, say "Make it friendlier", "Make it more professional", "Make it clearer", or "Make it shorter".
-- You hear the new version first. Your own text does not change yet.
+- You hear "Done. Press Enter to use it" first, then the new version. Your own text does not change yet.
 - To use the new version, press Enter or say "Use it".
 - To keep your own text, press Escape.
 - If you change your mind, say "Undo", or press Control+Z.
@@ -2573,7 +2573,7 @@ If a document has a table, select the words you want to change first.
 32.4 Summarise or simplify
 This works on an email you are reading, a document, a note, a web page, and a file in the Document reader.
 - To hear the main points, say "Summarise this", or choose Summarise.
-- To hear it in plain words, say "Simplify this", or choose Simplify.
+- To hear it in plain words, say "Simplify this", or choose Simplify. In your own writing, press Enter to use the simpler version.
 - To hear the answer again, say "Read it again", or press Control+R.
 - Use Up Arrow and Down Arrow to read the answer a line at a time.
 - To copy the answer, say "Copy the answer", or press Control+C.

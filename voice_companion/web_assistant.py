@@ -73,8 +73,10 @@ LOAD_FAILURES=(
      'The page did not open because the website failed a security check. Check the address, or try again later.'))
 
 
-def load_failure(error,otherwise):
-    """What to say when a page did not load: the reason, then what to do next."""
+def load_failure(error,otherwise,folder=None):
+    """What to say when a page did not load: the reason, then what to do next. With folder, the
+    error's type goes in browser-log.txt (never the page's words), so the next failure names itself."""
+    if folder is not None:browser_note(folder,'page did not load ('+type(error).__name__+')')
     message=str(error).upper()
     if type(error).__name__=='TimeoutError':message+=' TIMEOUT '
     return next((said for codes,said in LOAD_FAILURES if any(code in message for code in codes)),otherwise)
@@ -1892,7 +1894,7 @@ class WebSession:
                 else:page.reload(wait_until='domcontentloaded',timeout=30000)
                 return self._refresh()
             except Exception as exc:
-                return load_failure(exc,'The page reload did not finish. Wait a moment, then press F5 again, or return to the browser menu.')
+                return load_failure(exc,'The page reload did not finish. Wait a moment, then press F5 again, or return to the browser menu.',self.folder)
         try:self._sync_browser_tab()
         except WebError as exc:return str(exc)   # its own reason, such as "Open a normal website tab"
         except Exception as exc:
@@ -2710,7 +2712,7 @@ class WebSession:
         except ValueError as exc:
             return str(exc)
         except Exception as exc:
-            return self.take_leave_notice() or load_failure(exc,'The page did not open. Check the address and internet connection.')
+            return self.take_leave_notice() or load_failure(exc,'The page did not open. Check the address and internet connection.',self.folder)
 
     def take_leave_notice(self):
         """The notice for a page that stayed open because of unsaved changes, once."""
@@ -2732,7 +2734,7 @@ class WebSession:
             # The browser's own reason (it could not start) is what to fix, not the engine.
             return str(exc)
         except Exception as exc:
-            return load_failure(exc,name + ' could not open. Your search engine was not changed. Try again or choose another search engine.')
+            return load_failure(exc,name + ' could not open. Your search engine was not changed. Try again or choose another search engine.',self.folder)
 
     def engine_names(self):
         return [{'google':'Google','bing':'Bing','brave':'Brave Search','duckduckgo':'DuckDuckGo'}[e] for e in self.engine_choices]

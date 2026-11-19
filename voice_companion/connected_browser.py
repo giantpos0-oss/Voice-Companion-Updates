@@ -62,23 +62,48 @@ class ConnectedBrowserBackend(BrowserBackend):
             self.close()
             raise WebError('The browser link is not ready. Open a website tab and keep Companion open, then return to the Web browser menu.') from exc
 
-    def sync_active_tab(self):
+    def sync_active_tab(self, _again=True):
         self.linked()
         if self.remote_browser and (self.generation!=self.relay.generation or not self.remote_browser.is_connected()):
             self.close();self.start();return True
         if not self.root_session or not self.context:return False
         target=self.root_session.send('VoiceCompanion.getActiveTarget').get('targetId')
         if not target:return False
+        page=self._page_for(target)
+        if page is not None:
+            changed=self.page is not page
+            self.page=page;self.page.set_default_timeout(10000)
+            return changed
+        # Your active tab is not one this connection knows: Chrome gave it a new target (opening a
+        # link to another site can), or it opened after the connection. Keeping the old page made
+        # every key wait 10 seconds for a tab that no longer answers (Will, November 18, 2026:
+        # "it won't load a page"). The connection is made again, which finds every tab.
+        if not _again:
+            raise WebError('Companion could not find your active Chrome tab. Switch to that tab, then try again.')
+        self._note('active tab not known to this connection, linking again')
+        self.close();self.start()
+        self.sync_active_tab(_again=False)
+        return True
+
+    def _page_for(self, target):
         for page in self.context.pages:
             if page not in self.target_ids:
-                session=self.context.new_cdp_session(page)
-                try:self.target_ids[page]=session.send('Target.getTargetInfo')['targetInfo']['targetId']
-                finally:session.detach()
+                try:
+                    session=self.context.new_cdp_session(page)
+                    try:self.target_ids[page]=session.send('Target.getTargetInfo')['targetInfo']['targetId']
+                    finally:session.detach()
+                except Exception:
+                    continue          # a tab closing while it is asked: not this one
             if self.target_ids[page]==target:
-                changed=self.page is not page
-                self.page=page;self.page.set_default_timeout(10000)
-                return changed
-        return False
+                return page
+        return None
+
+    def _note(self, text):
+        try:
+            from web_assistant import browser_note
+            browser_note(self.folder, text)
+        except Exception:
+            pass
 
     def refocus(self):
         self.start()

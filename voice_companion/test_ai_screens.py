@@ -98,7 +98,7 @@ class WritingAssistantTests(AIScreenTestCase):
         doc = self.document('i saw teh dog')
         mode = companion.handle('Make it more professional.', 'document')
         self.assertEqual(mode, 'ai_assistant')
-        self.assertTrue(self.answer().startswith('Dear team, I saw the dog.'))
+        self.assertEqual(self.answer(), ai.KEEP_FIRST + 'Dear team, I saw the dog.')
         self.assertEqual(self.service.asked[0], ('rewrite', {'text': 'i saw teh dog', 'tone': 'professional'}))
         mode = companion.handle('use it', mode)
         self.assertEqual(doc.paragraphs[0].text, 'Dear team, I saw the dog.')
@@ -150,11 +150,69 @@ class WritingAssistantTests(AIScreenTestCase):
         self.assertEqual(' '.join(companion.note_buffer), 'I saw the dog.')
 
 
+class KeepingTests(AIScreenTestCase):
+    # Will, November 18, 2026: "AI assistant isn't letting me keep text". In 0.2.215 every key on the
+    # AI screen but a few stopped with NameError (screen_command was not imported in ai_key).
+    def test_every_key_works_at_every_level(self):
+        from input_parity import SCREEN_KEYS
+        doc = self.document('I saw teh dgo.')
+        keys = sorted(set(SCREEN_KEYS.get('ai_assistant', {})) | {'Delete', 'Ctrl+Enter', 'Ctrl+C', 'Left', 'Right', 'Space',
+                                                               'Tab', 'Up', 'Down', 'Home', 'End', 'Ctrl+Home', 'F1'})
+        for level in ('menu', 'corrections', 'result', 'working', 'question'):
+            companion.AI_SESSION = ai.Session({'kind': 'write', 'label': 'this', 'text': 'x', 'apply': lambda n: 'Done.'},
+                                              'document', self.service)
+            companion.AI_SESSION.level = level
+            companion.AI_SESSION.reading = companion.ReadingCursor()
+            for key in keys:
+                with self.subTest(level=level, key=key):
+                    companion.ai_key(key)      # never an error
+
+    def test_control_enter_keeps_every_correction(self):
+        doc = self.document('I saw teh dgo.')
+        mode = self.key('Ctrl+Shift+Q', 'document')
+        mode = self.key('Enter', mode)
+        self.answer()
+        mode = self.key('Ctrl+Enter', mode)
+        self.assertEqual(doc.paragraphs[0].text, 'I saw the dog.')
+
+    def test_delete_skips_a_correction(self):
+        doc = self.document('I saw teh dgo.')
+        mode = self.key('Ctrl+Shift+Q', 'document'); mode = self.key('Enter', mode); self.answer()
+        mode = self.key('Delete', mode)
+        self.assertIn('Change "dgo" to "dog"', self.last())
+        self.assertEqual(doc.paragraphs[0].text, 'I saw teh dgo.')
+
+    def test_the_answer_starts_with_what_to_do(self):
+        self.document('i saw teh dog')
+        mode = companion.handle('make it friendlier', 'document')
+        said = self.answer()
+        self.assertTrue(said.startswith('Done. Press Enter to use it in place of your text, or Escape to keep your own.'), said)
+        self.assertTrue(said.endswith('Dear team, I saw the dog.'))
+
+    def test_simplified_writing_can_be_kept(self):
+        doc = self.document('Utilise the aforementioned apparatus.')
+        mode = companion.handle('simplify this document', 'document')
+        self.assertTrue(self.answer().startswith(ai.KEEP_FIRST))
+        self.key('Enter', mode)
+        self.assertEqual(doc.paragraphs[0].text, 'Plain words.')
+
+    def test_a_rewrite_is_kept_in_an_email(self):
+        from email_draft import VoiceEmail
+        draft = VoiceEmail(self.folder / 'Email Drafts', recipient='sam@example.com', subject='Hi', compose_step='body')
+        draft.append_text('i saw teh dog')
+        companion.email_draft = draft
+        mode = self.key('Ctrl+Shift+Q', 'email_draft')
+        mode = companion.handle('make it more professional', mode); self.answer()
+        mode = self.key('Enter', mode)
+        self.assertEqual([p.text for p in draft.paragraphs], ['Dear team, I saw the dog.'])
+        self.assertEqual(self.last(), 'Done. Say undo to put your own text back.')
+
+
 class ReadingAssistantTests(AIScreenTestCase):
     def test_summarise_an_open_email_by_voice_and_read_it_line_by_line(self):
         companion.mail_session = Screen(view='message', body_text='Hello all. Lunch is now on Friday.\nBring food.')
         mode = companion.handle('Summarize this email.', 'mailbox')
-        self.assertEqual(self.answer(), 'Lunch moved to Friday.')
+        self.assertEqual(self.answer(), 'Done. Here it is. Lunch moved to Friday.')
         self.assertEqual(self.service.asked[0], ('summarise', {'text': 'Hello all. Lunch is now on Friday.\nBring food.'}))
         mode = self.key('Escape', mode)
         self.assertEqual(self.last(), 'Summarise, 1 of 2.')
@@ -170,7 +228,7 @@ class ReadingAssistantTests(AIScreenTestCase):
         companion.web_session = Screen(snapshot={'text': 'A long article.'})
         with patch.object(companion, 'web_writing_field', lambda: False):
             mode = companion.handle('simplify this page', 'web')
-        self.assertEqual(self.answer(), 'Plain words.')
+        self.assertEqual(self.answer(), 'Done. Here it is. Plain words.')
 
 
 class ImageAndHelpTests(AIScreenTestCase):
@@ -180,7 +238,7 @@ class ImageAndHelpTests(AIScreenTestCase):
         mode = self.key('Ctrl+Shift+Q', 'files')
         self.assertEqual(self.last(), 'AI assistant, for beach.jpg. Describe the image, 1 of 2.')
         mode = self.key('Enter', mode)
-        self.assertEqual(self.answer(), 'A dog on a beach.')
+        self.assertEqual(self.answer(), 'Done. Here it is. A dog on a beach.')
         self.assertTrue(self.service.asked[0][1]['image'].startswith('data:image/jpeg;base64,'))
 
     def test_the_file_manager_menu_picture_group(self):
@@ -194,7 +252,7 @@ class ImageAndHelpTests(AIScreenTestCase):
                                                  items=[1], command=lambda text: '__ai__:describe the image')
         mode = companion.handle('enter', 'files', typed=True)
         self.assertEqual(mode, 'ai_assistant')
-        self.assertEqual(self.answer(), 'A dog on a beach.')
+        self.assertEqual(self.answer(), 'Done. Here it is. A dog on a beach.')
 
     def test_a_file_that_is_not_a_picture(self):
         companion.FILE_MANAGER = SimpleNamespace(current=lambda: SimpleNamespace(path=str(self.folder / 'notes.txt')))
@@ -205,7 +263,7 @@ class ImageAndHelpTests(AIScreenTestCase):
         mode = companion.handle('ask a question', 'help')
         self.assertEqual(self.last(), 'Type or say your question about Voice Companion, then press Enter.')
         mode = companion.handle('How do I reply to an email?', mode)
-        self.assertEqual(self.answer(), 'Press R to reply.')
+        self.assertEqual(self.answer(), 'Done. Here it is. Press R to reply.')
         self.assertIn('reply', self.service.asked[0][1]['guide'].lower())
 
 
@@ -225,7 +283,7 @@ class ConsentAndSettingTests(AIScreenTestCase):
         companion.mail_session = Screen(view='message', body_text='Hi.')
         mode = companion.handle('summarise this', 'mailbox')
         mode = self.key('Y', mode)
-        self.assertEqual(self.answer(), 'Lunch moved to Friday.')
+        self.assertEqual(self.answer(), 'Done. Here it is. Lunch moved to Friday.')
         self.assertTrue(companion.PREFERENCES['ai_assistant_consent'])
 
     def test_ai_features_off(self):

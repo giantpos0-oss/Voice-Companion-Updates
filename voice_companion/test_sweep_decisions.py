@@ -399,7 +399,7 @@ class MediaWordsTests(unittest.TestCase):
 class SafetyNetTests(CompanionCase):
     """An unexpected error on any screen says what happened, and the app keeps running there."""
     def test_an_unexpected_error_in_a_command_is_said_and_the_screen_stays(self):
-        with patch.object(companion, 'SAFETY_NET', True), \
+        with patch.object(companion, 'SAFETY_NET', True), patch.object(companion, 'document', object()), \
              patch.object(companion, '_handle', side_effect=TypeError('boom')):
             self.assertEqual(companion.handle('read paragraph', 'document'), 'document')
         self.assertEqual(self.last(), 'That did not work because of a problem in Voice Companion. '
@@ -407,6 +407,14 @@ class SafetyNetTests(CompanionCase):
         detail = (self.folder / 'command-error.txt').read_text(encoding='utf-8')
         self.assertIn('builtins.TypeError', detail)
         self.assertNotIn('read paragraph', detail)
+
+    def test_a_screen_whose_document_closed_goes_to_the_main_menu(self):
+        # Bug sweep, November 18, 2026: with its object gone, every key on a screen failed.
+        with patch.object(companion, 'SAFETY_NET', True), patch.object(companion, 'document', None), \
+             patch.object(companion, '_handle', side_effect=AttributeError('no document')):
+            self.assertEqual(companion.handle('read paragraph', 'document'), 'awake')
+        self.assertIn('That screen has closed. Main menu.', self.said)
+        self.assertIn('builtins.AttributeError', (self.folder / 'command-error.txt').read_text(encoding='utf-8'))
 
     def test_off_under_tests_so_bugs_still_stop_them(self):
         with patch.object(companion, '_handle', side_effect=TypeError('boom')):
