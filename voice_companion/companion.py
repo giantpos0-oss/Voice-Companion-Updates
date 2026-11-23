@@ -2495,7 +2495,9 @@ def choose_voice(choice):
     if kind == 'ai': AI_VOICE_NAME = value
     elif kind in ('espeak', 'readspeaker'): ESPEAK_VOICE_NAME = value
     if kind == 'readspeaker': PREFERENCES['readspeaker_last_voice'] = value   # "Use ReadSpeaker" returns to it
-    else: voice.Voice = value
+    # Only a Windows voice goes to the Windows speech engine. This was "else", which also handed
+    # eSpeak and AI voice names (such as 'en-us') to it whenever one of those was chosen.
+    elif kind == 'windows': voice.Voice = value
     return name
 
 

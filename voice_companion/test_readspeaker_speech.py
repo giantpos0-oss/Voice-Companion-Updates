@@ -388,6 +388,18 @@ class CompanionTests(unittest.TestCase):
         self.assertTrue(self.app.ESPEAK_SPEECH.enabled)
         self.assertEqual(self.app.ESPEAK_VOICE_NAME, 'readspeaker:sophie:d22')
 
+    def test_choosing_espeak_or_ai_leaves_the_windows_voice_alone(self):
+        windows = mock.Mock()
+        windows_voice = windows.Voice
+        with mock.patch.object(self.app, 'interrupt_speech'), mock.patch.object(self.app, 'PREFERENCES', {}), \
+                mock.patch.object(self.app, 'voice', windows, create=True), mock.patch.object(self.app, 'AI_SPEECH', mock.Mock()):
+            self.app.choose_voice(('espeak', 'eSpeak US English', 'en-us'))
+            self.app.choose_voice(('ai', 'AI voice Alloy', 'alloy'))
+            self.assertIs(windows.Voice, windows_voice)        # was set to 'en-us', then 'alloy'
+            token = object()
+            self.app.choose_voice(('windows', 'Microsoft David', token))
+            self.assertIs(windows.Voice, token)
+
     def test_use_readspeaker_by_voice(self):
         voices = [('ReadSpeaker Julie', 'readspeaker:julie:d22')]
         said = []
