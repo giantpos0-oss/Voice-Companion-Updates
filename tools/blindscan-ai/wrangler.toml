@@ -1,0 +1,10 @@
+# BlindScan AI service. Deployed by .github/workflows/blindscan-ai.yml with Voice Companion's
+# Cloudflare token and OpenAI key (the key is a Worker secret, never stored here).
+name = "blindscan-ai"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+workers_dev = false   # only blindscan-ai.voicecompanionapp.com; the account has no workers.dev subdomain
+routes = [{ pattern = "blindscan-ai.voicecompanionapp.com", custom_domain = true }]
+
+[vars]
+MODEL = "gpt-6.2-sol"
