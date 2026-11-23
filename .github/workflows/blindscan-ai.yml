@@ -57,3 +57,13 @@ jobs:
             sleep 10
           done
           echo "::error::https://blindscan-ai.voicecompanionapp.com/v1/health did not answer. Check the custom domain in Cloudflare."; exit 1
+      - name: Ask a real question (checks the model and the answer format)
+        run: |
+          id=$(printf 'c%.0s' $(seq 1 32))
+          reply=$(curl -sS -m 120 -X POST https://blindscan-ai.voicecompanionapp.com/v1/ask \
+            -H 'content-type: application/json' -H "X-BlindScan-Install: $id" -H 'X-BlindScan-Version: deploy-check' \
+            -d '{"document":"City Water Utility\n\nAmount due: $84.17\n\nPlease pay by December 15, 2026.","question":"How much do I owe and when is it due?"}')
+          echo "$reply"
+          echo "$reply" | grep -q '"ok":true' || { echo "::error::The live question failed: $(echo "$reply" | head -c 400)"; exit 1; }
+          echo "$reply" | grep -q 'QUOTE' || { echo "::error::The answer is not in the ANSWER / QUOTE / CHECK form: $(echo "$reply" | head -c 400)"; exit 1; }
+          echo "::notice title=Live answer::$(echo "$reply" | head -c 400)"
