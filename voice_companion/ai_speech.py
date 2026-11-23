@@ -32,9 +32,10 @@ class ContinuousOutput:
     presses still lagged). Phrases are added to a buffer the device reads from; an interruption
     empties the buffer, so the next phrase starts at once, with no stopping and restarting."""
 
-    BYTES_PER_SECOND = 48000      # 24 kHz, 16-bit mono
-
-    def __init__(self):
+    def __init__(self, rate=24000):
+        # 24 kHz for eSpeak and ReadSpeaker; 44.1 kHz for Supertonic, played as made (Will,
+        # November 23, 2026: studio-quality voices, 44 to 48 kHz, are essential).
+        self.rate = int(rate)
         self.buffer = bytearray()
         self.lock = threading.Lock()
         self.paused = False
@@ -73,7 +74,7 @@ class ContinuousOutput:
         for name, factory, options in self.attempts(factory):
             stream = None
             try:
-                stream = factory(samplerate=24000, channels=1, dtype='int16', blocksize=480,
+                stream = factory(samplerate=self.rate, channels=1, dtype='int16', blocksize=self.rate // 50,
                                  latency='low', callback=self.callback, **options)
                 stream.start()
             except Exception:
@@ -127,8 +128,22 @@ def chunks(audio):
         yield from audio
 
 
+def rate_of(audio):
+    """The sample rate of sound from a synthesizer: 24 kHz unless it says otherwise."""
+    return int(getattr(audio, 'sample_rate', 24000) or 24000)
+
+
+class RatedBytes(bytes):
+    """Sound kept whole (made ahead, or kept) that still knows its sample rate."""
+    sample_rate = 24000
+
+
 def whole(audio):
-    return audio if isinstance(audio, (bytes, bytearray)) else b''.join(chunks(audio))
+    if isinstance(audio, (bytes, bytearray)) and rate_of(audio) == 24000:
+        return audio
+    made = RatedBytes(audio if isinstance(audio, (bytes, bytearray)) else b''.join(chunks(audio)))
+    made.sample_rate = rate_of(audio)
+    return made
 
 
 class AISpeech:
@@ -167,6 +182,12 @@ class AISpeech:
             while not self.pending.empty():
                 try: self.pending.get_nowait()
                 except queue.Empty: break
+        # A synthesizer that makes a sentence at a time (Supertonic) stops making it now, so the
+        # key press is spoken at once instead of after the rest of that sentence.
+        hook = getattr(self, 'on_interrupt', None)
+        if hook is not None:
+            try: hook()
+            except Exception: pass
 
     def close(self):
         self.interrupt()
@@ -213,15 +234,21 @@ class AISpeech:
             return ahead['audio']
         return self.synthesizer(part, rate)
 
-    def _stream(self):
-        """The open output stream, opened (or restarted after an interruption) when needed."""
+    _out_rate = 24000
+
+    def _stream(self, rate=24000):
+        """The open output stream, opened (or restarted after an interruption) when needed, at the
+        sample rate of the sound to play (reopened when another voice needs another rate)."""
+        if self._out is not None and self._out_rate != rate:
+            self._close_stream()
         if self._out is None:
             if self.output_factory is None:
                 import sounddevice
                 factory, options = sounddevice.RawOutputStream, {'latency': 'low'}
             else:
                 factory, options = self.output_factory, {}
-            stream = factory(samplerate=24000, channels=1, dtype='int16', blocksize=480, **options)
+            stream = factory(samplerate=rate, channels=1, dtype='int16', blocksize=rate // 50, **options)
+            self._out_rate = rate
             if hasattr(stream, 'start'):
                 stream.start()
                 self._out_entered = False
@@ -244,18 +271,18 @@ class AISpeech:
         except Exception:
             pass
 
-    def _continuous(self):
+    def _continuous(self, rate=24000):
         """The always-running device stream, or None to use a stream written to directly
         (tests give an output_factory; and the fallback if the callback stream cannot open)."""
         if self.output_factory is not None and not getattr(self.output_factory, 'continuous', False):
             return None
-        if self._device is not None and not self._device.broken():
+        if self._device is not None and not self._device.broken() and self._device.rate == rate:
             return self._device
         if self._device is not None:
             self._device.close(); self._device = None
         if self._device_failed:
             return None
-        device = ContinuousOutput()
+        device = ContinuousOutput(rate)
         if device.open(self.output_factory):
             self._device = device
             return device
@@ -294,8 +321,9 @@ class AISpeech:
 
     def _play(self, audio, generation, volume):
         pieces = chunks(audio)
+        rate = rate_of(audio)
         try:
-            device = self._continuous()
+            device = self._continuous(rate)
             if device is not None:
                 # Added to the running stream: no waiting for it to finish, so the next phrase
                 # follows with no gap. An interruption empties the stream (interrupt()).
@@ -310,15 +338,16 @@ class AISpeech:
                             return
                         device.add(piece)
                 return
-            stream = self._stream()
+            stream = self._stream(rate)
+            step = rate // 25 * 2          # 40 ms a write, at any sample rate
             for piece in pieces:
                 piece = self._scaled(piece, volume)
-                for start in range(0, len(piece), 960):
+                for start in range(0, len(piece), step):
                     if not self._wait(generation):
                         # Interrupted: drop what is still queued in the device at once.
                         if hasattr(stream, 'abort'): stream.abort()
                         return
-                    stream.write(piece[start:start + 960])
+                    stream.write(piece[start:start + step])
         except Exception:
             # A device that went away (headset unplugged): open a fresh stream next time.
             self._close_stream()

@@ -72,17 +72,18 @@ def spoken_font(value, choices):
 
 
 def voice_fields(context):
-    """The voice list of each synthesizer: SAPI, eSpeak, ReadSpeaker (where set up) and AI."""
+    """The voice list of each synthesizer: SAPI, eSpeak, ReadSpeaker and Supertonic (where set up) and AI."""
     return {'windows':Field('windows_voice','SAPI voice','choice',tuple(context.get('windows_voices',()))),
             'espeak':Field('espeak_voice','eSpeak voice','choice',tuple(context.get('espeak_voices',()))),
             'readspeaker':Field('readspeaker_voice','ReadSpeaker voice','choice',tuple(context.get('readspeaker_voices',()))),
+            'supertonic':Field('supertonic_voice','Supertonic voice','choice',tuple(context.get('supertonic_voices',()))),
             'ai':Field('ai_voice','AI voice','choice',tuple(context.get('ai_voices',())))}
 
 
 def voice_field(context):
     """Voice options shows the voice list of the synthesizer in use (context['engine'])."""
     engine=str(context.get('engine') or 'SAPI').lower()
-    return voice_fields(context)[engine if engine in ('espeak','readspeaker','ai') else 'windows']
+    return voice_fields(context)[engine if engine in ('espeak','readspeaker','supertonic','ai') else 'windows']
 
 
 def all_fields(context):
@@ -225,8 +226,8 @@ class SettingsSession:
         command=re.sub(r'^(?:(?:set|use|choose|select) )?(?:the )?font size\b[\s,:;-]*','document size ',command,flags=re.I)
         command=re.sub(r'^(?:(?:set|use|choose|select) )?(?:the )?font(?: name)?(?! for new documents)\b[\s,:;-]*(?:to\b[\s,:;-]*)?','document font ',command,flags=re.I)
         command=re.sub(r'^((?:document|default) font|font for new documents)[\s,:;-]+',r'\1 ',command,flags=re.I)
-        engine=re.fullmatch(r'(?:use|select|choose) (?:synthesizer )?(sapi|sapi voice|windows|windows speech|microsoft|espeak|espeak ng|ai voice|readspeaker|read speaker)',command,re.I)
-        if engine:return 'engine',{'sapi':'SAPI','sapi voice':'SAPI','windows speech':'windows','microsoft':'windows','espeak ng':'espeak','ai voice':'ai','read speaker':'readspeaker'}.get(engine[1].lower(),engine[1].lower())
+        engine=re.fullmatch(r'(?:use|select|choose) (?:synthesizer )?(sapi|sapi voice|windows|windows speech|microsoft|espeak|espeak ng|ai voice|readspeaker|read speaker|supertonic|super tonic)',command,re.I)
+        if engine:return 'engine',{'sapi':'SAPI','sapi voice':'SAPI','windows speech':'windows','microsoft':'windows','espeak ng':'espeak','ai voice':'ai','read speaker':'readspeaker','super tonic':'supertonic'}.get(engine[1].lower(),engine[1].lower())
         from speech_controls import request
         speech=request(command.lower())
         if speech and speech[2] is not None:

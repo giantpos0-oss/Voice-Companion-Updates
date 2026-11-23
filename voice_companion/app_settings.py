@@ -52,13 +52,15 @@ def snapshot(m):
     engine='ai' if m.AI_SPEECH and m.AI_SPEECH.enabled else 'espeak' if m.ESPEAK_SPEECH and m.ESPEAK_SPEECH.enabled else 'windows'
     if engine=='espeak' and str(m.ESPEAK_VOICE_NAME).startswith('readspeaker:'):engine='readspeaker'
     readspeaker=tuple(v[1] for v in voices if v[0]=='readspeaker')   # only where ReadSpeaker is set up
-    context={'engines':('SAPI',)+(('espeak',) if m.ESPEAK_SPEECH else ())+(('readspeaker',) if readspeaker else ())+('ai',),'windows_voices':tuple(v[1] for v in voices if v[0]=='windows'),'espeak_voices':tuple(v[1] for v in voices if v[0]=='espeak'),'readspeaker_voices':readspeaker,'ai_voices':VOICES,'accounts':tuple(p+' '+a for p,a in accounts),'podcasts':tuple(podcast_names),'podcast_limits':podcast_limits,'podcast_feeds':podcast_names,'actions':ACTIONS,
+    if engine=='espeak' and str(m.ESPEAK_VOICE_NAME).startswith('supertonic:'):engine='supertonic'
+    supertonic=tuple(v[1] for v in voices if v[0]=='supertonic')     # only where the Supertonic model is in place
+    context={'engines':('SAPI',)+(('espeak',) if m.ESPEAK_SPEECH else ())+(('readspeaker',) if readspeaker else ())+(('supertonic',) if supertonic else ())+('ai',),'windows_voices':tuple(v[1] for v in voices if v[0]=='windows'),'espeak_voices':tuple(v[1] for v in voices if v[0]=='espeak'),'readspeaker_voices':readspeaker,'supertonic_voices':supertonic,'ai_voices':VOICES,'accounts':tuple(p+' '+a for p,a in accounts),'podcasts':tuple(podcast_names),'podcast_limits':podcast_limits,'podcast_feeds':podcast_names,'actions':ACTIONS,
              # Fonts installed on this computer, found by the window; None lists every screen font.
              'display_fonts':getattr(m.APP_WINDOW,'font_families',None),
              # File manager start places: only what Windows shows now (drives, cloud folders, your folders).
              'file_places':file_places(m)}
     from windows_actions import startup_enabled
-    values=DEFAULTS|m.PREFERENCES|{'start_with_windows':startup_enabled()}|{'verbosity':m.VERBOSITY,'pitch':str(m.SPEECH_PITCH),'rate':str(m.SPEECH_RATE),'volume':str(m.SPEECH_VOLUME),'punctuation':m.PUNCTUATION_LEVEL,'input_mode':__import__('settings_model').input_mode_label(m.INPUT_MODE),'engine':engine,'windows_voice':m.voice.Voice.GetDescription() if not m.TEXT_MODE else '', 'espeak_voice':next((v[1] for v in voices if v[0]=='espeak' and v[2]==m.ESPEAK_VOICE_NAME),''),'readspeaker_voice':next((v[1] for v in voices if v[0]=='readspeaker' and v[2]==m.ESPEAK_VOICE_NAME),next(iter(readspeaker),'')),'ai_voice':m.AI_VOICE_NAME,'api_key':'','ai_consent':m.PREFERENCES.get('ai_consent',ai_account(m.APP).get('consent',False)),'remove_ai':False,'email_account':(' '.join(selected) if selected else ''),'email_list_size':read_text(m.APP/'email-list-size.txt','10'),'browser':__import__('web_assistant').browser_setting(m.APP),'radio_source':{'radio-browser':'radio browser','radiosure':'radio sure'}.get(read_as(m.APP/'radio-preferences.json',{}).get('source','all'),read_as(m.APP/'radio-preferences.json',{}).get('source','all')),'podcast_feed':next(iter(podcast_names),''),'podcast_limit':str(next(iter(podcast_limits.values()),'manual'))}
+    values=DEFAULTS|m.PREFERENCES|{'start_with_windows':startup_enabled()}|{'verbosity':m.VERBOSITY,'pitch':str(m.SPEECH_PITCH),'rate':str(m.SPEECH_RATE),'volume':str(m.SPEECH_VOLUME),'punctuation':m.PUNCTUATION_LEVEL,'input_mode':__import__('settings_model').input_mode_label(m.INPUT_MODE),'engine':engine,'windows_voice':m.voice.Voice.GetDescription() if not m.TEXT_MODE else '', 'espeak_voice':next((v[1] for v in voices if v[0]=='espeak' and v[2]==m.ESPEAK_VOICE_NAME),''),'readspeaker_voice':next((v[1] for v in voices if v[0]=='readspeaker' and v[2]==m.ESPEAK_VOICE_NAME),next(iter(readspeaker),'')),'supertonic_voice':next((v[1] for v in voices if v[0]=='supertonic' and v[2]==m.ESPEAK_VOICE_NAME),next(iter(supertonic),'')),'ai_voice':m.AI_VOICE_NAME,'api_key':'','ai_consent':m.PREFERENCES.get('ai_consent',ai_account(m.APP).get('consent',False)),'remove_ai':False,'email_account':(' '.join(selected) if selected else ''),'email_list_size':read_text(m.APP/'email-list-size.txt','10'),'browser':__import__('web_assistant').browser_setting(m.APP),'radio_source':{'radio-browser':'radio browser','radiosure':'radio sure'}.get(read_as(m.APP/'radio-preferences.json',{}).get('source','all'),read_as(m.APP/'radio-preferences.json',{}).get('source','all')),'podcast_feed':next(iter(podcast_names),''),'podcast_limit':str(next(iter(podcast_limits.values()),'manual'))}
     values['file_manager_start']=start_label(values.get('file_manager_start'),context['file_places'])
     return values,context
 
@@ -102,7 +104,12 @@ def preview_settings(m,values,text):
     def fallback():
         import pythoncom,win32com.client
         pythoncom.CoInitialize();return win32com.client.Dispatch('SAPI.SpVoice')
-    if engine=='readspeaker':
+    if engine=='supertonic':
+        from supertonic_speech import synthesize as supertonic
+        selected=next((v for v in m.voice_choices('supertonic') if v[1]==values.get('supertonic_voice')),None)
+        voice_name=selected[2] if selected else m.ESPEAK_VOICE_NAME
+        generator=lambda text,rate:supertonic(text,rate,voice=voice_name)
+    elif engine=='readspeaker':
         from readspeaker_speech import synthesize as readspeaker
         selected=next((v for v in m.voice_choices('readspeaker') if v[1]==values.get('readspeaker_voice')),None)
         voice_name=selected[2] if selected else m.ESPEAK_VOICE_NAME
@@ -132,7 +139,8 @@ def apply_settings(m,values):
     if not -10<=pitch<=10:raise ValueError('Voice pitch must be from minus ten to ten.')
     if not -10<=rate<=10 or not 0<=volume<=100:raise ValueError('Speech rate or volume is out of range.')
     choices=[] if m.TEXT_MODE else m.voice_choices()
-    if values['engine'] in ('espeak','readspeaker') and m.ESPEAK_SPEECH is None:raise ValueError('eSpeak is unavailable.')
+    if values['engine'] in ('espeak','readspeaker','supertonic') and m.ESPEAK_SPEECH is None:raise ValueError('eSpeak is unavailable.')
+    if values['engine']=='supertonic' and not any(c[0]=='supertonic' for c in choices):raise ValueError('Supertonic is not set up on this computer.')
     if values['engine']=='readspeaker' and not any(c[0]=='readspeaker' for c in choices):raise ValueError('ReadSpeaker is not set up on this computer.')
     ai=ai_account(m.APP);key=values.get('api_key','').strip() or ai.get('key','')
     if values.get('remove_ai') and values['engine']=='ai':raise ValueError('Choose another synthesizer before removing the AI key.')
@@ -165,7 +173,7 @@ def apply_settings(m,values):
     if not m.TEXT_MODE:
         m.voice.Rate=rate;m.voice.Volume=volume
     m.AI_VOICE_NAME=values['ai_voice']
-    selected=next((v for v in ([] if m.TEXT_MODE else m.voice_choices()) if v[0]==values['engine'] and v[1]==values.get({'windows':'windows_voice','espeak':'espeak_voice','readspeaker':'readspeaker_voice','ai':'ai_voice'}[values['engine']])),None)
+    selected=next((v for v in ([] if m.TEXT_MODE else m.voice_choices()) if v[0]==values['engine'] and v[1]==values.get({'windows':'windows_voice','espeak':'espeak_voice','readspeaker':'readspeaker_voice','supertonic':'supertonic_voice','ai':'ai_voice'}[values['engine']])),None)
     if values['engine']=='ai':selected=next((v for v in m.voice_choices('ai') if v[2]==values['ai_voice']),None) if not m.TEXT_MODE else None
     if selected:m.choose_voice(selected)
     elif not m.TEXT_MODE and values['engine']=='windows':
