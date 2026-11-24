@@ -57,13 +57,28 @@ jobs:
             sleep 10
           done
           echo "::error::https://blindscan-ai.voicecompanionapp.com/v1/health did not answer. Check the custom domain in Cloudflare."; exit 1
-      - name: Ask a real question (checks the model and the answer format)
+      - name: Ask real questions the way the phone does (checks Cloudflare lets the app through)
         run: |
           id=$(printf 'c%.0s' $(seq 1 32))
-          reply=$(curl -sS -m 120 -X POST https://blindscan-ai.voicecompanionapp.com/v1/ask \
-            -H 'content-type: application/json' -H "X-BlindScan-Install: $id" -H 'X-BlindScan-Version: deploy-check' \
-            -d '{"document":"City Water Utility\n\nAmount due: $84.17\n\nPlease pay by December 15, 2026.","question":"How much do I owe and when is it due?"}')
-          echo "$reply"
-          echo "$reply" | grep -q '"ok":true' || { echo "::error::The live question failed: $(echo "$reply" | head -c 400)"; exit 1; }
-          echo "$reply" | grep -q 'QUOTE' || { echo "::error::The answer is not in the ANSWER / QUOTE / CHECK form: $(echo "$reply" | head -c 400)"; exit 1; }
-          echo "::notice title=Live answer::$(echo "$reply" | head -c 400)"
+          doc='{"document":"City Water Utility\n\nAccount 4417-22\n\nAmount due: $84.17\n\nPlease pay by December 15, 2026. Late fee: $5.00.","question":"QUESTION"}'
+          ask() {
+            # $1: User-Agent, $2: question. Cloudflare can turn some app names away (error 1010) before
+            # the Worker sees them, as it did to Voice Companion; ask as BlindScan names itself, and as
+            # Android names an app that doesn't, so a block shows up here, not on someone's phone.
+            curl -sS -m 120 -X POST https://blindscan-ai.voicecompanionapp.com/v1/ask \
+              -H 'content-type: application/json' -H "X-BlindScan-Install: $id" -H 'X-BlindScan-Version: deploy-check' \
+              -A "$1" -d "${doc/QUESTION/$2}"
+          }
+          fail=0
+          for ua in 'BlindScan/deploy-check (Android)' 'Dalvik/2.1.0 (Linux; U; Android 17; Pixel 11 Pro XL Build/CP1A)'; do
+            reply=$(ask "$ua" 'How much do I owe and when is it due?')
+            echo "[$ua] $reply"
+            echo "$reply" | grep -q '"ok":true' || { echo "::error::Blocked or failed for User-Agent $ua: $(echo "$reply" | head -c 300)"; fail=1; }
+          done
+          for q in 'What does a late fee mean?|RELATED' 'Who won the World Series in 1990?|UNRELATED' 'What is my account number?|DOCUMENT'; do
+            reply=$(ask 'BlindScan/deploy-check (Android)' "${q%%|*}")
+            echo "[${q%%|*}] $reply"
+            echo "$reply" | grep -q "SOURCE: ${q##*|}" || { echo "::error::Expected SOURCE: ${q##*|} for '${q%%|*}': $(echo "$reply" | head -c 300)"; fail=1; }
+          done
+          echo "::notice title=Live answers::$(echo "$reply" | head -c 300)"
+          exit $fail

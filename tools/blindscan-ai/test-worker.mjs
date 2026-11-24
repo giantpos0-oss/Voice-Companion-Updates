@@ -19,7 +19,7 @@ const test = (name, fn) => tests.push([name, fn]);
 test('asks with BlindScan\'s instructions, the key, the document and the photo', async () => {
   const seen = [];
   const r = await handle(ask({ document: 'Amount due: $84.17', question: 'How much?', image: 'data:image/jpeg;base64,AAAA',
-    history: [{ question: 'Who from?', answer: 'City Water.' }] }), env, openai('ANSWER: $84.17\nQUOTE: Amount due: $84.17\nCHECK: OK', seen));
+    history: [{ question: 'Who from?', answer: 'City Water.' }] }), env, openai('SOURCE: DOCUMENT\nANSWER: $84.17\nQUOTE: Amount due: $84.17\nCHECK: OK', seen));
   const body = await r.json();
   assert.equal(body.ok, true); assert.match(body.text, /QUOTE/);
   assert.equal(seen[0].url, 'https://api.openai.com/v1/responses');
