@@ -1,20 +1,19 @@
 {
-  "version": "0.2.216-test",
+  "version": "0.2.217-test",
   "status": "Testing build",
   "date": "November 18, 2026",
-  "baseline": "0.2.215-test",
-  "scope": "The AI assistant lets you keep text again, and says what to do first. Chrome pages load again. A large bug sweep checked every key and command on every screen.",
+  "baseline": "0.2.216-test",
+  "scope": "Links, buttons and check boxes work in your own Chrome again, even with Companion in front. The browser extension links tabs more reliably.",
   "sections": [
     {
       "title": "New in this version",
       "topics": [
         {
-          "title": "The AI assistant says what to do first",
+          "title": "Old Chrome extension",
           "details": [
-            "When a rewrite is ready, you hear: Done. Press Enter to use it in place of your text, or Escape to keep your own.",
-            "Then you hear the new version.",
-            "Other answers start with: Done. Here it is.",
-            "In your own writing, you can now keep a simpler version too. Press Enter after Simplify."
+            "Some copies of the Chrome extension are too old to update.",
+            "If yours is one, Companion now tells you each time it starts.",
+            "Chapter 18 of the guide has the steps to replace it. Look for Replace an old extension."
           ]
         }
       ]
@@ -23,26 +22,33 @@
       "title": "What works better",
       "topics": [
         {
-          "title": "Keeping AI changes",
+          "title": "Links and buttons in your own Chrome",
           "details": [
-            "Control+Enter keeps all corrections again. Delete skips one again.",
-            "Control+C copies an answer again.",
-            "Before, these keys did nothing in 0.2.215."
+            "Links, buttons, check boxes and radio buttons work again in your own Chrome.",
+            "Before, a click could wait 10 seconds and then say the page did not load cleanly.",
+            "This happened when Companion's window was in front of Chrome.",
+            "Lists, menus and YouTube buttons work the same way now."
           ]
         },
         {
-          "title": "Chrome pages",
+          "title": "Searches and forms",
           "details": [
-            "Pages load again after you open a link to a new site.",
-            "Before, Companion could keep using an old tab, and each key waited 10 seconds."
+            "Pressing Enter in a search box or form is quick again.",
+            "Before, it waited about 5 seconds."
           ]
         },
         {
-          "title": "Bug sweep",
+          "title": "Pages that close or fail",
           "details": [
-            "Every key was tried on every screen, and every command on many screens.",
-            "If a screen has closed by mistake, Companion now says so and goes to the main menu.",
-            "In the file manager, a letter pressed while the list loads now says to try again."
+            "If a page closes its own tab, you go on in a tab that is still open.",
+            "If a website says a page is missing, you hear that first."
+          ]
+        },
+        {
+          "title": "Browser extension",
+          "details": [
+            "A tab that could not link at first now links when it loads again.",
+            "The tab you are on links when you open Web browser."
           ]
         }
       ]

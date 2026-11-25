@@ -117,6 +117,26 @@ class LiveSnapshotTests(unittest.TestCase):
         session._refresh(read=False)
         return session, backend, page
 
+    def test_a_scripts_404_is_not_the_pages_error(self):
+        """Will, November 18, 2026: a link from Google said the website returned HTTP 404. The page
+        loaded fine; a Firebase script on it got a 404. Only the page's own answer is said."""
+        session, backend, page = self.session()
+        pages = {'/': '<main><a href="/next">Next</a> <a href="/gone">Gone</a></main>',
+                 '/next': '<main><h1>Loaded</h1><p>Fine.</p><script>fetch("/firebase-config");fetch("/missing")</script></main>',
+                 '/gone': '<main><h1>Not found</h1></main>'}
+        def answer(route):
+            path = '/' + route.request.url.split('://', 1)[1].split('/', 1)[1].split('?')[0]
+            body = pages.get(path)
+            route.fulfill(status=200 if path in ('/', '/next') else 404, content_type='text/html', body=body or 'missing')
+        page.route('http://site.test/**', answer)
+        page.goto('http://site.test/'); session._refresh(read=False)
+        links = {c['label']: c for c in session.snapshot['controls'] if c['role'] == 'link'}
+        result = backend.activate(links['Next'])
+        self.assertIsNone(result.get('http_error'), result)
+        page.goto('http://site.test/'); session._refresh(read=False)
+        links = {c['label']: c for c in session.snapshot['controls'] if c['role'] == 'link'}
+        self.assertEqual(backend.activate(links['Gone']).get('http_error'), 'The website returned an error (HTTP 404).')
+
     def test_cloned_carousel_links_get_their_own_keys(self):
         html = ('<main><h1>News</h1><div id=track><div class=slide><a href="https://example.com/a">Story A</a></div></div>'
                 '<button id=init onclick="const s=document.querySelector(\'.slide\');'
