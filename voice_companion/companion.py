@@ -2451,6 +2451,7 @@ def voice_choices(engine=None):
     if ESPEAK_SPEECH is not None:
         from espeak_speech import VOICES as ESPEAK_VOICES
         choices += [('espeak', 'eSpeak ' + name, code) for name, code in ESPEAK_VOICES]
+        choices += [('readspeaker', name, code) for name, code in readspeaker_voices()]
     if AI_SPEECH is not None:
         from ai_voice_settings import VOICES
         choices += [('ai', 'AI voice ' + name.title(), name) for name in VOICES]
@@ -2489,17 +2490,21 @@ def choose_voice(choice):
     global AI_VOICE_NAME, ESPEAK_VOICE_NAME
     interrupt_speech()
     kind, name, value = choice
-    if ESPEAK_SPEECH is not None: ESPEAK_SPEECH.enabled = kind == 'espeak'
+    if ESPEAK_SPEECH is not None: ESPEAK_SPEECH.enabled = kind in ('espeak', 'readspeaker')
     if AI_SPEECH is not None: AI_SPEECH.enabled = kind == 'ai'
     if kind == 'ai': AI_VOICE_NAME = value
-    elif kind == 'espeak': ESPEAK_VOICE_NAME = value
-    else: voice.Voice = value
+    elif kind in ('espeak', 'readspeaker'): ESPEAK_VOICE_NAME = value
+    if kind == 'readspeaker': PREFERENCES['readspeaker_last_voice'] = value   # "Use ReadSpeaker" returns to it
+    # Only a Windows voice goes to the Windows speech engine. This was "else", which also handed
+    # eSpeak and AI voice names (such as 'en-us') to it whenever one of those was chosen.
+    elif kind == 'windows': voice.Voice = value
     return name
 
 
 def synthesizers():
     choices = [('windows', 'SAPI')]
     if ESPEAK_SPEECH is not None: choices.append(('espeak', 'eSpeak NG'))
+    if readspeaker_voices(): choices.append(('readspeaker', 'ReadSpeaker'))
     if AI_SPEECH is not None: choices.append(('ai', 'AI voice'))
     return choices
 
@@ -2528,9 +2533,9 @@ PICK_CONFIRM = frozenset(('that one', 'confirm that', 'okay', 'ok', 'use that vo
 
 def use_synthesizer(text):
     global SYNTH_PICK_INDEX, VOICE_PICK_INDEX, VOICE_PICK_ORIGINAL, VOICE_PICK_ENGINE
-    if normalized_command(text) not in ('use sapi','use sapi voice','use ai voice','use windows voice','use espeak','use espeak voice','use e speak'):return False
+    if normalized_command(text) not in ('use sapi','use sapi voice','use ai voice','use windows voice','use espeak','use espeak voice','use e speak','use readspeaker','use read speaker','use readspeaker voice','use read speaker voice'):return False
     requested = normalized_command(text)
-    kind = 'windows' if requested in ('use windows voice','use sapi','use sapi voice') else 'ai' if requested == 'use ai voice' else 'espeak'
+    kind = 'windows' if requested in ('use windows voice','use sapi','use sapi voice') else 'ai' if requested == 'use ai voice' else 'readspeaker' if 'read' in requested else 'espeak'
     if TEXT_MODE:
         choices = []
     elif kind == 'windows':
@@ -2540,11 +2545,17 @@ def use_synthesizer(text):
     elif kind == 'espeak' and ESPEAK_SPEECH is not None:
         from espeak_speech import ALL_VOICES
         choices = [('espeak', 'eSpeak ' + name, code) for name, code in ALL_VOICES if code == ESPEAK_VOICE_NAME]
+    elif kind == 'readspeaker':
+        voices = readspeaker_voices()
+        last = ESPEAK_VOICE_NAME if ESPEAK_VOICE_NAME.startswith('readspeaker:') else PREFERENCES.get('readspeaker_last_voice')
+        choices = [('readspeaker', name, code) for name, code in voices if code == last][:1] or [('readspeaker', name, code) for name, code in voices][:1]
     else: choices = []
     if choices:
         choose_voice(choices[0])
         SYNTH_PICK_INDEX = VOICE_PICK_INDEX = VOICE_PICK_ORIGINAL = VOICE_PICK_ENGINE = None
-        speak('Using ' + choices[0][1] + '.' + remembered(save_speech_settings))
+        others = len(readspeaker_voices()) - 1 if kind == 'readspeaker' else 0
+        speak('Using ' + choices[0][1] + '.' + remembered(save_speech_settings) +
+              (' To choose another ReadSpeaker voice, say select voice.' if others > 0 else ''))
     else:
         speak('That synthesizer is not configured. Ask your trainer to check setup.')
     return True
@@ -2572,6 +2583,7 @@ def voice_menu(command):
         SYNTH_PICK_INDEX = 0
         if command in ('select voice', 'choose voice'):
             kind = 'espeak' if ESPEAK_SPEECH and ESPEAK_SPEECH.enabled else 'ai' if AI_SPEECH and AI_SPEECH.enabled else 'windows'
+            if kind == 'espeak' and ESPEAK_VOICE_NAME.startswith('readspeaker:'): kind = 'readspeaker'
             VOICE_PICK_ENGINE = kind
             SYNTH_PICK_INDEX = None
             VOICE_PICK_INDEX = 0
@@ -2623,6 +2635,11 @@ def voice_menu(command):
 def record_espeak_error(exc):
     # Do not write dictated text, command input, subprocess output or credentials.
     import subprocess
+    if ESPEAK_VOICE_NAME.startswith('readspeaker:'):
+        # The SDK's own reason (a license problem, a missing voice), never the words being spoken.
+        APP.mkdir(parents=True, exist_ok=True)
+        (APP / 'readspeaker-error.txt').write_text('ReadSpeaker failure: ' + type(exc).__name__ + '\n' + str(exc)[:500] + '\n', encoding='utf-8')
+        return
     kind = 'speech generation' if isinstance(exc, (subprocess.SubprocessError, OSError, ValueError)) else 'audio playback'
     code = getattr(exc, 'returncode', None)
     APP.mkdir(parents=True, exist_ok=True)
@@ -2643,9 +2660,26 @@ def configure_espeak_speech():
         import win32com.client
         pythoncom.CoInitialize()
         return win32com.client.Dispatch('SAPI.SpVoice')
-    ESPEAK_SPEECH = AISpeech(fallback, lambda text, rate: synthesize(text, rate,
-        voice=ESPEAK_VOICE_NAME, program=program,pitch=SPEECH_PITCH), engine_name='eSpeak', error_callback=record_espeak_error)
+    def local_voice(text, rate):
+        # ReadSpeaker voices (readspeaker_speech.py) share this local speech player with eSpeak.
+        if ESPEAK_VOICE_NAME.startswith('readspeaker:'):
+            from readspeaker_speech import synthesize as readspeaker
+            return readspeaker(text, rate, voice=ESPEAK_VOICE_NAME, pitch=SPEECH_PITCH, pieces=True)
+        return synthesize(text, rate, voice=ESPEAK_VOICE_NAME, program=program, pitch=SPEECH_PITCH)
+    def local_name():
+        return 'ReadSpeaker' if ESPEAK_VOICE_NAME.startswith('readspeaker:') else 'eSpeak'
+    ESPEAK_SPEECH = AISpeech(fallback, local_voice, engine_name=local_name, error_callback=record_espeak_error)
     return True
+
+
+def readspeaker_voices():
+    """ReadSpeaker voices on this computer (evaluation only; none unless a helper set them up)."""
+    if ESPEAK_SPEECH is None:return []
+    try:
+        from readspeaker_speech import available_voices
+        return available_voices()
+    except Exception:
+        return []
 
 
 def configure_ai_speech():
@@ -7568,9 +7602,19 @@ if __name__ == '__main__':
             try:
                 if configure_espeak_speech():
                     stored = locals().get('settings', {})
+                    try:
+                        from readspeaker_speech import sdk_folder, self_check
+                        if sdk_folder():
+                            # Evaluation (readspeaker_speech.py): record what works, on a thread, never blocking start.
+                            threading.Thread(target=self_check, args=(APP / 'readspeaker-check.txt', SPEECH_RATE), name='ReadSpeaker check', daemon=True).start()
+                    except Exception:
+                        pass
                     ESPEAK_SPEECH.enabled = bool(stored.get('espeak_enabled', False))
                     from espeak_speech import ALL_VOICES as ESPEAK_VOICES
                     if stored.get('espeak_voice') in {code for _, code in ESPEAK_VOICES}: ESPEAK_VOICE_NAME = stored['espeak_voice']
+                    elif str(stored.get('espeak_voice','')).startswith('readspeaker:'):
+                        # A ReadSpeaker voice only while it is still set up here; otherwise US English eSpeak.
+                        if stored['espeak_voice'] in {code for _, code in readspeaker_voices()}: ESPEAK_VOICE_NAME = stored['espeak_voice']
             except Exception:
                 ESPEAK_SPEECH = None
                 print('eSpeak unavailable; Windows speech remains available.', file=sys.stderr)

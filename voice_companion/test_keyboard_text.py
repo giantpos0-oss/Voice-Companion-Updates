@@ -107,6 +107,20 @@ class KeyboardTextTests(unittest.TestCase):
         with patch.object(companion,'mail_session',session),patch.object(companion,'handle',return_value='mailbox') as handle:
             companion.handle_keyboard('New folder','mailbox')
             handle.assert_called_once_with('rename to New folder','mailbox',typed=True)
+    def test_a_key_press_does_not_wait_for_windows_speech_that_never_started(self):
+        # Will, November 17, 2026: with ReadSpeaker speaking, every key press still asked the
+        # Windows voice to stop, and waited for it (0.7 seconds once).
+        worker=KeyboardSpeech.__new__(KeyboardSpeech);worker.problem=None;worker.paused=False;worker.active=True;worker.quiet_until=0
+        local=Mock(enabled=True);worker.settings=('',0,100,local,0)
+        worker.queue=Mock(get=Mock(side_effect=[('interrupt',),'Right',('interrupt',),'Left',None]))
+        voice=Mock();stand_ins={'pythoncom':Mock(),'win32com.client':Mock(Dispatch=Mock(return_value=voice))}
+        import builtins;real_import=builtins.__import__
+        def fake_import(name,*args,**kwargs):
+            # Only these two Windows modules are replaced, for this call (sys.modules is untouched).
+            return stand_ins[name] if name in stand_ins else real_import(name,*args,**kwargs)
+        with patch('builtins.__import__',fake_import),patch('speech32.with_32bit_voices',lambda native:native):worker.run()
+        voice.Speak.assert_not_called()
+        self.assertEqual([c.args[0] for c in local.speak.call_args_list],['Right','Left'])
     def test_pause_resume_and_stop_control_the_keyboard_voice_on_its_owner_thread(self):
         worker=KeyboardSpeech.__new__(KeyboardSpeech);worker.settings=('',0,100,None);worker.problem=None;worker.paused=False;worker.active=True;worker.quiet_until=0
         worker.queue=Mock(get=Mock(side_effect=['Read this.',('pause',),('resume',),('interrupt',),None]))

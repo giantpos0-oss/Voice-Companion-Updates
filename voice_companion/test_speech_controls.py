@@ -96,6 +96,189 @@ class SpeechControlTests(unittest.TestCase):
             self.assertEqual(list(array.array('h',b''.join(blocks))),[50,-50])
         finally:engine.close()
 
+    def test_one_output_stream_serves_many_phrases(self):
+        # Will, November 17, 2026: keys lagged. Opening a Windows audio stream for every phrase
+        # cost a delay each key press; the stream now stays open, and an interruption only aborts it.
+        import ai_speech,array
+        opened=[]
+        class Output:
+            def __init__(self,**options):opened.append(options);self.active=False;self.calls=[]
+            def start(self):self.active=True;self.calls.append('start')
+            def write(self,data):self.calls.append('write')
+            def abort(self):self.active=False;self.calls.append('abort')
+            def close(self):self.calls.append('close')
+        engine=ai_speech.AISpeech(Mock(),output_factory=Output)
+        try:
+            tone=array.array('h',[100]*2000).tobytes()
+            for _ in range(5):engine._play(tone,engine.generation,100)
+            self.assertEqual(len(opened),1)
+            stream=engine._out
+            engine.generation+=1                       # a key press interrupts
+            engine._play(tone,engine.generation-1,100)
+            self.assertIn('abort',stream.calls)
+            engine._play(tone,engine.generation,100)   # the next phrase restarts the same stream
+            self.assertEqual(len(opened),1)
+            self.assertEqual(stream.calls.count('start'),2)
+        finally:engine.close()
+
+    def test_the_next_sentence_is_made_while_this_one_plays(self):
+        # Will, November 17, 2026: "Exit Voice Companion. Are you sure?" had a long pause between.
+        # The second phrase is now made while the first plays, so it starts right after it.
+        import ai_speech,time as clock
+        events=[]
+        def make(text,rate):
+            clock.sleep(0.25);events.append(('made',text,clock.perf_counter()));return b'\x00\x00'
+        engine=ai_speech.AISpeech(Mock(),synthesizer=make)
+        def play(audio,generation,volume):
+            events.append(('start',clock.perf_counter()));clock.sleep(0.4);events.append(('end',clock.perf_counter()))
+        engine._play=play
+        try:
+            engine.speak('Exit Voice Companion.');engine.speak('Are you sure?')
+            deadline=clock.time()+5
+            while len([e for e in events if e[0]=='end'])<2 and clock.time()<deadline:clock.sleep(0.02)
+        finally:engine.close()
+        ends=[e[1] for e in events if e[0]=='end'];starts=[e[1] for e in events if e[0]=='start']
+        self.assertEqual(len(starts),2)
+        self.assertLess(starts[1]-ends[0],0.1,'the second phrase waited for the synthesizer')
+
+    def test_an_interruption_drops_the_phrase_made_ahead(self):
+        import ai_speech,time as clock
+        made=[];played=[]
+        engine=ai_speech.AISpeech(Mock(),synthesizer=lambda text,rate:(made.append(text),b'\x00\x00')[1])
+        def play(audio,generation,volume):
+            played.append(generation)
+            if len(played)==1:engine.interrupt();engine.speak('New key')
+        engine._play=play
+        try:
+            engine.speak('First');engine.speak('Old next')
+            deadline=clock.time()+3
+            while len(played)<2 and clock.time()<deadline:clock.sleep(0.02)
+        finally:engine.close()
+        self.assertEqual(len(played),2)
+        self.assertEqual(played[1],played[0]+1,'the phrase made ahead was from before the key press')
+        self.assertEqual(made[-1],'New key')
+
+    def test_a_failed_device_is_reopened_next_time(self):
+        import ai_speech,array
+        opened=[]
+        class Output:
+            def __init__(self,**options):opened.append(self);self.broken=len(opened)==1
+            def start(self):pass
+            def write(self,data):
+                if self.broken:raise OSError('device unplugged')
+            def close(self):pass
+        engine=ai_speech.AISpeech(Mock(),output_factory=Output)
+        try:
+            with self.assertRaises(OSError):engine._play(b'\x00\x00'*10,engine.generation,100)
+            engine._play(b'\x00\x00'*10,engine.generation,100)
+            self.assertEqual(len(opened),2)
+        finally:engine.close()
+
+    # Will, November 17, 2026: quick key presses still lagged. The device stream now never stops:
+    # phrases are added to it, and a key press empties it instead of stopping and restarting it.
+    class ContinuousStream:
+        continuous=True
+        made=[]
+        def __init__(self,callback=None,**options):
+            self.callback=callback;self.options=options;self.active=False;self.calls=[]
+            type(self).made.append(self)
+        def start(self):self.active=True;self.calls.append('start')
+        def abort(self):self.active=False;self.calls.append('abort')
+        def close(self):self.calls.append('close')
+        def pull(self,frames=480):
+            out=bytearray(frames*2);self.callback(out,frames,None,None);return bytes(out)
+
+    def continuous_engine(self):
+        import ai_speech
+        self.ContinuousStream.made=[]
+        engine=ai_speech.AISpeech(Mock(),output_factory=self.ContinuousStream)
+        self.addCleanup(engine.close)
+        return engine
+
+    def test_phrases_run_into_one_stream_with_no_gap(self):
+        import array
+        engine=self.continuous_engine()
+        engine._play(array.array('h',[100]*300).tobytes(),engine.generation,100)
+        engine._play(array.array('h',[200]*300).tobytes(),engine.generation,100)
+        stream=self.ContinuousStream.made[0]
+        self.assertEqual(len(self.ContinuousStream.made),1)
+        self.assertEqual(list(array.array('h',stream.pull(600))),[100]*300+[200]*300)
+        self.assertNotIn('abort',stream.calls)
+
+    def test_a_key_press_silences_the_stream_at_once_without_stopping_it(self):
+        import array
+        engine=self.continuous_engine()
+        engine._play(array.array('h',[100]*24000).tobytes(),engine.generation,100)
+        self.assertTrue(engine.busy())
+        engine.interrupt()
+        stream=self.ContinuousStream.made[0]
+        self.assertEqual(set(array.array('h',stream.pull())),{0})
+        self.assertFalse(engine.busy())
+        engine._play(array.array('h',[300]*480).tobytes(),engine.generation,100)
+        self.assertEqual(set(array.array('h',stream.pull())),{300})
+        self.assertEqual(stream.calls,['start'])
+
+    def test_sound_from_before_a_key_press_never_reaches_the_stream(self):
+        import array
+        engine=self.continuous_engine()
+        old=engine.generation;engine.interrupt()
+        engine._play(array.array('h',[100]*480).tobytes(),old,100)
+        self.assertFalse(engine.busy())
+
+    def test_pause_holds_the_sound_and_resume_continues_it(self):
+        import array
+        engine=self.continuous_engine()
+        engine._play(array.array('h',[100]*960).tobytes(),engine.generation,100)
+        stream=self.ContinuousStream.made[0]
+        engine.pause()
+        self.assertEqual(set(array.array('h',stream.pull())),{0})
+        engine.resume()
+        self.assertEqual(set(array.array('h',stream.pull(960))),{100})
+
+    def test_a_synthesizer_still_making_sound_stops_at_a_key_press(self):
+        import array
+        engine=self.continuous_engine()
+        made=[];stopped=[]
+        def pieces():
+            try:
+                for _ in range(10):
+                    made.append(1)
+                    if len(made)==2:engine.interrupt()
+                    yield array.array('h',[100]*480).tobytes()
+            finally:stopped.append(True)
+        engine._play(pieces(),engine.generation-0,100)
+        self.assertEqual(len(made),2)
+        self.assertEqual(stopped,[True])
+
+    def test_a_phrase_made_in_pieces_is_made_before_the_next_one(self):
+        import array,time as clock
+        engine=self.continuous_engine()
+        order=[]
+        def make(text,rate):
+            def pieces():
+                order.append(text)
+                yield array.array('h',[100]*480).tobytes()
+            return pieces()
+        engine.synthesizer=make
+        engine.speak('First');engine.speak('Second')
+        deadline=clock.time()+3
+        while len(order)<2 and clock.time()<deadline:clock.sleep(0.01)
+        self.assertEqual(order,['First','Second'])
+
+    def test_windows_audio_is_tried_first_then_the_default_device(self):
+        import ai_speech
+        tried=[]
+        class Fails(self.ContinuousStream):
+            def start(self):tried.append('wasapi');raise OSError('no WASAPI')
+        class Works(self.ContinuousStream):
+            def start(self):tried.append('default');self.active=True
+        device=ai_speech.ContinuousOutput()
+        with patch.object(ai_speech.ContinuousOutput,'attempts',staticmethod(lambda factory=None:[('Windows audio (WASAPI)',Fails,{}),('the default sound device',Works,{})])):
+            self.assertTrue(device.open())
+        self.assertEqual(tried,['wasapi','default'])
+        self.assertTrue(device.description.startswith('the default sound device'))
+        device.close()
+
     def test_espeak_direct_speed_is_passed_to_local_generator(self):
         import io,wave,espeak_speech
         buffer=io.BytesIO()
